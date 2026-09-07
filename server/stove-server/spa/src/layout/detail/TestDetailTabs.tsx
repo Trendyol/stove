@@ -2,10 +2,13 @@ import { lazy, Suspense, useEffect, useMemo } from "react";
 import { dashboardQueries } from "../../api/dashboard-queries";
 import type { Entry, MockInteraction, MockWarning, Snapshot, Span } from "../../api/types";
 import { EvidenceWorkbench } from "../../components/EvidenceWorkbench";
+import { FocusedEvidenceView } from "../../components/FocusedEvidenceView";
 import { MockJournal } from "../../components/MockJournal";
 import { SnapshotCards } from "../../components/SnapshotCards";
 import { SpanTree } from "../../components/SpanTree";
+import { useFocusedEvidenceState } from "../../hooks/FocusedEvidenceProvider";
 import { type DashboardListQuery, useDashboardListQuery } from "../../hooks/useDashboardListQuery";
+import { useEvidenceNavigation } from "../../hooks/useEvidenceNavigation";
 import { partitionSnapshotsByDetail } from "../../utils/snapshot-state";
 import type { Tab } from "./TabBar";
 
@@ -44,6 +47,8 @@ export function TestDetailTab({
   onSelectTab,
   onSummary,
 }: TestDetailTabProps) {
+  const navigation = useEvidenceNavigation();
+  const focus = useFocusedEvidenceState();
   const scope = {
     runId,
     testId,
@@ -51,10 +56,18 @@ export function TestDetailTab({
     pollWhileDisconnected: testRunning,
   };
 
+  if (navigation?.focus && focus && (!navigation.full || focus.error || focus.isPending))
+    return <FocusedEvidenceView query={focus} runId={runId} testId={testId} />;
+
   switch (tab) {
     case "timeline":
       return (
-        <EvidenceTab scope={scope} onOpenTrace={() => onSelectTab("trace")} onSummary={onSummary} />
+        <EvidenceTab
+          citedEntry={focus?.data?.target.kind === "entry" ? focus.data.target.value : undefined}
+          scope={scope}
+          onOpenTrace={() => onSelectTab("trace")}
+          onSummary={onSummary}
+        />
       );
     case "mocks":
       return (
@@ -70,10 +83,12 @@ export function TestDetailTab({
 }
 
 function EvidenceTab({
+  citedEntry,
   scope,
   onOpenTrace,
   onSummary,
 }: {
+  citedEntry?: Entry;
   scope: TestQueryScope;
   onOpenTrace: () => void;
   onSummary: TestDetailTabProps["onSummary"];
@@ -84,7 +99,17 @@ function EvidenceTab({
   return (
     <ListQueryView query={query} loading="Loading evidence…" failure="Failed to load entries">
       {(entries) => (
-        <EvidenceWorkbench key={scope.testId} entries={entries} onOpenTrace={onOpenTrace} />
+        <EvidenceWorkbench
+          key={scope.testId}
+          entries={
+            citedEntry && !entries.some((entry) => entry.id === citedEntry.id)
+              ? [...entries, citedEntry].sort(
+                  (a, b) => a.timestamp.localeCompare(b.timestamp) || a.id - b.id,
+                )
+              : entries
+          }
+          onOpenTrace={onOpenTrace}
+        />
       )}
     </ListQueryView>
   );
@@ -174,7 +199,7 @@ function SnapshotsTab({
 
   return (
     <ListQueryView query={query} loading="Loading snapshots…" failure="Failed to load snapshots">
-      {() => <SnapshotCards snapshots={detailedSnapshots} hiddenCount={hiddenCount} />}
+      {() => <SnapshotCards snapshots={query.data} hiddenCount={hiddenCount} />}
     </ListQueryView>
   );
 }

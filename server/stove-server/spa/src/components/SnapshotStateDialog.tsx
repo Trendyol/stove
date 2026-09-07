@@ -1,8 +1,10 @@
 import { useState } from "react";
 import type { Snapshot } from "../api/types";
+import { useEvidenceNavigation } from "../hooks/useEvidenceNavigation";
 import { useModalDialog } from "../hooks/useModalDialog";
 import { useSnapshotExplorer } from "../hooks/useSnapshotExplorer";
 import { getSystemInfo } from "../utils/systems";
+import { EvidenceActions } from "./EvidenceActions";
 import { JsonTree } from "./JsonTree";
 import { SnapshotMetricTiles } from "./SnapshotMetricTiles";
 
@@ -12,12 +14,17 @@ interface SnapshotStateDialogProps {
 }
 
 export function SnapshotStateDialog({ snapshot, onClose }: SnapshotStateDialogProps) {
+  const navigation = useEvidenceNavigation();
+  const [showAll, setShowAll] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const normalizedSearchQuery = searchQuery.trim();
-  const explorer = useSnapshotExplorer(snapshot, normalizedSearchQuery);
+  const explorer = useSnapshotExplorer(snapshot, normalizedSearchQuery, navigation?.pointer);
   const closeButtonRef = useModalDialog(true, onClose);
   const info = getSystemInfo(snapshot.system);
 
+  const pointer = navigation?.pointer;
+  const selected = explorer.kind === "loading" ? undefined : explorer.selection;
+  const focused = !showAll && selected?.found;
   const detailed = explorer.kind !== "loading" && explorer.detailed;
   const detailDescription =
     explorer.kind === "loading"
@@ -87,13 +94,31 @@ export function SnapshotStateDialog({ snapshot, onClose }: SnapshotStateDialogPr
           </button>
         </div>
 
+        <EvidenceActions />
         <div className="flex-1 space-y-3 overflow-y-auto p-4">
           {explorer.kind !== "loading" && explorer.metrics.length > 0 && (
             <SnapshotMetricTiles metrics={explorer.metrics} />
           )}
 
           {explorer.kind === "loading" && <StateMessage>Preparing state explorer…</StateMessage>}
-          {explorer.kind === "structured" && explorer.detailed && (
+          {pointer !== undefined && explorer.kind !== "loading" && (
+            <div className="evidence-scope-note">
+              {selected?.found ? (
+                <>
+                  Selected value: <code>{pointer || "/ (root)"}</code>{" "}
+                  <button type="button" onClick={() => setShowAll(!showAll)}>
+                    {showAll ? "Show selected value" : "Show complete snapshot"}
+                  </button>
+                </>
+              ) : (
+                <>The selected path is unavailable. Showing the recorded snapshot.</>
+              )}
+            </div>
+          )}
+          {focused && selected?.found && (
+            <JsonTree value={selected.value} defaultExpandedDepth={2} />
+          )}
+          {!focused && explorer.kind === "structured" && explorer.detailed && (
             <StructuredState
               explorer={explorer}
               searchQuery={searchQuery}
@@ -101,7 +126,7 @@ export function SnapshotStateDialog({ snapshot, onClose }: SnapshotStateDialogPr
               onSearchChange={setSearchQuery}
             />
           )}
-          {explorer.kind === "raw" && explorer.detailed && (
+          {!focused && explorer.kind === "raw" && explorer.detailed && (
             <pre className="overflow-x-auto rounded-lg border border-stove-border bg-stove-base p-3 text-xs whitespace-pre-wrap break-words text-[var(--stove-text)]">
               {explorer.value}
             </pre>

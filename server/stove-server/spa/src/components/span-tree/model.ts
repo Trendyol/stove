@@ -1,5 +1,8 @@
 import type { Span } from "../../api/types";
 
+export const spanKey = (span: Pick<Span, "trace_id" | "span_id">) =>
+  `${span.trace_id}:${span.span_id}`;
+
 interface SpanNode {
   span: Span;
   children: SpanNode[];
@@ -18,13 +21,16 @@ export function buildSpanTreeRows(
 ): SpanTreeRowModel[] {
   const nodes = new Map<string, SpanNode>();
   for (const span of spans) {
-    nodes.set(span.span_id, { span, children: [] });
+    nodes.set(spanKey(span), { span, children: [] });
   }
 
   const roots: SpanNode[] = [];
   for (const node of nodes.values()) {
     const parentId = node.span.parent_span_id;
-    const parent = parentId && parentId !== node.span.span_id ? nodes.get(parentId) : undefined;
+    const parent =
+      parentId && parentId !== node.span.span_id
+        ? nodes.get(`${node.span.trace_id}:${parentId}`)
+        : undefined;
     if (parent) parent.children.push(node);
     else roots.push(node);
   }
@@ -35,9 +41,9 @@ export function buildSpanTreeRows(
   const rows: SpanTreeRowModel[] = [];
   const visited = new Set<string>();
   const append = (node: SpanNode, depth: number) => {
-    if (visited.has(node.span.span_id)) return;
-    visited.add(node.span.span_id);
-    const collapsed = collapsedSpanIds.has(node.span.span_id);
+    if (visited.has(spanKey(node.span))) return;
+    visited.add(spanKey(node.span));
+    const collapsed = collapsedSpanIds.has(spanKey(node.span));
     rows.push({
       span: node.span,
       depth,
@@ -55,14 +61,14 @@ export function buildSpanTreeRows(
   // Malformed cyclic traces have no natural root. Keep them inspectable without
   // allowing the tree traversal to recurse forever.
   for (const node of nodes.values()) {
-    if (!visited.has(node.span.span_id)) append(node, 0);
+    if (!visited.has(spanKey(node.span))) append(node, 0);
   }
   return rows;
 }
 
 function markVisited(node: SpanNode, visited: Set<string>) {
-  if (visited.has(node.span.span_id)) return;
-  visited.add(node.span.span_id);
+  if (visited.has(spanKey(node.span))) return;
+  visited.add(spanKey(node.span));
   for (const child of node.children) markVisited(child, visited);
 }
 

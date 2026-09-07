@@ -1,16 +1,13 @@
 import { useEffect, useState } from "react";
-import type { MockInteraction, MockWarning } from "../../api/types";
-import { formatDuration, formatTimestamp } from "../../utils/format";
-import { tryFormatJson } from "../../utils/json";
-import { getSystemInfo } from "../../utils/systems";
+import type { MockInteraction } from "../../api/types";
+import { formatDuration } from "../../utils/format";
+import { EvidenceActions } from "../EvidenceActions";
 import { Icon } from "../Icon";
-import {
-  attributionLabel,
-  hasInteractionIssue,
-  humanize,
-  type InspectorTab,
-  type JournalInspectorState,
-} from "./model";
+import { InspectorBody } from "./InspectorBody";
+import { InspectorHeader, WarningBrief } from "./InspectorHeader";
+import { type InspectorTab, InspectorTabs } from "./InspectorTabs";
+import { hasInteractionIssue } from "./model";
+import { type JournalInspectorState, selectedInteraction } from "./selection";
 
 interface InteractionInspectorProps {
   state: JournalInspectorState;
@@ -37,7 +34,6 @@ export function InteractionInspector({
         ? `interaction:${state.interaction.id}`
         : `warning:${state.warning.id}`;
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: selection key deliberately controls inspector reset
   useEffect(() => {
     setTab(state.kind === "warning" ? "diagnostics" : "overview");
   }, [selectionKey]);
@@ -67,6 +63,7 @@ export function InteractionInspector({
       }
     >
       <InspectorHeader state={state} interaction={interaction} onClose={onClose} />
+      <EvidenceActions />
       {warning && <WarningBrief warning={warning} />}
 
       {interaction && (
@@ -116,240 +113,5 @@ export function InteractionInspector({
         </>
       )}
     </aside>
-  );
-}
-
-function selectedInteraction(state: JournalInspectorState): MockInteraction | undefined {
-  if (state.kind === "interaction") return state.interaction;
-  if (state.kind === "warning" && state.related.kind === "interaction") {
-    return state.related.interaction;
-  }
-  return undefined;
-}
-
-function InspectorHeader({
-  state,
-  interaction,
-  onClose,
-}: {
-  state: Exclude<JournalInspectorState, { kind: "empty" }>;
-  interaction: MockInteraction | undefined;
-  onClose: () => void;
-}) {
-  const warning = state.kind === "warning" ? state.warning : undefined;
-  const system = interaction ? getSystemInfo(interaction.system) : undefined;
-  const title = interaction?.target ?? warning?.target ?? (warning ? humanize(warning.kind) : "");
-
-  return (
-    <header className="ledger-inspector-header">
-      <div>
-        <strong>{title}</strong>
-        <p>
-          {interaction && system ? (
-            <>
-              <span style={{ color: system.color }}>{system.icon}</span> {interaction.system} ·{" "}
-              {interaction.method} · {formatTimestamp(interaction.timestamp)}
-            </>
-          ) : (
-            warning && `${warning.system} · ${formatTimestamp(warning.timestamp)}`
-          )}
-        </p>
-      </div>
-      <button
-        type="button"
-        className="inspector-close"
-        onClick={onClose}
-        aria-label="Close inspector"
-      >
-        ×
-      </button>
-    </header>
-  );
-}
-
-function WarningBrief({ warning }: { warning: MockWarning }) {
-  return (
-    <div className="inspector-warning-brief">
-      <Icon name="warning" className="h-4 w-4" />
-      <div>
-        <strong>{humanize(warning.kind)}</strong>
-        <p>{warning.message}</p>
-      </div>
-    </div>
-  );
-}
-
-function InspectorTabs({
-  active,
-  diagnosticCount,
-  onSelect,
-}: {
-  active: InspectorTab;
-  diagnosticCount: number;
-  onSelect: (tab: InspectorTab) => void;
-}) {
-  const tabs: readonly InspectorTab[] = ["overview", "request", "response", "diagnostics"];
-  return (
-    <nav className="inspector-tabs" aria-label="Exchange detail sections">
-      {tabs.map((tab) => (
-        <button
-          type="button"
-          key={tab}
-          className={active === tab ? "is-active" : ""}
-          onClick={() => onSelect(tab)}
-        >
-          {tab}
-          {tab === "diagnostics" && diagnosticCount > 0 && <span>{diagnosticCount}</span>}
-        </button>
-      ))}
-    </nav>
-  );
-}
-
-function InspectorBody({
-  tab,
-  interaction,
-  warning,
-}: {
-  tab: InspectorTab;
-  interaction: MockInteraction;
-  warning: MockWarning | undefined;
-}) {
-  return (
-    <div className="ledger-inspector-body">
-      {tab === "overview" && <InteractionOverview interaction={interaction} />}
-      {tab === "request" && (
-        <ExchangeBody
-          label="Request body"
-          body={interaction.request_body}
-          truncated={interaction.request_body_truncated}
-        />
-      )}
-      {tab === "response" && (
-        <ExchangeBody
-          label="Response body"
-          body={interaction.response_body}
-          truncated={interaction.response_body_truncated}
-        />
-      )}
-      {tab === "diagnostics" && (
-        <InteractionDiagnostics interaction={interaction} warning={warning} />
-      )}
-    </div>
-  );
-}
-
-function InteractionOverview({ interaction }: { interaction: MockInteraction }) {
-  return (
-    <div className="inspector-overview-grid">
-      <InspectorDatum label="Attribution" value={attributionLabel(interaction.attribution)} />
-      <InspectorDatum label="Protocol" value={interaction.protocol} />
-      <InspectorDatum label="Matched" value={interaction.matched ? "Yes" : "No"} />
-      <InspectorDatum
-        label="Observed latency"
-        value={interaction.latency_ms === null ? "Unknown" : formatDuration(interaction.latency_ms)}
-      />
-      {interaction.configured_delay_ms !== null && (
-        <InspectorDatum
-          label="Configured delay"
-          value={formatDuration(interaction.configured_delay_ms)}
-          tone="warn"
-        />
-      )}
-      {interaction.client_deadline_ms !== null && (
-        <InspectorDatum
-          label="Client deadline"
-          value={formatDuration(interaction.client_deadline_ms)}
-          tone="warn"
-        />
-      )}
-      {interaction.fault && (
-        <InspectorDatum label="Injected fault" value={humanize(interaction.fault)} tone="bad" />
-      )}
-      {interaction.stub_id && <InspectorDatum label="Stub" value={interaction.stub_id} mono />}
-      {(interaction.scenario_name ||
-        interaction.scenario_state ||
-        interaction.next_scenario_state) && (
-        <div className="inspector-scenario">
-          <span>{interaction.scenario_name ?? "Scenario transition"}</span>
-          <code>{interaction.scenario_state ?? "STARTED"}</code>
-          <span className="inspector-scenario-arrow">→</span>
-          <code>{interaction.next_scenario_state ?? "stable"}</code>
-        </div>
-      )}
-    </div>
-  );
-}
-
-function InteractionDiagnostics({
-  interaction,
-  warning,
-}: {
-  interaction: MockInteraction;
-  warning: MockWarning | undefined;
-}) {
-  return (
-    <div className="inspector-diagnostics">
-      {warning && (
-        <div className="diagnostic-block is-warning">
-          <strong>{humanize(warning.kind)}</strong>
-          <p>{warning.message}</p>
-        </div>
-      )}
-      {interaction.near_misses.map((nearMiss, index) => (
-        // biome-ignore lint/suspicious/noArrayIndexKey: duplicate diagnostic candidates are meaningful and have no stable id
-        <div className="diagnostic-block" key={`${index}-${nearMiss}`}>
-          <span>Candidate {index + 1}</span>
-          <pre>{nearMiss}</pre>
-        </div>
-      ))}
-      {interaction.near_misses.length === 0 && warning === undefined && (
-        <div className="inspector-no-detail">
-          No near-miss or warning diagnostics were recorded.
-        </div>
-      )}
-      {interaction.trace_id && (
-        <InspectorDatum label="Trace ID" value={interaction.trace_id} mono />
-      )}
-    </div>
-  );
-}
-
-function ExchangeBody({
-  label,
-  body,
-  truncated,
-}: {
-  label: string;
-  body: string | null;
-  truncated: boolean;
-}) {
-  return (
-    <div className="inspector-exchange-body">
-      <div>
-        <span>{label}</span>
-        {truncated && <span className="inspector-truncated">truncated</span>}
-      </div>
-      {body ? <pre>{tryFormatJson(body)}</pre> : <p>No body captured</p>}
-    </div>
-  );
-}
-
-function InspectorDatum({
-  label,
-  value,
-  tone = "neutral",
-  mono = false,
-}: {
-  label: string;
-  value: string;
-  tone?: "neutral" | "warn" | "bad";
-  mono?: boolean;
-}) {
-  return (
-    <div className={`inspector-datum is-${tone}`}>
-      <span>{label}</span>
-      <strong className={mono ? "is-mono" : ""}>{value}</strong>
-    </div>
   );
 }

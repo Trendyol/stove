@@ -3,19 +3,9 @@ import { useModalDialog } from "../../hooks/useModalDialog";
 import { formatTimestamp } from "../../utils/format";
 import { getSystemInfo } from "../../utils/systems";
 import { EntryDetails } from "../EntryDetails";
+import { EvidenceActions } from "../EvidenceActions";
 import { Icon } from "../Icon";
-import { hasEntryDetail, isEntryIssue } from "./model";
-
-export type EvidenceInspectorState =
-  | { kind: "closed" }
-  | {
-      kind: "open";
-      entry: Entry;
-      position: number;
-      total: number;
-      previous?: Entry;
-      next?: Entry;
-    };
+import { type EvidenceInspectorState, hasEntryDetail, isEntryIssue } from "./model";
 
 interface EvidenceInspectorProps {
   state: EvidenceInspectorState;
@@ -69,6 +59,7 @@ export function EvidenceInspector({
           </button>
         </header>
 
+        <EvidenceActions />
         <div className="inspector-status-line">
           <span className={isEntryIssue(entry) ? "is-issue" : "is-success"}>{entry.result}</span>
           {entry.attempt_count > 1 && (

@@ -1,0 +1,7 @@
+[
+  {"run":"run / +", "test":"test.東京!", "kind":"entry", "id":42, "path":"/runs/run%20%2F%20%2B/tests/test.%E6%9D%B1%E4%BA%AC%21?tab=timeline&focus=entry:42"},
+  {"run":"pipeline-42", "test":"test-1", "kind":"span", "id":17, "path":"/runs/pipeline-42/tests/test-1?tab=trace&focus=span:17"},
+  {"run":"run", "test":null, "kind":"interaction", "id":8, "path":"/runs/run?tab=mocks&focus=interaction:8"},
+  {"run":"run", "test":"test", "kind":"snapshot", "id":9, "path":"/runs/run/tests/test?tab=snapshots&focus=snapshot:9"},
+  {"run":"run", "test":null, "kind":"warning", "id":10, "path":"/runs/run?tab=mocks&focus=warning:10"}
+]

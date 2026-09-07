@@ -24,7 +24,7 @@ test("buildSpanTreeRows orders a trace and hides collapsed descendants", () => {
     ],
   );
 
-  const collapsed = buildSpanTreeRows(spans, new Set(["child-early"]));
+  const collapsed = buildSpanTreeRows(spans, new Set(["trace-1:child-early"]));
   assert.deepEqual(
     collapsed.map((row) => row.span.span_id),
     ["root", "child-early", "child-late"],
@@ -58,3 +58,12 @@ function span(spanId, parentSpanId, startTimeNanos) {
     exception_stack_trace: null,
   };
 }
+
+test("identical span ids in different traces keep separate parents and collapse state", () => {
+  const rows = buildSpanTreeRows([
+    span("root", null, 1), span("child", "root", 2),
+    {...span("root", null, 3), trace_id:"trace-2"}, {...span("child", "root", 4), trace_id:"trace-2"},
+  ], new Set(["trace-1:root"]));
+  assert.deepEqual(rows.map(row => [row.span.trace_id,row.span.span_id,row.depth]),
+    [["trace-1","root",0],["trace-2","root",0],["trace-2","child",1]]);
+});

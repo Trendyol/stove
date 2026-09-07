@@ -3,8 +3,12 @@ import test from "node:test";
 import createJiti from "jiti";
 
 const jiti = createJiti(import.meta.url);
-const { filterInteractions, journalStats, resolveJournalInspector } = await jiti.import(
+const { filterInteractions, journalStats } = await jiti.import(
   "../src/components/mock-journal/model.ts",
+);
+
+const { findRelatedInteraction, resolveJournalInspector } = await jiti.import(
+  "../src/components/mock-journal/selection.ts",
 );
 
 test("mock journal model derives filters and typed empty statistics", () => {
@@ -63,3 +67,18 @@ function interaction(overrides) {
     ...overrides,
   };
 }
+
+
+test("warning context requires the exact stub and owner", () => {
+  const warning = { run_id: "run", test_id: "test", stub_id: "stub", target: "/", system: "http" };
+  const exact = interaction({ id: 9, run_id: "run", test_id: "test", stub_id: "stub" });
+  const unrelated = [
+    interaction({ run_id: "other", test_id: "test", stub_id: "stub" }),
+    interaction({ run_id: "run", test_id: "other", stub_id: "stub" }),
+    interaction({ run_id: "run", test_id: null, stub_id: "stub" }),
+    interaction({ run_id: "run", test_id: "test", stub_id: "different" }),
+  ];
+  assert.equal(findRelatedInteraction(warning, unrelated), undefined);
+  assert.equal(findRelatedInteraction(warning, [...unrelated, exact]), exact);
+  assert.equal(findRelatedInteraction({ ...warning, stub_id: null }, [exact]), undefined);
+});

@@ -1,0 +1,265 @@
+# Testing Non-JVM Applications with Stove
+
+Stove can test any application that speaks HTTP, databases, and messaging --- regardless of the language. Two starters:
+
+- **`stove-process`** — host binary, fastest iteration loop (`processApp` / `goApp`)
+- **`stove-container`** — Docker image, CI parity with the production artifact (`containerApp`). See [container.md](container.md) for the full container guide.
+
+Same Stove DSL, same systems, same env/args mapping. The only difference is *how* the AUT starts.
+
+For Stove + AI agent triage on failed runs, see [mcp.md](mcp.md).
+
+## Requirements
+
+Your application must:
+
+1. **Accept configuration** --- via environment variables, CLI arguments, or both
+2. **Handle SIGTERM** --- for clean test teardown
+3. **Optional: expose a readiness endpoint** --- HTTP health check, TCP port, or custom probe
+
+## Setup Checklist
+
+```
+- [ ] Step 1: Add `stove-process` or `stove-container` dependency
+- [ ] Step 2: Create test-e2e source set layout
+- [ ] Step 3: Configure Gradle (build app + e2eTest task)
+- [ ] Step 4: Create StoveConfig with systems + processApp/goApp
+- [ ] Step 5: Instrument app with OpenTelemetry (optional)
+- [ ] Step 6: Add Kafka bridge (optional, Go only for now)
+- [ ] Step 7: Write tests using stove {} DSL
+```
+
+## Step 1: Add dependency
+
+```kotlin
+dependencies {
+    testImplementation(platform("com.trendyol:stove-bom:$stoveVersion"))
+    testImplementation("com.trendyol:stove-process")
+    testImplementation("com.trendyol:stove-container") // if AUT runs as Docker image
+    // ... other stove dependencies as needed
+}
+```
+
+## Step 2-3: Project structure, Gradle
+
+Same as JVM setup (see SKILL.md). Build your app binary before tests:
+
+```kotlin
+val appSourceDir = project.file("my-app")
+val appBinary = project.layout.buildDirectory.file("my-app").get().asFile
+
+tasks.register<Exec>("buildApp") {
+    workingDir = appSourceDir
+    commandLine("go", "build", "-o", appBinary.absolutePath, ".")  // or npm, cargo, etc.
+    inputs.files(fileTree(appSourceDir) { include("*.go", "go.mod", "go.sum") })
+    outputs.file(appBinary)
+}
+
+tasks.named<Test>("e2eTest") {
+    dependsOn("buildApp")
+    systemProperty("app.binary", appBinary.absolutePath)
+}
+```
+
+## Step 4: StoveConfig with processApp / goApp / containerApp
+
+Use `processApp()` for any language binary, `goApp()` as a Go convenience, or `containerApp()` when tests should launch an image directly.
+
+```kotlin
+Stove().with {
+    httpClient { HttpClientSystemOptions(baseUrl = "http://localhost:$APP_PORT") }
+    tracing { enableSpanReceiver(port = OTLP_PORT) }
+    dashboard { DashboardSystemOptions(appName = "my-app") }
+
+    postgresql {
+        PostgresqlOptions(
+            databaseName = "mydb",
+            configureExposedConfiguration = { cfg ->
+                listOf(
+                    "database.host=${cfg.host}",
+                    "database.port=${cfg.port}",
+                    "database.name=mydb",
+                    "database.username=${cfg.username}",
+                    "database.password=${cfg.password}"
+                )
+            }
+        ).migrations { register<SchemaMigration>() }
+    }
+
+    kafka {
+        KafkaSystemOptions(
+            configureExposedConfiguration = { cfg ->
+                listOf("kafka.bootstrapServers=${cfg.bootstrapServers}")
+            }
+        )
+    }
+
+    // For Go apps — uses go.app.binary system property by default
+    goApp(
+        target = ProcessTarget.Server(port = APP_PORT, portEnvVar = "APP_PORT"),
+        envProvider = envMapper {
+            "database.host" to "DB_HOST"
+            "database.port" to "DB_PORT"
+            "database.name" to "DB_NAME"
+            "database.username" to "DB_USER"
+            "database.password" to "DB_PASS"
+            "kafka.bootstrapServers" to "KAFKA_BROKERS"
+            env("OTEL_EXPORTER_OTLP_ENDPOINT", "localhost:$OTLP_PORT")
+        }
+    )
+
+    // For any other language — specify the full command
+    // processApp {
+    //     ProcessApplicationOptions(
+    //         command = listOf("python3", "server.py"),
+    //         target = ProcessTarget.Server(port = APP_PORT, portEnvVar = "PORT"),
+    //         envProvider = envMapper { "database.host" to "DB_HOST" }
+    //     )
+    // }
+
+    // For apps that prefer CLI arguments instead of env vars
+    // processApp {
+    //     ProcessApplicationOptions(
+    //         command = listOf("/path/to/rust-server"),
+    //         target = ProcessTarget.Server(port = APP_PORT),
+    //         argsProvider = argsMapper(prefix = "--", separator = "=") {
+    //             "database.host" to "db-host"   // --db-host=localhost
+    //             "database.port" to "db-port"   // --db-port=5432
+    //         }
+    //     )
+    // }
+}.run()
+```
+
+### ProcessTarget variants
+
+| Variant | Use case | Default readiness |
+|---------|----------|-------------------|
+| `ProcessTarget.Server(port, portEnvVar)` | HTTP APIs, gRPC servers, TCP servers | HTTP GET `/health` |
+| `ProcessTarget.Worker()` | Kafka consumers, batch jobs, CLI tools | 2-second fixed delay |
+
+### ReadinessStrategy variants
+
+| Strategy | Use case |
+|----------|----------|
+| `ReadinessStrategy.HttpGet(url, timeout, retries, retryDelay, expectedStatusCodes)` | REST APIs with health endpoint |
+| `ReadinessStrategy.TcpPort(port)` | gRPC servers, raw TCP (no HTTP) |
+| `ReadinessStrategy.Probe { ... }` | Custom readiness (file, DB query, etc.) |
+| `ReadinessStrategy.FixedDelay(duration)` | Simple workers with no readiness signal |
+
+### Configuration passing: envMapper and argsMapper
+
+Two mechanisms to pass Stove configs to the process — use one or both:
+
+**envMapper** — environment variables:
+
+```kotlin
+envMapper {
+    "stove.config.key" to "ENV_VAR_NAME"    // map Stove config → env var
+    env("STATIC_VAR", "value")              // static env var
+    env("COMPUTED_VAR") { computeValue() }  // computed env var
+}
+```
+
+**argsMapper** — CLI arguments (appended to the command):
+
+```kotlin
+// --db-host=localhost --db-port=5432
+argsMapper(prefix = "--", separator = "=") {
+    "database.host" to "db-host"            // map Stove config → CLI flag
+    arg("verbose")                          // boolean flag
+    arg("log-level", "debug")               // static flag
+}
+
+// -h localhost -p 5432 (space separator → two args per flag)
+argsMapper(prefix = "-", separator = " ") {
+    "database.host" to "h"
+    "database.port" to "p"
+}
+```
+
+## Step 5: OpenTelemetry (optional)
+
+Use your language's OTel SDK. Key points:
+
+- Use **sync exporter** (`WithSyncer`) for tests, not batched
+- Set **W3C Trace Context propagation** so spans share the test's trace ID
+- Stove's HTTP client sends `traceparent` headers automatically
+
+## Step 6: Kafka bridge (Go only)
+
+For Go apps using IBM/sarama, twmb/franz-go, or segmentio/kafka-go, add the `stove-kafka` bridge library. See [go-setup.md](go-setup.md) for details.
+
+The bridge intercepts produced/consumed messages and forwards them via gRPC to Stove's observer, enabling `shouldBePublished` and `shouldBeConsumed` assertions.
+
+## Code Coverage (Go)
+
+Go 1.20+ supports integration test coverage: build with `go build -cover`, set `GOCOVERDIR` env var, and coverage data is written on graceful shutdown. This fits Stove's lifecycle (SIGTERM → graceful shutdown → coverage files).
+
+Key pieces:
+- **Gradle**: `-Pgo.coverage=true` adds `-cover` to build, sets `go.cover.dir` system property, disables build cache for coverage runs
+- **StoveConfig**: `env("GOCOVERDIR") { System.getProperty("go.cover.dir")?.also { File(it).mkdirs() } ?: "" }`
+- **Go app**: `signal.Ignore(syscall.SIGPIPE)` in `main()` — prevents SIGPIPE (exit 141) from killing the process before coverage flush when stdout pipe closes under `ProcessBuilder`
+- **Report tasks**: `goCoverageReport` (textfmt), `goCoverageSummary` (per-function), `goCoverageHtml` (visual)
+- **Umbrella task**: `e2eTestWithCoverage` runs tests + generates reports
+
+```bash
+./gradlew e2eTestWithCoverage -Pgo.coverage=true
+./gradlew e2eTest-containerWithCoverage -Pgo.coverage=true
+```
+
+No Stove framework changes needed — uses existing `envMapper`, Gradle tasks, and SIGTERM shutdown.
+
+See [go-setup.md](go-setup.md#code-coverage) for full details.
+
+## What you can't do
+
+- **No `bridge()` / `using<T> {}`** --- no access to app's DI container
+- Everything else works: HTTP, databases, Kafka, tracing, WireMock, gRPC, dashboard
+
+## Container mode (`containerApp`)
+
+Use `containerApp(...)` from `stove-container` when the AUT should run as a Docker image. Same envMapper/argsMapper model as processApp, plus a `configureContainer { ... }` block for Testcontainers-level customization (network mode, bind mounts, log consumers).
+
+```kotlin
+import com.trendyol.stove.container.ContainerTarget
+import com.trendyol.stove.container.containerApp
+import com.trendyol.stove.system.application.envMapper
+
+containerApp(
+    image = "my-app:local",
+    target = ContainerTarget.Server(
+        hostPort = 8090, internalPort = 8090,
+        portEnvVar = "APP_PORT", bindHostPort = false
+    ),
+    envProvider = envMapper {
+        "database.host" to "DB_HOST"
+        "kafka.bootstrapServers" to "KAFKA_BROKERS"
+        env("OTEL_EXPORTER_OTLP_ENDPOINT", "localhost:4317")
+    },
+    configureContainer = {
+        withNetworkMode("host")  // Linux only; use port binding + shared network on macOS/Windows
+    }
+)
+```
+
+`ContainerTarget.Server(hostPort, internalPort, portEnvVar, bindHostPort)` for HTTP/gRPC servers, `ContainerTarget.Worker()` for jobs. See [container.md](container.md) for the full guide (Dockerfile, Gradle wiring, networking strategies, coverage volume mounts, common pitfalls).
+
+A common pattern: one `StoveConfig.kt` branches on `-Dgo.aut.mode=process|container` to switch between starters. The infrastructure systems and tests stay identical.
+
+## MCP triage on failures
+
+When `stove` (the server) is running, agents can triage failed runs through its MCP endpoint instead of scraping logs. The local default is `http://localhost:4040/mcp`; shared internal servers are also supported. See [mcp.md](mcp.md) for the workflow.
+
+## Reference
+
+- Process module source: `starters/process/stove-process/`
+- Container module source: `starters/container/stove-container/`
+- Container DSL: `starters/container/stove-container/src/main/kotlin/com/trendyol/stove/container/ContainerDsl.kt`
+- Full Go example (process + container in one repo): `recipes/process/golang/go-showcase/`
+- Docs:
+  - `docs/other-languages/go.md` — overview / mode picker
+  - `docs/other-languages/go-process.md` — process mode walkthrough
+  - `docs/other-languages/go-container.md` — container mode walkthrough
+  - `docs/other-languages/index.md`
+  - `docs/Components/21-mcp.md` — MCP triage

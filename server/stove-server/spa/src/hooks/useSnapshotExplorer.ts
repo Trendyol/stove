@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import type { Snapshot } from "../api/types";
+import type { PointerResult } from "../utils/json-pointer";
 import type { SnapshotMetric } from "../utils/snapshot-state";
 import type {
   SnapshotWorkerRequest,
@@ -8,10 +9,17 @@ import type {
 
 type SnapshotExplorerState =
   | { kind: "loading" }
-  | { kind: "raw"; value: string; detailed: boolean; metrics: SnapshotMetric[] }
+  | {
+      kind: "raw";
+      value: string;
+      selection?: PointerResult;
+      detailed: boolean;
+      metrics: SnapshotMetric[];
+    }
   | {
       kind: "structured";
       value: unknown;
+      selection?: PointerResult;
       filteredValue: unknown | null;
       description: string;
       detailed: boolean;
@@ -23,6 +31,7 @@ type SnapshotExplorerState =
 export function useSnapshotExplorer(
   snapshot: Pick<Snapshot, "state_json" | "system">,
   searchQuery: string,
+  pointer?: string,
 ): SnapshotExplorerState {
   const [state, setState] = useState<SnapshotExplorerState>({ kind: "loading" });
   const workerRef = useRef<Worker | undefined>(undefined);
@@ -66,6 +75,7 @@ export function useSnapshotExplorer(
       kind: "load",
       stateJson: snapshot.state_json,
       system: snapshot.system,
+      pointer,
     };
     worker.postMessage(request);
 
@@ -73,7 +83,7 @@ export function useSnapshotExplorer(
       worker.terminate();
       if (workerRef.current === worker) workerRef.current = undefined;
     };
-  }, [snapshot.state_json, snapshot.system]);
+  }, [snapshot.state_json, snapshot.system, pointer]);
 
   const sourceValue = state.kind === "structured" ? state.value : undefined;
   useEffect(() => {

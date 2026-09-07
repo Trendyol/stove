@@ -1,3 +1,5 @@
+use crate::http::server::AppState;
+use axum::extract::State;
 use axum::http::{StatusCode, Uri, header};
 use axum::response::{IntoResponse, Response};
 use rust_embed::Embed;
@@ -11,22 +13,37 @@ use rust_embed::Embed;
 struct SpaAssets;
 
 /// Serve embedded SPA files, falling back to `index.html` for client-side routing.
-pub async fn static_handler(uri: Uri) -> Response {
+pub async fn static_handler(State(state): State<AppState>, uri: Uri) -> Response {
   let path = uri.path().trim_start_matches('/');
 
   // Try exact file match first
-  if let Some(file) = SpaAssets::get(path) {
+  if let Some(file) = SpaAssets::get(path).filter(|_| path != "index.html") {
     let mime = mime_guess::from_path(path).first_or_octet_stream();
     return ([(header::CONTENT_TYPE, mime.as_ref())], file.data).into_response();
   }
 
-  if is_asset_like_path(path) {
+  if path != "index.html" && is_asset_like_path(path) && !path.starts_with("runs/") {
     return (StatusCode::NOT_FOUND, "Asset not found").into_response();
   }
 
   // Fallback to index.html for SPA client-side routing
   match SpaAssets::get("index.html") {
-    Some(file) => ([(header::CONTENT_TYPE, "text/html")], file.data).into_response(),
+    Some(file) => {
+      let base = crate::navigation::base_path(state.public_url.as_deref());
+      let base = base
+        .replace('&', "&amp;")
+        .replace('\"', "&quot;")
+        .replace('<', "&lt;")
+        .replace('>', "&gt;");
+      let html = String::from_utf8_lossy(&file.data)
+        .replace(
+          "<head>",
+          &format!("<head><meta name=\"stove-base\" content=\"{base}\">"),
+        )
+        .replace("\"/assets/", &format!("\"{base}/assets/"))
+        .replace("\"./assets/", &format!("\"{base}/assets/"));
+      ([(header::CONTENT_TYPE, "text/html")], html).into_response()
+    }
     None => (
       StatusCode::NOT_FOUND,
       "SPA not built. Run: cd spa && npm run build",

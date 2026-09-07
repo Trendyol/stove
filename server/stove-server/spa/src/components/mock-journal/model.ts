@@ -1,29 +1,13 @@
 import type { MockInteraction, MockWarning } from "../../api/types";
 
+export interface JournalRecords {
+  interactions: MockInteraction[];
+  warnings: MockWarning[];
+  ambientInteractions: MockInteraction[];
+  ambientWarnings: MockWarning[];
+}
+
 export type InteractionFilter = "all" | "issues" | "unmatched" | "slow";
-export type InspectorTab = "overview" | "request" | "response" | "diagnostics";
-
-type RelatedInteractionSelection =
-  | { kind: "none" }
-  | { kind: "interaction"; interactionId: MockInteraction["id"] };
-
-export type JournalSelection =
-  | { kind: "none" }
-  | { kind: "interaction"; interactionId: MockInteraction["id"] }
-  | {
-      kind: "warning";
-      warningId: MockWarning["id"];
-      related: RelatedInteractionSelection;
-    };
-
-export type JournalInspectorState =
-  | { kind: "empty" }
-  | { kind: "interaction"; interaction: MockInteraction }
-  | {
-      kind: "warning";
-      warning: MockWarning;
-      related: { kind: "none" } | { kind: "interaction"; interaction: MockInteraction };
-    };
 
 export interface JournalStats {
   all: number;
@@ -67,48 +51,6 @@ export function filterInteractions(
     if (filter === "slow" && !isSlowInteraction(interaction)) return false;
     return !query || searchableInteractionText(interaction).includes(query);
   });
-}
-
-export function findRelatedInteraction(
-  warning: MockWarning,
-  interactions: readonly MockInteraction[],
-): MockInteraction | undefined {
-  return (
-    interactions.find(
-      (interaction) => warning.stub_id !== null && interaction.stub_id === warning.stub_id,
-    ) ??
-    interactions.find(
-      (interaction) =>
-        warning.target !== null &&
-        interaction.target === warning.target &&
-        interaction.system === warning.system,
-    )
-  );
-}
-
-export function resolveJournalInspector(
-  selection: JournalSelection,
-  interactions: readonly MockInteraction[],
-  warnings: readonly MockWarning[],
-): JournalInspectorState {
-  if (selection.kind === "none") return { kind: "empty" };
-  if (selection.kind === "interaction") {
-    const interaction = interactions.find((candidate) => candidate.id === selection.interactionId);
-    return interaction ? { kind: "interaction", interaction } : { kind: "empty" };
-  }
-
-  const warning = warnings.find((candidate) => candidate.id === selection.warningId);
-  if (!warning) return { kind: "empty" };
-  if (selection.related.kind === "none") {
-    return { kind: "warning", warning, related: { kind: "none" } };
-  }
-  const relatedInteractionId = selection.related.interactionId;
-  const interaction = interactions.find((candidate) => candidate.id === relatedInteractionId);
-  return {
-    kind: "warning",
-    warning,
-    related: interaction ? { kind: "interaction", interaction } : { kind: "none" },
-  };
 }
 
 export function hasInteractionIssue(interaction: MockInteraction): boolean {

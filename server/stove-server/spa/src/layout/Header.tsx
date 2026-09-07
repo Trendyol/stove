@@ -2,6 +2,7 @@ import type { MouseEventHandler } from "react";
 import stoveMarkUrl from "../assets/stove-mark.svg";
 import { VersionMismatchWarning } from "../components/VersionMismatchWarning";
 import { useTheme } from "../hooks/useTheme";
+import { appPath, basePath } from "../utils/location";
 import type { StoveRoute } from "../utils/routes";
 import type { VersionMismatchSummary } from "../utils/version-mismatch";
 
@@ -19,8 +20,7 @@ export function Header({
   onNavigateAdmin,
 }: HeaderProps) {
   const { theme, toggle } = useTheme();
-  const basePath = window.location.pathname.replace(/\/admin\/?$/, "").replace(/\/$/, "");
-  const swaggerUrl = `${basePath}/swagger-ui/`;
+  const swaggerUrl = appPath("/swagger-ui/");
 
   return (
     <header className="stove-topbar">
@@ -49,13 +49,16 @@ export function Header({
           <span />
           {liveConnected ? "Stream live" : "Polling"}
         </span>
-        <code className="stove-endpoint" title={`MCP endpoint: ${window.location.origin}/mcp`}>
+        <code
+          className="stove-endpoint"
+          title={`MCP endpoint: ${window.location.origin}${basePath()}/mcp`}
+        >
           MCP · /mcp
         </code>
         <a
           aria-current={activeRoute === "admin" ? "page" : undefined}
           className={`stove-topbar-link stove-focus-ring ${activeRoute === "admin" ? "is-active" : ""}`}
-          href="/admin"
+          href={appPath("/admin")}
           onClick={onNavigateAdmin}
           title="Administration"
         >

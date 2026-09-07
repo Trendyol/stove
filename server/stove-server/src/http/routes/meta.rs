@@ -1,6 +1,7 @@
-use axum::Json;
+use crate::http::server::AppState;
 use axum::http::HeaderMap;
 use axum::http::header::HOST;
+use axum::{Json, extract::State};
 use serde::Serialize;
 use utoipa::ToSchema;
 
@@ -26,12 +27,15 @@ pub struct McpMeta {
   tag = "system",
   responses((status = 200, description = "Server version and capabilities", body = MetaResponse))
 )]
-pub async fn get_meta(headers: HeaderMap) -> Json<MetaResponse> {
+pub async fn get_meta(State(state): State<AppState>, headers: HeaderMap) -> Json<MetaResponse> {
   let endpoint = headers
     .get(HOST)
     .and_then(|value| value.to_str().ok())
     .filter(|host| !host.trim().is_empty())
     .map_or_else(|| "/mcp".to_string(), |host| format!("http://{host}/mcp"));
+  let endpoint = state
+    .public_url
+    .map_or(endpoint, |base| format!("{base}/mcp"));
   Json(MetaResponse {
     stove_server_version: STOVE_SERVER_VERSION,
     mcp: McpMeta {

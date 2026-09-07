@@ -15,6 +15,14 @@ The dashboard is useful because the test timeline, trace tree, and system eviden
 
 {{ dashboard_preview() }}
 
+## Open evidence from a report
+
+Agent reports can link directly to a run, test, or specific record. Opening a citation selects the right tab, highlights the record, and opens its inspector. You can copy that link from the dashboard, expand the surrounding context, or choose **Show full test**. Browser back and forward restore earlier selections.
+
+A cited retry stays on that exact attempt even if a later attempt passed. Snapshot links can open one JSON value and let you return to the complete snapshot. Evidence with no test attribution opens at run scope. If a record was removed by retention or a link points to the wrong scope, the dashboard shows it as unavailable.
+
+Set `public_url = "https://stove.example/observe"` in the server configuration to publish links for readers. Stove serves UI assets, REST, SSE, and MCP under that prefix as well as its usual root paths, so gateways can preserve or strip the prefix. The URL accepts HTTP(S), with no credentials, query, or fragment. This configures addresses only; existing deployment access controls still apply.
+
 ## Install the server
 
 === "Homebrew"
@@ -73,6 +81,7 @@ New snapshots replace the channel in place; `brew update && brew upgrade stove-n
 
 ```bash
 stove                                  # default UI/REST/MCP port 4040, gRPC port 4041
+stove --public-url https://stove.example/observe  # public browser URL and optional gateway prefix
 stove --port 9000 --grpc-port 9001     # override ports
 stove --retention-runs-per-app 50      # keep 50 completed runs per app (default: 1; 0: unlimited)
 stove --fresh-start                    # back up and recreate the DB, then start
@@ -416,6 +425,7 @@ The explorer has direct write access to Stove's tables. Confirmation in the brow
 | Flag | Default | Notes |
 |---|---|---|
 | `--config-file` | unset | TOML or JSON configuration path; also `STOVE_CONFIG_FILE` |
+| `--public-url` | unset | browser URL for MCP citations, including an optional path prefix; also `STOVE_PUBLIC_URL` or config-file `public_url` |
 | `--port` | 4040 | web UI, REST, and MCP; also `STOVE_PORT` |
 | `--grpc-port` | 4041 | event ingestion from Stove tests; also `STOVE_GRPC_PORT` |
 | `--db` | `~/.stove-dashboard.db` | persistence path; also `STOVE_DB` |

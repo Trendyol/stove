@@ -1,154 +1,78 @@
-//! `stove_raw_evidence` tool — fetch a single entry/span/snapshot by id with
-//! larger string budgets than the summarizing tools allow.
-
-use serde_json::Value;
-use serde_json::json;
-
-use super::Analyzer;
-use super::ToolOutput;
-use super::common::display_error;
-use super::common::fallback_message;
-use super::common::output;
-use super::evidence::entry_preview;
-use super::evidence::interaction_preview;
-use super::evidence::snapshot_detail;
-use super::evidence::span_preview;
-use super::evidence::warning_preview;
-use crate::mcp::args::Budget;
-use crate::mcp::args::RawEvidenceArgs;
-use crate::mcp::args::parse;
-use crate::mcp::contract::RawEvidenceKind;
+//! Exact raw evidence uses the same ownership checks as dashboard citations.
+use super::{
+  AnalysisOutput, Analyzer,
+  common::{display_error, fallback_message, output},
+  evidence::{entry_preview, interaction_preview, snapshot_detail, span_preview, warning_preview},
+};
+use crate::{
+  focus::{self, EvidenceKind, EvidenceTarget},
+  mcp::args::{Budget, RawEvidenceArgs, parse},
+};
+use serde_json::{Value, json};
 
 impl Analyzer {
-  pub(super) fn raw_evidence(&self, arguments: Value) -> Result<ToolOutput, String> {
+  pub(super) fn raw_evidence(&self, arguments: Value) -> Result<AnalysisOutput, String> {
     let args: RawEvidenceArgs = parse(arguments)?;
     let budget = Budget::from_args(args.common.budget.as_deref(), args.common.max_chars);
-    let kind = args.kind.to_ascii_lowercase();
-    let evidence = match RawEvidenceKind::from_str(&kind) {
-      Some(RawEvidenceKind::Entry) => {
-        let run_id = args
-          .run_id
-          .as_deref()
-          .ok_or_else(|| "raw entry lookup requires run_id and test_id".to_string())?;
-        let test_id = args
-          .test_id
-          .as_deref()
-          .ok_or_else(|| "raw entry lookup requires run_id and test_id".to_string())?;
-        let entry = self
-          .repository
-          .get_raw_entries(run_id, test_id)
-          .map_err(display_error)?
-          .into_iter()
-          .find(|entry| entry.id == args.id)
-          .ok_or_else(|| {
-            let id = args.id;
-            format!("entry {id} was not found in {run_id}/{test_id}")
-          })?;
-        json!({ "kind": RawEvidenceKind::Entry.as_str(), "evidence": entry_preview(&entry, budget.raw_string_chars) })
+    let kind: EvidenceKind = serde_json::from_value(json!(args.kind.to_ascii_lowercase()))
+      .map_err(|_| {
+        "kind must be one of: entry, span, snapshot, interaction, warning".to_string()
+      })?;
+    let mut run_id = args.run_id.clone();
+    let mut test_id = args.test_id.clone();
+    if matches!(kind, EvidenceKind::Span) && args.trace_id.is_some() {
+      let span = self
+        .repository
+        .get_trace_span(args.trace_id.as_deref().unwrap(), args.id)
+        .map_err(display_error)?
+        .ok_or_else(|| format!("span {} was not found", args.id))?;
+      if run_id.as_deref().is_some_and(|run| run != span.run_id) {
+        return Err("span is not in the requested run".into());
       }
-      Some(RawEvidenceKind::Span) => {
-        let spans = if let Some(trace_id) = args.trace_id.as_deref() {
-          self.repository.get_trace(trace_id).map_err(display_error)?
-        } else {
-          let run_id = args
-            .run_id
-            .as_deref()
-            .ok_or_else(|| "raw span lookup requires trace_id or run_id + test_id".to_string())?;
-          let test_id = args
-            .test_id
-            .as_deref()
-            .ok_or_else(|| "raw span lookup requires trace_id or run_id + test_id".to_string())?;
-          self
+      run_id = Some(span.run_id);
+    }
+    let run_id =
+      run_id.ok_or_else(|| "raw evidence requires run_id (or trace_id for spans)".to_string())?;
+    // Run-level raw mock lookups may refer to either proven or ambient evidence.
+    // The returned citation carries the actual owner, never an inferred test.
+    if test_id.is_none() {
+      match kind {
+        EvidenceKind::Interaction => {
+          test_id = self
             .repository
-            .get_spans_for_test(run_id, test_id)
+            .get_mock_interaction(&run_id, args.id)
             .map_err(display_error)?
-        };
-        let span = spans
-          .into_iter()
-          .find(|span| span.id == args.id)
-          .ok_or_else(|| {
-            let id = args.id;
-            format!("span {id} was not found")
-          })?;
-        json!({ "kind": RawEvidenceKind::Span.as_str(), "evidence": span_preview(&span, budget.raw_string_chars) })
+            .and_then(|item| item.test_id);
+        }
+        EvidenceKind::Warning => {
+          test_id = self
+            .repository
+            .get_mock_warning(&run_id, args.id)
+            .map_err(display_error)?
+            .and_then(|item| item.test_id);
+        }
+        _ => {}
       }
-      Some(RawEvidenceKind::Snapshot) => {
-        let run_id = args
-          .run_id
-          .as_deref()
-          .ok_or_else(|| "raw snapshot lookup requires run_id and test_id".to_string())?;
-        let test_id = args
-          .test_id
-          .as_deref()
-          .ok_or_else(|| "raw snapshot lookup requires run_id and test_id".to_string())?;
-        let snapshot = self
-          .repository
-          .get_snapshots(run_id, test_id)
-          .map_err(display_error)?
-          .into_iter()
-          .find(|snapshot| snapshot.id == args.id)
-          .ok_or_else(|| {
-            let id = args.id;
-            format!("snapshot {id} was not found in {run_id}/{test_id}")
-          })?;
-        json!({ "kind": RawEvidenceKind::Snapshot.as_str(), "evidence": snapshot_detail(&snapshot, None, budget.raw_string_chars) })
-      }
-      Some(RawEvidenceKind::Interaction) => {
-        self.raw_interaction(args.run_id.as_deref(), args.id, budget.raw_string_chars)?
-      }
-      Some(RawEvidenceKind::Warning) => {
-        self.raw_warning(args.run_id.as_deref(), args.id, budget.raw_string_chars)?
-      }
-      None => {
-        return Err(format!(
-          "kind must be one of: {}",
-          RawEvidenceKind::ALL
-            .into_iter()
-            .map(RawEvidenceKind::as_str)
-            .collect::<Vec<_>>()
-            .join(", ")
-        ));
-      }
+    }
+    let target =
+      focus::resolve_target(&self.repository, &run_id, test_id.as_deref(), kind, args.id)
+        .map_err(display_error)?;
+    let (kind, evidence) = match target {
+      EvidenceTarget::Entry(item) => ("entry", entry_preview(&item, budget.raw_string_chars)),
+      EvidenceTarget::Span(item) => ("span", span_preview(&item, budget.raw_string_chars)),
+      EvidenceTarget::Snapshot(item) => (
+        "snapshot",
+        snapshot_detail(&item, None, budget.raw_string_chars),
+      ),
+      EvidenceTarget::Interaction(item) => (
+        "interaction",
+        interaction_preview(&item, budget.raw_string_chars),
+      ),
+      EvidenceTarget::Warning(item) => ("warning", warning_preview(&item, budget.raw_string_chars)),
     };
-
     Ok(output(
-      json!({ "raw_evidence": evidence, "fallback": fallback_message() }),
+      json!({ "run_id": run_id, "test_id": test_id, "raw_evidence": { "kind": kind, "evidence": evidence }, "fallback": fallback_message() }),
       "Raw Stove evidence",
     ))
-  }
-
-  fn raw_interaction(
-    &self,
-    run_id: Option<&str>,
-    id: i64,
-    max_chars: usize,
-  ) -> Result<Value, String> {
-    let run_id = run_id.ok_or_else(|| "raw interaction lookup requires run_id".to_string())?;
-    let interaction = self
-      .repository
-      .get_mock_interactions_for_run(run_id)
-      .map_err(display_error)?
-      .into_iter()
-      .find(|interaction| interaction.id == id)
-      .ok_or_else(|| format!("interaction {id} was not found in run {run_id}"))?;
-    Ok(json!({
-      "kind": RawEvidenceKind::Interaction.as_str(),
-      "evidence": interaction_preview(&interaction, max_chars),
-    }))
-  }
-
-  fn raw_warning(&self, run_id: Option<&str>, id: i64, max_chars: usize) -> Result<Value, String> {
-    let run_id = run_id.ok_or_else(|| "raw warning lookup requires run_id".to_string())?;
-    let warning = self
-      .repository
-      .get_mock_warnings_for_run(run_id)
-      .map_err(display_error)?
-      .into_iter()
-      .find(|warning| warning.id == id)
-      .ok_or_else(|| format!("warning {id} was not found in run {run_id}"))?;
-    Ok(json!({
-      "kind": RawEvidenceKind::Warning.as_str(),
-      "evidence": warning_preview(&warning, max_chars),
-    }))
   }
 }

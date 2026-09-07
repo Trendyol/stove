@@ -13,6 +13,7 @@ const DEFAULT_RETENTION_RUNS_PER_APP: usize = 1;
 /// override values loaded from the optional TOML or JSON configuration file.
 #[allow(clippy::struct_excessive_bools)] // CLI flags are naturally bool-heavy
 pub struct Config {
+  pub public_url: Option<String>,
   pub port: u16,
   pub grpc_port: u16,
   pub db: String,
@@ -35,6 +36,9 @@ pub struct Config {
 )]
 #[allow(clippy::struct_excessive_bools)] // CLI flags are naturally bool-heavy
 struct CliConfig {
+  /// Browser-accessible URL, including an optional gateway path prefix
+  #[arg(long, env = "STOVE_PUBLIC_URL")]
+  public_url: Option<String>,
   /// Path to a TOML server configuration file
   #[arg(long, env = "STOVE_CONFIG_FILE", value_name = "PATH")]
   config_file: Option<PathBuf>,
@@ -93,6 +97,7 @@ struct CliConfig {
 #[derive(Default, Deserialize)]
 #[serde(deny_unknown_fields)]
 struct FileConfig {
+  public_url: Option<String>,
   port: Option<u16>,
   grpc_port: Option<u16>,
   db: Option<PathBuf>,
@@ -155,7 +160,13 @@ impl Config {
       |path| path.to_string_lossy().into_owned(),
     );
 
+    let public_url = cli
+      .public_url
+      .or_else(|| file.as_ref().and_then(|config| config.public_url.clone()))
+      .map(|value| crate::navigation::validate_public_url(&value).map_err(anyhow::Error::msg))
+      .transpose()?;
     Ok(Self {
+      public_url,
       port: cli
         .port
         .or_else(|| file.as_ref().and_then(|config| config.port))
@@ -373,6 +384,27 @@ mod tests {
     assert_eq!(config.retention_runs_per_app, 1);
     assert!(!config.clear);
     assert!(!config.fresh_start);
+  }
+
+  #[test]
+  fn public_url_uses_config_file_and_cli_precedence() {
+    let dir = TempDir::new().unwrap();
+    let path = dir.path().join("stove.toml");
+    fs::write(&path, "public_url = \"https://stove.example/observe/\"\n").unwrap();
+    let arguments = ["stove", "--config-file", path.to_str().unwrap()];
+    let config = Config::try_parse_from(arguments).unwrap();
+    assert_eq!(
+      config.public_url.as_deref(),
+      Some("https://stove.example/observe")
+    );
+    let config = Config::try_parse_from(
+      arguments
+        .into_iter()
+        .chain(["--public-url", "https://other.example/"]),
+    )
+    .unwrap();
+    assert_eq!(config.public_url.as_deref(), Some("https://other.example"));
+    assert!(Config::try_parse_from(["stove", "--public-url", "/relative"]).is_err());
   }
 
   #[test]

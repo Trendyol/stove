@@ -39,3 +39,7 @@ export function object<T>(schema: ObjectSchema<T>): Validator<T> {
 
 export const isRunStatus = (value: unknown): value is RunStatus =>
   value === "RUNNING" || value === "PASSED" || value === "FAILED";
+
+export function nullable<T>(validate: Validator<T>): Validator<T | null> {
+  return (value): value is T | null => value === null || validate(value);
+}

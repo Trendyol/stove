@@ -192,10 +192,6 @@ impl RawEvidenceKind {
       Self::Warning => "warning",
     }
   }
-
-  pub(crate) fn from_str(value: &str) -> Option<Self> {
-    Self::ALL.into_iter().find(|kind| kind.as_str() == value)
-  }
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]

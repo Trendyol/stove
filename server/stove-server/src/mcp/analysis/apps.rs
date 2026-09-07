@@ -6,8 +6,8 @@ use std::collections::HashMap;
 use serde_json::Value;
 use serde_json::json;
 
+use super::AnalysisOutput;
 use super::Analyzer;
-use super::ToolOutput;
 use super::common::display_error;
 use super::common::fallback_message;
 use super::common::output;
@@ -20,7 +20,7 @@ use crate::mcp::contract::ToolName;
 use crate::storage::models::RunStatus;
 
 impl Analyzer {
-  pub(super) fn apps(&self, arguments: Value) -> Result<ToolOutput, String> {
+  pub(super) fn apps(&self, arguments: Value) -> Result<AnalysisOutput, String> {
     let args: ListArgs = parse(arguments)?;
     let limit = args.limit();
     let apps = self.repository.get_apps().map_err(display_error)?;

@@ -18,6 +18,207 @@ use crate::storage::schema::sqlite::{
 };
 
 impl SqliteBackend {
+  pub fn get_test(&self, run_id: &str, test_id: &str) -> Result<Option<Test>> {
+    let mut db = self.lock_read();
+    tests::table
+      .filter(tests::run_id.eq(run_id))
+      .filter(tests::id.eq(test_id))
+      .select(tests::all_columns)
+      .first::<TestRow>(db.conn())
+      .optional()?
+      .map(Test::try_from)
+      .transpose()
+  }
+
+  pub fn get_entry(&self, run_id: &str, test_id: &str, id: i64) -> Result<Option<Entry>> {
+    let mut db = self.lock_read();
+    diesel::sql_query(&*ENTRY_BY_ID_SQL)
+      .bind::<Text, _>(run_id)
+      .bind::<Text, _>(test_id)
+      .bind::<diesel::sql_types::BigInt, _>(id)
+      .get_result::<EntryRow>(db.conn())
+      .optional()?
+      .map(Entry::try_from)
+      .transpose()
+  }
+
+  pub fn entry_context(
+    &self,
+    run_id: &str,
+    test_id: &str,
+    timestamp: &str,
+    id: i64,
+    before: bool,
+    limit: i64,
+  ) -> Result<Vec<Entry>> {
+    let mut db = self.lock_read();
+    let sql = if before {
+      &*ENTRIES_BEFORE_SQL
+    } else {
+      &*ENTRIES_AFTER_SQL
+    };
+    diesel::sql_query(sql)
+      .bind::<Text, _>(run_id)
+      .bind::<Text, _>(test_id)
+      .bind::<Text, _>(timestamp)
+      .bind::<diesel::sql_types::BigInt, _>(id)
+      .bind::<diesel::sql_types::BigInt, _>(limit)
+      .load::<EntryRow>(db.conn())?
+      .into_iter()
+      .map(Entry::try_from)
+      .collect()
+  }
+
+  pub fn get_trace_span(&self, trace_id: &str, id: i64) -> Result<Option<Span>> {
+    let mut db = self.lock_read();
+    spans::table
+      .filter(spans::trace_id.eq(trace_id))
+      .filter(spans::id.eq(id))
+      .select(spans::all_columns)
+      .first::<SpanRow>(db.conn())
+      .optional()?
+      .map(Span::try_from)
+      .transpose()
+  }
+
+  pub fn get_span(&self, run_id: &str, id: i64) -> Result<Option<Span>> {
+    let mut db = self.lock_read();
+    spans::table
+      .filter(spans::run_id.eq(run_id))
+      .filter(spans::id.eq(id))
+      .select(spans::all_columns)
+      .first::<SpanRow>(db.conn())
+      .optional()?
+      .map(Span::try_from)
+      .transpose()
+  }
+
+  pub fn get_test_span(&self, run_id: &str, test_id: &str, id: i64) -> Result<Option<Span>> {
+    let mut db = self.lock_read();
+    diesel::sql_query(&*TEST_SPAN_BY_ID_SQL)
+      .bind::<Text, _>(run_id)
+      .bind::<Text, _>(test_id)
+      .bind::<diesel::sql_types::BigInt, _>(id)
+      .get_result::<SpanRow>(db.conn())
+      .optional()?
+      .map(Span::try_from)
+      .transpose()
+  }
+
+  pub fn get_span_ancestors(
+    &self,
+    run_id: &str,
+    trace_id: &str,
+    id: i64,
+    depth: i64,
+  ) -> Result<Vec<Span>> {
+    let mut db = self.lock_read();
+    diesel::sql_query(crate::storage::repository::evidence_sql::SPAN_ANCESTORS)
+      .bind::<Text, _>(run_id)
+      .bind::<Text, _>(trace_id)
+      .bind::<diesel::sql_types::BigInt, _>(id)
+      .bind::<diesel::sql_types::BigInt, _>(depth)
+      .load::<SpanRow>(db.conn())?
+      .into_iter()
+      .map(Span::try_from)
+      .collect()
+  }
+
+  pub fn get_snapshot(&self, run_id: &str, test_id: &str, id: i64) -> Result<Option<Snapshot>> {
+    let mut db = self.lock_read();
+    Ok(
+      snapshots::table
+        .filter(snapshots::run_id.eq(run_id))
+        .filter(snapshots::test_id.eq(test_id))
+        .filter(snapshots::id.eq(id))
+        .select(snapshots::all_columns)
+        .first::<SnapshotRow>(db.conn())
+        .optional()?
+        .map(Snapshot::from),
+    )
+  }
+
+  pub fn get_mock_interaction(&self, run_id: &str, id: i64) -> Result<Option<MockInteraction>> {
+    let mut db = self.lock_read();
+    mock_interactions::table
+      .filter(mock_interactions::run_id.eq(run_id))
+      .filter(mock_interactions::id.eq(id))
+      .select(mock_interactions::all_columns)
+      .first::<MockInteractionRow>(db.conn())
+      .optional()?
+      .map(|row| row.into_domain())
+      .transpose()
+  }
+
+  pub fn get_mock_warning(&self, run_id: &str, id: i64) -> Result<Option<MockWarning>> {
+    let mut db = self.lock_read();
+    Ok(
+      mock_warnings::table
+        .filter(mock_warnings::run_id.eq(run_id))
+        .filter(mock_warnings::id.eq(id))
+        .select(mock_warnings::all_columns)
+        .first::<MockWarningRow>(db.conn())
+        .optional()?
+        .map(MockWarning::from),
+    )
+  }
+
+  pub fn related_interactions(
+    &self,
+    run_id: &str,
+    test_id: Option<&str>,
+    stub_id: &str,
+    limit: i64,
+  ) -> Result<Vec<MockInteraction>> {
+    let mut db = self.lock_read();
+    let mut query = mock_interactions::table
+      .filter(mock_interactions::run_id.eq(run_id))
+      .filter(mock_interactions::stub_id.eq(stub_id))
+      .into_boxed();
+    query = if let Some(test_id) = test_id {
+      query.filter(mock_interactions::test_id.eq(test_id))
+    } else {
+      query.filter(mock_interactions::test_id.is_null())
+    };
+    query
+      .order(mock_interactions::id)
+      .limit(limit)
+      .select(mock_interactions::all_columns)
+      .load::<MockInteractionRow>(db.conn())?
+      .into_iter()
+      .map(|row| row.into_domain())
+      .collect()
+  }
+
+  pub fn related_warnings(
+    &self,
+    run_id: &str,
+    test_id: Option<&str>,
+    stub_id: &str,
+    limit: i64,
+  ) -> Result<Vec<MockWarning>> {
+    let mut db = self.lock_read();
+    let mut query = mock_warnings::table
+      .filter(mock_warnings::run_id.eq(run_id))
+      .filter(mock_warnings::stub_id.eq(stub_id))
+      .into_boxed();
+    query = if let Some(test_id) = test_id {
+      query.filter(mock_warnings::test_id.eq(test_id))
+    } else {
+      query.filter(mock_warnings::test_id.is_null())
+    };
+    Ok(
+      query
+        .order(mock_warnings::id)
+        .limit(limit)
+        .select(mock_warnings::all_columns)
+        .load::<MockWarningRow>(db.conn())?
+        .into_iter()
+        .map(MockWarning::from)
+        .collect(),
+    )
+  }
+
   pub fn get_open_assertion(
     &self,
     run_id: &str,
@@ -127,7 +328,7 @@ impl SqliteBackend {
 
   pub fn get_entries(&self, run_id: &str, test_id: &str, raw: bool) -> Result<Vec<Entry>> {
     let sql = if raw {
-      RAW_ENTRIES_SQL
+      RAW_ENTRIES_SQL.as_str()
     } else {
       COLLAPSED_ENTRIES_SQL
     };
@@ -143,7 +344,7 @@ impl SqliteBackend {
 
   pub fn get_spans_for_test(&self, run_id: &str, test_id: &str) -> Result<Vec<Span>> {
     let mut db = self.lock_read();
-    diesel::sql_query(SPANS_FOR_TEST_SQL)
+    diesel::sql_query(&*SPANS_FOR_TEST_SQL)
       .bind::<Text, _>(run_id)
       .bind::<Text, _>(test_id)
       .load::<SpanRow>(db.conn())?
@@ -236,12 +437,12 @@ impl SqliteBackend {
   }
 }
 
-const RAW_ENTRIES_SQL: &str = "SELECT id, run_id, test_id, timestamp, system, action, result,
+const RAW_ENTRIES_BASE: &str = "SELECT id, run_id, test_id, timestamp, system, action, result,
   input, output, metadata, expected, actual, error, trace_id,
   assertion_id,
   1 AS attempt_count,
   CASE WHEN result IN ('FAILED', 'ERROR') THEN 1 ELSE 0 END AS failure_count
-  FROM entries WHERE run_id = ? AND test_id = ? ORDER BY timestamp, id";
+  FROM entries WHERE run_id = $1 AND test_id = $2";
 
 const COLLAPSED_ENTRIES_SQL: &str = "WITH correlated AS (
   SELECT id, run_id, test_id, timestamp, system, action, result, input, output, metadata,
@@ -259,15 +460,36 @@ SELECT id, run_id, test_id, timestamp, system, action, result, input, output, me
        expected, actual, error, trace_id, assertion_id, attempt_count, failure_count
   FROM ranked WHERE attempt_rank = 1 ORDER BY timestamp, id";
 
-const SPANS_FOR_TEST_SQL: &str = "SELECT id, run_id, trace_id, span_id, parent_span_id,
+const SPANS_FOR_TEST_BASE: &str = "SELECT id, run_id, trace_id, span_id, parent_span_id,
   operation_name, service_name, start_time_nanos, end_time_nanos, status, attributes,
   exception_type, exception_message, exception_stack_trace FROM spans
-  WHERE run_id = ? AND trace_id IN (
-    SELECT trace_id FROM entries WHERE run_id = ?1 AND test_id = ?2 AND trace_id != ''
-    UNION SELECT DISTINCT trace_id FROM spans WHERE run_id = ?1 AND (
-      json_extract(attributes, '$.\"x-stove-test-id\"') = ?2 OR
-      json_extract(attributes, '$.\"X-Stove-Test-Id\"') = ?2 OR
-      json_extract(attributes, '$.\"stove.test.id\"') = ?2 OR
-      json_extract(attributes, '$.\"stove_test_id\"') = ?2
+  WHERE run_id = $1 AND trace_id IN (
+    SELECT trace_id FROM entries WHERE run_id = $1 AND test_id = $2 AND trace_id != ''
+    UNION SELECT DISTINCT trace_id FROM spans WHERE run_id = $1 AND (
+      json_extract(attributes, '$.\"x-stove-test-id\"') = $2 OR
+      json_extract(attributes, '$.\"X-Stove-Test-Id\"') = $2 OR
+      json_extract(attributes, '$.\"stove.test.id\"') = $2 OR
+      json_extract(attributes, '$.\"stove_test_id\"') = $2
     )
-  ) ORDER BY start_time_nanos";
+  )";
+
+// Database-specific casts and correlation predicates remain in the base queries.
+// These variants are assembled once and never rewrite executable SQL by substring.
+static RAW_ENTRIES_SQL: std::sync::LazyLock<String> =
+  std::sync::LazyLock::new(|| format!("{RAW_ENTRIES_BASE} ORDER BY timestamp, id"));
+static ENTRY_BY_ID_SQL: std::sync::LazyLock<String> =
+  std::sync::LazyLock::new(|| format!("{RAW_ENTRIES_BASE} AND id = $3"));
+static ENTRIES_BEFORE_SQL: std::sync::LazyLock<String> = std::sync::LazyLock::new(|| {
+  format!(
+    "{RAW_ENTRIES_BASE} AND (timestamp < $3 OR (timestamp = $3 AND id < $4)) ORDER BY timestamp DESC, id DESC LIMIT $5"
+  )
+});
+static ENTRIES_AFTER_SQL: std::sync::LazyLock<String> = std::sync::LazyLock::new(|| {
+  format!(
+    "{RAW_ENTRIES_BASE} AND (timestamp > $3 OR (timestamp = $3 AND id > $4)) ORDER BY timestamp, id LIMIT $5"
+  )
+});
+static SPANS_FOR_TEST_SQL: std::sync::LazyLock<String> =
+  std::sync::LazyLock::new(|| format!("{SPANS_FOR_TEST_BASE} ORDER BY start_time_nanos"));
+static TEST_SPAN_BY_ID_SQL: std::sync::LazyLock<String> =
+  std::sync::LazyLock::new(|| format!("{SPANS_FOR_TEST_BASE} AND id = $3"));

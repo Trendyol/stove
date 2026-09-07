@@ -1109,3 +1109,185 @@ fn run_ids(value: &Value) -> BTreeSet<String> {
     })
     .collect()
 }
+
+#[tokio::test]
+async fn postgres_focused_evidence_preserves_exact_scope_and_context() -> Result<()> {
+  let database = PostgresTestDatabase::start().await?;
+  let stove = RunningStove::start_postgres(&database.url, Some(0)).await?;
+  let mut grpc = stove.grpc_client().await?;
+  let related_warning = |test: &str| {
+    let mut event = mock_warning("focus-run", test, 1_704_067_205);
+    if let Some(proto::dashboard_event::Event::MockWarning(warning)) = &mut event.event {
+      warning.stub_id = "payment-stub".into();
+    }
+    event
+  };
+  send_events(
+    &mut grpc,
+    [
+      run_started("focus-run", "focused", 1_704_067_200, &[]),
+      test_started("focus-run", "test-failed", 1_704_067_201, "same name"),
+      test_started("focus-run", "test-other", 1_704_067_201, "same name"),
+      failed_entry("focus-run", "test-failed", 1_704_067_202),
+      failed_entry("focus-run", "test-failed", 1_704_067_202),
+      failed_entry("focus-run", "test-failed", 1_704_067_202),
+      failed_span("focus-run"),
+      snapshot("focus-run", "test-failed", 1_704_067_203),
+      mock_interaction("focus-run", "test-failed", 1_704_067_204),
+      related_warning("test-failed"),
+      mock_interaction("focus-run", "", 1_704_067_204),
+      related_warning(""),
+    ],
+  )
+  .await?;
+  stove.mcp_tool("stove_runs", json!({})).await?;
+  let root = "/runs/focus-run/tests/test-failed";
+  let raw = stove.get_json(&format!("{root}/entries/raw")).await?;
+  let id = raw[1]["id"].as_i64().context("entry id")?;
+  let focused = stove
+    .get_json(&format!("{root}/evidence/entry/{id}?context=1"))
+    .await?;
+  assert_eq!(focused["entries"], raw);
+  assert_eq!(focused["target"]["value"]["id"], id);
+  assert_eq!(focused["has_more_before"], false);
+  assert_eq!(focused["has_more_after"], false);
+  for (kind, list) in [
+    ("entry", "entries/raw"),
+    ("span", "spans"),
+    ("snapshot", "snapshots"),
+    ("interaction", "mock-interactions"),
+    ("warning", "mock-warnings"),
+  ] {
+    let items = stove.get_json(&format!("{root}/{list}")).await?;
+    let id = items[0]["id"].as_i64().context("evidence id")?;
+    let result = stove
+      .get_json(&format!("{root}/evidence/{kind}/{id}"))
+      .await?;
+    assert_eq!(result["target"]["value"]["id"], id, "{result}");
+    assert_eq!(
+      stove
+        .get(&format!(
+          "/runs/focus-run/tests/test-other/evidence/{kind}/{id}"
+        ))
+        .await?
+        .status(),
+      404
+    );
+    if kind == "interaction" {
+      assert_eq!(result["warnings"].as_array().unwrap().len(), 1);
+    }
+    if kind == "warning" {
+      assert_eq!(result["interactions"].as_array().unwrap().len(), 1);
+    }
+  }
+  for (kind, list) in [
+    ("interaction", "mock-interactions"),
+    ("warning", "mock-warnings"),
+  ] {
+    let items = stove
+      .get_json(&format!("/runs/focus-run/{list}/ambient"))
+      .await?;
+    let id = items[0]["id"].as_i64().context("ambient id")?;
+    let result = stove
+      .get_json(&format!("/runs/focus-run/evidence/{kind}/{id}"))
+      .await?;
+    assert_eq!(result["target"]["value"]["id"], id);
+    assert_eq!(
+      stove
+        .get(&format!("{root}/evidence/{kind}/{id}"))
+        .await?
+        .status(),
+      404
+    );
+  }
+  Ok(())
+}
+
+#[tokio::test]
+async fn public_citations_open_embedded_spa_under_a_gateway_prefix() -> Result<()> {
+  let stove = RunningStove::start_with_public_path("/observe").await?;
+  let mut grpc = stove.grpc_client().await?;
+  send_events(
+    &mut grpc,
+    [
+      run_started(
+        "pipeline-42",
+        "checkout",
+        1_704_067_200,
+        &[("pipeline", "42")],
+      ),
+      test_started(
+        "pipeline-42",
+        "test-failed",
+        1_704_067_201,
+        "declines an invalid payment",
+      ),
+      failed_entry("pipeline-42", "test-failed", 1_704_067_202),
+      failed_span("pipeline-42"),
+      snapshot("pipeline-42", "test-failed", 1_704_067_203),
+      mock_interaction("pipeline-42", "test-failed", 1_704_067_204),
+      mock_warning("pipeline-42", "test-failed", 1_704_067_205),
+      test_ended(
+        "pipeline-42",
+        "test-failed",
+        1_704_067_206,
+        "FAILED",
+        "payment declined",
+      ),
+      run_ended("pipeline-42", 1_704_067_207, 1, 0, 1),
+    ],
+  )
+  .await?;
+  let result = stove
+    .mcp_tool(
+      "stove_failure_detail",
+      json!({"run_id":"pipeline-42","test_id":"test-failed"}),
+    )
+    .await?;
+  let url = result["result"]["structuredContent"]["failed_entries"][0]["navigation"]["url"]
+    .as_str()
+    .context("public citation")?;
+  let html = stove
+    .client
+    .get(url)
+    .send()
+    .await?
+    .error_for_status()?
+    .text()
+    .await?;
+  assert!(html.contains("name=\"stove-base\" content=\"/observe\""));
+  let mut assets = Vec::new();
+  for part in html.split('"') {
+    if part.starts_with("/observe/assets/") {
+      let response = stove
+        .client
+        .get(format!("{}{part}", stove.base_url))
+        .send()
+        .await?;
+      assert!(response.status().is_success(), "missing asset {part}");
+      assets.push(part.to_string());
+    }
+  }
+  assert!(!assets.is_empty());
+  for path in [
+    "/observe/index.html",
+    "/observe/runs/pipeline-42/tests/test-failed",
+    "/observe/api/v1/runs/pipeline-42/tests/test-failed",
+  ] {
+    assert!(
+      stove
+        .client
+        .get(format!("{}{path}", stove.base_url))
+        .send()
+        .await?
+        .status()
+        .is_success(),
+      "{path}"
+    );
+  }
+  if let Ok(seconds) = std::env::var("STOVE_ACCEPTANCE_BROWSER_HOLD_SECONDS") {
+    eprintln!("STOVE_ACCEPTANCE_BROWSER_URL={url}");
+    tokio::time::sleep(Duration::from_secs(seconds.parse().unwrap_or(120))).await;
+  }
+  Ok(())
+}

@@ -1,5 +1,7 @@
 import { useState } from "react";
 import type { Snapshot } from "../api/types";
+import { useEvidenceNavigation } from "../hooks/useEvidenceNavigation";
+import { partitionSnapshotsByDetail } from "../utils/snapshot-state";
 import { getSystemInfo } from "../utils/systems";
 import { SnapshotStateDialog } from "./SnapshotStateDialog";
 
@@ -11,9 +13,22 @@ interface SnapshotCardsProps {
 type SnapshotSelection = { kind: "none" } | { kind: "snapshot"; snapshot: Snapshot };
 
 export function SnapshotCards({ snapshots, hiddenCount = 0 }: SnapshotCardsProps) {
-  const [selection, setSelection] = useState<SnapshotSelection>({ kind: "none" });
+  const navigation = useEvidenceNavigation();
+  const [localSelection, setSelection] = useState<SnapshotSelection>({ kind: "none" });
+  const focused =
+    navigation?.focus?.kind === "snapshot"
+      ? snapshots.find((item) => item.id === navigation.focus?.id)
+      : undefined;
+  const selection: SnapshotSelection = navigation
+    ? focused
+      ? { kind: "snapshot", snapshot: focused }
+      : { kind: "none" }
+    : localSelection;
+  const visibleSnapshots = partitionSnapshotsByDetail(snapshots).detailedSnapshots;
+  if (focused && !visibleSnapshots.some((item) => item.id === focused.id))
+    visibleSnapshots.push(focused);
 
-  if (snapshots.length === 0) {
+  if (visibleSnapshots.length === 0) {
     return (
       <div className="p-4">
         <div className="rounded-xl border border-dashed border-stove-border bg-stove-surface p-6 text-center text-sm text-[var(--stove-text-secondary)]">
@@ -31,20 +46,25 @@ export function SnapshotCards({ snapshots, hiddenCount = 0 }: SnapshotCardsProps
         className="grid gap-3"
         style={{ gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))" }}
       >
-        {snapshots.map((snap) => {
+        {visibleSnapshots.map((snap) => {
           return (
             <DetailedSnapshotCard
               key={snap.id}
               snapshot={snap}
-              onOpen={() => setSelection({ kind: "snapshot", snapshot: snap })}
+              onOpen={() =>
+                navigation
+                  ? navigation.select("snapshot", snap.id)
+                  : setSelection({ kind: "snapshot", snapshot: snap })
+              }
             />
           );
         })}
       </div>
       {selection.kind === "snapshot" && (
         <SnapshotStateDialog
+          key={`${selection.snapshot.id}:${navigation?.pointer ?? ""}`}
           snapshot={selection.snapshot}
-          onClose={() => setSelection({ kind: "none" })}
+          onClose={() => (navigation ? navigation.clear() : setSelection({ kind: "none" }))}
         />
       )}
     </div>

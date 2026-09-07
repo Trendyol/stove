@@ -30,27 +30,32 @@ pub struct RunningStove {
 
 impl RunningStove {
   pub async fn start(retention_runs_per_app: Option<usize>) -> Result<Self> {
-    Self::start_with_database(retention_runs_per_app, None, false).await
+    Self::start_with_database(retention_runs_per_app, None, false, None).await
   }
 
   pub async fn start_postgres(
     database_url: &str,
     retention_runs_per_app: Option<usize>,
   ) -> Result<Self> {
-    Self::start_with_database(retention_runs_per_app, Some(database_url), false).await
+    Self::start_with_database(retention_runs_per_app, Some(database_url), false, None).await
   }
 
   pub async fn start_postgres_with_config_file(
     database_url: &str,
     retention_runs_per_app: Option<usize>,
   ) -> Result<Self> {
-    Self::start_with_database(retention_runs_per_app, Some(database_url), true).await
+    Self::start_with_database(retention_runs_per_app, Some(database_url), true, None).await
+  }
+
+  pub async fn start_with_public_path(path: &str) -> Result<Self> {
+    Self::start_with_database(Some(0), None, false, Some(path)).await
   }
 
   async fn start_with_database(
     retention_runs_per_app: Option<usize>,
     database_url: Option<&str>,
     use_config_file: bool,
+    public_path: Option<&str>,
   ) -> Result<Self> {
     let http_port = free_port()?;
     let grpc_port = free_port()?;
@@ -91,6 +96,11 @@ impl RunningStove {
         .arg(retention.to_string());
     }
 
+    if let Some(path) = public_path {
+      command
+        .arg("--public-url")
+        .arg(format!("http://127.0.0.1:{http_port}{path}"));
+    }
     let child = command.spawn().context("launch the real stove binary")?;
     let mut server = Self {
       base_url: format!("http://127.0.0.1:{http_port}"),

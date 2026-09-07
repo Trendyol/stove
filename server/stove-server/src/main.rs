@@ -50,6 +50,7 @@ async fn main() -> anyhow::Result<()> {
   ));
   let http_handle = tokio::spawn(serve_http(
     config.port,
+    config.public_url.clone(),
     repository,
     sse_manager,
     ingestor,
@@ -135,13 +136,15 @@ async fn serve_grpc(
 
 async fn serve_http(
   port: u16,
+  public_url: Option<String>,
   repository: Arc<storage::repository::Repository>,
   sse_manager: Arc<sse::manager::SseManager>,
   ingestor: EventIngestor,
   shutdown: watch::Receiver<bool>,
 ) -> anyhow::Result<()> {
   let address = SocketAddr::from(([0, 0, 0, 0], port));
-  let router = http::server::create_router(repository, sse_manager, ingestor);
+  let router =
+    http::server::create_router_with_public_url(repository, sse_manager, ingestor, public_url);
   info!("HTTP server listening on {}", address);
   let listener = tokio::net::TcpListener::bind(address).await?;
   axum::serve(

@@ -230,7 +230,7 @@ mod tests {
       "binary"
     );
     assert_eq!(document["servers"][0]["url"], "..");
-    assert_eq!(document["paths"].as_object().unwrap().len(), 25);
+    assert_eq!(document["paths"].as_object().unwrap().len(), 28);
     assert!(document["paths"]["/api/v1/runs"].is_object());
     assert!(document["paths"]["/api/v1/admin/status"].is_object());
     assert!(document["paths"]["/api/v1/events/stream"].is_object());

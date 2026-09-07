@@ -3,6 +3,7 @@
 //! Lives here so each per-tool module (apps, runs, failures, …) can import
 //! only the small set it needs without dragging the others in.
 
+use crate::navigation::{error_reference, reference};
 use std::collections::BTreeMap;
 use std::collections::BTreeSet;
 use std::collections::HashMap;
@@ -44,6 +45,8 @@ pub(super) fn selected_runs(
 
 pub(super) fn failure_item(run: &Run, test: &Test) -> Value {
   json!({
+    "navigation": reference(&run.id, Some(&test.id), None),
+    "error_navigation": error_reference(&run.id, &test.id, test.error.as_deref()),
     "app_name": run.app_name,
     "run_id": run.id,
     "test_id": test.id,
@@ -61,6 +64,8 @@ pub(super) fn failure_item(run: &Run, test: &Test) -> Value {
 
 pub(super) fn test_json(test: &Test) -> Value {
   json!({
+    "navigation": reference(&test.run_id, Some(&test.id), None),
+    "error_navigation": error_reference(&test.run_id, &test.id, test.error.as_deref()),
     "test_id": test.id,
     "test_name": test.test_name,
     "spec_name": test.spec_name,
@@ -238,6 +243,7 @@ fn critical_path_for_trace(spans: &[Span], trace_id: &str, max_spans: usize) -> 
 
 fn compact_event(entry: &Entry) -> Value {
   json!({
+    "navigation": reference(&entry.run_id, Some(&entry.test_id), Some(("entry", entry.id))),
     "id": entry.id,
     "timestamp": entry.timestamp,
     "system": entry.system,
@@ -324,15 +330,11 @@ pub(super) fn fallback_message() -> &'static str {
   "If Stove MCP is unavailable, incomplete, or ambiguous, fall back to normal test output, Stove failure reports, and logs."
 }
 
-pub(super) fn output(structured: Value, heading: &str) -> super::ToolOutput {
-  let body = compact_text(&structured);
-  let text = format!("{heading}\n{body}");
-  super::ToolOutput { structured, text }
-}
-
-fn compact_text(value: &Value) -> String {
-  serde_json::to_string_pretty(value)
-    .unwrap_or_else(|_| "Stove MCP result could not be rendered as JSON".to_string())
+pub(super) fn output(structured: Value, heading: &'static str) -> super::AnalysisOutput {
+  super::AnalysisOutput {
+    structured,
+    heading,
+  }
 }
 
 pub(super) fn display_error(error: impl std::fmt::Display) -> String {

@@ -71,6 +71,25 @@ For a shared deployment, use the server's internal address instead, for example 
 | `stove_interactions` | mock exchanges and warnings for a test or whole run, including unattributed evidence |
 | `stove_raw_evidence` | full untruncated entry / payload (rarely needed) |
 
+## Link reports to exact evidence
+
+Failure and evidence results include `navigation` with the exact `run_id`, optional `test_id`, browser `path`, and optional absolute `url`. Tests with a recorded error also include `error_navigation` to open that error. Agents can put these links beside their explanation in a report; reports themselves remain in the agent's output.
+
+```json
+{
+  "run_id": "pipeline-42",
+  "test_id": "test-failed",
+  "path": "/observe/runs/pipeline-42/tests/test-failed?tab=timeline&focus=entry:482",
+  "url": "https://stove.example/observe/runs/pipeline-42/tests/test-failed?tab=timeline&focus=entry:482"
+}
+```
+
+Configure the browser address with `STOVE_PUBLIC_URL=https://stove.example/observe`, `--public-url`, or `public_url` in the server configuration file. It can differ from the agent's internal MCP address. Without it, `url` is null and `path` is relative to the browser origin; agents should use a known browser origin, never guess one from an internal MCP hostname.
+
+Use the returned link unchanged. Entry links preserve the exact recorded attempt, even when a later retry passed. Span, snapshot, mock interaction, and warning links open the corresponding inspector. `stove_snapshot` includes the requested RFC 6901 `json_pointer` in its citation. Unattributed mocks and trace-only spans can link to run evidence without assigning a test.
+
+The dashboard starts with bounded context and lets readers expand it or open the full test. Missing or purged evidence produces an unavailable state; it never selects a newer run. Links remain valid only while their evidence is retained. Shared CI deployments should choose an appropriate retention period; the default keeps one completed run per app.
+
 ## Data model
 
 ```

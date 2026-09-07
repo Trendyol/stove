@@ -215,6 +215,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/runs/{run_id}/evidence/{kind}/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["get_run_focused_evidence"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/runs/{run_id}/mock-interactions": {
         parameters: {
             query?: never;
@@ -295,6 +311,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/runs/{run_id}/tests/{test_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["get_test"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/runs/{run_id}/tests/{test_id}/entries": {
         parameters: {
             query?: never;
@@ -319,6 +351,22 @@ export interface paths {
             cookie?: never;
         };
         get: operations["get_raw_entries"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/runs/{run_id}/tests/{test_id}/evidence/{kind}/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["get_focused_evidence"];
         put?: never;
         post?: never;
         delete?: never;
@@ -484,6 +532,39 @@ export interface components {
             spans: number;
             /** Format: int64 */
             tests: number;
+        };
+        /** @enum {string} */
+        EvidenceKind: "entry" | "span" | "snapshot" | "interaction" | "warning";
+        EvidenceTarget: {
+            /** @enum {string} */
+            kind: "entry";
+            value: components["schemas"]["Entry"];
+        } | {
+            /** @enum {string} */
+            kind: "span";
+            value: components["schemas"]["Span"];
+        } | {
+            /** @enum {string} */
+            kind: "snapshot";
+            value: components["schemas"]["Snapshot"];
+        } | {
+            /** @enum {string} */
+            kind: "interaction";
+            value: components["schemas"]["MockInteraction"];
+        } | {
+            /** @enum {string} */
+            kind: "warning";
+            value: components["schemas"]["MockWarning"];
+        };
+        FocusedEvidence: {
+            context_limit: number;
+            entries: components["schemas"]["Entry"][];
+            has_more_after: boolean;
+            has_more_before: boolean;
+            interactions: components["schemas"]["MockInteraction"][];
+            spans: components["schemas"]["Span"][];
+            target: components["schemas"]["EvidenceTarget"];
+            warnings: components["schemas"]["MockWarning"][];
         };
         LiveDashboardEvent: components["schemas"]["LiveDashboardPayload"] & {
             run_id: string;
@@ -1165,6 +1246,38 @@ export interface operations {
             };
         };
     };
+    get_run_focused_evidence: {
+        parameters: {
+            query?: {
+                context?: number;
+            };
+            header?: never;
+            path: {
+                id: number;
+                kind: components["schemas"]["EvidenceKind"];
+                run_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FocusedEvidence"];
+                };
+            };
+            /** @description Run evidence unavailable */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
     get_run_mock_interactions: {
         parameters: {
             query?: never;
@@ -1280,6 +1393,35 @@ export interface operations {
             };
         };
     };
+    get_test: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                run_id: string;
+                test_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Test"];
+                };
+            };
+            /** @description Test unavailable */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
     get_entries: {
         parameters: {
             query?: never;
@@ -1327,6 +1469,40 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["Entry"][];
                 };
+            };
+        };
+    };
+    get_focused_evidence: {
+        parameters: {
+            query?: {
+                /** @description Surrounding records, default 10, maximum 100 */
+                context?: number;
+            };
+            header?: never;
+            path: {
+                id: number;
+                kind: components["schemas"]["EvidenceKind"];
+                run_id: string;
+                test_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FocusedEvidence"];
+                };
+            };
+            /** @description Evidence unavailable in this scope */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
         };
     };

@@ -11,6 +11,7 @@ mod common;
 pub(super) mod evidence;
 mod failures;
 mod interactions;
+mod navigation;
 mod raw_evidence;
 mod runs;
 mod snapshot;
@@ -32,19 +33,28 @@ pub struct ToolOutput {
   pub text: String,
 }
 
+pub(super) struct AnalysisOutput {
+  structured: Value,
+  heading: &'static str,
+}
+
 #[derive(Clone)]
 pub struct Analyzer {
   repository: Arc<Repository>,
+  public_url: Option<String>,
 }
 
 impl Analyzer {
   #[must_use]
-  pub fn new(repository: Arc<Repository>) -> Self {
-    Self { repository }
+  pub fn new(repository: Arc<Repository>, public_url: Option<String>) -> Self {
+    Self {
+      repository,
+      public_url,
+    }
   }
 
   pub fn call_tool(&self, name: &str, arguments: Value) -> Result<ToolOutput, String> {
-    match ToolName::from_str(name) {
+    let mut result = match ToolName::from_str(name) {
       Some(ToolName::Apps) => self.apps(arguments),
       Some(ToolName::Runs) => self.runs(arguments),
       Some(ToolName::Failures) => self.failures(arguments),
@@ -55,7 +65,17 @@ impl Analyzer {
       Some(ToolName::Interactions) => self.interactions(arguments),
       Some(ToolName::RawEvidence) => self.raw_evidence(arguments),
       None => Err(format!("unknown Stove MCP tool: {name}")),
-    }
+    }?;
+    navigation::attach(&mut result.structured, self.public_url.as_deref());
+    let text = format!(
+      "{}\n{}",
+      result.heading,
+      serde_json::to_string_pretty(&result.structured).map_err(|error| error.to_string())?
+    );
+    Ok(ToolOutput {
+      structured: result.structured,
+      text,
+    })
   }
 
   pub(super) fn resolve_test(&self, run_id: &str, test_id: &str) -> Result<(Run, Test), String> {
@@ -66,10 +86,8 @@ impl Analyzer {
       .ok_or_else(|| format!("run `{run_id}` was not found"))?;
     let test = self
       .repository
-      .get_tests_for_run(run_id)
+      .get_test(run_id, test_id)
       .map_err(display_error)?
-      .into_iter()
-      .find(|test| test.id == test_id)
       .ok_or_else(|| format!("test `{test_id}` was not found in run `{run_id}`"))?;
     Ok((run, test))
   }

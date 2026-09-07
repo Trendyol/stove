@@ -14,6 +14,121 @@ pub(super) enum EvidenceScope<'a> {
 }
 
 impl Repository {
+  pub fn get_test(&self, run_id: &str, test_id: &str) -> Result<Option<Test>> {
+    self.with_backend(|backend| match backend {
+      Backend::Sqlite(sqlite) => sqlite.get_test(run_id, test_id),
+      Backend::Postgres(postgres) => postgres.get_test(run_id, test_id),
+    })
+  }
+
+  pub fn get_entry(&self, run_id: &str, test_id: &str, id: i64) -> Result<Option<Entry>> {
+    self.with_backend(|backend| match backend {
+      Backend::Sqlite(sqlite) => sqlite.get_entry(run_id, test_id, id),
+      Backend::Postgres(postgres) => postgres.get_entry(run_id, test_id, id),
+    })
+  }
+
+  pub fn entry_context(
+    &self,
+    run_id: &str,
+    test_id: &str,
+    timestamp: &str,
+    id: i64,
+    before: bool,
+    limit: i64,
+  ) -> Result<Vec<Entry>> {
+    self.with_backend(|backend| match backend {
+      Backend::Sqlite(sqlite) => {
+        sqlite.entry_context(run_id, test_id, timestamp, id, before, limit)
+      }
+      Backend::Postgres(postgres) => {
+        postgres.entry_context(run_id, test_id, timestamp, id, before, limit)
+      }
+    })
+  }
+
+  pub fn get_trace_span(&self, trace_id: &str, id: i64) -> Result<Option<Span>> {
+    self.with_backend(|backend| match backend {
+      Backend::Sqlite(sqlite) => sqlite.get_trace_span(trace_id, id),
+      Backend::Postgres(postgres) => postgres.get_trace_span(trace_id, id),
+    })
+  }
+
+  pub fn get_span(&self, run_id: &str, id: i64) -> Result<Option<Span>> {
+    self.with_backend(|backend| match backend {
+      Backend::Sqlite(sqlite) => sqlite.get_span(run_id, id),
+      Backend::Postgres(postgres) => postgres.get_span(run_id, id),
+    })
+  }
+
+  pub fn get_test_span(&self, run_id: &str, test_id: &str, id: i64) -> Result<Option<Span>> {
+    self.with_backend(|backend| match backend {
+      Backend::Sqlite(sqlite) => sqlite.get_test_span(run_id, test_id, id),
+      Backend::Postgres(postgres) => postgres.get_test_span(run_id, test_id, id),
+    })
+  }
+
+  pub fn get_span_ancestors(
+    &self,
+    run_id: &str,
+    trace_id: &str,
+    id: i64,
+    limit: usize,
+  ) -> Result<Vec<Span>> {
+    let depth = i64::try_from(limit.min(101)).unwrap();
+    self.with_backend(|backend| match backend {
+      Backend::Sqlite(sqlite) => sqlite.get_span_ancestors(run_id, trace_id, id, depth),
+      Backend::Postgres(postgres) => postgres.get_span_ancestors(run_id, trace_id, id, depth),
+    })
+  }
+
+  pub fn get_snapshot(&self, run_id: &str, test_id: &str, id: i64) -> Result<Option<Snapshot>> {
+    self.with_backend(|backend| match backend {
+      Backend::Sqlite(sqlite) => sqlite.get_snapshot(run_id, test_id, id),
+      Backend::Postgres(postgres) => postgres.get_snapshot(run_id, test_id, id),
+    })
+  }
+
+  pub fn get_mock_interaction(&self, run_id: &str, id: i64) -> Result<Option<MockInteraction>> {
+    self.with_backend(|backend| match backend {
+      Backend::Sqlite(sqlite) => sqlite.get_mock_interaction(run_id, id),
+      Backend::Postgres(postgres) => postgres.get_mock_interaction(run_id, id),
+    })
+  }
+
+  pub fn get_mock_warning(&self, run_id: &str, id: i64) -> Result<Option<MockWarning>> {
+    self.with_backend(|backend| match backend {
+      Backend::Sqlite(sqlite) => sqlite.get_mock_warning(run_id, id),
+      Backend::Postgres(postgres) => postgres.get_mock_warning(run_id, id),
+    })
+  }
+
+  pub fn related_interactions(
+    &self,
+    run_id: &str,
+    test_id: Option<&str>,
+    stub_id: &str,
+    limit: i64,
+  ) -> Result<Vec<MockInteraction>> {
+    self.with_backend(|backend| match backend {
+      Backend::Sqlite(sqlite) => sqlite.related_interactions(run_id, test_id, stub_id, limit),
+      Backend::Postgres(postgres) => postgres.related_interactions(run_id, test_id, stub_id, limit),
+    })
+  }
+
+  pub fn related_warnings(
+    &self,
+    run_id: &str,
+    test_id: Option<&str>,
+    stub_id: &str,
+    limit: i64,
+  ) -> Result<Vec<MockWarning>> {
+    self.with_backend(|backend| match backend {
+      Backend::Sqlite(sqlite) => sqlite.related_warnings(run_id, test_id, stub_id, limit),
+      Backend::Postgres(postgres) => postgres.related_warnings(run_id, test_id, stub_id, limit),
+    })
+  }
+
   pub(crate) fn get_open_assertion(
     &self,
     run_id: &str,

@@ -14,6 +14,9 @@ use utoipa_swagger_ui::{Config, SwaggerUi};
     super::routes::get_runs,
     super::routes::get_run,
     super::routes::get_tests,
+    super::routes::get_test,
+    super::routes::get_focused_evidence,
+    super::routes::get_run_focused_evidence,
     super::routes::get_entries,
     super::routes::get_raw_entries,
     super::routes::get_test_spans,
@@ -34,7 +37,7 @@ use utoipa_swagger_ui::{Config, SwaggerUi};
     super::routes::preview_purge,
     super::routes::purge_runs
   ),
-  components(schemas(crate::ingest::LiveDashboardEvent)),
+  components(schemas(crate::ingest::LiveDashboardEvent, crate::focus::EvidenceKind)),
   tags(
     (name = "system", description = "Server metadata and capabilities"),
     (

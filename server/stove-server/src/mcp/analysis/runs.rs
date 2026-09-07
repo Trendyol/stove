@@ -4,8 +4,8 @@
 use serde_json::Value;
 use serde_json::json;
 
+use super::AnalysisOutput;
 use super::Analyzer;
-use super::ToolOutput;
 use super::common::display_error;
 use super::common::fallback_message;
 use super::common::output;
@@ -18,7 +18,7 @@ use crate::mcp::contract::ArgName;
 use crate::mcp::contract::ToolName;
 
 impl Analyzer {
-  pub(super) fn runs(&self, arguments: Value) -> Result<ToolOutput, String> {
+  pub(super) fn runs(&self, arguments: Value) -> Result<AnalysisOutput, String> {
     let args: RunsArgs = parse(arguments)?;
     let limit = args.common.limit();
     let status_filter = args.status.as_deref().map(str::to_ascii_uppercase);

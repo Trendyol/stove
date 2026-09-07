@@ -8,8 +8,8 @@
 use serde_json::Value;
 use serde_json::json;
 
+use super::AnalysisOutput;
 use super::Analyzer;
-use super::ToolOutput;
 use super::common::display_error;
 use super::common::fallback_message;
 use super::common::output;
@@ -20,7 +20,7 @@ use crate::mcp::args::InteractionsArgs;
 use crate::mcp::args::parse;
 
 impl Analyzer {
-  pub(super) fn interactions(&self, arguments: Value) -> Result<ToolOutput, String> {
+  pub(super) fn interactions(&self, arguments: Value) -> Result<AnalysisOutput, String> {
     let args: InteractionsArgs = parse(arguments)?;
     let budget = Budget::from_args(args.common.budget.as_deref(), args.common.max_chars);
     let limit = args.common.limit().min(budget.interactions.max(1));

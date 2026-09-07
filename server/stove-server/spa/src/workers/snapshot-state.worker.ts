@@ -1,6 +1,7 @@
 /// <reference lib="webworker" />
 
 import { describeJsonValue, filterJsonByQuery, parseJsonDeep } from "../utils/json";
+import { resolveSnapshotPointer } from "../utils/json-pointer";
 import { getKafkaSnapshotMetrics, hasDetailedSnapshotState } from "../utils/snapshot-state";
 import type { SnapshotWorkerRequest, SnapshotWorkerResponse } from "./snapshot-state.protocol";
 
@@ -25,6 +26,10 @@ self.onmessage = (message: MessageEvent<SnapshotWorkerRequest>) => {
             detailed,
             metrics,
           };
+    response.selection =
+      request.pointer === undefined
+        ? undefined
+        : resolveSnapshotPointer(request.stateJson, request.pointer);
     self.postMessage(response);
     return;
   }

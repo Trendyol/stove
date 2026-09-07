@@ -3,8 +3,8 @@
 use serde_json::Value;
 use serde_json::json;
 
+use super::AnalysisOutput;
 use super::Analyzer;
-use super::ToolOutput;
 use super::common::correlated_test_for_trace;
 use super::common::display_error;
 use super::common::fallback_message;
@@ -16,7 +16,7 @@ use crate::mcp::args::TraceArgs;
 use crate::mcp::args::parse;
 
 impl Analyzer {
-  pub(super) fn trace(&self, arguments: Value) -> Result<ToolOutput, String> {
+  pub(super) fn trace(&self, arguments: Value) -> Result<AnalysisOutput, String> {
     let args: TraceArgs = parse(arguments)?;
     let budget = Budget::from_args(args.common.budget.as_deref(), args.common.max_chars);
     let (run, test, entries, spans) = if let Some(trace_id) = args.trace_id.as_deref() {

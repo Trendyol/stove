@@ -8,6 +8,8 @@ import type {
   DatabaseTable,
   Entry,
   EvidenceCounts,
+  EvidenceTarget,
+  FocusedEvidence,
   McpMeta,
   MetaResponse,
   MockInteraction,
@@ -25,6 +27,7 @@ import {
   isNullableNumber,
   isNullableString,
   isNumber,
+  isRecord,
   isRunStatus,
   isStatus,
   isString,
@@ -146,4 +149,32 @@ export const isMockInteraction = object<MockInteraction>({
 export const isMockWarning = object<MockWarning>({
   ...payloadSchemas.mock_warning,
   run_id: isString,
+});
+
+const isEvidenceTarget = (value: unknown): value is EvidenceTarget => {
+  if (!isRecord(value)) return false;
+  switch (value.kind) {
+    case "entry":
+      return isEntry(value.value);
+    case "span":
+      return isSpan(value.value);
+    case "snapshot":
+      return isSnapshot(value.value);
+    case "interaction":
+      return isMockInteraction(value.value);
+    case "warning":
+      return isMockWarning(value.value);
+    default:
+      return false;
+  }
+};
+export const isFocusedEvidence = object<FocusedEvidence>({
+  target: isEvidenceTarget,
+  entries: arrayOf(isEntry),
+  spans: arrayOf(isSpan),
+  interactions: arrayOf(isMockInteraction),
+  warnings: arrayOf(isMockWarning),
+  has_more_before: isBoolean,
+  has_more_after: isBoolean,
+  context_limit: isNumber,
 });

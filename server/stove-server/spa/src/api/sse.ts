@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { appPath } from "../utils/location";
 import { parseLiveDashboardEvent } from "./live-event";
 import type { LiveDashboardEvent } from "./types";
 
@@ -83,7 +84,7 @@ export function useSSE({
         return;
       }
 
-      source = new EventSource("/api/v1/events/stream");
+      source = new EventSource(appPath("/api/v1/events/stream"));
 
       source.onopen = () => {
         const isReconnect = hasConnectedRef.current;

@@ -8,7 +8,7 @@
 use std::sync::Arc;
 
 use serde_json::Value;
-use stove::http::server::create_router;
+use stove::http::server::create_router_with_public_url;
 use stove::ingest::EventIngestor;
 use stove::sse::manager::SseManager;
 use stove::storage::models::{NewEntry, NewMockInteraction, NewMockWarning, NewSpan};
@@ -26,12 +26,21 @@ pub struct TestServer {
 impl TestServer {
   /// Start a test server on an OS-assigned port with an in-memory database.
   pub async fn start() -> Self {
+    Self::start_with_public_url(None).await
+  }
+
+  pub async fn start_with_public_url(public_url: Option<String>) -> Self {
     let repo =
       Arc::new(Repository::connect_sqlite(":memory:", 1).expect("in-memory database should open"));
     let sse_manager = Arc::new(SseManager::new());
     let _live_event_relay = stove::sse::relay::spawn(repo.clone(), sse_manager.clone());
     let ingestor = EventIngestor::new(repo.clone(), sse_manager.clone());
-    let router = create_router(repo.clone(), sse_manager.clone(), ingestor.clone());
+    let router = create_router_with_public_url(
+      repo.clone(),
+      sse_manager.clone(),
+      ingestor.clone(),
+      public_url,
+    );
 
     let listener = tokio::net::TcpListener::bind("127.0.0.1:0")
       .await

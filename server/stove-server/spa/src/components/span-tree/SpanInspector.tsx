@@ -3,6 +3,7 @@ import type { Span } from "../../api/types";
 import { formatNanosDuration } from "../../utils/format";
 import { parseAttrs } from "../../utils/json";
 import { getResultTone } from "../../utils/result";
+import { EvidenceActions } from "../EvidenceActions";
 
 interface SpanInspectorProps {
   span?: Span;
@@ -63,6 +64,7 @@ export function SpanInspector({ span, onClose }: SpanInspectorProps) {
             ×
           </button>
         </header>
+        <EvidenceActions />
         <div className="inspector-status-line">
           <span className={`is-${tone}`}>{span.status}</span>
           <span>{formatNanosDuration(span.start_time_nanos, span.end_time_nanos)}</span>

@@ -1,4 +1,5 @@
 import { useEffect } from "react";
+import { EvidenceActions } from "./EvidenceActions";
 
 interface ErrorDialogProps {
   error: string;
@@ -38,6 +39,7 @@ export function ErrorDialog({ error, onClose }: ErrorDialogProps) {
           </button>
         </div>
 
+        <EvidenceActions />
         <pre className="flex-1 overflow-auto p-4 font-mono text-xs whitespace-pre-wrap break-words text-[var(--stove-red)]">
           {error}
         </pre>

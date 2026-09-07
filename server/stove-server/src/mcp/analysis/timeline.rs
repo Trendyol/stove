@@ -3,8 +3,8 @@
 use serde_json::Value;
 use serde_json::json;
 
+use super::AnalysisOutput;
 use super::Analyzer;
-use super::ToolOutput;
 use super::common::display_error;
 use super::common::failure_window;
 use super::common::fallback_message;
@@ -18,7 +18,7 @@ use crate::mcp::args::parse;
 use crate::mcp::contract::TimelineFocus;
 
 impl Analyzer {
-  pub(super) fn timeline(&self, arguments: Value) -> Result<ToolOutput, String> {
+  pub(super) fn timeline(&self, arguments: Value) -> Result<AnalysisOutput, String> {
     let args: TimelineArgs = parse(arguments)?;
     let budget = Budget::from_args(
       args.exact.common.budget.as_deref(),

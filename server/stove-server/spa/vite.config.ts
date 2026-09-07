@@ -10,6 +10,7 @@ const version =
   "dev";
 
 export default defineConfig({
+  base: "./",
   plugins: [react()],
   define: {
     __STOVE_VERSION__: JSON.stringify(version),

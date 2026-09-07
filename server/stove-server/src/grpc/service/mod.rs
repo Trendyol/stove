@@ -55,6 +55,7 @@ impl proto::dashboard_event_service_server::DashboardEventService for DashboardE
 #[allow(clippy::needless_pass_by_value)]
 fn to_status(error: AppError) -> Status {
   match error {
+    AppError::NotFound(_) => Status::not_found(error.to_string()),
     AppError::InvalidEvent(message) => Status::invalid_argument(message),
     AppError::Database(_)
     | AppError::Diesel(_)

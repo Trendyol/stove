@@ -1,3 +1,4 @@
+use crate::navigation::reference;
 use serde_json::Value;
 use serde_json::json;
 
@@ -14,6 +15,7 @@ use crate::storage::models::Span;
 
 pub(super) fn entry_preview(entry: &Entry, max_chars: usize) -> Value {
   json!({
+    "navigation": reference(&entry.run_id, Some(&entry.test_id), Some(("entry", entry.id))),
     "id": entry.id,
     "timestamp": entry.timestamp,
     "system": entry.system,
@@ -40,6 +42,7 @@ pub(super) fn entry_preview(entry: &Entry, max_chars: usize) -> Value {
 
 pub(super) fn span_preview(span: &Span, max_chars: usize) -> Value {
   json!({
+    "navigation": reference(&span.run_id, None, Some(("span", span.id))),
     "id": span.id,
     "trace_id": span.trace_id,
     "span_id": span.span_id,
@@ -58,6 +61,7 @@ pub(super) fn span_preview(span: &Span, max_chars: usize) -> Value {
 pub(super) fn snapshot_summary(snapshot: &Snapshot, max_chars: usize) -> Value {
   let state = parse_state(&snapshot.state_json, max_chars);
   json!({
+    "navigation": reference(&snapshot.run_id, Some(&snapshot.test_id), Some(("snapshot", snapshot.id))),
     "id": snapshot.id,
     "system": snapshot.system,
     "summary": clip_string(&snapshot.summary, max_chars),
@@ -89,7 +93,19 @@ pub(super) fn snapshot_detail(
     },
   );
 
+  let mut navigation = reference(
+    &snapshot.run_id,
+    Some(&snapshot.test_id),
+    Some(("snapshot", snapshot.id)),
+  );
+  if let Some(pointer) = pointer {
+    navigation.path.push_str("&pointer=");
+    navigation
+      .path
+      .push_str(&crate::navigation::component(pointer));
+  }
   json!({
+    "navigation": navigation,
     "id": snapshot.id,
     "system": snapshot.system,
     "summary": clip_string(&snapshot.summary, max_chars),
@@ -105,6 +121,7 @@ pub(super) fn snapshot_detail(
 
 pub(super) fn interaction_preview(interaction: &MockInteraction, max_chars: usize) -> Value {
   let mut preview = json!({
+    "navigation": reference(&interaction.run_id, interaction.test_id.as_deref(), Some(("interaction", interaction.id))),
     "id": interaction.id,
     "timestamp": interaction.timestamp,
     "system": interaction.system,
@@ -158,6 +175,7 @@ pub(super) fn interaction_preview(interaction: &MockInteraction, max_chars: usiz
 
 pub(super) fn warning_preview(warning: &MockWarning, max_chars: usize) -> Value {
   json!({
+    "navigation": reference(&warning.run_id, warning.test_id.as_deref(), Some(("warning", warning.id))),
     "id": warning.id,
     "timestamp": warning.timestamp,
     "system": warning.system,

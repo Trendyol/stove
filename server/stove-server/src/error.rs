@@ -6,6 +6,9 @@ use thiserror::Error;
 /// `anyhow` is used only at the top level (`main.rs`) for ergonomic `?` usage.
 #[derive(Error, Debug)]
 pub enum AppError {
+  #[error("{0}")]
+  NotFound(String),
+
   #[error("Database error: {0}")]
   Database(#[from] rusqlite::Error),
 
@@ -46,6 +49,7 @@ pub type Result<T> = std::result::Result<T, AppError>;
 impl axum::response::IntoResponse for AppError {
   fn into_response(self) -> axum::response::Response {
     let status = match &self {
+      AppError::NotFound(_) => axum::http::StatusCode::NOT_FOUND,
       AppError::GrpcTransport(_) => axum::http::StatusCode::BAD_GATEWAY,
       AppError::Serialization(_) | AppError::InvalidEvent(_) => axum::http::StatusCode::BAD_REQUEST,
       AppError::Database(_)

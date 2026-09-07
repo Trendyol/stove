@@ -70,7 +70,7 @@ fn handle_request(state: AppState, request: JsonRpcRequest) -> Result<Value, Rpc
         serde_json::from_value(request.params.unwrap_or_else(|| json!({}))).map_err(|error| {
           RpcError::invalid_params(format!("invalid tools/call params: {error}"))
         })?;
-      let analyzer = Analyzer::new(state.repository);
+      let analyzer = Analyzer::new(state.repository, state.public_url);
       let arguments = params.arguments.unwrap_or_else(|| json!({}));
       let output = analyzer
         .call_tool(&params.name, arguments)

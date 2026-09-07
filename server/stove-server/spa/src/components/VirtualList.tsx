@@ -12,6 +12,7 @@ interface VirtualListProps<T> {
   ariaLabel: string;
   windowThreshold?: number;
   overscanPx?: number;
+  scrollToKey?: Key;
 }
 
 interface ItemLayout {
@@ -29,6 +30,7 @@ export function VirtualList<T>({
   ariaLabel,
   windowThreshold = DEFAULT_WINDOW_THRESHOLD,
   overscanPx = DEFAULT_OVERSCAN_PX,
+  scrollToKey,
 }: VirtualListProps<T>) {
   const viewportRef = useRef<HTMLUListElement>(null);
   const [viewport, setViewport] = useState({ height: 0, scrollTop: 0 });
@@ -55,9 +57,21 @@ export function VirtualList<T>({
     return () => observer.disconnect();
   }, [windowed]);
 
+  const targetIndex =
+    scrollToKey === undefined ? -1 : items.findIndex((item) => getKey(item) === scrollToKey);
+  const targetStart = layout[targetIndex]?.start;
+  useLayoutEffect(() => {
+    const element = viewportRef.current;
+    if (!element || targetIndex < 0) return;
+    if (windowed && targetStart !== undefined) {
+      element.scrollTop = Math.max(0, targetStart - element.clientHeight / 3);
+      setViewport({ height: element.clientHeight, scrollTop: element.scrollTop });
+    } else element.children[targetIndex]?.scrollIntoView?.({ block: "nearest" });
+  }, [scrollToKey, targetIndex, targetStart, windowed]);
+
   if (!windowed) {
     return (
-      <ul className={className} aria-label={ariaLabel}>
+      <ul ref={viewportRef} className={className} aria-label={ariaLabel}>
         {items.map((item, index) => (
           <li key={getKey(item)}>{renderItem(item, index)}</li>
         ))}

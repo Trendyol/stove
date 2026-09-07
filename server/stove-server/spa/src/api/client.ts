@@ -1,3 +1,4 @@
+import { appPath, type EvidenceFocus } from "../utils/location";
 import * as schema from "./response-schemas";
 import type {
   DatabaseQueryRequest,
@@ -5,20 +6,28 @@ import type {
   PurgeRequest,
   RetentionRequest,
 } from "./types";
-import { arrayOf, type Validator } from "./validation";
+import { arrayOf, nullable, type Validator } from "./validation";
 
 const BASE = "/api/v1";
+export class ApiError extends Error {
+  constructor(
+    public status: number,
+    message: string,
+  ) {
+    super(message);
+  }
+}
 const encodePath = (value: string) => encodeURIComponent(value);
 
 async function get<T>(url: string, validate: Validator<T>, signal?: AbortSignal): Promise<T> {
-  const res = await fetch(`${BASE}${url}`, { signal });
-  if (!res.ok) throw new Error(`${res.status} ${res.statusText}`);
+  const res = await fetch(appPath(`${BASE}${url}`), { signal });
+  if (!res.ok) throw new ApiError(res.status, `${res.status} ${res.statusText}`);
   return readResponse(res, url, validate);
 }
 
 async function del(url: string): Promise<void> {
-  const res = await fetch(`${BASE}${url}`, { method: "DELETE" });
-  if (!res.ok) throw new Error(`${res.status} ${res.statusText}`);
+  const res = await fetch(appPath(`${BASE}${url}`), { method: "DELETE" });
+  if (!res.ok) throw new ApiError(res.status, `${res.status} ${res.statusText}`);
 }
 
 async function send<T>(
@@ -27,7 +36,7 @@ async function send<T>(
   body: unknown,
   validate: Validator<T>,
 ): Promise<T> {
-  const res = await fetch(`${BASE}${url}`, {
+  const res = await fetch(appPath(`${BASE}${url}`), {
     method,
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(body),
@@ -47,6 +56,25 @@ async function readResponse<T>(
 }
 
 export const api = {
+  getRun: async (runId: string, signal?: AbortSignal) => {
+    const run = await get(`/runs/${encodePath(runId)}`, nullable(schema.isRun), signal);
+    if (run === null) throw new ApiError(404, "Run unavailable");
+    return run;
+  },
+  getTest: (runId: string, testId: string, signal?: AbortSignal) =>
+    get(`/runs/${encodePath(runId)}/tests/${encodePath(testId)}`, schema.isTest, signal),
+  getFocusedEvidence: (
+    runId: string,
+    testId: string | undefined,
+    focus: EvidenceFocus,
+    context: number,
+    signal?: AbortSignal,
+  ) =>
+    get(
+      `/runs/${encodePath(runId)}${testId === undefined ? "" : `/tests/${encodePath(testId)}`}/evidence/${focus.kind}/${focus.id}?context=${context}`,
+      schema.isFocusedEvidence,
+      signal,
+    ),
   getMeta: (signal?: AbortSignal) => get("/meta", schema.isMetaResponse, signal),
   getApps: (signal?: AbortSignal) => get("/apps", arrayOf(schema.isAppSummary), signal),
   getRuns: (app?: string, signal?: AbortSignal) => {

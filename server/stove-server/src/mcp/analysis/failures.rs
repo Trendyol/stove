@@ -4,8 +4,8 @@
 use serde_json::Value;
 use serde_json::json;
 
+use super::AnalysisOutput;
 use super::Analyzer;
-use super::ToolOutput;
 use super::common::display_error;
 use super::common::exact_test_tool_call;
 use super::common::failure_item;
@@ -35,7 +35,7 @@ use crate::storage::models::Test;
 use crate::storage::models::TestStatus;
 
 impl Analyzer {
-  pub(super) fn failures(&self, arguments: Value) -> Result<ToolOutput, String> {
+  pub(super) fn failures(&self, arguments: Value) -> Result<AnalysisOutput, String> {
     let args: FailuresArgs = parse(arguments)?;
     let limit = args.common.limit();
     let runs = selected_runs(
@@ -92,7 +92,7 @@ impl Analyzer {
     ))
   }
 
-  pub(super) fn failure_detail(&self, arguments: Value) -> Result<ToolOutput, String> {
+  pub(super) fn failure_detail(&self, arguments: Value) -> Result<AnalysisOutput, String> {
     let args: ExactTestArgs = parse(arguments)?;
     let budget = Budget::from_args(args.common.budget.as_deref(), args.common.max_chars);
     let (run, test) = self.resolve_test(&args.run_id, &args.test_id)?;

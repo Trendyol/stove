@@ -11,6 +11,7 @@ use crate::storage::repository::Repository;
 /// Shared application state passed to all HTTP handlers.
 #[derive(Clone)]
 pub struct AppState {
+  pub public_url: Option<String>,
   pub repository: Arc<Repository>,
   pub sse_manager: Arc<SseManager>,
   pub(crate) ingestor: EventIngestor,
@@ -22,13 +23,24 @@ pub fn create_router(
   sse_manager: Arc<SseManager>,
   ingestor: EventIngestor,
 ) -> Router {
+  create_router_with_public_url(repository, sse_manager, ingestor, None)
+}
+
+pub fn create_router_with_public_url(
+  repository: Arc<Repository>,
+  sse_manager: Arc<SseManager>,
+  ingestor: EventIngestor,
+  public_url: Option<String>,
+) -> Router {
+  let prefix = crate::navigation::base_path(public_url.as_deref());
   let state = AppState {
+    public_url,
     repository,
     sse_manager,
     ingestor,
   };
 
-  Router::new()
+  let router = Router::new()
     .route(
       "/mcp",
       get(crate::mcp::handle_get).post(crate::mcp::handle_post),
@@ -40,7 +52,12 @@ pub fn create_router(
     .merge(super::openapi::router())
     .fallback(super::routes::static_handler)
     .layer(CorsLayer::permissive())
-    .with_state(state)
+    .with_state(state);
+  if prefix.is_empty() {
+    router
+  } else {
+    Router::new().nest(&prefix, router.clone()).merge(router)
+  }
 }
 
 fn run_routes() -> Router<AppState> {
@@ -50,6 +67,18 @@ fn run_routes() -> Router<AppState> {
     .route("/events", post(super::routes::post_event))
     .route("/runs", get(super::routes::get_runs))
     .route("/runs/{run_id}", get(super::routes::get_run))
+    .route(
+      "/runs/{run_id}/tests/{test_id}",
+      get(super::routes::get_test),
+    )
+    .route(
+      "/runs/{run_id}/tests/{test_id}/evidence/{kind}/{id}",
+      get(super::routes::get_focused_evidence),
+    )
+    .route(
+      "/runs/{run_id}/evidence/{kind}/{id}",
+      get(super::routes::get_run_focused_evidence),
+    )
     .route("/runs/{run_id}/tests", get(super::routes::get_tests))
     .route(
       "/runs/{run_id}/tests/{test_id}/entries",

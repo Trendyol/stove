@@ -1,12 +1,24 @@
-import { type MouseEvent, useEffect, useState } from "react";
+import type { MouseEvent } from "react";
 import { useAppData } from "./hooks/useAppData";
 import { DashboardWorkspace } from "./layout/DashboardWorkspace";
 import { Header } from "./layout/Header";
+import { LinkedWorkspace } from "./layout/LinkedWorkspace";
 import { AdminPage } from "./pages/AdminPage";
-import { pathForRoute, routeForPath, type StoveRoute } from "./utils/routes";
+import { appPath, evidencePath, navigateTo, useLocation } from "./utils/location";
+import { pathForRoute, type StoveRoute } from "./utils/routes";
 
 export default function App() {
-  const [route, setRoute] = useState<StoveRoute>(() => routeForPath(window.location.pathname));
+  const location = useLocation();
+  if (location.kind === "evidence") return <LinkedWorkspace location={location.value} />;
+  if (location.kind === "invalid")
+    return (
+      <main className="stove-empty-state m-4" role="alert">
+        This evidence link is invalid. <a href={appPath("/")}>Open dashboard</a>
+      </main>
+    );
+  return <DashboardApp route={location.kind === "admin" ? "admin" : "dashboard"} />;
+}
+function DashboardApp({ route }: { route: StoveRoute }) {
   const {
     error,
     loading,
@@ -29,12 +41,6 @@ export default function App() {
     selectTest,
   } = useAppData();
 
-  useEffect(() => {
-    const syncRoute = () => setRoute(routeForPath(window.location.pathname));
-    window.addEventListener("popstate", syncRoute);
-    return () => window.removeEventListener("popstate", syncRoute);
-  }, []);
-
   const navigate = (event: MouseEvent<HTMLAnchorElement>, nextRoute: StoveRoute) => {
     if (event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) {
       return;
@@ -42,8 +48,7 @@ export default function App() {
 
     event.preventDefault();
     const nextPath = pathForRoute(nextRoute);
-    if (window.location.pathname !== nextPath) window.history.pushState(null, "", nextPath);
-    setRoute(nextRoute);
+    navigateTo(nextPath);
   };
 
   return (
@@ -79,9 +84,15 @@ export default function App() {
           selectedTest={selectedTest}
           liveConnected={liveConnected}
           onSelectApp={selectApp}
-          onSelectRun={selectRun}
+          onSelectRun={(runId) => {
+            selectRun(runId);
+            navigateTo(evidencePath(runId));
+          }}
           onMetadataFilterChange={filterRunsByMetadata}
-          onSelectTest={selectTest}
+          onSelectTest={(testId) => {
+            selectTest(testId);
+            if (latestRun) navigateTo(evidencePath(latestRun.id, testId));
+          }}
         />
       )}
     </div>

@@ -109,6 +109,14 @@ stove_failure_detail(run_id="<returned-run-id>", test_id="<returned-test-id>")
 
 Metadata originates in `DashboardSystemOptions(metadata = mapOf(...))`; see [dashboard.md](dashboard.md). Do not invent metadata values or silently broaden a failed lookup. Ask for the current CI dimensions or use `stove_runs` without metadata only when surveying all retained runs is intended.
 
+## Cite evidence in reports
+
+Put the returned `navigation.url` beside each supporting finding. Use `error_navigation` for a test's recorded error. Preserve the exact run, test, evidence ID, and snapshot pointer; do not rebuild a link from test names or replace it with a latest-run link. Keep reports in your normal response or report artifact.
+
+When `url` is null, `navigation.path` can be joined to a known browser origin. Do not infer the public browser address from an internal MCP endpoint; shared deployments can configure `STOVE_PUBLIC_URL` or `--public-url`. Unattributed mock evidence stays at run scope. Links expire when data is purged, so identify the pipeline/run in the report as well.
+
+Citations do not require larger tool budgets. Continue to start compact and fetch one scoped record only when its content is needed. A reader can expand context in the dashboard.
+
 ## Data hierarchy
 
 ```

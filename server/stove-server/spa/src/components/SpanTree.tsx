@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import type { Span } from "../api/types";
+import { useEvidenceNavigation } from "../hooks/useEvidenceNavigation";
 import { getResultTone, isFailed } from "../utils/result";
-import { buildSpanTreeRows } from "./span-tree/model";
+import { buildSpanTreeRows, spanKey } from "./span-tree/model";
 import { SpanInspector } from "./span-tree/SpanInspector";
 import { SpanTreeRow } from "./span-tree/SpanTreeRow";
 import { VirtualList } from "./VirtualList";
@@ -14,15 +15,22 @@ type SpanSelection = { kind: "none" } | { kind: "span"; spanId: string };
 
 export function SpanTree({ spans }: SpanTreeProps) {
   const [collapsedSpanIds, setCollapsedSpanIds] = useState<Set<string>>(new Set());
+  const navigation = useEvidenceNavigation();
   const [selection, setSelection] = useState<SpanSelection>({ kind: "none" });
+  useEffect(() => {
+    if (navigation?.focus?.kind === "span") setCollapsedSpanIds(new Set());
+  }, [navigation?.focus?.id]);
   const rows = useMemo(() => buildSpanTreeRows(spans, collapsedSpanIds), [collapsedSpanIds, spans]);
   const totalFailed = useMemo(() => spans.filter((span) => isFailed(span.status)).length, [spans]);
   const totalNeutral = useMemo(
     () => spans.filter((span) => getResultTone(span.status) === "neutral").length,
     [spans],
   );
-  const selectedSpan =
-    selection.kind === "span" ? spans.find((span) => span.span_id === selection.spanId) : undefined;
+  const selectedSpan = navigation
+    ? spans.find((span) => navigation.focus?.kind === "span" && span.id === navigation.focus.id)
+    : selection.kind === "span"
+      ? spans.find((span) => spanKey(span) === selection.spanId)
+      : undefined;
 
   useEffect(() => {
     if (selection.kind === "span" && !selectedSpan) setSelection({ kind: "none" });
@@ -36,7 +44,10 @@ export function SpanTree({ spans }: SpanTreeProps) {
       return next;
     });
   }, []);
-  const closeInspector = useCallback(() => setSelection({ kind: "none" }), []);
+  const closeInspector = useCallback(
+    () => (navigation ? navigation.clear() : setSelection({ kind: "none" })),
+    [navigation],
+  );
 
   if (spans.length === 0) {
     return (
@@ -54,13 +65,18 @@ export function SpanTree({ spans }: SpanTreeProps) {
         items={rows}
         getKey={(row) => `${row.span.trace_id}:${row.span.span_id}`}
         getItemSize={44}
+        scrollToKey={selectedSpan ? spanKey(selectedSpan) : undefined}
         windowThreshold={120}
         renderItem={(row) => (
           <SpanTreeRow
             row={row}
-            selected={row.span.span_id === selectedSpan?.span_id}
-            onToggle={() => toggleSpan(row.span.span_id)}
-            onInspect={() => setSelection({ kind: "span", spanId: row.span.span_id })}
+            selected={row.span.id === selectedSpan?.id}
+            onToggle={() => toggleSpan(spanKey(row.span))}
+            onInspect={() =>
+              navigation
+                ? navigation.select("span", row.span.id)
+                : setSelection({ kind: "span", spanId: spanKey(row.span) })
+            }
           />
         )}
       />

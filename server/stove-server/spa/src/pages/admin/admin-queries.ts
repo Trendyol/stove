@@ -7,6 +7,8 @@ export const adminKeys = {
 };
 
 const DASHBOARD_ROOTS = new Set([
+  "linked",
+  "focus",
   "apps",
   "runs",
   "tests",

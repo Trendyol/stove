@@ -790,3 +790,44 @@
   background: var(--stove-card);
   color: var(--stove-blue);
 }
+
+.evidence-breadcrumb,
+.evidence-link-actions,
+.evidence-scope-note {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 16px;
+  font-size: 12px;
+  border-bottom: 1px solid var(--stove-border);
+  background: var(--stove-surface);
+  color: var(--stove-text-secondary);
+}
+.evidence-breadcrumb a {
+  color: var(--stove-blue);
+  overflow-wrap: anywhere;
+}
+.evidence-link-actions button,
+.evidence-scope-note button {
+  padding: 5px 9px;
+  border: 1px solid var(--stove-border);
+  border-radius: 6px;
+  color: var(--stove-text);
+  cursor: pointer;
+}
+.evidence-link-actions button:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+.evidence-link-actions input {
+  width: 100%;
+}
+.linked-test-list {
+  display: grid;
+  gap: 12px;
+  margin-top: 16px;
+}
+.linked-test-list a {
+  color: var(--stove-blue);
+}

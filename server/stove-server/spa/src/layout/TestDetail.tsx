@@ -1,6 +1,12 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import type { Test } from "../api/types";
 import { ErrorDialog } from "../components/ErrorDialog";
+import { EvidenceActions } from "../components/EvidenceActions";
+import { FocusedEvidenceProvider } from "../hooks/FocusedEvidenceProvider";
+import {
+  EvidenceNavigationProvider,
+  useRequiredEvidenceNavigation,
+} from "../hooks/useEvidenceNavigation";
 import { isRunning } from "../utils/status";
 import { type Tab, TabBar, type TabDef } from "./detail/TabBar";
 import { type TabSummary, TestDetailTab } from "./detail/TestDetailTabs";
@@ -20,9 +26,22 @@ interface TestDetailProps {
   liveConnected: boolean;
 }
 
-export function TestDetail({ runId, test, liveConnected }: TestDetailProps) {
-  const [tab, setTab] = useState<Tab>("timeline");
-  const [errorDialogOpen, setErrorDialogOpen] = useState(false);
+export function TestDetail(props: TestDetailProps) {
+  return (
+    <EvidenceNavigationProvider runId={props.runId} testId={props.test.id}>
+      <FocusedEvidenceProvider
+        running={isRunning(props.test.status)}
+        liveConnected={props.liveConnected}
+      >
+        <TestDetailContent key={JSON.stringify([props.runId, props.test.id])} {...props} />
+      </FocusedEvidenceProvider>
+    </EvidenceNavigationProvider>
+  );
+}
+function TestDetailContent({ runId, test, liveConnected }: TestDetailProps) {
+  const navigation = useRequiredEvidenceNavigation();
+  const tab = navigation.tab;
+  const setTab = navigation.selectTab;
   const [summaries, setSummaries] = useState<Partial<Record<Tab, TabSummary>>>({});
 
   const updateSummary = useCallback((summaryTab: Tab, summary: TabSummary) => {
@@ -40,23 +59,17 @@ export function TestDetail({ runId, test, liveConnected }: TestDetailProps) {
     [summaries],
   );
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: reset local view state for a new test
-  useEffect(() => {
-    setTab("timeline");
-    setErrorDialogOpen(false);
-    setSummaries({});
-  }, [runId, test.id]);
-
   const testError = test.error;
 
   return (
     <main className="test-detail">
       <div className="test-detail-header">
         <TestHeader test={test} liveConnected={liveConnected} />
+        <EvidenceActions />
         {testError && (
           <button
             type="button"
-            onClick={() => setErrorDialogOpen(true)}
+            onClick={navigation.openError}
             className="test-error-strip"
             title="Click to view full error"
           >
@@ -64,8 +77,16 @@ export function TestDetail({ runId, test, liveConnected }: TestDetailProps) {
             {testError}
           </button>
         )}
-        {errorDialogOpen && testError && (
-          <ErrorDialog error={testError} onClose={() => setErrorDialogOpen(false)} />
+        {navigation.errorOpen && testError && (
+          <ErrorDialog error={testError} onClose={navigation.clear} />
+        )}
+        {navigation.errorOpen && !testError && (
+          <div role="alert" className="evidence-scope-note">
+            The cited test error is unavailable. This test has no recorded error.
+            <button type="button" onClick={navigation.clear}>
+              Show test
+            </button>
+          </div>
         )}
         <TabBar tabs={tabs} active={tab} onSelect={setTab} />
       </div>

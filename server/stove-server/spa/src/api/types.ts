@@ -49,3 +49,6 @@ type ReadonlyEvent<Event> = { readonly [Field in keyof Event]: Readonly<Event[Fi
 export type LiveDashboardEvent = ReadonlyEvent<components["schemas"]["LiveDashboardEvent"]>;
 export type LiveEventOf<Type extends EventType> = Extract<LiveDashboardEvent, { event_type: Type }>;
 export type LivePayloads = { [Type in EventType]: LiveEventOf<Type>["payload"] };
+
+export type FocusedEvidence = components["schemas"]["FocusedEvidence"];
+export type EvidenceTarget = components["schemas"]["EvidenceTarget"];
