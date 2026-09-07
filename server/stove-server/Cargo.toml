@@ -56,7 +56,7 @@ pq-sys = { version = "0.7", default-features = false, optional = true }
 openssl-sys = { version = "0.9", optional = true }
 refinery = { version = "0.9", default-features = false, features = ["postgres", "rusqlite-bundled"] }
 # Keep this compatible with refinery-core's rusqlite dependency.
-rusqlite = { version = "0.39", features = ["bundled"] }
+rusqlite = { version = "=0.39.0", features = ["bundled"] }
 postgres = "0.19"
 postgres-native-tls = "0.5"
 native-tls = "0.2"
