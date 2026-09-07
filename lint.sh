@@ -5,6 +5,7 @@
 #   ./lint.sh --check    Check only (git hooks, CI)
 #   ./lint.sh --format   Auto-fix everything
 #   ./lint.sh            Same as --check
+#   ./lint.sh --staged   Check projects with staged changes (git hooks)
 #
 # Pass project names to scope the run (default: all changed projects, or all if --all):
 #
@@ -25,11 +26,13 @@ REPO_ROOT="$(cd "$(dirname "$0")" && pwd)"
 SERVER_DIR="$REPO_ROOT/server/stove-server"
 SPA_DIR="$SERVER_DIR/spa"
 RECIPES_DIR="$REPO_ROOT/recipes/jvm"
+cd "$REPO_ROOT"
 
 # ── Parse args ────────────────────────────────────────────────────────
 
 MODE="check"
 RUN_ALL=false
+STAGED_ONLY=false
 PROJECTS=""
 
 for arg in "$@"; do
@@ -37,9 +40,10 @@ for arg in "$@"; do
     --check)  MODE="check" ;;
     --format) MODE="format" ;;
     --all)    RUN_ALL=true ;;
+    --staged) STAGED_ONLY=true ;;
     jvm|rust|spa|recipes|go) PROJECTS="$PROJECTS $arg" ;;
     *)
-      echo "Usage: $0 [--check|--format] [--all] [jvm] [rust] [spa] [recipes]"
+      echo "Usage: $0 [--check|--format] [--all|--staged] [jvm] [rust] [spa] [recipes] [go]"
       exit 1
       ;;
   esac
@@ -48,28 +52,25 @@ done
 # ── Detect changed projects when no explicit selection ────────────────
 
 detect_changed() {
-  # In a git hook context, use cached diff; otherwise use working tree diff
-  if git diff --cached --name-only 2>/dev/null | grep -q .; then
-    DIFF_CMD="git diff --cached --name-only"
+  if [ "$STAGED_ONLY" = true ]; then
+    CHANGED=$(git diff --cached --name-only)
   else
-    DIFF_CMD="git diff --name-only HEAD"
+    CHANGED=$(git diff --name-only; git diff --cached --name-only; git ls-files --others --exclude-standard)
   fi
 
-  CHANGED=$($DIFF_CMD 2>/dev/null || true)
-
-  if echo "$CHANGED" | grep -qE '\.(kt|kts|java)$'; then
+  if echo "$CHANGED" | grep -v '^recipes/' | grep -qE '\.(kt|kts|java)$|^(gradle/|gradlew$|gradle.properties$|detekt.yml$|\.editorconfig$)'; then
     PROJECTS="$PROJECTS jvm"
   fi
-  if echo "$CHANGED" | grep -qE "^server/stove-server/.*\.(rs|toml)$"; then
+  if echo "$CHANGED" | grep -qE '^server/stove-server/.*\.(rs|toml)$|^server/stove-server/Cargo.lock$'; then
     PROJECTS="$PROJECTS rust"
   fi
-  if echo "$CHANGED" | grep -qE "^server/stove-server/spa/src/.*\.(ts|tsx|js|jsx|css)$"; then
+  if echo "$CHANGED" | grep -qE '^server/stove-server/spa/(src/|[^/]+\.(json|jsonc|ts|js|mjs)$)'; then
     PROJECTS="$PROJECTS spa"
   fi
-  if echo "$CHANGED" | grep -qE "^recipes/"; then
+  if echo "$CHANGED" | grep -qE '^recipes/jvm/|^gradle/libs.versions.toml$'; then
     PROJECTS="$PROJECTS recipes"
   fi
-  if echo "$CHANGED" | grep -qE '\.go$'; then
+  if echo "$CHANGED" | grep -qE '\.go$|(^|/)go\.(mod|sum)$'; then
     PROJECTS="$PROJECTS go"
   fi
 }
@@ -97,6 +98,13 @@ run() {
   fi
 }
 
+# Keep failure accounting in the project process, outside the directory subshell.
+in_dir() (
+  cd "$1" || exit 1
+  shift
+  "$@"
+)
+
 section() {
   echo ""
   echo "── $1 ──"
@@ -107,9 +115,9 @@ section() {
 lint_jvm() {
   section "JVM (Kotlin / Java)"
   if [ "$MODE" = "format" ]; then
-    run "$REPO_ROOT/gradlew" -p "$REPO_ROOT" --no-daemon spotlessApply detekt apiDump
+    run "$REPO_ROOT/gradlew" -p "$REPO_ROOT" spotlessApply detekt apiDump
   else
-    run "$REPO_ROOT/gradlew" -p "$REPO_ROOT" --no-daemon spotlessCheck detekt apiCheck
+    run "$REPO_ROOT/gradlew" -p "$REPO_ROOT" spotlessCheck detekt apiCheck
   fi
 }
 
@@ -118,11 +126,11 @@ lint_jvm() {
 lint_rust() {
   section "Rust"
   if [ "$MODE" = "format" ]; then
-    (cd "$SERVER_DIR" && run cargo fmt)
+    run in_dir "$SERVER_DIR" cargo fmt --all
   else
-    (cd "$SERVER_DIR" && run cargo fmt -- --check)
+    run in_dir "$SERVER_DIR" cargo fmt --all -- --check
   fi
-  (cd "$SERVER_DIR" && SKIP_SPA_BUILD=1 run cargo clippy -- -D warnings)
+  SKIP_SPA_BUILD=1 run in_dir "$SERVER_DIR" cargo clippy --all-targets --locked -- -D warnings
 }
 
 # ── SPA (TypeScript / React) ─────────────────────────────────────────
@@ -130,13 +138,13 @@ lint_rust() {
 lint_spa() {
   section "SPA (TypeScript / React)"
   if [ ! -d "$SPA_DIR/node_modules" ]; then
-    (cd "$SPA_DIR" && run npm install)
+    run in_dir "$SPA_DIR" npm ci
   fi
   if [ "$MODE" = "format" ]; then
-    (cd "$SPA_DIR" && run npx biome check --write src)
+    run in_dir "$SPA_DIR" npx --no-install biome check --write src
   else
-    (cd "$SPA_DIR" && run npx tsc -b)
-    (cd "$SPA_DIR" && run npx biome check src)
+    run in_dir "$SPA_DIR" npx --no-install tsc -b
+    run in_dir "$SPA_DIR" npx --no-install biome check src
   fi
 }
 
@@ -150,13 +158,15 @@ lint_go() {
       if [ "$MODE" = "format" ]; then
         run gofmt -w "$dir"
       else
-        if [ -n "$(gofmt -l "$dir")" ]; then
+        if ! UNFORMATTED=$(gofmt -l "$dir"); then
+          EXIT_CODE=1
+        elif [ -n "$UNFORMATTED" ]; then
           echo "gofmt: files need formatting in $dir:"
-          gofmt -l "$dir"
+          echo "$UNFORMATTED"
           EXIT_CODE=1
         fi
       fi
-      (cd "$dir" && run go vet ./...)
+      run in_dir "$dir" go vet ./...
     fi
   done
 }
@@ -166,9 +176,9 @@ lint_go() {
 lint_recipes() {
   section "Recipes (Kotlin / Java / Scala)"
   if [ "$MODE" = "format" ]; then
-    run "$REPO_ROOT/gradlew" -p "$RECIPES_DIR" --no-daemon spotlessApply
+    run "$RECIPES_DIR/gradlew" -p "$RECIPES_DIR" spotlessApply
   else
-    run "$REPO_ROOT/gradlew" -p "$RECIPES_DIR" --no-daemon spotlessCheck
+    run "$RECIPES_DIR/gradlew" -p "$RECIPES_DIR" spotlessCheck
   fi
 }
 
@@ -177,7 +187,10 @@ lint_recipes() {
 echo "Mode: $MODE"
 
 PIDS=""
+STARTED=" "
 for proj in $PROJECTS; do
+  case "$STARTED" in *" $proj "*) continue ;; esac
+  STARTED="$STARTED$proj "
   (
     case "$proj" in
       jvm)     lint_jvm ;;

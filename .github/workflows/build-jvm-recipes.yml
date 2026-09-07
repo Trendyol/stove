@@ -23,12 +23,10 @@ jobs:
   build-and-test:
     runs-on: ubuntu-latest
     permissions:
+      contents: read
       checks: write
       pull-requests: write
-    services:
-      docker:
-        image: docker:dind
-        options: --privileged
+    timeout-minutes: 45
 
     steps:
       - uses: actions/checkout@v7
@@ -41,33 +39,13 @@ jobs:
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v6
         with:
-          gradle-version: current
-          cache-read-only: false
+          cache-read-only: ${{ github.ref != 'refs/heads/main' }}
           cache-encryption-key: ${{ secrets.GRADLE_CACHE_ENCRYPTION_KEY }}
-
-      - name: Cache Gradle dependencies
-        uses: actions/cache@v6
-        with:
-          path: |
-            ~/.gradle/caches
-            ~/.gradle/wrapper
-          key: gradle-jvm-recipes-${{ runner.os }}-${{ hashFiles('recipes/jvm/**/gradle/wrapper/gradle-wrapper.properties', 'recipes/jvm/**/gradle/libs.versions.toml') }}
-          restore-keys: |
-            gradle-jvm-recipes-${{ runner.os }}-
-
-      # Cache Docker images for testcontainers
-      - name: Cache Docker images
-        uses: actions/cache@v6
-        with:
-          path: /var/lib/docker
-          key: docker-jvm-recipes-${{ runner.os }}-${{ hashFiles('recipes/jvm/**/gradle/libs.versions.toml') }}
-          restore-keys: |
-            docker-jvm-recipes-${{ runner.os }}-
 
       # Run all tasks in a single Gradle invocation
       - name: Build, Test, and E2E Test
         run: |
-          gradle -p recipes/jvm build test e2eTest \
+          ./recipes/jvm/gradlew -p recipes/jvm build e2eTest \
             --build-cache \
             --no-daemon \
             -Dorg.gradle.parallel=true

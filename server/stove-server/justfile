@@ -11,7 +11,7 @@ fix:
     cargo clippy --fix --allow-dirty --allow-staged --all-targets -- -D warnings
 
 clippy:
-    cargo clippy --all-targets -- -D warnings
+    SKIP_SPA_BUILD=1 cargo clippy --all-targets --locked -- -D warnings
 
 test:
     SKIP_SPA_BUILD=1 cargo test --lib --test api_e2e --test mcp_e2e

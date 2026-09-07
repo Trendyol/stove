@@ -12,6 +12,16 @@ on:
       - 'build.gradle.kts'
       - 'settings.gradle.kts'
       - 'build-logic/**'
+      - 'test-extensions/**'
+      - 'gradle.properties'
+      - 'gradlew'
+      - 'gradlew.bat'
+      - '.editorconfig'
+      - 'detekt.yml'
+      - '.github/workflows/build.yml'
+      - 'lint.sh'
+      - 'pre-commit.sh'
+      - 'scripts/tests/**'
   pull_request:
     branches: [main]
     paths:
@@ -23,6 +33,16 @@ on:
       - 'build.gradle.kts'
       - 'settings.gradle.kts'
       - 'build-logic/**'
+      - 'test-extensions/**'
+      - 'gradle.properties'
+      - 'gradlew'
+      - 'gradlew.bat'
+      - '.editorconfig'
+      - 'detekt.yml'
+      - '.github/workflows/build.yml'
+      - 'lint.sh'
+      - 'pre-commit.sh'
+      - 'scripts/tests/**'
 
 # Cancel in-progress runs for the same branch
 concurrency:
@@ -33,17 +53,18 @@ jobs:
   build-and-test:
     runs-on: ubuntu-latest
     permissions:
+      contents: read
       checks: write
       id-token: write
       issues: write
       pull-requests: write
-    services:
-      docker:
-        image: docker:dind
-        options: --privileged
+    timeout-minutes: 45
 
     steps:
       - uses: actions/checkout@v7
+
+      - name: Test local lint runner
+        run: python3 -m unittest discover -s scripts/tests -v
 
       - uses: actions/setup-java@v6
         with:
@@ -53,33 +74,13 @@ jobs:
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v6
         with:
-          gradle-version: current
-          cache-read-only: false
+          cache-read-only: ${{ github.ref != 'refs/heads/main' }}
           cache-encryption-key: ${{ secrets.GRADLE_CACHE_ENCRYPTION_KEY }}
-
-      - name: Cache Gradle dependencies
-        uses: actions/cache@v6
-        with:
-          path: |
-            ~/.gradle/caches
-            ~/.gradle/wrapper
-          key: gradle-${{ runner.os }}-${{ hashFiles('**/gradle/wrapper/gradle-wrapper.properties', '**/gradle/libs.versions.toml') }}
-          restore-keys: |
-            gradle-${{ runner.os }}-
-
-      # Cache Docker images for testcontainers
-      - name: Cache Docker images
-        uses: actions/cache@v6
-        with:
-          path: /var/lib/docker
-          key: docker-${{ runner.os }}-${{ hashFiles('**/gradle/libs.versions.toml') }}
-          restore-keys: |
-            docker-${{ runner.os }}-
 
       # Run all tasks in a single Gradle invocation for optimal build time
       - name: Build, Test, and Coverage
         run: |
-          gradle build test koverXmlReport \
+          ./gradlew build :koverXmlReport \
             --build-cache \
             --configuration-cache \
             --parallel \
@@ -92,7 +93,7 @@ jobs:
         with:
           name: test-results
           path: |
-            **/build/test-results/test/
+            **/build/test-results/
             **/build/reports/tests/
           retention-days: 7
 
@@ -110,7 +111,7 @@ jobs:
         uses: mikepenz/action-junit-report@v6
         if: always() && github.event_name == 'pull_request'
         with:
-          report_paths: "**/build/test-results/test/*.xml"
+          report_paths: "**/build/test-results/**/*.xml"
           check_name: "Test Results"
           detailed_summary: true
           include_passed: false

@@ -118,10 +118,16 @@ tasks.register<Test>("e2eTest") {
   enabled = false
 }
 
+tasks.named("buildContainerImage") {
+  mustRunAfter(kafkaE2eTasks)
+}
+
 val containerE2eTask = tasks.register<Test>("e2eTest-container") {
   description = "Runs container-based e2e tests with sarama Kafka library."
   group = "verification"
   dependsOn("buildContainerImage")
+  mustRunAfter(kafkaE2eTasks)
+  finalizedBy(removeContainerImageTask)
   testClassesDirs = sourceSets[stoveTests].output.classesDirs
   classpath = sourceSets[stoveTests].runtimeClasspath
   useJUnitPlatform()

@@ -6,11 +6,15 @@ on:
     paths:
       - 'server/stove-server/**'
       - 'lib/stove-dashboard-api/src/main/proto/**'
+      - 'gradle.properties'
+      - '.github/workflows/stove-server-ci.yml'
   pull_request:
     branches: [main]
     paths:
       - 'server/stove-server/**'
       - 'lib/stove-dashboard-api/src/main/proto/**'
+      - 'gradle.properties'
+      - '.github/workflows/stove-server-ci.yml'
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -19,6 +23,14 @@ concurrency:
 jobs:
   build-and-test:
     runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: read
+    env:
+      SKIP_SPA_BUILD: "1"
+      CARGO_INCREMENTAL: "0"
+      CARGO_PROFILE_DEV_DEBUG: "0"
+      CARGO_PROFILE_TEST_DEBUG: "0"
     defaults:
       run:
         working-directory: server/stove-server
@@ -36,7 +48,10 @@ jobs:
         run: cd spa && npm ci
 
       - name: SPA lint and format check
-        run: cd spa && npx biome check src
+        run: cd spa && npm run check
+
+      - name: SPA tests
+        run: cd spa && npm test
 
       - name: Build SPA
         run: cd spa && npm run build
@@ -48,34 +63,23 @@ jobs:
       - name: Install protoc
         run: sudo apt-get update && sudo apt-get install -y protobuf-compiler
 
-      - uses: actions/cache@v6
+      # Key dependency artifacts by the Rust toolchain and Cargo inputs.
+      - uses: Swatinem/rust-cache@v2
         with:
-          path: |
-            ~/.cargo/registry
-            ~/.cargo/git
-            server/stove-server/target
-          key: cargo-${{ runner.os }}-${{ hashFiles('server/stove-server/Cargo.lock') }}
-          restore-keys: cargo-${{ runner.os }}-
+          workspaces: server/stove-server -> target
+          save-if: ${{ github.ref == 'refs/heads/main' }}
 
       - name: Check formatting
-        run: cargo fmt -- --check
+        run: cargo fmt --all -- --check
 
       - name: Clippy
-        run: cargo clippy -- -D warnings
-        env:
-          SKIP_SPA_BUILD: "1"
+        run: cargo clippy --all-targets --locked -- -D warnings
 
       - name: Run tests
-        run: cargo test --lib --test api_e2e --test mcp_e2e
-        env:
-          SKIP_SPA_BUILD: "1"
+        run: cargo test --locked --lib --test api_e2e --test mcp_e2e
 
       - name: Run server acceptance tests
-        run: cargo test --test acceptance
-        env:
-          SKIP_SPA_BUILD: "1"
+        run: cargo test --locked --test acceptance
 
       - name: Run PostgreSQL load test
-        run: cargo test --test load -- --nocapture
-        env:
-          SKIP_SPA_BUILD: "1"
+        run: cargo test --locked --test load -- --nocapture

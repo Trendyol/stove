@@ -4,4 +4,4 @@
 # Delegates to lint.sh which auto-detects changed files.
 
 REPO_ROOT="$(git rev-parse --show-toplevel)"
-exec "$REPO_ROOT/lint.sh" --check
+exec "$REPO_ROOT/lint.sh" --check --staged

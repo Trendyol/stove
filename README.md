@@ -701,7 +701,8 @@ See [provided instances docs](https://trendyol.github.io/stove/Components/11-pro
 
 *Using Stove? Open a PR to add your company.*
 
-**Contributions:** [Issues](https://github.com/Trendyol/stove/issues) and PRs welcome  
+**Contributions:** [Issues](https://github.com/Trendyol/stove/issues) and PRs welcome. See [local checks and CI](CONTRIBUTING.md).
+
 **License:** Apache 2.0
 
 > **Note:** Production-ready and used at scale. API still evolving; breaking changes possible in minor releases with

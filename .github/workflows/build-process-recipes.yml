@@ -23,12 +23,10 @@ jobs:
   go-showcase:
     runs-on: ubuntu-latest
     permissions:
+      contents: read
       checks: write
       pull-requests: write
-    services:
-      docker:
-        image: docker:dind
-        options: --privileged
+    timeout-minutes: 45
 
     steps:
       - uses: actions/checkout@v7
@@ -41,56 +39,23 @@ jobs:
       - uses: actions/setup-go@v7
         with:
           go-version-file: recipes/process/golang/go-showcase/go.mod
+          cache-dependency-path: recipes/process/golang/go-showcase/go.sum
 
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v6
         with:
-          gradle-version: current
-          cache-read-only: false
+          cache-read-only: ${{ github.ref != 'refs/heads/main' }}
           cache-encryption-key: ${{ secrets.GRADLE_CACHE_ENCRYPTION_KEY }}
 
-      - name: Cache Gradle dependencies
-        uses: actions/cache@v6
-        with:
-          path: |
-            ~/.gradle/caches
-            ~/.gradle/wrapper
-          key: gradle-process-recipes-${{ runner.os }}-${{ hashFiles('recipes/process/**/gradle/wrapper/gradle-wrapper.properties') }}
-          restore-keys: |
-            gradle-process-recipes-${{ runner.os }}-
-
-      # Cache Docker images for testcontainers
-      - name: Cache Docker images
-        uses: actions/cache@v6
-        with:
-          path: /var/lib/docker
-          key: docker-process-recipes-${{ runner.os }}
-          restore-keys: |
-            docker-process-recipes-${{ runner.os }}-
-
-      - name: Run E2E Tests (all Kafka libraries)
+      - name: Run process and container E2E tests
         env:
           GOTOOLCHAIN: auto
         run: |
           GO_EXECUTABLE="$(command -v go)"
           export GO_EXECUTABLE
           "$GO_EXECUTABLE" version
-          gradle -p recipes/process/golang/go-showcase e2eTest \
-            --build-cache \
-            --no-daemon
-
-      - name: Run Container E2E Tests (sarama)
-        env:
-          GOTOOLCHAIN: auto
-        run: |
-          GO_EXECUTABLE="$(command -v go)"
-          export GO_EXECUTABLE
-          "$GO_EXECUTABLE" version
-          gradle -p recipes/process/golang/go-showcase e2eTest-container \
-            --build-cache \
-            --no-daemon && \
-          gradle -p recipes/process/golang/go-showcase removeContainerImage \
-            --no-daemon
+          ./recipes/process/golang/go-showcase/gradlew -p recipes/process/golang/go-showcase \
+            e2eTest e2eTest-container --build-cache --no-daemon
 
       # Upload test results
       - name: Upload test results
