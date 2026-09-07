@@ -3,7 +3,7 @@ use std::time::Duration;
 use diesel::dsl::max;
 use diesel::prelude::*;
 use diesel::sql_types::Text;
-use fallible_iterator::FallibleIterator;
+use postgres::fallible_iterator::FallibleIterator;
 use tokio::sync::mpsc;
 
 use super::PostgresBackend;
