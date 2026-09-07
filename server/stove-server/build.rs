@@ -45,6 +45,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 /// Build the SPA when `spa/dist/index.html` is missing or SPA sources changed.
 /// Skipped if `SKIP_SPA_BUILD=1` (useful for CI when SPA is pre-built).
 fn build_spa() {
+  println!("cargo:rerun-if-env-changed=SKIP_SPA_BUILD");
   if std::env::var("SKIP_SPA_BUILD").unwrap_or_default() == "1" {
     return;
   }
@@ -55,6 +56,7 @@ fn build_spa() {
   println!("cargo:rerun-if-changed=spa/src");
   println!("cargo:rerun-if-changed=spa/index.html");
   println!("cargo:rerun-if-changed=spa/package.json");
+  println!("cargo:rerun-if-changed=spa/package-lock.json");
 
   if !spa_dir.join("package.json").exists() {
     eprintln!("cargo:warning=spa/package.json not found — skipping SPA build");
@@ -66,9 +68,9 @@ fn build_spa() {
     run_npm(spa_dir, &["install"]);
   }
 
-  // Always rebuild — cargo only re-runs build.rs when spa/src changes,
-  // and Vite's own caching keeps no-op builds fast.
-  run_npm(spa_dir, &["run", "build"]);
+  // Cargo already holds its build lock. Type generation runs before Cargo through
+  // `npm run build` / `just build`; this internal hook only bundles the SPA.
+  run_npm(spa_dir, &["run", "build:assets"]);
 }
 
 fn run_npm(dir: &Path, args: &[&str]) {

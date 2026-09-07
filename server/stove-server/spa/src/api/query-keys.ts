@@ -3,7 +3,6 @@ export const dashboardKeys = {
   meta: ["meta"] as const,
   runsRoot: ["runs"] as const,
   runs: (appName: string) => ["runs", appName] as const,
-  filteredRuns: (appName: string, metadataKey: string) => ["runs", appName, metadataKey] as const,
   testsRoot: ["tests"] as const,
   tests: (runId: string) => ["tests", runId] as const,
   entries: (runId: string, testId: string) => ["entries", runId, testId] as const,

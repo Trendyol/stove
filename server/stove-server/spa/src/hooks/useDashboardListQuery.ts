@@ -1,11 +1,11 @@
-import { type QueryKey, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import type { DashboardQuery } from "../api/dashboard-queries";
 import { loadAndReconcileDashboardData } from "../api/live-cache";
 
 const EMPTY_LIST: never[] = [];
 
 interface DashboardListQueryOptions<T> {
-  queryKey: QueryKey;
-  load: (signal: AbortSignal) => Promise<T[]>;
+  query: DashboardQuery<T>;
   liveConnected: boolean;
   pollWhileDisconnected: boolean;
 }
@@ -17,16 +17,14 @@ export type DashboardListQuery<T> =
 
 /** Shared loading, reconciliation, and fallback-polling policy for visible dashboard lists. */
 export function useDashboardListQuery<T>({
-  queryKey,
-  load,
+  query: descriptor,
   liveConnected,
   pollWhileDisconnected,
 }: DashboardListQueryOptions<T>): DashboardListQuery<T> {
   const queryClient = useQueryClient();
   const query = useQuery<T[], Error>({
-    queryKey,
-    queryFn: ({ signal }) =>
-      loadAndReconcileDashboardData(queryClient, queryKey, () => load(signal)),
+    queryKey: descriptor.queryKey,
+    queryFn: ({ signal }) => loadAndReconcileDashboardData(queryClient, descriptor, signal),
     refetchInterval: !liveConnected && pollWhileDisconnected ? 5000 : false,
     staleTime: liveConnected ? Number.POSITIVE_INFINITY : 0,
   });

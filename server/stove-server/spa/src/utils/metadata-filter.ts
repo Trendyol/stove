@@ -2,7 +2,7 @@ import type { Run } from "../api/types";
 
 export type MetadataFilter = Readonly<Record<string, readonly string[]>>;
 
-export interface MetadataSelection {
+interface MetadataSelection {
   key: string;
   value: string;
 }

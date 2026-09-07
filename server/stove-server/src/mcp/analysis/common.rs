@@ -16,7 +16,6 @@ use super::evidence::clip_opt;
 use super::evidence::span_preview;
 use crate::mcp::contract::ArgName;
 use crate::mcp::contract::RunStatusValue;
-use crate::mcp::contract::STATUS_ERROR;
 use crate::mcp::contract::ToolName;
 use crate::storage::models::Entry;
 use crate::storage::models::Run;
@@ -283,11 +282,7 @@ pub(super) fn is_failed_status(status: &TestStatus) -> bool {
 }
 
 pub(super) fn is_failed_span(span: &Span) -> bool {
-  span.status.eq_ignore_ascii_case(STATUS_ERROR)
-    || span
-      .status
-      .eq_ignore_ascii_case(RunStatusValue::Failed.as_str())
-    || span.exception_type.is_some()
+  span.status == crate::storage::models::SpanStatus::Error || span.exception_type.is_some()
 }
 
 pub(super) fn tool_call(tool: ToolName, arguments: Value) -> Value {

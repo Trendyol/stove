@@ -30,6 +30,9 @@ pub enum AppError {
   #[error("Serialization error: {0}")]
   Serialization(#[from] serde_json::Error),
 
+  #[error("Invalid stored field: {0}")]
+  InvalidStoredField(&'static str),
+
   #[error("Invalid dashboard event: {0}")]
   InvalidEvent(String),
 
@@ -51,6 +54,7 @@ impl axum::response::IntoResponse for AppError {
       | AppError::Migration(_)
       | AppError::Postgres(_)
       | AppError::PostgresTls(_)
+      | AppError::InvalidStoredField(_)
       | AppError::Startup(_) => axum::http::StatusCode::INTERNAL_SERVER_ERROR,
     };
     let body = axum::Json(serde_json::json!({ "error": self.to_string() }));

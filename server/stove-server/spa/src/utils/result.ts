@@ -3,7 +3,7 @@ export function isFailed(result: string): boolean {
   return upper === "FAILED" || upper === "ERROR";
 }
 
-export function isSuccessful(result: string): boolean {
+function isSuccessful(result: string): boolean {
   const upper = result.toUpperCase();
   return upper === "PASSED" || upper === "OK";
 }

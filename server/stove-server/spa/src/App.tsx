@@ -8,6 +8,9 @@ import { pathForRoute, routeForPath, type StoveRoute } from "./utils/routes";
 export default function App() {
   const [route, setRoute] = useState<StoveRoute>(() => routeForPath(window.location.pathname));
   const {
+    error,
+    loading,
+    retry,
     apps,
     activeApp,
     latestRun,
@@ -51,6 +54,15 @@ export default function App() {
         versionMismatchSummary={versionMismatchSummary}
         onNavigateAdmin={(event) => navigate(event, "admin")}
       />
+      {route === "dashboard" && error && (
+        <div role="alert" className="stove-admin-error flex items-center justify-between">
+          <span>Could not load dashboard data: {error.message}</span>
+          <button type="button" onClick={() => void retry()}>
+            Retry
+          </button>
+        </div>
+      )}
+      {route === "dashboard" && loading && !error && <div role="status">Loading dashboard…</div>}
       {route === "admin" ? (
         <AdminPage apps={apps} onNavigateDashboard={(event) => navigate(event, "dashboard")} />
       ) : (

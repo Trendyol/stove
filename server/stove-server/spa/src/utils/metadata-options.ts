@@ -1,11 +1,11 @@
 import type { Run } from "../api/types";
 
-export interface MetadataOption {
+interface MetadataOption {
   key: string;
   values: MetadataValueOption[];
 }
 
-export interface MetadataValueOption {
+interface MetadataValueOption {
   value: string;
   count: number;
 }

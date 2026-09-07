@@ -185,7 +185,7 @@ fn full_event_lifecycle() {
       service_name: "product-api".into(),
       start_time_nanos: 1_000_000_000,
       end_time_nanos: 1_100_000_000,
-      status: "OK".into(),
+      status: crate::storage::models::SpanStatus::Ok,
       attributes: Some(r#"{"http.method":"POST"}"#.into()),
       exception_type: None,
       exception_message: None,
@@ -955,4 +955,124 @@ fn sqlite_database_explorer_caps_results_and_rejects_multiple_statements() {
       .execute_database_query("SELECT 1; SELECT 2", 100)
       .is_err()
   );
+}
+
+#[test]
+fn corrupt_run_fields_are_errors_instead_of_fabricated_defaults() {
+  for (field, value) in [
+    ("status", "UNKNOWN"),
+    ("systems", "not-json"),
+    ("metadata", "{\"count\":42}"),
+  ] {
+    let repo = test_repo();
+    repo
+      .save_run_start("run-1", "app", "2026-09-07T10:00:00Z", &[])
+      .unwrap();
+    repo
+      .lock_write_db()
+      .conn()
+      .batch_execute(&format!("UPDATE runs SET {field} = '{value}'"))
+      .unwrap();
+    assert!(matches!(
+      repo.get_run("run-1"),
+      Err(crate::error::AppError::InvalidStoredField(_))
+    ));
+    assert!(repo.get_runs(None).is_err());
+    if field != "systems" {
+      assert!(repo.get_apps().is_err());
+    }
+  }
+}
+
+#[test]
+fn corrupt_test_fields_are_errors_instead_of_fabricated_defaults() {
+  for (field, value) in [("status", "UNKNOWN"), ("test_path", "not-json")] {
+    let repo = test_repo();
+    repo
+      .save_run_start("run-1", "app", "2026-09-07T10:00:00Z", &[])
+      .unwrap();
+    repo
+      .save_test_start(
+        "run-1",
+        "test-1",
+        "test",
+        "spec",
+        &[],
+        "2026-09-07T10:00:00Z",
+      )
+      .unwrap();
+    repo
+      .lock_write_db()
+      .conn()
+      .batch_execute(&format!("UPDATE tests SET {field} = '{value}'"))
+      .unwrap();
+    assert!(matches!(
+      repo.get_tests_for_run("run-1"),
+      Err(crate::error::AppError::InvalidStoredField(_))
+    ));
+  }
+}
+
+#[test]
+fn corrupt_entry_fields_fail_both_raw_and_collapsed_reads() {
+  for (field, value) in [("result", "UNKNOWN"), ("assertion_id", "")] {
+    let repo = test_repo();
+    repo
+      .save_run_start("run-1", "app", "2026-09-07T10:00:00Z", &[])
+      .unwrap();
+    repo
+      .lock_write_db()
+      .conn()
+      .batch_execute(
+        "INSERT INTO entries (run_id, test_id, timestamp, system, action, result, assertion_id)
+         VALUES ('run-1', 'test-1', '2026-09-07T10:00:00Z', 'HTTP', 'GET /', 'PASSED', 'assertion-1')",
+      )
+      .unwrap();
+    repo
+      .lock_write_db()
+      .conn()
+      .batch_execute(&format!("UPDATE entries SET {field} = '{value}'"))
+      .unwrap();
+    for result in [
+      repo.get_entries("run-1", "test-1"),
+      repo.get_raw_entries("run-1", "test-1"),
+    ] {
+      assert!(matches!(
+        result,
+        Err(crate::error::AppError::InvalidStoredField(_))
+      ));
+    }
+  }
+}
+
+#[test]
+fn corrupt_span_status_fails_trace_and_test_reads() {
+  let repo = test_repo();
+  repo
+    .save_run_start("run-1", "app", "2026-09-07T10:00:00Z", &[])
+    .unwrap();
+  repo
+    .save_span(&NewSpan {
+      run_id: "run-1".into(),
+      trace_id: "trace-1".into(),
+      span_id: "span-1".into(),
+      status: "OK".into(),
+      attributes: r#"{"stove.test.id":"test-1"}"#.into(),
+      ..Default::default()
+    })
+    .unwrap();
+  repo
+    .lock_write_db()
+    .conn()
+    .batch_execute("UPDATE spans SET status = 'UNKNOWN'")
+    .unwrap();
+  for result in [
+    repo.get_trace("trace-1"),
+    repo.get_spans_for_test("run-1", "test-1"),
+  ] {
+    assert!(matches!(
+      result,
+      Err(crate::error::AppError::InvalidStoredField("spans.status"))
+    ));
+  }
 }

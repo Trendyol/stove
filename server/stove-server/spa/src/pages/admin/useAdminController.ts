@@ -1,120 +1,119 @@
-import { useQueryClient } from "@tanstack/react-query";
-import { useEffect, useState } from "react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useState } from "react";
 import { api } from "../../api/client";
-import type { AdminStatus, PurgePreview } from "../../api/types";
+import { adminKeys, refreshDatabaseQueries } from "./admin-queries";
+
+type AdminCommand =
+  | { kind: "retention"; runsPerApp: number }
+  | { kind: "purge"; runIds: string[]; includeRunning: boolean }
+  | { kind: "clear" };
+
+interface PurgeFilters {
+  appName: string;
+  olderThan: string;
+  includeRunning: boolean;
+}
 
 export function useAdminController() {
   const queryClient = useQueryClient();
-  const [status, setStatus] = useState<AdminStatus | null>(null);
-  const [retention, setRetention] = useState(1);
-  const [appName, setAppName] = useState("");
-  const [olderThan, setOlderThan] = useState("");
-  const [includeRunning, setIncludeRunning] = useState(false);
-  const [preview, setPreview] = useState<PurgePreview | null>(null);
-  const [busy, setBusy] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    const controller = new AbortController();
-    void loadStatus(controller.signal)
-      .then((next) => {
-        setStatus(next);
-        setRetention(next.retention_runs_per_app);
-      })
-      .catch((reason: unknown) => {
-        if (!controller.signal.aborted) setError(errorMessage(reason));
-      });
-    return () => controller.abort();
-  }, []);
-
-  const runAction = async (action: () => Promise<void>) => {
-    setBusy(true);
-    setError(null);
-    try {
-      await action();
-    } catch (reason) {
-      setError(errorMessage(reason));
-    } finally {
-      setBusy(false);
-    }
+  const statusQuery = useQuery({
+    queryKey: adminKeys.status,
+    queryFn: ({ signal }) => api.getAdminStatus(signal),
+  });
+  const [retentionDraft, setRetention] = useState<number>();
+  const [filters, setFilters] = useState<PurgeFilters>({
+    appName: "",
+    olderThan: "",
+    includeRunning: false,
+  });
+  const previewMutation = useMutation({ mutationFn: previewPurge });
+  const refresh = () => {
+    previewMutation.reset();
+    return refreshDatabaseQueries(queryClient);
   };
+  const command = useMutation({
+    mutationFn: executeCommand,
+    onMutate: () => previewMutation.reset(),
+    onSuccess: async (_, submitted) => {
+      await refreshDatabaseQueries(queryClient);
+      if (submitted.kind === "retention") {
+        setRetention((draft) =>
+          draft !== undefined && normalizeRetention(draft) === submitted.runsPerApp
+            ? undefined
+            : draft,
+        );
+      }
+    },
+  });
+  const retention = retentionDraft ?? statusQuery.data?.retention_runs_per_app ?? 1;
+  const preview = previewMutation.data ?? null;
 
-  const refresh = async () => {
-    setStatus(await loadStatus());
-    await queryClient.resetQueries();
+  const updateFilter = (patch: Partial<PurgeFilters>) => {
+    setFilters((current) => ({ ...current, ...patch }));
+    // Detach the old preview so a late response cannot restore obsolete run ids.
+    previewMutation.reset();
   };
-
-  const updateRetention = () =>
-    runAction(async () => {
-      setStatus(await api.updateRetention(normalizeRetention(retention)));
-      setPreview(null);
-      await queryClient.resetQueries();
-    });
-
-  const previewPurge = () =>
-    runAction(async () => {
-      setPreview(
-        await api.previewPurge({
-          ...(appName ? { app_name: appName } : {}),
-          ...(olderThan ? { older_than: new Date(olderThan).toISOString() } : {}),
-          include_running: includeRunning,
-        }),
-      );
-    });
-
   const purge = () => {
-    if (!preview?.run_count) return;
-    if (!confirm(`Purge ${preview.run_count} previewed run(s)? This cannot be undone.`)) return;
-    void runAction(async () => {
-      await api.purgeRuns(preview.run_ids, includeRunning);
-      setPreview(null);
-      await refresh();
+    if (
+      !preview?.run_count ||
+      !confirm(`Purge ${preview.run_count} previewed run(s)? This cannot be undone.`)
+    )
+      return;
+    command.mutate({
+      kind: "purge",
+      runIds: preview.run_ids,
+      includeRunning: filters.includeRunning,
     });
   };
-
   const clearAll = () => {
-    if (!confirm("Clear all stored data? This cannot be undone.")) return;
-    void runAction(async () => {
-      await api.clearAll();
-      setPreview(null);
-      await refresh();
-    });
-  };
-
-  const updatePurgeFilter = <T>(setter: (value: T) => void, value: T) => {
-    setter(value);
-    setPreview(null);
+    if (confirm("Clear all stored data? This cannot be undone.")) command.mutate({ kind: "clear" });
   };
 
   return {
-    status,
+    status: statusQuery.data ?? null,
     retention,
     setRetention,
-    appName,
-    setAppName: (value: string) => updatePurgeFilter(setAppName, value),
-    olderThan,
-    setOlderThan: (value: string) => updatePurgeFilter(setOlderThan, value),
-    includeRunning,
-    setIncludeRunning: (value: boolean) => updatePurgeFilter(setIncludeRunning, value),
+    ...filters,
+    setAppName: (appName: string) => updateFilter({ appName }),
+    setOlderThan: (olderThan: string) => updateFilter({ olderThan }),
+    setIncludeRunning: (includeRunning: boolean) => updateFilter({ includeRunning }),
     preview,
-    busy,
-    error,
-    updateRetention,
-    previewPurge,
+    busy: command.isPending || previewMutation.isPending || statusQuery.isPending,
+    error: (command.error ?? previewMutation.error ?? statusQuery.error)?.message ?? null,
+    updateRetention: () =>
+      command.mutate({ kind: "retention", runsPerApp: normalizeRetention(retention) }),
+    previewPurge: () => {
+      command.reset();
+      previewMutation.mutate(filters);
+    },
     purge,
     clearAll,
     refresh,
   };
 }
 
-function loadStatus(signal?: AbortSignal): Promise<AdminStatus> {
-  return api.getAdminStatus(signal);
+async function executeCommand(command: AdminCommand): Promise<void> {
+  switch (command.kind) {
+    case "retention":
+      await api.updateRetention(command.runsPerApp);
+      return;
+    case "purge":
+      await api.purgeRuns(command.runIds, command.includeRunning);
+      return;
+    case "clear":
+      await api.clearAll();
+      return;
+  }
+}
+
+function previewPurge({ appName, olderThan, includeRunning }: PurgeFilters) {
+  return api.previewPurge({
+    ...(appName ? { app_name: appName } : {}),
+    ...(olderThan ? { older_than: new Date(olderThan).toISOString() } : {}),
+    include_running: includeRunning,
+  });
 }
 
 function normalizeRetention(value: number): number {
-  return Math.max(0, Math.trunc(value));
-}
-
-function errorMessage(reason: unknown): string {
-  return reason instanceof Error ? reason.message : String(reason);
+  return Number.isFinite(value) ? Math.max(0, Math.trunc(value)) : 1;
 }

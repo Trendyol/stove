@@ -71,7 +71,7 @@ impl PostgresBackend {
         .values((
           live_events::event_id.eq(&identity.event_id),
           live_events::run_id.eq(&event.live.run_id),
-          live_events::event_type.eq(&event.live.event_type),
+          live_events::event_type.eq(event.live.event_type()),
           live_events::payload.eq(serde_json::json!({})),
         ))
         .returning(live_events::id)

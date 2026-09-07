@@ -6,7 +6,7 @@ import type {
   SnapshotWorkerResponse,
 } from "../workers/snapshot-state.protocol";
 
-export type SnapshotExplorerState =
+type SnapshotExplorerState =
   | { kind: "loading" }
   | { kind: "raw"; value: string; detailed: boolean; metrics: SnapshotMetric[] }
   | {

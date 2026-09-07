@@ -4,15 +4,13 @@ import createJiti from "jiti";
 
 const jiti = createJiti(import.meta.url);
 const {
-  tryFormatJsonDeep,
   parseJsonDeep,
   filterJsonByQuery,
   describeJsonValue,
-  getJsonPreviewKeys,
 } = await jiti.import("../src/utils/json.ts");
 
-test("tryFormatJsonDeep expands embedded JSON strings inside structured snapshot payloads", () => {
-  const formatted = tryFormatJsonDeep(
+test("parseJsonDeep expands embedded JSON strings inside structured snapshot payloads", () => {
+  const parsed = parseJsonDeep(
     JSON.stringify({
       outboxEvents: [
         JSON.stringify({
@@ -29,10 +27,10 @@ test("tryFormatJsonDeep expands embedded JSON strings inside structured snapshot
     }),
   );
 
-  assert.match(formatted, /"outboxEvents": \[/);
-  assert.match(formatted, /"type": "ProductCreated"/);
-  assert.match(formatted, /"productId": 42/);
-  assert.doesNotMatch(formatted, /\\"type\\"/);
+  assert.deepEqual(parsed.outboxEvents, [
+    { type: "ProductCreated", payload: { productId: 42, sellerId: 99 } },
+  ]);
+  assert.deepEqual(parsed.metadata, { count: 1 });
 });
 
 test("parseJsonDeep returns structured nested values for snapshot state rendering", () => {
@@ -61,7 +59,7 @@ test("parseJsonDeep returns structured nested values for snapshot state renderin
   });
 });
 
-test("snapshot json helpers describe and preview object roots for compact cards", () => {
+test("snapshot json helpers describe object roots for compact cards", () => {
   const parsed = parseJsonDeep(
     JSON.stringify({
       registeredStubs: [],
@@ -74,12 +72,6 @@ test("snapshot json helpers describe and preview object roots for compact cards"
   );
 
   assert.equal(describeJsonValue(parsed), "4 keys");
-  assert.deepEqual(getJsonPreviewKeys(parsed), [
-    "registeredStubs",
-    "servedRequests",
-    "unmatchedRequests",
-    "metadata",
-  ]);
 });
 
 test("filterJsonByQuery narrows state by matching property names while preserving subtree context", () => {

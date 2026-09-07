@@ -1,0 +1,822 @@
+/* ── Sidebar ─────────────────────────────────────────────────────── */
+
+.stove-sidebar {
+  position: relative;
+  display: flex;
+  flex-shrink: 0;
+  flex-direction: column;
+  width: var(--sidebar-width);
+  overflow: hidden;
+  border-right: 1px solid var(--stove-border);
+}
+
+.stove-app-picker {
+  border-bottom: 1px solid var(--stove-border);
+  padding: 16px 14px 14px;
+}
+
+.stove-app-picker > label,
+.stove-sidebar-section-label {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  color: var(--stove-text-muted);
+  font-family: var(--font-mono);
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+.stove-app-picker > label {
+  margin-bottom: 8px;
+}
+
+.stove-app-select-wrap {
+  position: relative;
+  display: grid;
+  grid-template-columns: 32px minmax(0, 1fr) 16px;
+  align-items: center;
+  gap: 9px;
+  border: 1px solid var(--stove-border);
+  border-radius: 12px;
+  background: var(--stove-surface);
+  box-shadow: var(--stove-shadow-soft);
+  padding: 7px 9px;
+}
+
+.stove-app-glyph {
+  display: grid;
+  width: 30px;
+  height: 30px;
+  place-items: center;
+  border-radius: 9px;
+  background: linear-gradient(145deg, var(--stove-ember), #d24b2f);
+  color: white;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: 700;
+  box-shadow: 0 5px 14px rgba(239, 107, 45, 0.22);
+}
+
+.stove-app-select-wrap select {
+  min-width: 0;
+  width: 100%;
+  appearance: none;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  color: var(--stove-text-heading);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.stove-app-select-wrap svg {
+  width: 14px;
+  color: var(--stove-text-muted);
+  pointer-events: none;
+}
+
+.stove-run-picker {
+  display: grid;
+  gap: 8px;
+  border-bottom: 1px solid var(--stove-border);
+  padding: 12px 14px;
+}
+
+.stove-run-picker > select {
+  min-width: 0;
+  width: 100%;
+  border: 1px solid var(--stove-border);
+  border-radius: 8px;
+  outline: 0;
+  background: var(--stove-surface);
+  padding: 7px 8px;
+  color: var(--stove-text);
+  font-size: 10px;
+}
+
+.stove-metadata-filters {
+  display: grid;
+  gap: 8px;
+  margin-top: 2px;
+}
+
+.stove-metadata-filter-heading {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 6px;
+}
+
+.stove-metadata-filter-toggle,
+.stove-metadata-clear,
+.stove-metadata-active-chip,
+.stove-metadata-value {
+  cursor: pointer;
+  border: 1px solid var(--stove-border);
+  color: var(--stove-text-secondary);
+}
+
+.stove-metadata-filter-toggle {
+  display: grid;
+  min-width: 0;
+  grid-template-columns: 27px minmax(0, 1fr) auto auto;
+  align-items: center;
+  gap: 8px;
+  border-radius: 10px;
+  background: var(--stove-surface);
+  padding: 7px 8px;
+  text-align: left;
+  transition:
+    border-color 140ms ease,
+    background 140ms ease;
+}
+
+.stove-metadata-filter-toggle:hover {
+  border-color: var(--stove-border-strong);
+  background: var(--stove-hover);
+}
+
+.stove-filter-glyph {
+  display: grid;
+  width: 25px;
+  height: 25px;
+  place-content: center;
+  gap: 3px;
+  border-radius: 7px;
+  background: var(--stove-blue-soft);
+}
+
+.stove-filter-glyph i {
+  display: block;
+  height: 1px;
+  border-radius: 999px;
+  background: var(--stove-blue);
+}
+
+.stove-filter-glyph i:nth-child(1) {
+  width: 13px;
+}
+
+.stove-filter-glyph i:nth-child(2) {
+  width: 9px;
+}
+
+.stove-filter-glyph i:nth-child(3) {
+  width: 5px;
+}
+
+.stove-metadata-filter-copy {
+  min-width: 0;
+}
+
+.stove-metadata-filter-copy strong,
+.stove-metadata-filter-copy small {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.stove-metadata-filter-copy strong {
+  color: var(--stove-text-heading);
+  font-size: 10px;
+  font-weight: 650;
+}
+
+.stove-metadata-filter-copy small {
+  margin-top: 2px;
+  color: var(--stove-text-muted);
+  font-size: 8px;
+}
+
+.stove-metadata-filter-count {
+  display: grid;
+  min-width: 20px;
+  height: 20px;
+  place-items: center;
+  border-radius: 999px;
+  background: var(--stove-blue);
+  color: var(--stove-surface);
+  font-family: var(--font-mono);
+  font-size: 9px;
+  font-weight: 700;
+}
+
+.stove-metadata-filter-chevron {
+  color: var(--stove-text-muted);
+  font-size: 17px;
+  line-height: 1;
+  transform: rotate(90deg);
+  transition: transform 140ms ease;
+}
+
+.stove-metadata-filter-chevron.is-expanded {
+  transform: rotate(-90deg);
+}
+
+.stove-metadata-clear {
+  border-radius: 8px;
+  background: transparent;
+  padding: 7px 8px;
+  color: var(--stove-ember);
+  font-size: 9px;
+  font-weight: 650;
+}
+
+.stove-metadata-clear:hover {
+  border-color: color-mix(in srgb, var(--stove-ember) 55%, var(--stove-border));
+  background: color-mix(in srgb, var(--stove-ember) 8%, transparent);
+}
+
+.stove-metadata-active {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.stove-metadata-active li {
+  display: flex;
+  min-width: 0;
+  max-width: 100%;
+}
+
+.stove-metadata-active-chip {
+  display: inline-flex;
+  min-width: 0;
+  max-width: 100%;
+  align-items: center;
+  gap: 4px;
+  border-color: color-mix(in srgb, var(--stove-blue) 36%, var(--stove-border));
+  border-radius: 999px;
+  background: var(--stove-blue-soft);
+  padding: 3px 6px 3px 7px;
+  font-family: var(--font-mono);
+  font-size: 8px;
+}
+
+.stove-metadata-active-chip span:first-child {
+  overflow: hidden;
+  color: var(--stove-text-muted);
+  text-overflow: ellipsis;
+}
+
+.stove-metadata-active-chip strong {
+  overflow: hidden;
+  color: var(--stove-blue);
+  font-weight: 650;
+  text-overflow: ellipsis;
+}
+
+.stove-metadata-active-chip span:last-child {
+  color: var(--stove-blue);
+  font-size: 12px;
+  line-height: 1;
+}
+
+.stove-metadata-active-chip:hover {
+  border-color: var(--stove-blue);
+}
+
+.stove-metadata-facet-panel {
+  display: grid;
+  gap: 9px;
+  overflow: hidden;
+  border: 1px solid var(--stove-border);
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--stove-card) 62%, transparent);
+  padding: 9px;
+}
+
+.stove-metadata-facet-panel[hidden] {
+  display: none;
+}
+
+.stove-metadata-facet-panel > p {
+  margin: 0;
+  color: var(--stove-text-muted);
+  font-size: 8px;
+  line-height: 1.45;
+}
+
+.stove-metadata-facet-list {
+  display: grid;
+  max-height: 210px;
+  gap: 11px;
+  overflow-y: auto;
+  padding-right: 2px;
+}
+
+.stove-metadata-facet {
+  min-width: 0;
+  margin: 0;
+  border: 0;
+  padding: 0;
+}
+
+.stove-metadata-facet legend {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 5px;
+  color: var(--stove-text-secondary);
+  font-family: var(--font-mono);
+  font-size: 8px;
+}
+
+.stove-metadata-facet legend span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.stove-metadata-facet legend strong {
+  flex: none;
+  color: var(--stove-blue);
+  font-size: 7px;
+  font-weight: 650;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.stove-metadata-values {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+}
+
+.stove-metadata-value {
+  display: inline-grid;
+  min-width: 0;
+  max-width: 100%;
+  grid-template-columns: minmax(0, auto) auto;
+  align-items: center;
+  gap: 6px;
+  border-radius: 7px;
+  background: var(--stove-surface);
+  padding: 4px 5px 4px 7px;
+  font-size: 8px;
+  transition:
+    border-color 120ms ease,
+    background 120ms ease,
+    color 120ms ease;
+}
+
+.stove-metadata-value:hover {
+  border-color: var(--stove-border-strong);
+  color: var(--stove-text-heading);
+}
+
+.stove-metadata-value.is-selected {
+  border-color: color-mix(in srgb, var(--stove-blue) 58%, var(--stove-border));
+  background: var(--stove-blue-soft);
+  color: var(--stove-blue);
+}
+
+.stove-metadata-value-label {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.stove-metadata-value-count {
+  display: grid;
+  min-width: 17px;
+  height: 17px;
+  place-items: center;
+  border-radius: 5px;
+  background: var(--stove-card);
+  color: var(--stove-text-muted);
+  font-family: var(--font-mono);
+  font-size: 7px;
+}
+
+.stove-metadata-value.is-selected .stove-metadata-value-count {
+  background: var(--stove-blue);
+  color: var(--stove-surface);
+}
+
+.stove-metadata-empty {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-top: 2px;
+  border-top: 1px dashed var(--stove-border);
+  padding-top: 8px;
+  color: var(--stove-text-muted);
+  font-size: 8px;
+}
+
+.stove-metadata-empty span {
+  font-family: var(--font-mono);
+  font-weight: 650;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.stove-run-summary {
+  border-bottom: 1px solid var(--stove-border);
+  padding: 14px;
+}
+
+.stove-run-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.stove-run-heading > div {
+  min-width: 0;
+}
+
+.stove-run-heading span {
+  display: block;
+  color: var(--stove-text-muted);
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.stove-run-heading code {
+  display: block;
+  overflow: hidden;
+  margin-top: 3px;
+  color: var(--stove-text-secondary);
+  font-family: var(--font-mono);
+  font-size: 10px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.stove-run-progress {
+  margin-top: 13px;
+}
+
+.stove-run-progress > div {
+  height: 4px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: var(--stove-card);
+}
+
+.stove-run-progress > div span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, var(--stove-ember), var(--stove-green));
+  box-shadow: 0 0 12px color-mix(in srgb, var(--stove-green) 30%, transparent);
+  transition: width 300ms ease;
+}
+
+.stove-run-progress p {
+  display: flex;
+  margin: 7px 0 0;
+  color: var(--stove-text-muted);
+  font-size: 10px;
+}
+
+.stove-run-progress p strong {
+  margin-right: 4px;
+  color: var(--stove-text-secondary);
+}
+
+.stove-run-progress p span {
+  margin-left: auto;
+  font-family: var(--font-mono);
+}
+
+.stove-run-stats {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 5px;
+  margin-top: 12px;
+}
+
+.stove-run-stats > div {
+  border: 1px solid var(--stove-border);
+  border-radius: 9px;
+  background: color-mix(in srgb, var(--stove-card) 55%, transparent);
+  padding: 7px 3px;
+  text-align: center;
+}
+
+.stove-run-stats > div > div {
+  color: var(--stove-text-heading);
+  font-family: var(--font-mono);
+  font-size: 15px;
+  font-weight: 600;
+  line-height: 1;
+}
+
+.stove-run-stats > div > span {
+  display: block;
+  margin-top: 5px;
+  color: var(--stove-text-muted);
+  font-size: 9px;
+}
+
+.stove-test-filters {
+  display: grid;
+  gap: 8px;
+  border-bottom: 1px solid var(--stove-border);
+  padding: 11px 12px;
+}
+
+.stove-filter-tabs {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 3px;
+  border: 1px solid var(--stove-border);
+  border-radius: 9px;
+  background: color-mix(in srgb, var(--stove-base) 70%, transparent);
+  padding: 3px;
+}
+
+.stove-filter-tabs button {
+  cursor: pointer;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  padding: 5px;
+  color: var(--stove-text-muted);
+  font-size: 10px;
+  text-transform: capitalize;
+}
+
+.stove-filter-tabs button.is-active {
+  background: var(--stove-surface);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  color: var(--stove-text-heading);
+}
+
+.stove-test-search {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  border: 1px solid var(--stove-border);
+  border-radius: 9px;
+  background: var(--stove-surface);
+  padding: 7px 9px;
+  color: var(--stove-text-muted);
+}
+
+.stove-test-search svg {
+  width: 13px;
+  flex-shrink: 0;
+  stroke-width: 1.5;
+}
+
+.stove-test-search input {
+  min-width: 0;
+  width: 100%;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  color: var(--stove-text);
+  font-size: 11px;
+}
+
+.stove-test-search input::placeholder {
+  color: var(--stove-text-muted);
+}
+
+.stove-test-tree-panel {
+  min-height: 0;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  padding: 8px 5px 12px;
+}
+
+.stove-test-tree-scroll {
+  min-height: 0;
+  flex: 1;
+  margin: 0;
+  overflow-x: hidden;
+  overflow-y: auto;
+  padding: 0;
+  list-style: none;
+}
+
+.stove-test-tree-scroll.virtual-list-window {
+  height: auto;
+}
+
+.stove-sidebar-section-label {
+  padding: 3px 9px 8px;
+}
+
+.stove-sidebar-section-label span:last-child {
+  border-radius: 999px;
+  background: var(--stove-card);
+  padding: 2px 6px;
+  letter-spacing: 0;
+}
+
+.stove-tree-group {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  gap: 5px;
+  cursor: pointer;
+  border: 0;
+  border-radius: 7px;
+  background: transparent;
+  color: var(--stove-text-secondary);
+  text-align: left;
+  transition: background 140ms ease;
+}
+
+.stove-tree-group:hover {
+  background: var(--stove-hover);
+}
+
+.stove-tree-chevron {
+  width: 11px;
+  height: 11px;
+  flex-shrink: 0;
+  color: var(--stove-text-muted);
+  transition: transform 140ms ease;
+}
+
+.stove-tree-chevron.is-open {
+  transform: rotate(90deg);
+}
+
+.stove-tree-label {
+  overflow: hidden;
+  flex: 1;
+  color: var(--stove-text-secondary);
+  font-size: 10px;
+  font-weight: 550;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.stove-tree-dot {
+  width: 6px;
+  height: 6px;
+  flex-shrink: 0;
+  margin-right: 8px;
+  border-radius: 999px;
+  background: var(--stove-text-muted);
+}
+
+.stove-tree-dot.is-passed {
+  background: var(--stove-green);
+}
+
+.stove-tree-dot.is-failed {
+  background: var(--stove-red);
+}
+
+.stove-tree-dot.is-running {
+  background: var(--stove-blue);
+  animation: pulse-dot 1.5s ease-in-out infinite;
+}
+
+.stove-test-item {
+  position: relative;
+  display: grid;
+  width: calc(100% - 10px);
+  grid-template-columns: 6px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 9px;
+  margin: 3px 5px;
+  cursor: pointer;
+  border: 1px solid transparent;
+  border-radius: 11px;
+  background: transparent;
+  padding: 9px 9px 9px 7px;
+  text-align: left;
+  transition:
+    border-color 140ms ease,
+    background 140ms ease,
+    transform 140ms ease;
+}
+
+.stove-test-item:hover {
+  background: var(--stove-hover);
+}
+
+.stove-test-item.is-selected {
+  border-color: color-mix(in srgb, var(--stove-ember) 42%, var(--stove-border));
+  background: linear-gradient(90deg, var(--stove-amber-bg), var(--stove-hover));
+  box-shadow: inset 3px 0 0 var(--stove-ember);
+  transform: translateX(2px);
+}
+
+.stove-test-status {
+  width: 5px;
+  height: 24px;
+  border-radius: 999px;
+  background: var(--stove-text-muted);
+  opacity: 0.7;
+}
+
+.stove-test-status.is-passed {
+  background: var(--stove-green);
+}
+
+.stove-test-status.is-failed,
+.stove-test-status.is-error {
+  background: var(--stove-red);
+}
+
+.stove-test-status.is-running {
+  background: var(--stove-blue);
+  animation: pulse-dot 1.5s ease-in-out infinite;
+}
+
+.stove-test-item-copy {
+  min-width: 0;
+}
+
+.stove-test-item-copy > span,
+.stove-test-item-copy > strong,
+.stove-test-item-copy > code {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.stove-test-item-copy > span {
+  margin-bottom: 2px;
+  color: var(--stove-text-muted);
+  font-size: 9px;
+  text-transform: uppercase;
+}
+
+.stove-test-item-copy > strong {
+  color: var(--stove-text);
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.stove-test-item-copy > code {
+  margin-top: 3px;
+  color: var(--stove-text-muted);
+  font-family: var(--font-mono);
+  font-size: 9px;
+}
+
+.stove-test-item [role="status"] {
+  padding: 4px 6px;
+  font-size: 8px;
+}
+
+.stove-sidebar-footer {
+  border-top: 1px solid var(--stove-border);
+  background: var(--stove-panel-strong);
+  padding: 9px 12px;
+}
+
+.stove-clear-button {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  cursor: pointer;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  background: transparent;
+  padding: 6px;
+  color: var(--stove-text-muted);
+  font-size: 10px;
+  transition: 140ms ease;
+}
+
+.stove-clear-button:hover {
+  border-color: color-mix(in srgb, var(--stove-red) 25%, transparent);
+  background: var(--stove-red-bg);
+  color: var(--stove-red);
+}
+
+.stove-clear-button:disabled {
+  opacity: 0.5;
+}
+
+.stove-sidebar-resizer {
+  position: absolute;
+  top: 0;
+  right: -2px;
+  z-index: 5;
+  width: 5px;
+  height: 100%;
+  cursor: col-resize;
+  transition: background 140ms ease;
+}
+
+.stove-sidebar-resizer:hover {
+  background: color-mix(in srgb, var(--stove-blue) 38%, transparent);
+}

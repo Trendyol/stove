@@ -119,7 +119,7 @@ export function hasInteractionIssue(interaction: MockInteraction): boolean {
   );
 }
 
-export function isSlowInteraction(interaction: MockInteraction): boolean {
+function isSlowInteraction(interaction: MockInteraction): boolean {
   return (interaction.latency_ms ?? 0) >= 500;
 }
 

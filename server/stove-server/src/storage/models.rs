@@ -77,6 +77,28 @@ impl fmt::Display for TestStatus {
   }
 }
 
+/// OpenTelemetry status; deliberately distinct from test outcomes.
+#[derive(Debug, Clone, Copy, Serialize, ToSchema, PartialEq, Eq)]
+#[serde(rename_all = "UPPERCASE")]
+pub enum SpanStatus {
+  Ok,
+  Error,
+  Unset,
+}
+
+impl FromStr for SpanStatus {
+  type Err = String;
+
+  fn from_str(value: &str) -> Result<Self, Self::Err> {
+    match value {
+      "OK" => Ok(Self::Ok),
+      "ERROR" => Ok(Self::Error),
+      "UNSET" => Ok(Self::Unset),
+      other => Err(format!("unknown span status: {other}")),
+    }
+  }
+}
+
 /// Summary of an application known to the dashboard.
 #[derive(Debug, Clone, Serialize, ToSchema, PartialEq, Eq)]
 pub struct AppSummary {
@@ -84,6 +106,7 @@ pub struct AppSummary {
   pub latest_run_id: String,
   pub latest_run_started_at: String,
   pub latest_status: RunStatus,
+  #[schema(required = true)]
   pub stove_version: Option<String>,
   pub metadata: BTreeMap<String, String>,
 }
@@ -94,12 +117,15 @@ pub struct Run {
   pub id: String,
   pub app_name: String,
   pub started_at: String,
+  #[schema(required = true)]
   pub ended_at: Option<String>,
   pub status: RunStatus,
   pub total_tests: i32,
   pub passed: i32,
   pub failed: i32,
+  #[schema(required = true)]
   pub duration_ms: Option<i64>,
+  #[schema(required = true)]
   pub stove_version: Option<String>,
   pub systems: Vec<String>,
   pub metadata: BTreeMap<String, String>,
@@ -114,9 +140,12 @@ pub struct Test {
   pub spec_name: String,
   pub test_path: Vec<String>,
   pub started_at: String,
+  #[schema(required = true)]
   pub ended_at: Option<String>,
   pub status: TestStatus,
+  #[schema(required = true)]
   pub duration_ms: Option<i64>,
+  #[schema(required = true)]
   pub error: Option<String>,
 }
 
@@ -130,12 +159,19 @@ pub struct Entry {
   pub system: String,
   pub action: String,
   pub result: TestStatus,
+  #[schema(required = true)]
   pub input: Option<String>,
+  #[schema(required = true)]
   pub output: Option<String>,
+  #[schema(required = true)]
   pub metadata: Option<String>,
+  #[schema(required = true)]
   pub expected: Option<String>,
+  #[schema(required = true)]
   pub actual: Option<String>,
+  #[schema(required = true)]
   pub error: Option<String>,
+  #[schema(required = true)]
   pub trace_id: Option<String>,
   /// Best-effort identity shared by repeated invocations of the same assertion.
   pub assertion_id: String,
@@ -150,15 +186,20 @@ pub struct Span {
   pub run_id: String,
   pub trace_id: String,
   pub span_id: String,
+  #[schema(required = true)]
   pub parent_span_id: Option<String>,
   pub operation_name: String,
   pub service_name: String,
   pub start_time_nanos: i64,
   pub end_time_nanos: i64,
-  pub status: String,
+  pub status: SpanStatus,
+  #[schema(required = true)]
   pub attributes: Option<String>,
+  #[schema(required = true)]
   pub exception_type: Option<String>,
+  #[schema(required = true)]
   pub exception_message: Option<String>,
+  #[schema(required = true)]
   pub exception_stack_trace: Option<String>,
 }
 
@@ -171,6 +212,7 @@ pub struct Snapshot {
   pub system: String,
   pub state_json: String,
   pub summary: String,
+  #[schema(required = true)]
   pub captured_at: Option<String>,
   /// `TEST_END` for the regular end-of-test snapshot, `FAILURE` for the state
   /// captured at the moment the first failing entry was recorded.
@@ -184,6 +226,7 @@ pub struct Snapshot {
 pub struct MockInteraction {
   pub id: i64,
   pub run_id: String,
+  #[schema(required = true)]
   pub test_id: Option<String>,
   pub timestamp: String,
   pub system: String,
@@ -191,22 +234,33 @@ pub struct MockInteraction {
   pub method: String,
   pub target: String,
   pub matched: bool,
+  #[schema(required = true)]
   pub stub_id: Option<String>,
   pub attribution: String,
+  #[schema(required = true)]
   pub request_body: Option<String>,
   pub request_body_truncated: bool,
+  #[schema(required = true)]
   pub response_body: Option<String>,
   pub response_body_truncated: bool,
   pub status: String,
+  #[schema(required = true)]
   pub latency_ms: Option<i64>,
   /// Rendered near-miss candidates; populated for unmatched exchanges.
   pub near_misses: Vec<String>,
+  #[schema(required = true)]
   pub trace_id: Option<String>,
+  #[schema(required = true)]
   pub scenario_name: Option<String>,
+  #[schema(required = true)]
   pub scenario_state: Option<String>,
+  #[schema(required = true)]
   pub next_scenario_state: Option<String>,
+  #[schema(required = true)]
   pub configured_delay_ms: Option<i64>,
+  #[schema(required = true)]
   pub fault: Option<String>,
+  #[schema(required = true)]
   pub client_deadline_ms: Option<i64>,
 }
 
@@ -215,12 +269,15 @@ pub struct MockInteraction {
 pub struct MockWarning {
   pub id: i64,
   pub run_id: String,
+  #[schema(required = true)]
   pub test_id: Option<String>,
   pub timestamp: String,
   pub system: String,
   pub kind: String,
   pub message: String,
+  #[schema(required = true)]
   pub stub_id: Option<String>,
+  #[schema(required = true)]
   pub target: Option<String>,
 }
 

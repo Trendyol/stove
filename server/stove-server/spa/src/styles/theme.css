@@ -1,0 +1,70 @@
+@theme {
+  --color-stove-base: var(--stove-base);
+  --color-stove-surface: var(--stove-surface);
+  --color-stove-card: var(--stove-card);
+  --color-stove-border: var(--stove-border);
+
+  --font-mono: "JetBrains Mono", monospace;
+  --font-sans: "IBM Plex Sans", system-ui, sans-serif;
+
+  --animate-fade-in: fade-in 0.2s ease;
+  --animate-pulse-dot: pulse-dot 1.5s ease-in-out infinite;
+}
+
+/* ── Theme variables ─────────────────────────────────────────────── */
+
+:root {
+  --stove-base: #f3f0e9;
+  --stove-surface: #fffdf8;
+  --stove-card: #eeebe3;
+  --stove-border: #d6d0c4;
+  --stove-border-strong: #bdb5a6;
+  --stove-text: #27302e;
+  --stove-text-secondary: #68716e;
+  --stove-text-muted: #969d98;
+  --stove-text-heading: #101816;
+  --stove-hover: rgba(15, 118, 110, 0.07);
+  --stove-blue: #0f766e;
+  --stove-blue-soft: rgba(15, 118, 110, 0.1);
+  --stove-green: #16865d;
+  --stove-red: #cf4438;
+  --stove-amber: #d66a19;
+  --stove-ember: #f06b2d;
+  --stove-violet: #7c65a9;
+  --stove-red-bg: rgba(207, 68, 56, 0.09);
+  --stove-amber-bg: rgba(214, 106, 25, 0.1);
+  --stove-panel: rgba(255, 253, 248, 0.82);
+  --stove-panel-strong: rgba(255, 253, 248, 0.96);
+  --stove-shadow: 0 20px 60px rgba(44, 36, 25, 0.1);
+  --stove-shadow-soft: 0 10px 28px rgba(44, 36, 25, 0.07);
+  --stove-ring: rgba(15, 118, 110, 0.22);
+  --stove-grid: rgba(51, 65, 61, 0.045);
+}
+
+:root.dark {
+  --stove-base: #16201e;
+  --stove-surface: #1b2724;
+  --stove-card: #23312e;
+  --stove-border: #3a4b46;
+  --stove-border-strong: #53665f;
+  --stove-text: #dbe4e1;
+  --stove-text-secondary: #acb9b5;
+  --stove-text-muted: #899892;
+  --stove-text-heading: #f4f7f5;
+  --stove-hover: rgba(45, 212, 191, 0.075);
+  --stove-blue: #2dd4bf;
+  --stove-blue-soft: rgba(45, 212, 191, 0.11);
+  --stove-green: #52d49a;
+  --stove-red: #ff7d6e;
+  --stove-amber: #f7ad52;
+  --stove-ember: #ff7448;
+  --stove-violet: #b7a1e4;
+  --stove-red-bg: rgba(127, 29, 29, 0.24);
+  --stove-amber-bg: rgba(120, 53, 15, 0.2);
+  --stove-panel: rgba(24, 37, 34, 0.88);
+  --stove-panel-strong: rgba(27, 39, 36, 0.96);
+  --stove-shadow: 0 24px 64px rgba(0, 0, 0, 0.24);
+  --stove-shadow-soft: 0 14px 34px rgba(0, 0, 0, 0.16);
+  --stove-ring: rgba(45, 212, 191, 0.25);
+  --stove-grid: rgba(148, 163, 154, 0.045);
+}

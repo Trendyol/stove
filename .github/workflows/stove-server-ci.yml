@@ -47,6 +47,22 @@ jobs:
       - name: Install SPA dependencies
         run: cd spa && npm ci
 
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: clippy, rustfmt
+
+      - name: Install protoc
+        run: sudo apt-get update && sudo apt-get install -y protobuf-compiler libpq-dev libssl-dev pkg-config
+
+      # Key dependency artifacts by the Rust toolchain and Cargo inputs.
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: server/stove-server -> target
+          save-if: ${{ github.ref == 'refs/heads/main' }}
+
+      - name: Check generated REST types
+        run: cd spa && npm run check:api
+
       - name: SPA lint and format check
         run: cd spa && npm run check
 
@@ -55,19 +71,6 @@ jobs:
 
       - name: Build SPA
         run: cd spa && npm run build
-
-      - uses: dtolnay/rust-toolchain@stable
-        with:
-          components: clippy, rustfmt
-
-      - name: Install protoc
-        run: sudo apt-get update && sudo apt-get install -y protobuf-compiler
-
-      # Key dependency artifacts by the Rust toolchain and Cargo inputs.
-      - uses: Swatinem/rust-cache@v2
-        with:
-          workspaces: server/stove-server -> target
-          save-if: ${{ github.ref == 'refs/heads/main' }}
 
       - name: Check formatting
         run: cargo fmt --all -- --check

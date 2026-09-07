@@ -73,7 +73,7 @@ impl SqliteBackend {
     )
     .load::<AppSummaryRow>(db.conn())?
     .into_iter()
-    .map(|row| Ok(row.into_domain()?))
+    .map(|row| row.into_domain())
     .collect()
   }
 
@@ -92,8 +92,8 @@ impl SqliteBackend {
       .select(runs::all_columns)
       .load::<RunRow<String>>(db.conn())?
       .into_iter()
-      .map(Run::from)
-      .collect::<Vec<_>>();
+      .map(Run::try_from)
+      .collect::<Result<Vec<_>>>()?;
     found.retain(|run| {
       metadata
         .iter()
@@ -104,28 +104,25 @@ impl SqliteBackend {
 
   pub fn get_run(&self, run_id: &str) -> Result<Option<Run>> {
     let mut db = self.lock_read();
-    Ok(
-      runs::table
-        .find(run_id)
-        .select(runs::all_columns)
-        .first::<RunRow<String>>(db.conn())
-        .optional()?
-        .map(Run::from),
-    )
+    runs::table
+      .find(run_id)
+      .select(runs::all_columns)
+      .first::<RunRow<String>>(db.conn())
+      .optional()?
+      .map(Run::try_from)
+      .transpose()
   }
 
   pub fn get_tests_for_run(&self, run_id: &str) -> Result<Vec<Test>> {
     let mut db = self.lock_read();
-    Ok(
-      tests::table
-        .filter(tests::run_id.eq(run_id))
-        .order(tests::started_at)
-        .select(tests::all_columns)
-        .load::<TestRow>(db.conn())?
-        .into_iter()
-        .map(Test::from)
-        .collect(),
-    )
+    tests::table
+      .filter(tests::run_id.eq(run_id))
+      .order(tests::started_at)
+      .select(tests::all_columns)
+      .load::<TestRow>(db.conn())?
+      .into_iter()
+      .map(Test::try_from)
+      .collect::<Result<Vec<_>>>()
   }
 
   pub fn get_entries(&self, run_id: &str, test_id: &str, raw: bool) -> Result<Vec<Entry>> {
@@ -135,42 +132,36 @@ impl SqliteBackend {
       COLLAPSED_ENTRIES_SQL
     };
     let mut db = self.lock_read();
-    Ok(
-      diesel::sql_query(sql)
-        .bind::<Text, _>(run_id)
-        .bind::<Text, _>(test_id)
-        .load::<EntryRow>(db.conn())?
-        .into_iter()
-        .map(Entry::from)
-        .collect(),
-    )
+    diesel::sql_query(sql)
+      .bind::<Text, _>(run_id)
+      .bind::<Text, _>(test_id)
+      .load::<EntryRow>(db.conn())?
+      .into_iter()
+      .map(Entry::try_from)
+      .collect::<Result<Vec<_>>>()
   }
 
   pub fn get_spans_for_test(&self, run_id: &str, test_id: &str) -> Result<Vec<Span>> {
     let mut db = self.lock_read();
-    Ok(
-      diesel::sql_query(SPANS_FOR_TEST_SQL)
-        .bind::<Text, _>(run_id)
-        .bind::<Text, _>(test_id)
-        .load::<SpanRow>(db.conn())?
-        .into_iter()
-        .map(Span::from)
-        .collect(),
-    )
+    diesel::sql_query(SPANS_FOR_TEST_SQL)
+      .bind::<Text, _>(run_id)
+      .bind::<Text, _>(test_id)
+      .load::<SpanRow>(db.conn())?
+      .into_iter()
+      .map(Span::try_from)
+      .collect::<Result<Vec<_>>>()
   }
 
   pub fn get_trace(&self, trace_id: &str) -> Result<Vec<Span>> {
     let mut db = self.lock_read();
-    Ok(
-      spans::table
-        .filter(spans::trace_id.eq(trace_id))
-        .order(spans::start_time_nanos)
-        .select(spans::all_columns)
-        .load::<SpanRow>(db.conn())?
-        .into_iter()
-        .map(Span::from)
-        .collect(),
-    )
+    spans::table
+      .filter(spans::trace_id.eq(trace_id))
+      .order(spans::start_time_nanos)
+      .select(spans::all_columns)
+      .load::<SpanRow>(db.conn())?
+      .into_iter()
+      .map(Span::try_from)
+      .collect::<Result<Vec<_>>>()
   }
 
   pub fn get_snapshots(&self, run_id: &str, test_id: &str) -> Result<Vec<Snapshot>> {
@@ -211,7 +202,7 @@ impl SqliteBackend {
       .select(mock_interactions::all_columns)
       .load::<MockInteractionRow>(db.conn())?
       .into_iter()
-      .map(|row| Ok(row.into_domain()?))
+      .map(|row| row.into_domain())
       .collect()
   }
 
@@ -247,7 +238,7 @@ impl SqliteBackend {
 
 const RAW_ENTRIES_SQL: &str = "SELECT id, run_id, test_id, timestamp, system, action, result,
   input, output, metadata, expected, actual, error, trace_id,
-  CASE WHEN assertion_id = '' THEN 'legacy:' || id ELSE assertion_id END AS assertion_id,
+  assertion_id,
   1 AS attempt_count,
   CASE WHEN result IN ('FAILED', 'ERROR') THEN 1 ELSE 0 END AS failure_count
   FROM entries WHERE run_id = ? AND test_id = ? ORDER BY timestamp, id";
@@ -255,7 +246,7 @@ const RAW_ENTRIES_SQL: &str = "SELECT id, run_id, test_id, timestamp, system, ac
 const COLLAPSED_ENTRIES_SQL: &str = "WITH correlated AS (
   SELECT id, run_id, test_id, timestamp, system, action, result, input, output, metadata,
          expected, actual, error, trace_id,
-         CASE WHEN assertion_id = '' THEN 'legacy:' || id ELSE assertion_id END AS assertion_id
+         assertion_id
     FROM entries WHERE run_id = ? AND test_id = ?
 ), ranked AS (
   SELECT *, COUNT(*) OVER (PARTITION BY assertion_id) AS attempt_count,

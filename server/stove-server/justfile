@@ -46,6 +46,7 @@ postgres-reset:
     docker compose -f compose.postgres.yml down --volumes --remove-orphans
 
 build:
+    cd spa && npm ci && npm run build
     SKIP_SPA_BUILD=1 cargo build
 
 verify: fmt-check clippy test acceptance load-test

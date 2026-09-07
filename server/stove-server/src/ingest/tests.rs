@@ -380,3 +380,171 @@ async fn assertions_with_distinct_expectations_do_not_share_retry_identity() {
   assert_eq!(entries.len(), 2);
   assert_ne!(entries[0].assertion_id, entries[1].assertion_id);
 }
+
+#[test]
+fn every_live_variant_matches_its_wire_envelope_storage_tag_and_schema() {
+  use proto::dashboard_event::Event;
+
+  let service = test_service();
+  let cases = [
+    (
+      Event::RunStarted(proto::RunStartedEvent::default()),
+      "run_started",
+    ),
+    (
+      Event::RunEnded(proto::RunEndedEvent::default()),
+      "run_ended",
+    ),
+    (
+      Event::TestStarted(proto::TestStartedEvent::default()),
+      "test_started",
+    ),
+    (
+      Event::TestEnded(proto::TestEndedEvent {
+        status: "PASSED".into(),
+        ..Default::default()
+      }),
+      "test_ended",
+    ),
+    (
+      Event::EntryRecorded(proto::EntryRecordedEvent {
+        result: "PASSED".into(),
+        ..Default::default()
+      }),
+      "entry_recorded",
+    ),
+    (
+      Event::SpanRecorded(proto::SpanRecordedEvent {
+        status: "UNSET".into(),
+        ..Default::default()
+      }),
+      "span_recorded",
+    ),
+    (Event::Snapshot(proto::SnapshotEvent::default()), "snapshot"),
+    (
+      Event::MockInteraction(proto::MockInteractionEvent::default()),
+      "mock_interaction",
+    ),
+    (
+      Event::MockWarning(proto::MockWarningEvent::default()),
+      "mock_warning",
+    ),
+  ];
+
+  let document = serde_json::to_value(crate::http::openapi_document()).unwrap();
+  let schemas = &document["components"]["schemas"];
+  let variants = schemas["LiveDashboardPayload"]["oneOf"].as_array().unwrap();
+  assert_eq!(variants.len(), cases.len());
+
+  for (payload, expected_tag) in cases {
+    let prepared = service
+      .prepare_event(&proto::DashboardEvent {
+        run_id: "run-wire".to_string(),
+        event: Some(payload),
+        ..Default::default()
+      })
+      .unwrap();
+    let live = prepared.live.with_seq(42);
+    let json = serde_json::to_value(&live).unwrap();
+
+    assert_eq!(json.as_object().unwrap().len(), 4);
+    assert_eq!(json["seq"], 42);
+    assert_eq!(json["run_id"], "run-wire");
+    assert_eq!(json["event_type"], expected_tag);
+    assert_eq!(live.event_type(), expected_tag);
+    let variant = variants
+      .iter()
+      .find(|variant| variant["properties"]["event_type"]["enum"][0] == expected_tag)
+      .unwrap();
+    let payload_ref = variant["properties"]["payload"]["$ref"].as_str().unwrap();
+    let payload_schema = document
+      .pointer(payload_ref.strip_prefix('#').unwrap())
+      .unwrap();
+    let fields = json["payload"].as_object().unwrap();
+    let required = payload_schema["required"].as_array().unwrap();
+    assert_eq!(
+      payload_schema["properties"].as_object().unwrap().len(),
+      fields.len()
+    );
+    assert_eq!(required.len(), fields.len());
+    for (field, value) in fields {
+      assert!(
+        required.iter().any(|name| name == field),
+        "{expected_tag}.{field}"
+      );
+      if value.is_null() {
+        assert!(
+          payload_schema["properties"][field]["type"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .any(|kind| kind == "null"),
+          "{expected_tag}.{field} must allow null"
+        );
+      }
+    }
+    if let Some(id) = json["payload"].get("id") {
+      assert_eq!(id, -42);
+    }
+  }
+}
+
+#[tokio::test]
+async fn invalid_statuses_never_commit_domain_or_live_events() {
+  use proto::dashboard_event::Event;
+  let svc = test_service();
+  svc
+    .repository
+    .save_run_start("run-1", "app", "2026-09-07T10:00:00Z", &[])
+    .unwrap();
+  svc
+    .repository
+    .save_test_start(
+      "run-1",
+      "test-1",
+      "test",
+      "spec",
+      &[],
+      "2026-09-07T10:00:00Z",
+    )
+    .unwrap();
+  let events = [
+    Event::TestEnded(proto::TestEndedEvent {
+      test_id: "test-1".into(),
+      status: "UNKNOWN".into(),
+      ..Default::default()
+    }),
+    Event::EntryRecorded(proto::EntryRecordedEvent {
+      test_id: "test-1".into(),
+      result: "UNKNOWN".into(),
+      ..Default::default()
+    }),
+    Event::SpanRecorded(proto::SpanRecordedEvent {
+      status: "PASSED".into(),
+      ..Default::default()
+    }),
+  ];
+  for event in events {
+    let result = svc.ingest(&proto::DashboardEvent {
+      run_id: "run-1".into(),
+      event: Some(event),
+      ..Default::default()
+    });
+    assert!(matches!(
+      result,
+      Err(crate::error::AppError::InvalidEvent(_))
+    ));
+  }
+  assert_eq!(svc.repository.latest_live_event_id().unwrap(), 0);
+  assert_eq!(
+    svc.repository.get_tests_for_run("run-1").unwrap()[0].status,
+    crate::storage::models::TestStatus::Running
+  );
+  assert!(
+    svc
+      .repository
+      .get_entries("run-1", "test-1")
+      .unwrap()
+      .is_empty()
+  );
+}

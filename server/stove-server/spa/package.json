@@ -5,11 +5,14 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "tsc -b && vite build",
+    "build": "npm run generate:api && npm run build:assets",
+    "build:assets": "tsc -b && vite build",
     "preview": "vite preview",
-    "test": "node --test test/*.test.mjs",
+    "test": "tsc -p test/tsconfig.json && node --test test/*.test.mjs",
     "check": "biome check src",
-    "format": "biome check --write src"
+    "format": "biome check --write src",
+    "generate:api": "node scripts/api-types/generate.mjs",
+    "check:api": "node scripts/api-types/generate.mjs --check"
   },
   "dependencies": {
     "@dagrejs/dagre": "^3.0.0",
@@ -21,11 +24,16 @@
   "devDependencies": {
     "@biomejs/biome": "2.5.11",
     "@tailwindcss/postcss": "^4.0.0",
+    "@testing-library/react": "^16.3.3",
     "@types/react": "^19.1.0",
     "@types/react-dom": "^19.1.0",
     "@vitejs/plugin-react": "^6.0.0",
+    "jsdom": "^30.0.1",
     "tailwindcss": "^4.0.0",
     "typescript": "~7.0.0",
     "vite": "^8.0.0"
-  }
+  },
+  "workspaces": [
+    "scripts/api-types"
+  ]
 }

@@ -34,6 +34,7 @@ use utoipa_swagger_ui::{Config, SwaggerUi};
     super::routes::preview_purge,
     super::routes::purge_runs
   ),
+  components(schemas(crate::ingest::LiveDashboardEvent)),
   tags(
     (name = "system", description = "Server metadata and capabilities"),
     (

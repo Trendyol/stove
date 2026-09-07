@@ -1,10 +1,11 @@
+use crate::error::{AppError, Result};
 use diesel::Queryable;
 use diesel::QueryableByName;
 use diesel::sql_types::{BigInt, Nullable, Text};
+use std::collections::BTreeMap;
 
 use crate::storage::models::{
-  AppSummary, Entry, MockInteraction, MockWarning, OpenAssertion, Run, RunStatus, Snapshot, Span,
-  Test, TestStatus,
+  AppSummary, Entry, MockInteraction, MockWarning, OpenAssertion, Run, Snapshot, Span, Test,
 };
 
 #[derive(Queryable)]
@@ -23,34 +24,41 @@ pub(super) struct RunRow<M> {
   metadata: M,
 }
 
-impl From<RunRow<String>> for Run {
-  fn from(row: RunRow<String>) -> Self {
-    row.into_domain(|metadata| parse_json(&metadata))
+impl TryFrom<RunRow<String>> for Run {
+  type Error = AppError;
+
+  fn try_from(row: RunRow<String>) -> Result<Self> {
+    row.into_domain(|metadata| stored_json(&metadata, "runs.metadata"))
   }
 }
 
-impl From<RunRow<serde_json::Value>> for Run {
-  fn from(row: RunRow<serde_json::Value>) -> Self {
-    row.into_domain(|metadata| serde_json::from_value(metadata).unwrap_or_default())
+impl TryFrom<RunRow<serde_json::Value>> for Run {
+  type Error = AppError;
+
+  fn try_from(row: RunRow<serde_json::Value>) -> Result<Self> {
+    row.into_domain(|metadata| stored_field(serde_json::from_value(metadata), "runs.metadata"))
   }
 }
 
 impl<M> RunRow<M> {
-  fn into_domain(self, convert_metadata: impl FnOnce(M) -> BTreeMap<String, String>) -> Run {
-    Run {
+  fn into_domain(
+    self,
+    convert_metadata: impl FnOnce(M) -> Result<BTreeMap<String, String>>,
+  ) -> Result<Run> {
+    Ok(Run {
       id: self.id,
       app_name: self.app_name,
       started_at: self.started_at,
       ended_at: self.ended_at,
-      status: parse_run_status(&self.status),
+      status: stored_field(self.status.parse(), "runs.status")?,
       total_tests: self.total_tests,
       passed: self.passed,
       failed: self.failed,
       duration_ms: self.duration_ms,
       stove_version: self.stove_version,
-      systems: parse_json(&self.systems),
-      metadata: convert_metadata(self.metadata),
-    }
+      systems: stored_json(&self.systems, "runs.systems")?,
+      metadata: convert_metadata(self.metadata)?,
+    })
   }
 }
 
@@ -68,20 +76,22 @@ pub(super) struct TestRow {
   error: Option<String>,
 }
 
-impl From<TestRow> for Test {
-  fn from(row: TestRow) -> Self {
-    Self {
+impl TryFrom<TestRow> for Test {
+  type Error = AppError;
+
+  fn try_from(row: TestRow) -> Result<Self> {
+    Ok(Self {
       id: row.id,
       run_id: row.run_id,
       test_name: row.test_name,
       spec_name: row.spec_name,
-      test_path: parse_json(&row.test_path),
+      test_path: stored_json(&row.test_path, "tests.test_path")?,
       started_at: row.started_at,
       ended_at: row.ended_at,
-      status: parse_test_status(&row.status),
+      status: stored_field(row.status.parse(), "tests.status")?,
       duration_ms: row.duration_ms,
       error: row.error,
-    }
+    })
   }
 }
 
@@ -117,9 +127,11 @@ pub(super) struct SpanRow {
   exception_stack_trace: Option<String>,
 }
 
-impl From<SpanRow> for Span {
-  fn from(row: SpanRow) -> Self {
-    Self {
+impl TryFrom<SpanRow> for Span {
+  type Error = AppError;
+
+  fn try_from(row: SpanRow) -> Result<Self> {
+    Ok(Self {
       id: row.id,
       run_id: row.run_id,
       trace_id: row.trace_id,
@@ -129,12 +141,12 @@ impl From<SpanRow> for Span {
       service_name: row.service_name,
       start_time_nanos: row.start_time_nanos,
       end_time_nanos: row.end_time_nanos,
-      status: row.status,
+      status: stored_field(row.status.parse(), "spans.status")?,
       attributes: row.attributes,
       exception_type: row.exception_type,
       exception_message: row.exception_message,
       exception_stack_trace: row.exception_stack_trace,
-    }
+    })
   }
 }
 
@@ -195,11 +207,11 @@ pub(super) struct MockInteractionRow {
 }
 
 impl MockInteractionRow {
-  pub(super) fn into_domain(self) -> serde_json::Result<MockInteraction> {
+  pub(super) fn into_domain(self) -> Result<MockInteraction> {
     let near_misses = self
       .near_misses
       .as_deref()
-      .map(serde_json::from_str)
+      .map(|json| stored_json(json, "mock_interactions.near_misses"))
       .transpose()?
       .unwrap_or_default();
     Ok(MockInteraction {
@@ -298,14 +310,14 @@ pub(super) struct AppSummaryRow {
 }
 
 impl AppSummaryRow {
-  pub(super) fn into_domain(self) -> serde_json::Result<AppSummary> {
+  pub(super) fn into_domain(self) -> Result<AppSummary> {
     Ok(AppSummary {
       app_name: self.app_name,
       latest_run_id: self.latest_run_id,
       latest_run_started_at: self.latest_run_started_at,
-      latest_status: parse_run_status(&self.latest_status),
+      latest_status: stored_field(self.latest_status.parse(), "runs.status")?,
       stove_version: self.stove_version,
-      metadata: serde_json::from_str(&self.metadata)?,
+      metadata: stored_json(&self.metadata, "runs.metadata")?,
     })
   }
 }
@@ -348,16 +360,21 @@ pub(super) struct EntryRow {
   failure_count: i64,
 }
 
-impl From<EntryRow> for Entry {
-  fn from(row: EntryRow) -> Self {
-    Self {
+impl TryFrom<EntryRow> for Entry {
+  type Error = AppError;
+
+  fn try_from(row: EntryRow) -> Result<Self> {
+    if row.assertion_id.is_empty() {
+      return Err(AppError::InvalidStoredField("entries.assertion_id"));
+    }
+    Ok(Self {
       id: row.id,
       run_id: row.run_id,
       test_id: row.test_id,
       timestamp: row.timestamp,
       system: row.system,
       action: row.action,
-      result: parse_test_status(&row.result),
+      result: stored_field(row.result.parse(), "entries.result")?,
       input: row.input,
       output: row.output,
       metadata: row.metadata,
@@ -368,19 +385,15 @@ impl From<EntryRow> for Entry {
       assertion_id: row.assertion_id,
       attempt_count: row.attempt_count,
       failure_count: row.failure_count,
-    }
+    })
   }
 }
 
-pub(super) fn parse_json<T: serde::de::DeserializeOwned + Default>(value: &str) -> T {
-  serde_json::from_str(value).unwrap_or_default()
+/// Report the column, without exposing the stored evidence in API errors.
+fn stored_field<T, E>(result: std::result::Result<T, E>, field: &'static str) -> Result<T> {
+  result.map_err(|_| AppError::InvalidStoredField(field))
 }
 
-fn parse_run_status(value: &str) -> RunStatus {
-  value.parse().unwrap_or(RunStatus::Running)
+fn stored_json<T: serde::de::DeserializeOwned>(value: &str, field: &'static str) -> Result<T> {
+  stored_field(serde_json::from_str(value), field)
 }
-
-fn parse_test_status(value: &str) -> TestStatus {
-  value.parse().unwrap_or(TestStatus::Running)
-}
-use std::collections::BTreeMap;

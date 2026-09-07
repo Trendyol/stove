@@ -1,0 +1,304 @@
+/* ── React Flow theme ────────────────────────────────────────────── */
+
+.react-flow {
+  --xy-background-color: var(--stove-base);
+  --xy-node-border-radius: 8px;
+  --xy-edge-stroke: var(--stove-border);
+  --xy-edge-stroke-selected: var(--stove-blue);
+  --xy-controls-button-background-color: var(--stove-card);
+  --xy-controls-button-border-color: var(--stove-border);
+  --xy-controls-button-color: var(--stove-text);
+  --xy-minimap-background-color: var(--stove-surface);
+}
+
+/* ── Responsive behavior ─────────────────────────────────────────── */
+
+@media (max-width: 1120px) {
+  .stove-topbar {
+    grid-template-columns: minmax(190px, 1fr) auto;
+  }
+
+  .stove-topbar-context {
+    display: none;
+  }
+
+  .test-dossier {
+    grid-template-columns: minmax(0, 1fr) minmax(280px, 0.7fr);
+  }
+
+  .mock-overview {
+    grid-template-columns: minmax(260px, 1fr) minmax(320px, 1fr);
+  }
+
+  .mock-pulse {
+    display: none;
+  }
+}
+
+@media (max-width: 900px) {
+  .stove-version-warning-label {
+    display: none;
+  }
+
+  .stove-version-warning-popover {
+    position: fixed;
+    top: 63px;
+    right: 8px;
+    width: min(430px, calc(100vw - 16px));
+    max-height: calc(100vh - 71px);
+  }
+
+  .stove-sidebar {
+    width: 282px;
+  }
+
+  .test-dossier {
+    grid-template-columns: 1fr;
+    gap: 13px;
+  }
+
+  .test-signal-grid {
+    grid-template-columns: repeat(4, minmax(60px, 1fr));
+  }
+
+  .test-signal {
+    padding: 7px;
+  }
+
+  .test-dossier-meta code {
+    display: none;
+  }
+
+  .mock-overview {
+    grid-template-columns: 1fr;
+  }
+
+  .mock-overview-copy {
+    max-width: 680px;
+  }
+
+  .mock-metrics {
+    grid-template-columns: repeat(4, minmax(70px, 1fr));
+  }
+
+  .mock-interaction-summary {
+    grid-template-columns: 30px 36px minmax(180px, 1fr) minmax(100px, auto) 18px;
+  }
+
+  .mock-route-line {
+    display: none;
+  }
+
+  .mock-interaction-details,
+  .mock-scenario-rail {
+    padding-left: 84px;
+  }
+}
+
+@media (max-width: 720px) {
+  .stove-topbar {
+    min-height: 56px;
+    grid-template-columns: 1fr auto;
+    padding: 7px 10px;
+  }
+
+  .stove-brand img {
+    width: 34px;
+    height: 34px;
+  }
+
+  .stove-brand small,
+  .stove-endpoint,
+  .stove-topbar-link span {
+    display: none;
+  }
+
+  .stove-topbar-actions {
+    gap: 2px;
+  }
+
+  .stove-version-warning-popover {
+    top: 59px;
+    left: 8px;
+    width: auto;
+    max-height: calc(100vh - 67px);
+  }
+
+  .stove-stream-status {
+    padding: 5px 8px;
+    font-size: 9px;
+  }
+
+  .stove-workspace {
+    flex-direction: column;
+    overflow: auto;
+  }
+
+  .stove-sidebar {
+    width: 100%;
+    min-height: 250px;
+    max-height: 42vh;
+    border-right: 0;
+    border-bottom: 1px solid var(--stove-border);
+  }
+
+  .stove-sidebar-resizer {
+    display: none;
+  }
+
+  .stove-app-picker,
+  .stove-run-summary {
+    padding: 10px 12px;
+  }
+
+  .stove-run-progress {
+    display: none;
+  }
+
+  .stove-run-stats {
+    margin-top: 9px;
+  }
+
+  .stove-test-filters {
+    grid-template-columns: minmax(180px, 0.8fr) minmax(160px, 1fr);
+  }
+
+  .test-detail {
+    min-height: 70vh;
+    overflow: visible;
+  }
+
+  .test-detail-header {
+    position: sticky;
+    top: 0;
+    padding: 12px 12px 0;
+  }
+
+  .test-title-row h1 {
+    font-size: 17px;
+  }
+
+  .test-signal-grid {
+    grid-template-columns: repeat(4, 1fr);
+  }
+
+  .test-signal > span {
+    display: none;
+  }
+
+  .test-signal {
+    grid-template-columns: auto 1fr;
+  }
+
+  .test-signal > strong {
+    grid-column: auto;
+    justify-self: end;
+    font-size: 14px;
+  }
+
+  .stove-tab-bar > button {
+    padding-inline: 8px;
+  }
+
+  .evidence-page,
+  .mock-workbench {
+    padding: 14px 12px 24px;
+  }
+
+  .mock-scope-bar,
+  .mock-toolbar {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .mock-scope-note {
+    padding-left: 3px;
+  }
+
+  .mock-search {
+    width: 100%;
+  }
+
+  .mock-interaction-summary {
+    grid-template-columns: 25px 34px minmax(0, 1fr) auto 16px;
+    gap: 7px;
+    padding-inline: 7px;
+  }
+
+  .mock-response {
+    max-width: 92px;
+  }
+
+  .mock-request-topline time,
+  .mock-evidence-tags {
+    display: none;
+  }
+
+  .mock-body-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .mock-interaction-details,
+  .mock-scenario-rail {
+    padding-left: 12px;
+  }
+}
+
+@media (max-width: 480px) {
+  .stove-brand > span {
+    display: none;
+  }
+
+  .stove-sidebar {
+    max-height: 48vh;
+  }
+
+  .stove-test-filters {
+    grid-template-columns: 1fr;
+  }
+
+  .test-dossier-meta > span:nth-child(2) {
+    display: none;
+  }
+
+  .test-signal-grid {
+    gap: 4px;
+  }
+
+  .test-signal {
+    padding: 6px;
+  }
+
+  .stove-tab-bar > button > span:nth-child(2) {
+    display: none;
+  }
+
+  .mock-metrics {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .mock-warning-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .mock-filters {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+  }
+
+  .mock-filters button {
+    padding-inline: 5px;
+  }
+
+  .mock-sequence {
+    display: none;
+  }
+
+  .mock-interaction-summary {
+    grid-template-columns: 34px minmax(0, 1fr) auto 16px;
+  }
+
+  .mock-exchange-list::before {
+    display: none;
+  }
+}

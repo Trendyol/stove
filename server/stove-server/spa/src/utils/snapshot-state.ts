@@ -8,7 +8,7 @@ export interface SnapshotMetric {
   tone: "info" | "success" | "warning" | "danger" | "neutral";
 }
 
-export interface SnapshotPartition<TSnapshot> {
+interface SnapshotPartition<TSnapshot> {
   detailedSnapshots: TSnapshot[];
   hiddenCount: number;
 }

@@ -64,6 +64,7 @@ fn to_status(error: AppError) -> Status {
     | AppError::PostgresTls(_)
     | AppError::GrpcTransport(_)
     | AppError::Serialization(_)
+    | AppError::InvalidStoredField(_)
     | AppError::Startup(_) => Status::internal(error.to_string()),
   }
 }

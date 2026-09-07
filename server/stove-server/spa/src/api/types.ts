@@ -1,4 +1,5 @@
 import type { Status } from "../utils/status";
+import type { components } from "./generated/schema";
 
 export type { Status };
 
@@ -12,339 +13,39 @@ export const EVENT_TYPE = {
   SNAPSHOT: "snapshot",
   MOCK_INTERACTION: "mock_interaction",
   MOCK_WARNING: "mock_warning",
-} as const;
+} as const satisfies { [Type in EventType as Uppercase<Type>]: Type };
 
-export type EventType = (typeof EVENT_TYPE)[keyof typeof EVENT_TYPE];
+export type EventType = LiveDashboardEvent["event_type"];
 
-export interface AppSummary {
-  app_name: string;
-  latest_run_id: string;
-  latest_run_started_at: string;
-  latest_status: Status;
-  stove_version: string | null;
-  metadata: Record<string, string>;
-}
+// REST shapes are owned by the Rust OpenAPI contract.
+export type AppSummary = components["schemas"]["AppSummary"];
+export type MetaResponse = components["schemas"]["MetaResponse"];
+export type McpMeta = components["schemas"]["McpMeta"];
+export type Run = components["schemas"]["Run"];
+export type Test = components["schemas"]["Test"];
+export type EvidenceCounts = components["schemas"]["EvidenceCounts"];
+export type AdminStatus = components["schemas"]["StorageStats"];
+export type PurgePreview = components["schemas"]["PurgePreview"];
+export type PurgeResult = components["schemas"]["PurgeResult"];
+export type DatabaseSchema = components["schemas"]["DatabaseSchema"];
+export type DatabaseTable = components["schemas"]["DatabaseTable"];
+export type DatabaseColumn = components["schemas"]["DatabaseColumn"];
+export type DatabaseQueryResult = components["schemas"]["DatabaseQueryResult"];
+export type Entry = components["schemas"]["Entry"];
+export type Span = components["schemas"]["Span"];
+export type Snapshot = components["schemas"]["Snapshot"];
+export type MockInteraction = components["schemas"]["MockInteraction"];
+export type MockWarning = components["schemas"]["MockWarning"];
+export type RunStatus = components["schemas"]["RunStatus"];
+export type SpanStatus = components["schemas"]["SpanStatus"];
+export type PurgePreviewRequest = components["schemas"]["PurgePreviewRequest"];
+export type PurgeRequest = components["schemas"]["PurgeRequest"];
+export type RetentionRequest = components["schemas"]["RetentionRequest"];
+export type DatabaseQueryRequest = components["schemas"]["DatabaseQueryRequest"];
 
-export interface MetaResponse {
-  stove_server_version: string;
-}
+// Preserve each generated union variant while making its envelope and payload readonly.
+type ReadonlyEvent<Event> = { readonly [Field in keyof Event]: Readonly<Event[Field]> };
 
-export type LiveRecordId = number | string;
-
-export interface Run {
-  id: string;
-  app_name: string;
-  started_at: string;
-  ended_at: string | null;
-  status: Status;
-  total_tests: number;
-  passed: number;
-  failed: number;
-  duration_ms: number | null;
-  stove_version: string | null;
-  systems: string[];
-  metadata: Record<string, string>;
-}
-
-export interface EvidenceCounts {
-  tests: number;
-  entries: number;
-  spans: number;
-  snapshots: number;
-  mock_interactions: number;
-  mock_warnings: number;
-}
-
-export interface AdminStatus {
-  backend: string;
-  retention_runs_per_app: number;
-  runs: number;
-  running_runs: number;
-  evidence: EvidenceCounts;
-}
-
-export interface PurgePreview {
-  run_ids: string[];
-  run_count: number;
-  evidence: EvidenceCounts;
-}
-
-export interface PurgeResult {
-  purged_run_ids: string[];
-  purged_runs: number;
-  evidence: EvidenceCounts;
-}
-
-export interface DatabaseSchema {
-  backend: string;
-  tables: DatabaseTable[];
-}
-
-export interface DatabaseTable {
-  name: string;
-  columns: DatabaseColumn[];
-}
-
-export interface DatabaseColumn {
-  name: string;
-  data_type: string;
-  nullable: boolean;
-  primary_key: boolean;
-}
-
-export interface DatabaseQueryResult {
-  columns: string[];
-  rows: Array<Array<string | null>>;
-  affected_rows: number;
-  truncated: boolean;
-}
-
-export interface Test {
-  id: string;
-  run_id: string;
-  test_name: string;
-  spec_name: string;
-  test_path: string[];
-  started_at: string;
-  ended_at: string | null;
-  status: Status;
-  duration_ms: number | null;
-  error: string | null;
-}
-
-export interface Entry {
-  id: LiveRecordId;
-  run_id: string;
-  test_id: string;
-  timestamp: string;
-  system: string;
-  action: string;
-  result: string;
-  input: string | null;
-  output: string | null;
-  metadata: string | null;
-  expected: string | null;
-  actual: string | null;
-  error: string | null;
-  trace_id: string | null;
-  assertion_id: string;
-  attempt_count: number;
-  failure_count: number;
-}
-
-export interface Span {
-  id: LiveRecordId;
-  run_id: string;
-  trace_id: string;
-  span_id: string;
-  parent_span_id: string | null;
-  operation_name: string;
-  service_name: string;
-  start_time_nanos: number;
-  end_time_nanos: number;
-  status: Status;
-  attributes: string | null;
-  exception_type: string | null;
-  exception_message: string | null;
-  exception_stack_trace: string | null;
-}
-
-export interface Snapshot {
-  id: LiveRecordId;
-  run_id: string;
-  test_id: string;
-  system: string;
-  state_json: string;
-  summary: string;
-  captured_at: string | null;
-  trigger: string;
-}
-
-export interface MockInteraction {
-  id: LiveRecordId;
-  run_id: string;
-  test_id: string | null;
-  timestamp: string;
-  system: string;
-  protocol: string;
-  method: string;
-  target: string;
-  matched: boolean;
-  stub_id: string | null;
-  attribution: string;
-  request_body: string | null;
-  request_body_truncated: boolean;
-  response_body: string | null;
-  response_body_truncated: boolean;
-  status: string;
-  latency_ms: number | null;
-  near_misses: string[];
-  trace_id: string | null;
-  scenario_name: string | null;
-  scenario_state: string | null;
-  next_scenario_state: string | null;
-  configured_delay_ms: number | null;
-  fault: string | null;
-  client_deadline_ms: number | null;
-}
-
-export interface MockWarning {
-  id: LiveRecordId;
-  run_id: string;
-  test_id: string | null;
-  timestamp: string;
-  system: string;
-  kind: string;
-  message: string;
-  stub_id: string | null;
-  target: string | null;
-}
-
-export interface LiveRunStartedPayload {
-  app_name: string;
-  started_at: string;
-  stove_version: string | null;
-  systems: string[];
-  metadata: Record<string, string>;
-}
-
-export interface LiveRunEndedPayload {
-  ended_at: string;
-  status: Status;
-  total_tests: number;
-  passed: number;
-  failed: number;
-  duration_ms: number;
-}
-
-export interface LiveTestStartedPayload {
-  test_id: string;
-  test_name: string;
-  spec_name: string;
-  test_path: string[];
-  started_at: string;
-  status: Status;
-}
-
-export interface LiveTestEndedPayload {
-  test_id: string;
-  status: Status;
-  duration_ms: number;
-  error: string | null;
-  ended_at: string;
-}
-
-export interface LiveEntryRecordedPayload {
-  id: LiveRecordId;
-  test_id: string;
-  timestamp: string;
-  system: string;
-  action: string;
-  result: string;
-  input: string | null;
-  output: string | null;
-  metadata: string | null;
-  expected: string | null;
-  actual: string | null;
-  error: string | null;
-  trace_id: string | null;
-  assertion_id: string;
-  attempt_count: number;
-  failure_count: number;
-}
-
-export interface LiveSpanRecordedPayload {
-  id: LiveRecordId;
-  test_id: string | null;
-  trace_id: string;
-  span_id: string;
-  parent_span_id: string | null;
-  operation_name: string;
-  service_name: string;
-  start_time_nanos: number;
-  end_time_nanos: number;
-  status: Status;
-  attributes: string | null;
-  exception_type: string | null;
-  exception_message: string | null;
-  exception_stack_trace: string | null;
-}
-
-export interface LiveSnapshotPayload {
-  id: LiveRecordId;
-  test_id: string;
-  system: string;
-  state_json: string;
-  summary: string;
-  captured_at: string | null;
-  trigger: string;
-}
-
-export interface LiveMockInteractionPayload {
-  id: LiveRecordId;
-  test_id: string | null;
-  timestamp: string;
-  system: string;
-  protocol: string;
-  method: string;
-  target: string;
-  matched: boolean;
-  stub_id: string | null;
-  attribution: string;
-  request_body: string | null;
-  request_body_truncated: boolean;
-  response_body: string | null;
-  response_body_truncated: boolean;
-  status: string;
-  latency_ms: number | null;
-  near_misses: string[];
-  trace_id: string | null;
-  scenario_name: string | null;
-  scenario_state: string | null;
-  next_scenario_state: string | null;
-  configured_delay_ms: number | null;
-  fault: string | null;
-  client_deadline_ms: number | null;
-}
-
-export interface LiveMockWarningPayload {
-  id: LiveRecordId;
-  test_id: string | null;
-  timestamp: string;
-  system: string;
-  kind: string;
-  message: string;
-  stub_id: string | null;
-  target: string | null;
-}
-
-interface LiveEventBase {
-  seq: number;
-  run_id: string;
-}
-
-export type LiveDashboardEvent =
-  | (LiveEventBase & { event_type: typeof EVENT_TYPE.RUN_STARTED; payload: LiveRunStartedPayload })
-  | (LiveEventBase & { event_type: typeof EVENT_TYPE.RUN_ENDED; payload: LiveRunEndedPayload })
-  | (LiveEventBase & {
-      event_type: typeof EVENT_TYPE.TEST_STARTED;
-      payload: LiveTestStartedPayload;
-    })
-  | (LiveEventBase & { event_type: typeof EVENT_TYPE.TEST_ENDED; payload: LiveTestEndedPayload })
-  | (LiveEventBase & {
-      event_type: typeof EVENT_TYPE.ENTRY_RECORDED;
-      payload: LiveEntryRecordedPayload;
-    })
-  | (LiveEventBase & {
-      event_type: typeof EVENT_TYPE.SPAN_RECORDED;
-      payload: LiveSpanRecordedPayload;
-    })
-  | (LiveEventBase & { event_type: typeof EVENT_TYPE.SNAPSHOT; payload: LiveSnapshotPayload })
-  | (LiveEventBase & {
-      event_type: typeof EVENT_TYPE.MOCK_INTERACTION;
-      payload: LiveMockInteractionPayload;
-    })
-  | (LiveEventBase & {
-      event_type: typeof EVENT_TYPE.MOCK_WARNING;
-      payload: LiveMockWarningPayload;
-    });
+export type LiveDashboardEvent = ReadonlyEvent<components["schemas"]["LiveDashboardEvent"]>;
+export type LiveEventOf<Type extends EventType> = Extract<LiveDashboardEvent, { event_type: Type }>;
+export type LivePayloads = { [Type in EventType]: LiveEventOf<Type>["payload"] };

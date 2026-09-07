@@ -1,0 +1,67 @@
+/* ── App shell polish ────────────────────────────────────────────── */
+
+.stove-app-shell {
+  background:
+    linear-gradient(var(--stove-grid) 1px, transparent 1px),
+    linear-gradient(90deg, var(--stove-grid) 1px, transparent 1px),
+    radial-gradient(circle at 8% 0%, rgba(240, 107, 45, 0.12), transparent 25rem),
+    radial-gradient(circle at 92% 3%, rgba(45, 212, 191, 0.1), transparent 26rem), var(--stove-base);
+  background-size:
+    28px 28px,
+    28px 28px,
+    auto,
+    auto;
+}
+
+.stove-glass-panel {
+  background: var(--stove-panel);
+  box-shadow: var(--stove-shadow-soft);
+  backdrop-filter: blur(14px);
+}
+
+.stove-focus-ring:focus-visible {
+  outline: 2px solid var(--stove-blue);
+  outline-offset: 2px;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  background: var(--stove-base);
+}
+
+button,
+input,
+select {
+  font: inherit;
+}
+
+button {
+  color: inherit;
+}
+
+* {
+  scrollbar-color: var(--stove-border-strong) transparent;
+  scrollbar-width: thin;
+}
+
+.stove-kicker {
+  color: var(--stove-ember);
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.17em;
+  text-transform: uppercase;
+}
+
+.stove-workspace {
+  display: flex;
+  min-height: 0;
+  flex: 1;
+  overflow: hidden;
+}

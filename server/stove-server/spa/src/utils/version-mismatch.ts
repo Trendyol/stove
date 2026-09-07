@@ -3,9 +3,9 @@ import type { AppSummary } from "../api/types";
 const RELEASE_VERSION_PATTERN = /^(\d+)\.(\d+)\.(\d+)$/;
 const SERVER_UPGRADE_COMMAND = "brew upgrade Trendyol/trendyol-tap/stove";
 
-export type VersionMismatchKind = "runtime_older" | "server_older" | "unknown";
+type VersionMismatchKind = "runtime_older" | "server_older" | "unknown";
 
-export interface VersionMismatch {
+interface VersionMismatch {
   appName: string;
   serverVersion: string;
   runtimeVersion: string | null;
@@ -19,18 +19,18 @@ export interface VersionMismatchSummary {
   selectedAppMismatch: VersionMismatch | null;
 }
 
-export interface VersionMismatchRemediationStep {
+interface VersionMismatchRemediationStep {
   kind: "text" | "command";
   value: string;
 }
 
-export interface VersionMismatchDetailModel extends VersionMismatch {
+interface VersionMismatchDetailModel extends VersionMismatch {
   selected: boolean;
   problem: string;
   remediationSteps: VersionMismatchRemediationStep[];
 }
 
-export interface VersionMismatchWarningModel {
+interface VersionMismatchWarningModel {
   title: string;
   mismatchCount: number;
   serverVersion: string;

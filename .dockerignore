@@ -15,6 +15,7 @@
 server/stove-server/target/
 server/stove-server/spa/dist/
 server/stove-server/spa/node_modules/
+server/stove-server/spa/scripts/api-types/node_modules/
 server/stove-server/**/*.log
 server/stove-server/.idea/
 server/stove-server/.vscode/

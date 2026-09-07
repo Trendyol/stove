@@ -1,7 +1,8 @@
 /// <reference lib="webworker" />
 
 import type { Span } from "../api/types";
-import { applyDagreLayout, spansToTraceDag } from "../utils/flow";
+import { applyDagreLayout } from "../utils/flow/layout";
+import { spansToTraceDag } from "../utils/flow/trace";
 
 self.onmessage = (message: MessageEvent<Span[]>) => {
   const graph = spansToTraceDag(message.data);

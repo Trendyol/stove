@@ -1,6 +1,5 @@
 import { lazy, Suspense, useEffect, useMemo } from "react";
-import { api } from "../../api/client";
-import { dashboardKeys } from "../../api/query-keys";
+import { dashboardQueries } from "../../api/dashboard-queries";
 import type { Entry, MockInteraction, MockWarning, Snapshot, Span } from "../../api/types";
 import { EvidenceWorkbench } from "../../components/EvidenceWorkbench";
 import { MockJournal } from "../../components/MockJournal";
@@ -101,26 +100,22 @@ function MocksTab({
   onSummary: TestDetailTabProps["onSummary"];
 }) {
   const interactions = useDashboardListQuery<MockInteraction>({
-    queryKey: dashboardKeys.testMockInteractions(scope.runId, scope.testId),
-    load: (signal) => api.getTestMockInteractions(scope.runId, scope.testId, signal),
+    query: dashboardQueries.testMockInteractions(scope.runId, scope.testId),
     liveConnected: scope.liveConnected,
     pollWhileDisconnected: scope.pollWhileDisconnected,
   });
   const warnings = useDashboardListQuery<MockWarning>({
-    queryKey: dashboardKeys.testMockWarnings(scope.runId, scope.testId),
-    load: (signal) => api.getTestMockWarnings(scope.runId, scope.testId, signal),
+    query: dashboardQueries.testMockWarnings(scope.runId, scope.testId),
     liveConnected: scope.liveConnected,
     pollWhileDisconnected: scope.pollWhileDisconnected,
   });
   const ambientInteractions = useDashboardListQuery<MockInteraction>({
-    queryKey: dashboardKeys.ambientMockInteractions(scope.runId),
-    load: (signal) => api.getAmbientMockInteractions(scope.runId, signal),
+    query: dashboardQueries.ambientMockInteractions(scope.runId),
     liveConnected: scope.liveConnected,
     pollWhileDisconnected: scope.pollWhileDisconnected,
   });
   const ambientWarnings = useDashboardListQuery<MockWarning>({
-    queryKey: dashboardKeys.ambientMockWarnings(scope.runId),
-    load: (signal) => api.getAmbientMockWarnings(scope.runId, signal),
+    query: dashboardQueries.ambientMockWarnings(scope.runId),
     liveConnected: scope.liveConnected,
     pollWhileDisconnected: scope.pollWhileDisconnected,
   });
@@ -214,8 +209,7 @@ function FlowView({ scope, onOpenTrace }: { scope: TestQueryScope; onOpenTrace: 
 
 function useEntries(scope: TestQueryScope) {
   return useDashboardListQuery<Entry>({
-    queryKey: dashboardKeys.entries(scope.runId, scope.testId),
-    load: (signal) => api.getEntries(scope.runId, scope.testId, signal),
+    query: dashboardQueries.entries(scope.runId, scope.testId),
     liveConnected: scope.liveConnected,
     pollWhileDisconnected: scope.pollWhileDisconnected,
   });
@@ -223,8 +217,7 @@ function useEntries(scope: TestQueryScope) {
 
 function useSpans(scope: TestQueryScope) {
   return useDashboardListQuery<Span>({
-    queryKey: dashboardKeys.spans(scope.runId, scope.testId),
-    load: (signal) => api.getSpans(scope.runId, scope.testId, signal),
+    query: dashboardQueries.spans(scope.runId, scope.testId),
     liveConnected: scope.liveConnected,
     pollWhileDisconnected: scope.pollWhileDisconnected,
   });
@@ -232,8 +225,7 @@ function useSpans(scope: TestQueryScope) {
 
 function useSnapshots(scope: TestQueryScope) {
   return useDashboardListQuery<Snapshot>({
-    queryKey: dashboardKeys.snapshots(scope.runId, scope.testId),
-    load: (signal) => api.getSnapshots(scope.runId, scope.testId, signal),
+    query: dashboardQueries.snapshots(scope.runId, scope.testId),
     liveConnected: scope.liveConnected,
     pollWhileDisconnected: scope.pollWhileDisconnected,
   });

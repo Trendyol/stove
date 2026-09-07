@@ -30,6 +30,9 @@
     }
   },
   "files": {
-    "includes": ["src/**"]
+    "includes": [
+      "src/**",
+      "!src/api/generated/**"
+    ]
   }
 }

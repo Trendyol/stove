@@ -216,5 +216,3 @@ impl RunStatusValue {
     }
   }
 }
-
-pub(crate) const STATUS_ERROR: &str = "ERROR";

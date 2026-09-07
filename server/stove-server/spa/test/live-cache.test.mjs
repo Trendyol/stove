@@ -5,11 +5,16 @@ import { QueryClient } from "@tanstack/react-query";
 
 const jiti = createJiti(import.meta.url);
 const {
-  applyLiveDashboardEvent,
   applyLiveDashboardEvents,
   loadAndReconcileDashboardData,
   reconcileDashboardData,
 } = await jiti.import("../src/api/live-cache.ts");
+const { dashboardQueries } = await jiti.import("../src/api/dashboard-queries.ts");
+
+
+function applyLiveDashboardEvent(client, event) {
+  applyLiveDashboardEvents(client, [event]);
+}
 
 test("applyLiveDashboardEvent updates run, test, and detail caches from live SSE payloads", () => {
   const queryClient = new QueryClient();
@@ -226,7 +231,7 @@ test("applyLiveDashboardEvent updates run, test, and detail caches from live SSE
   assert.equal(runWarnings.length, 0);
 });
 
-test("a live run start is added to unfiltered and matching metadata run caches", () => {
+test("a live run start updates its app cache without touching another app", () => {
   const queryClient = new QueryClient();
   queryClient.setQueryData(["apps"], [
     {
@@ -254,8 +259,7 @@ test("a live run start is added to unfiltered and matching metadata run caches",
       metadata: { team: "checkout" },
     },
   ]);
-  queryClient.setQueryData(["runs", "live-app", '{"team":"checkout"}'], []);
-  queryClient.setQueryData(["runs", "live-app", '{"team":"catalog"}'], []);
+  queryClient.setQueryData(["runs", "another-app"], []);
 
   applyLiveDashboardEvent(queryClient, {
     seq: 1,
@@ -272,21 +276,10 @@ test("a live run start is added to unfiltered and matching metadata run caches",
 
   const apps = queryClient.getQueryData(["apps"]);
   const runs = queryClient.getQueryData(["runs", "live-app"]);
-  const matchingRuns = queryClient.getQueryData([
-    "runs",
-    "live-app",
-    '{"team":"checkout"}',
-  ]);
-  const excludedRuns = queryClient.getQueryData([
-    "runs",
-    "live-app",
-    '{"team":"catalog"}',
-  ]);
   assert.equal(apps[0].latest_run_id, "new-run");
   assert.equal("total_runs" in apps[0], false);
   assert.deepEqual(runs.map((run) => run.id), ["new-run", "old-run"]);
-  assert.deepEqual(matchingRuns.map((run) => run.id), ["new-run"]);
-  assert.deepEqual(excludedRuns, []);
+  assert.deepEqual(queryClient.getQueryData(["runs", "another-app"]), []);
 });
 
 test("app reconciliation retains a newer persisted run when the cache contains an older run", () => {
@@ -301,7 +294,7 @@ test("app reconciliation retains a newer persisted run when the cache contains a
     },
   ]);
 
-  const reconciledApps = reconcileDashboardData(queryClient, ["apps"], [
+  const reconciledApps = reconcileDashboardData(queryClient, dashboardQueries.apps(), [
     {
       app_name: "live-app",
       latest_run_id: "new-run",
@@ -331,7 +324,7 @@ test("a newer live app survives a stale in-flight apps response", async () => {
 
   const request = queryClient.fetchQuery({
     queryKey,
-    queryFn: () => loadAndReconcileDashboardData(queryClient, queryKey, () => response.promise),
+    queryFn: () => loadAndReconcileDashboardData(queryClient, { ...dashboardQueries.apps(), load: () => response.promise }),
   });
   applyLiveDashboardEvent(queryClient, runStartedEvent("new-run", "2024-06-01T10:00:00Z"));
   response.resolve([
@@ -357,7 +350,7 @@ test("a newer apps response wins over an older live event received in flight", a
 
   const request = queryClient.fetchQuery({
     queryKey,
-    queryFn: () => loadAndReconcileDashboardData(queryClient, queryKey, () => response.promise),
+    queryFn: () => loadAndReconcileDashboardData(queryClient, { ...dashboardQueries.apps(), load: () => response.promise }),
   });
   applyLiveDashboardEvent(queryClient, runStartedEvent("old-run", "2024-05-31T10:00:00Z"));
   response.resolve([
@@ -441,7 +434,7 @@ test("live assertion retries collapse to the latest attempt and retain failure h
   assert.equal(retriedEntry.failure_count, 4);
   assert.equal(retriedEntry.actual, "one row");
 
-  const reconciled = reconcileDashboardData(queryClient, queryKey, [
+  const reconciled = reconcileDashboardData(queryClient, dashboardQueries.entries("run-retry", "test-retry"), [
     {
       ...retriedEntry,
       id: 42,
@@ -481,7 +474,7 @@ test("live test data survives a stale persisted response", () => {
     },
   ]);
 
-  const reconciled = reconcileDashboardData(queryClient, queryKey, []);
+  const reconciled = reconcileDashboardData(queryClient, dashboardQueries.tests("run-race"), []);
 
   assert.equal(reconciled.length, 1);
   assert.equal(reconciled[0].id, "test-live");
@@ -499,7 +492,7 @@ test("a live event survives a production-shaped in-flight REST request without c
     .fetchQuery({
       queryKey,
       queryFn: ({ signal }) =>
-        loadAndReconcileDashboardData(queryClient, queryKey, () =>
+        loadAndReconcileDashboardData(queryClient, { ...dashboardQueries.tests("run-race"), load: () =>
           new Promise((resolve, reject) => {
             signal.addEventListener(
               "abort",
@@ -511,7 +504,7 @@ test("a live event survives a production-shaped in-flight REST request without c
             );
             setTimeout(() => resolve([]), 100);
           }),
-        ),
+        }, signal),
     })
     .catch((error) => error);
 
@@ -688,7 +681,7 @@ test("persisted evidence replaces its temporary live duplicate during reconcilia
   };
   queryClient.setQueryData(queryKey, [live]);
 
-  const reconciled = reconcileDashboardData(queryClient, queryKey, [{ ...live, id: 42 }]);
+  const reconciled = reconcileDashboardData(queryClient, dashboardQueries.testMockInteractions("run-race", "test-live"), [{ ...live, id: 42 }]);
 
   assert.equal(reconciled.length, 1);
   assert.equal(reconciled[0].id, 42);
@@ -749,7 +742,7 @@ test("evidence reconciliation preserves persisted and cached multiplicity", () =
   };
   queryClient.setQueryData(queryKey, [interaction, { ...interaction, id: -8 }]);
 
-  const reconciled = reconcileDashboardData(queryClient, queryKey, [
+  const reconciled = reconcileDashboardData(queryClient, dashboardQueries.testMockInteractions("run-race", "test-live"), [
     { ...interaction, id: 42 },
   ]);
 
@@ -758,4 +751,64 @@ test("evidence reconciliation preserves persisted and cached multiplicity", () =
     reconciled.map((record) => record.id).sort((left, right) => left - right),
     [-8, 42],
   );
+});
+
+for (const apply of [applyLiveDashboardEvent, (client, event) => applyLiveDashboardEvents(client, [event, event])]) {
+  test(`${apply.name || "batch"} preserves published records and arrays during retries`, () => {
+    const queryClient = new QueryClient();
+    const key = ["entries", "immutable-run", "test-1"];
+    const previous = Object.freeze({
+      id: 7,
+      run_id: "immutable-run",
+      test_id: "test-1",
+      timestamp: "2024-06-01T10:00:00Z",
+      assertion_id: "assertion-1",
+      attempt_count: 1,
+      failure_count: 1,
+      result: "FAILED",
+    });
+    queryClient.setQueryData(key, Object.freeze([previous]));
+    const published = queryClient.getQueryData(key);
+    Object.freeze(published);
+    Object.freeze(published[0]);
+    const payload = Object.freeze({
+      ...previous,
+      id: -8,
+      timestamp: "2024-06-01T10:00:01Z",
+      attempt_count: 2,
+      result: "PASSED",
+    });
+
+    apply(queryClient, { seq: 8, run_id: "immutable-run", event_type: "entry_recorded", payload });
+
+    assert.equal(published.length, 1);
+    assert.equal(published[0].result, "FAILED");
+    assert.equal(published[0].attempt_count, 1);
+    assert.equal(payload.id, -8);
+    const updated = queryClient.getQueryData(key);
+    assert.notEqual(updated, published);
+    assert.deepEqual(updated.map(({ id, result, attempt_count, failure_count }) =>
+      ({ id, result, attempt_count, failure_count })),
+    [{ id: 7, result: "PASSED", attempt_count: 2, failure_count: 1 }]);
+  });
+}
+
+test("reconciliation preserves both input snapshots when a retry arrives during a read", () => {
+  const queryClient = new QueryClient();
+  const key = ["entries", "run-1", "test-1"];
+  const persisted = Object.freeze([Object.freeze({
+    id: 7, assertion_id: "a", attempt_count: 1, failure_count: 1,
+    result: "FAILED", timestamp: "2024-06-01T10:00:00Z",
+  })]);
+  const cached = Object.freeze([Object.freeze({
+    ...persisted[0], id: -8, attempt_count: 2, result: "PASSED",
+    timestamp: "2024-06-01T10:00:01Z",
+  })]);
+  queryClient.setQueryData(key, cached);
+  const result = reconcileDashboardData(queryClient, dashboardQueries.entries("run-1", "test-1"), persisted);
+  assert.equal(result[0].id, 7);
+  assert.equal(result[0].result, "PASSED");
+  assert.equal(result[0].failure_count, 1);
+  assert.equal(persisted[0].result, "FAILED");
+  assert.equal(cached[0].id, -8);
 });

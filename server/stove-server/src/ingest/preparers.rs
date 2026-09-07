@@ -5,7 +5,7 @@
 
 use std::collections::BTreeMap;
 
-use crate::error::Result as AppResult;
+use crate::error::{AppError, Result as AppResult};
 use crate::ingest::LiveDashboardEvent;
 use crate::ingest::LiveDashboardPayload;
 use crate::ingest::LiveEntryRecordedPayload;
@@ -25,6 +25,8 @@ use crate::storage::models::NewMockInteraction;
 use crate::storage::models::NewMockWarning;
 use crate::storage::models::NewSpan;
 use crate::storage::models::OpenAssertion;
+use crate::storage::models::SpanStatus;
+use crate::storage::models::TestStatus;
 use uuid::Uuid;
 
 use super::convert::extract_test_id;
@@ -70,7 +72,7 @@ pub(super) fn prepare_run_ended(
   event: &proto::RunEndedEvent,
 ) -> PreparedDashboardEvent {
   let ended_at = format_timestamp(event.timestamp.as_ref());
-  let status = run_status(event.failed).to_string();
+  let status = run_status(event.failed);
   PreparedDashboardEvent {
     live: LiveDashboardEvent::new(
       run_id,
@@ -108,7 +110,7 @@ pub(super) fn prepare_test_started(
         spec_name: event.spec_name.clone(),
         test_path: event.test_path.clone(),
         started_at: started_at.clone(),
-        status: "RUNNING".to_string(),
+        status: TestStatus::Running,
       }),
     ),
     persisted: PersistedDashboardEvent::TestStarted {
@@ -125,14 +127,15 @@ pub(super) fn prepare_test_started(
 pub(super) fn prepare_test_ended(
   run_id: &str,
   event: &proto::TestEndedEvent,
-) -> PreparedDashboardEvent {
+) -> AppResult<PreparedDashboardEvent> {
+  let status: TestStatus = event.status.parse().map_err(AppError::InvalidEvent)?;
   let ended_at = format_timestamp(event.timestamp.as_ref());
-  PreparedDashboardEvent {
+  Ok(PreparedDashboardEvent {
     live: LiveDashboardEvent::new(
       run_id,
       LiveDashboardPayload::TestEnded(LiveTestEndedPayload {
         test_id: event.test_id.clone(),
-        status: event.status.clone(),
+        status,
         duration_ms: event.duration_ms,
         error: non_empty(&event.error),
         ended_at: ended_at.clone(),
@@ -146,7 +149,7 @@ pub(super) fn prepare_test_ended(
       error: non_empty(&event.error),
       ended_at,
     },
-  }
+  })
 }
 
 pub(super) fn prepare_entry_recorded(
@@ -154,6 +157,7 @@ pub(super) fn prepare_entry_recorded(
   event: &proto::EntryRecordedEvent,
   open_assertion: Option<OpenAssertion>,
 ) -> AppResult<PreparedDashboardEvent> {
+  let result: TestStatus = event.result.parse().map_err(AppError::InvalidEvent)?;
   let metadata = serde_json::to_string(&event.metadata)?;
   let timestamp = format_timestamp(event.timestamp.as_ref());
   let (assertion_id, attempt_count, failure_count) = assertion_attempt(event, open_assertion);
@@ -178,7 +182,7 @@ pub(super) fn prepare_entry_recorded(
   Ok(PreparedDashboardEvent {
     live: LiveDashboardEvent::new(
       run_id,
-      LiveDashboardPayload::EntryRecorded(live_entry(&entry, attempt_count, failure_count)),
+      LiveDashboardPayload::EntryRecorded(live_entry(&entry, result, attempt_count, failure_count)),
     ),
     persisted: PersistedDashboardEvent::EntryRecorded(entry),
   })
@@ -202,13 +206,14 @@ pub(super) fn prepare_span_recorded(
   event: &proto::SpanRecordedEvent,
   trace_test_id: Option<String>,
 ) -> AppResult<PreparedDashboardEvent> {
+  let status: SpanStatus = event.status.parse().map_err(AppError::InvalidEvent)?;
   let test_id = extract_test_id(&event.attributes).or(trace_test_id);
   let span = new_span(run_id, event)?;
 
   Ok(PreparedDashboardEvent {
     live: LiveDashboardEvent::new(
       run_id,
-      LiveDashboardPayload::SpanRecorded(live_span(&span, test_id)),
+      LiveDashboardPayload::SpanRecorded(live_span(&span, test_id, status)),
     ),
     persisted: PersistedDashboardEvent::SpanRecorded(span),
   })
@@ -323,6 +328,7 @@ fn assertion_attempt(
 
 fn live_entry(
   entry: &NewEntry,
+  result: TestStatus,
   attempt_count: i64,
   failure_count: i64,
 ) -> LiveEntryRecordedPayload {
@@ -332,7 +338,7 @@ fn live_entry(
     timestamp: entry.timestamp.clone(),
     system: entry.system.clone(),
     action: entry.action.clone(),
-    result: entry.result.clone(),
+    result,
     input: non_empty(&entry.input),
     output: non_empty(&entry.output),
     metadata: non_empty(&entry.metadata),
@@ -375,7 +381,11 @@ fn new_span(run_id: &str, event: &proto::SpanRecordedEvent) -> AppResult<NewSpan
   })
 }
 
-fn live_span(span: &NewSpan, test_id: Option<String>) -> LiveSpanRecordedPayload {
+fn live_span(
+  span: &NewSpan,
+  test_id: Option<String>,
+  status: SpanStatus,
+) -> LiveSpanRecordedPayload {
   LiveSpanRecordedPayload {
     id: 0,
     test_id,
@@ -386,7 +396,7 @@ fn live_span(span: &NewSpan, test_id: Option<String>) -> LiveSpanRecordedPayload
     service_name: span.service_name.clone(),
     start_time_nanos: span.start_time_nanos,
     end_time_nanos: span.end_time_nanos,
-    status: span.status.clone(),
+    status,
     attributes: non_empty(&span.attributes),
     exception_type: non_empty(&span.exception_type),
     exception_message: non_empty(&span.exception_message),

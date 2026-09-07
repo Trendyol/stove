@@ -6,14 +6,6 @@ export function tryFormatJson(s: string): string {
   }
 }
 
-export function tryFormatJsonDeep(s: string): string {
-  const parsed = parseJsonDeep(s);
-  if (parsed === null) {
-    return s;
-  }
-  return JSON.stringify(parsed, null, 2);
-}
-
 export function parseJsonDeep(s: string): unknown | null {
   try {
     return normalizeEmbeddedJson(JSON.parse(s));
@@ -22,7 +14,7 @@ export function parseJsonDeep(s: string): unknown | null {
   }
 }
 
-export interface JsonSearchResult {
+interface JsonSearchResult {
   filteredValue: unknown | null;
   matchCount: number;
 }
@@ -54,18 +46,6 @@ export function describeJsonValue(value: unknown): string {
   }
 
   return typeof value;
-}
-
-export function getJsonPreviewKeys(value: unknown, limit = 4): string[] {
-  if (Array.isArray(value)) {
-    return value.slice(0, limit).map((_, index) => `[${index}]`);
-  }
-
-  if (typeof value === "object" && value !== null) {
-    return Object.keys(value).slice(0, limit);
-  }
-
-  return [];
 }
 
 function normalizeEmbeddedJson(value: unknown): unknown {

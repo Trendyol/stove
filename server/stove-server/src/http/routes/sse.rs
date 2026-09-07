@@ -27,7 +27,7 @@ const CLIENT_BUFFER_SIZE: usize = 256;
   path = "/api/v1/events/stream",
   tag = "events",
   params(("last-event-id" = Option<u64>, Header, description = "Resume after this event")),
-  responses((status = 200, description = "Live dashboard event stream", content_type = "text/event-stream"))
+  responses((status = 200, description = "Live dashboard event stream. Each data field contains a JSON LiveDashboardEvent; keep-alives are SSE comments.", content_type = "text/event-stream"))
 )]
 pub async fn sse_handler(
   State(state): State<AppState>,

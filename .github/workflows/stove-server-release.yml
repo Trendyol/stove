@@ -76,20 +76,19 @@ jobs:
           cache: 'npm'
           cache-dependency-path: server/stove-server/spa/package-lock.json
 
-      - name: Build SPA
-        run: cd spa && npm ci && npm run build
-
       - uses: dtolnay/rust-toolchain@stable
         with:
           targets: ${{ matrix.target }}
 
       - name: Install protoc (Linux)
         if: runner.os == 'Linux'
-        run: sudo apt-get update && sudo apt-get install -y protobuf-compiler
+        run: sudo apt-get update && sudo apt-get install -y protobuf-compiler libpq-dev libssl-dev pkg-config
 
       - name: Install protoc (macOS)
         if: runner.os == 'macOS'
-        run: brew install protobuf
+        run: |
+          brew install protobuf libpq
+          echo "$(brew --prefix libpq)/bin" >> "$GITHUB_PATH"
 
       - uses: actions/cache@v6
         with:
@@ -99,6 +98,9 @@ jobs:
             server/stove-server/target
           key: cargo-release-${{ matrix.target }}-${{ hashFiles('server/stove-server/Cargo.lock') }}
           restore-keys: cargo-release-${{ matrix.target }}-
+
+      - name: Build SPA
+        run: cd spa && npm ci && npm run build
 
       - name: Build release binary
         run: cargo build --release --locked --features vendored-postgres --target ${{ matrix.target }}

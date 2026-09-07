@@ -1,27 +1,19 @@
+import * as schema from "./response-schemas";
 import type {
-  AdminStatus,
-  AppSummary,
-  DatabaseQueryResult,
-  DatabaseSchema,
-  Entry,
-  MetaResponse,
-  MockInteraction,
-  MockWarning,
-  PurgePreview,
-  PurgeResult,
-  Run,
-  Snapshot,
-  Span,
-  Test,
+  DatabaseQueryRequest,
+  PurgePreviewRequest,
+  PurgeRequest,
+  RetentionRequest,
 } from "./types";
+import { arrayOf, type Validator } from "./validation";
 
 const BASE = "/api/v1";
 const encodePath = (value: string) => encodeURIComponent(value);
 
-async function get<T>(url: string, signal?: AbortSignal): Promise<T> {
+async function get<T>(url: string, validate: Validator<T>, signal?: AbortSignal): Promise<T> {
   const res = await fetch(`${BASE}${url}`, { signal });
   if (!res.ok) throw new Error(`${res.status} ${res.statusText}`);
-  return res.json();
+  return readResponse(res, url, validate);
 }
 
 async function del(url: string): Promise<void> {
@@ -29,72 +21,113 @@ async function del(url: string): Promise<void> {
   if (!res.ok) throw new Error(`${res.status} ${res.statusText}`);
 }
 
-async function send<T>(url: string, method: "POST" | "PUT", body: unknown): Promise<T> {
+async function send<T>(
+  url: string,
+  method: "POST" | "PUT",
+  body: unknown,
+  validate: Validator<T>,
+): Promise<T> {
   const res = await fetch(`${BASE}${url}`, {
     method,
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(body),
   });
   if (!res.ok) throw new Error(`${res.status} ${await res.text()}`);
-  return res.json();
+  return readResponse(res, url, validate);
+}
+
+async function readResponse<T>(
+  response: Response,
+  url: string,
+  validate: Validator<T>,
+): Promise<T> {
+  const value: unknown = await response.json();
+  if (!validate(value)) throw new Error(`Invalid response from ${BASE}${url}`);
+  return value;
 }
 
 export const api = {
-  getMeta: (signal?: AbortSignal) => get<MetaResponse>("/meta", signal),
-  getApps: (signal?: AbortSignal) => get<AppSummary[]>("/apps", signal),
-  getRuns: (app?: string, metadata: Record<string, string> = {}, signal?: AbortSignal) => {
+  getMeta: (signal?: AbortSignal) => get("/meta", schema.isMetaResponse, signal),
+  getApps: (signal?: AbortSignal) => get("/apps", arrayOf(schema.isAppSummary), signal),
+  getRuns: (app?: string, signal?: AbortSignal) => {
     const params = new URLSearchParams();
     if (app) params.set("app", app);
-    if (Object.keys(metadata).length > 0) params.set("metadata", JSON.stringify(metadata));
     const query = params.toString();
-    return get<Run[]>(query ? `/runs?${query}` : "/runs", signal);
+    return get(query ? `/runs?${query}` : "/runs", arrayOf(schema.isRun), signal);
   },
-  getRun: (runId: string, signal?: AbortSignal) =>
-    get<Run | null>(`/runs/${encodePath(runId)}`, signal),
   getTests: (runId: string, signal?: AbortSignal) =>
-    get<Test[]>(`/runs/${encodePath(runId)}/tests`, signal),
+    get(`/runs/${encodePath(runId)}/tests`, arrayOf(schema.isTest), signal),
   getEntries: (runId: string, testId: string, signal?: AbortSignal) =>
-    get<Entry[]>(`/runs/${encodePath(runId)}/tests/${encodePath(testId)}/entries`, signal),
+    get(
+      `/runs/${encodePath(runId)}/tests/${encodePath(testId)}/entries`,
+      arrayOf(schema.isEntry),
+      signal,
+    ),
   getSpans: (runId: string, testId: string, signal?: AbortSignal) =>
-    get<Span[]>(`/runs/${encodePath(runId)}/tests/${encodePath(testId)}/spans`, signal),
+    get(
+      `/runs/${encodePath(runId)}/tests/${encodePath(testId)}/spans`,
+      arrayOf(schema.isSpan),
+      signal,
+    ),
   getSnapshots: (runId: string, testId: string, signal?: AbortSignal) =>
-    get<Snapshot[]>(`/runs/${encodePath(runId)}/tests/${encodePath(testId)}/snapshots`, signal),
+    get(
+      `/runs/${encodePath(runId)}/tests/${encodePath(testId)}/snapshots`,
+      arrayOf(schema.isSnapshot),
+      signal,
+    ),
   getTestMockInteractions: (runId: string, testId: string, signal?: AbortSignal) =>
-    get<MockInteraction[]>(
+    get(
       `/runs/${encodePath(runId)}/tests/${encodePath(testId)}/mock-interactions`,
+      arrayOf(schema.isMockInteraction),
       signal,
     ),
-  getRunMockInteractions: (runId: string, signal?: AbortSignal) =>
-    get<MockInteraction[]>(`/runs/${encodePath(runId)}/mock-interactions`, signal),
   getAmbientMockInteractions: (runId: string, signal?: AbortSignal) =>
-    get<MockInteraction[]>(`/runs/${encodePath(runId)}/mock-interactions/ambient`, signal),
-  getTestMockWarnings: (runId: string, testId: string, signal?: AbortSignal) =>
-    get<MockWarning[]>(
-      `/runs/${encodePath(runId)}/tests/${encodePath(testId)}/mock-warnings`,
+    get(
+      `/runs/${encodePath(runId)}/mock-interactions/ambient`,
+      arrayOf(schema.isMockInteraction),
       signal,
     ),
-  getRunMockWarnings: (runId: string, signal?: AbortSignal) =>
-    get<MockWarning[]>(`/runs/${encodePath(runId)}/mock-warnings`, signal),
+  getTestMockWarnings: (runId: string, testId: string, signal?: AbortSignal) =>
+    get(
+      `/runs/${encodePath(runId)}/tests/${encodePath(testId)}/mock-warnings`,
+      arrayOf(schema.isMockWarning),
+      signal,
+    ),
   getAmbientMockWarnings: (runId: string, signal?: AbortSignal) =>
-    get<MockWarning[]>(`/runs/${encodePath(runId)}/mock-warnings/ambient`, signal),
+    get(`/runs/${encodePath(runId)}/mock-warnings/ambient`, arrayOf(schema.isMockWarning), signal),
   getTrace: (traceId: string, signal?: AbortSignal) =>
-    get<Span[]>(`/traces/${encodePath(traceId)}`, signal),
+    get(`/traces/${encodePath(traceId)}`, arrayOf(schema.isSpan), signal),
   clearAll: () => del("/data"),
-  getAdminStatus: (signal?: AbortSignal) => get<AdminStatus>("/admin/status", signal),
+  getAdminStatus: (signal?: AbortSignal) => get("/admin/status", schema.isAdminStatus, signal),
   getDatabaseSchema: (signal?: AbortSignal) =>
-    get<DatabaseSchema>("/admin/database/schema", signal),
+    get("/admin/database/schema", schema.isDatabaseSchema, signal),
   executeDatabaseQuery: (sql: string, maxRows: number) =>
-    send<DatabaseQueryResult>("/admin/database/query", "POST", {
-      sql,
-      max_rows: maxRows,
-    }),
+    send(
+      "/admin/database/query",
+      "POST",
+      {
+        sql,
+        max_rows: maxRows,
+      } satisfies DatabaseQueryRequest,
+      schema.isDatabaseQueryResult,
+    ),
   updateRetention: (runsPerApp: number) =>
-    send<AdminStatus>("/admin/retention", "PUT", { runs_per_app: runsPerApp }),
-  previewPurge: (selector: { app_name?: string; older_than?: string; include_running: boolean }) =>
-    send<PurgePreview>("/admin/purge/preview", "POST", selector),
+    send(
+      "/admin/retention",
+      "PUT",
+      { runs_per_app: runsPerApp } satisfies RetentionRequest,
+      schema.isAdminStatus,
+    ),
+  previewPurge: (selector: PurgePreviewRequest) =>
+    send("/admin/purge/preview", "POST", selector, schema.isPurgePreview),
   purgeRuns: (runIds: string[], includeRunning: boolean) =>
-    send<PurgeResult>("/admin/purge", "POST", {
-      run_ids: runIds,
-      include_running: includeRunning,
-    }),
+    send(
+      "/admin/purge",
+      "POST",
+      {
+        run_ids: runIds,
+        include_running: includeRunning,
+      } satisfies PurgeRequest,
+      schema.isPurgeResult,
+    ),
 };

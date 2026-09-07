@@ -2,17 +2,12 @@
 
 ARG STOVE_VERSION=dev
 
-FROM node:24-bookworm-slim AS spa-builder
-
-ARG STOVE_VERSION
-WORKDIR /source/server/stove-server/spa
-COPY gradle.properties /source/gradle.properties
-COPY server/stove-server/spa/package.json server/stove-server/spa/package-lock.json ./
-RUN --mount=type=cache,target=/root/.npm npm ci
-COPY server/stove-server/spa/ ./
-RUN STOVE_VERSION="${STOVE_VERSION}" npm run build
+FROM node:24-bookworm-slim AS node-toolchain
 
 FROM rust:1-bookworm AS rust-builder
+
+# Type generation needs both Rust and Node before the SPA can be bundled.
+COPY --from=node-toolchain /usr/local/ /usr/local/
 
 ARG STOVE_VERSION
 RUN apt-get update \
@@ -30,17 +25,23 @@ RUN --mount=type=cache,target=/usr/local/cargo/registry \
     --mount=type=cache,target=/usr/local/cargo/git \
     cargo fetch --locked
 
+WORKDIR /source/server/stove-server/spa
+COPY server/stove-server/spa/package.json server/stove-server/spa/package-lock.json ./
+COPY server/stove-server/spa/scripts/api-types/package.json scripts/api-types/package.json
+RUN --mount=type=cache,target=/root/.npm npm ci
+
 WORKDIR /source
 COPY gradle.properties ./
 COPY lib/stove-dashboard-api/src/main/proto/ lib/stove-dashboard-api/src/main/proto/
 COPY server/stove-server/ server/stove-server/
-COPY --from=spa-builder /source/server/stove-server/spa/dist/ server/stove-server/spa/dist/
 
 WORKDIR /source/server/stove-server
 RUN --mount=type=cache,target=/usr/local/cargo/registry \
     --mount=type=cache,target=/usr/local/cargo/git \
     --mount=type=cache,target=/source/server/stove-server/target \
-    STOVE_VERSION="${STOVE_VERSION}" SKIP_SPA_BUILD=1 cargo build --locked --release \
+    --mount=type=cache,target=/root/.npm \
+    cd spa && STOVE_VERSION="${STOVE_VERSION}" npm run build \
+    && cd .. && STOVE_VERSION="${STOVE_VERSION}" SKIP_SPA_BUILD=1 cargo build --locked --release \
     && cp target/release/stove /usr/local/bin/stove
 
 FROM debian:bookworm-slim AS runtime
