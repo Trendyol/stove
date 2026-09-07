@@ -15,6 +15,17 @@ on:
         required: false
         default: false
         type: boolean
+  workflow_call:
+    inputs:
+      version:
+        description: 'Image version; snapshot versions also update the snapshot tag'
+        required: true
+        type: string
+      publish_latest:
+        description: 'Also move latest (stable semantic versions only)'
+        required: false
+        default: false
+        type: boolean
 
 permissions:
   contents: read
@@ -35,6 +46,7 @@ jobs:
     outputs:
       version: ${{ steps.version.outputs.version }}
       stable: ${{ steps.version.outputs.stable }}
+      snapshot: ${{ steps.version.outputs.snapshot }}
       major: ${{ steps.version.outputs.major }}
       major_minor: ${{ steps.version.outputs.major_minor }}
       publish_latest: ${{ steps.version.outputs.publish_latest }}
@@ -48,10 +60,10 @@ jobs:
           INPUT_VERSION: ${{ inputs.version }}
           INPUT_PUBLISH_LATEST: ${{ inputs.publish_latest }}
         run: |
-          if [[ "${GITHUB_EVENT_NAME}" == "push" ]]; then
-            raw_version="${GITHUB_REF_NAME#v}"
-          elif [[ -n "${INPUT_VERSION}" ]]; then
+          if [[ -n "${INPUT_VERSION}" ]]; then
             raw_version="${INPUT_VERSION#v}"
+          elif [[ "${GITHUB_EVENT_NAME}" == "push" ]]; then
+            raw_version="${GITHUB_REF_NAME#v}"
           else
             raw_version="$(sed -n 's/^version=//p' gradle.properties)"
           fi
@@ -62,12 +74,15 @@ jobs:
           fi
 
           stable=false
+          snapshot=false
           major=""
           major_minor=""
           if [[ "${raw_version}" =~ ^([0-9]+)\.([0-9]+)\.([0-9]+)$ ]]; then
             stable=true
             major="${BASH_REMATCH[1]}"
             major_minor="${BASH_REMATCH[1]}.${BASH_REMATCH[2]}"
+          elif [[ "${raw_version}" =~ -[Ss][Nn][Aa][Pp][Ss][Hh][Oo][Tt]$ ]]; then
+            snapshot=true
           fi
 
           publish_latest=false
@@ -79,6 +94,7 @@ jobs:
           {
             echo "version=${raw_version}"
             echo "stable=${stable}"
+            echo "snapshot=${snapshot}"
             echo "major=${major}"
             echo "major_minor=${major_minor}"
             echo "publish_latest=${publish_latest}"
@@ -121,6 +137,7 @@ jobs:
             type=raw,value=${{ needs.prepare.outputs.major_minor }},enable=${{ needs.prepare.outputs.stable }}
             type=raw,value=${{ needs.prepare.outputs.major }},enable=${{ needs.prepare.outputs.stable }}
             type=raw,value=latest,enable=${{ needs.prepare.outputs.publish_latest }}
+            type=raw,value=snapshot,enable=${{ needs.prepare.outputs.snapshot }}
           labels: |
             org.opencontainers.image.title=Stove Server
             org.opencontainers.image.description=Dashboard, API, MCP server, and event ingestion for Stove test runs
@@ -215,6 +232,7 @@ jobs:
             type=raw,value=${{ needs.prepare.outputs.major_minor }},enable=${{ needs.prepare.outputs.stable }}
             type=raw,value=${{ needs.prepare.outputs.major }},enable=${{ needs.prepare.outputs.stable }}
             type=raw,value=latest,enable=${{ needs.prepare.outputs.publish_latest }}
+            type=raw,value=snapshot,enable=${{ needs.prepare.outputs.snapshot }}
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v4

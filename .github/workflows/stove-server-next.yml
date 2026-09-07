@@ -1,8 +1,9 @@
 name: Stove Server Next
 
 # Publishes the server dev channel: builds binaries versioned like the Maven
-# snapshot, updates the rolling `next` prerelease in place with them, and
-# updates the `stove-next` formula in the Homebrew tap.
+# snapshot, updates the rolling `next` prerelease in place with them,
+# updates the `stove-next` formula in the Homebrew tap, and publishes the
+# matching container image with a rolling `snapshot` tag.
 #
 # The `next` prerelease lives on the tap repo (homebrew-trendyol-tap), not
 # here — Stove's release list stays purely `v*` releases. Everything that
@@ -55,6 +56,15 @@ jobs:
           fi
           echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
           echo "Resolved next version: ${VERSION}"
+
+  publish-image:
+    needs: resolve-version
+    permissions:
+      contents: read
+      packages: write
+    uses: ./.github/workflows/stove-server-image.yml
+    with:
+      version: ${{ needs.resolve-version.outputs.version }}
 
   build:
     needs: resolve-version

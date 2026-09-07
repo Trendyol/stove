@@ -114,6 +114,10 @@ CLI arguments and `STOVE_*` environment variables override the configuration fil
 
 The image serves the dashboard, REST API, and MCP on port `4040`, and receives test events over gRPC on port `4041`. It runs as a non-root user and supports Linux AMD64 and ARM64.
 
+Use `ghcr.io/trendyol/stove-server:latest` to follow stable releases or `ghcr.io/trendyol/stove-server:snapshot` to follow development snapshots. Publishing a Maven snapshot also publishes the matching server image with both its versioned tag (for example, `:1.0.0.558-SNAPSHOT`) and `:snapshot`. Snapshot publications never update `:latest`.
+
+Manual container builds whose version ends in `-SNAPSHOT` (case-insensitive) also update `:snapshot`. Other prereleases, such as `0.28.0-beta.1`, receive only their versioned tag. Choose a versioned tag to select a specific build.
+
 For a local or single-host installation, persist SQLite at `/data`:
 
 ```bash

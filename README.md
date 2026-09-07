@@ -105,6 +105,8 @@ docker run -d --name stove -p 4040:4040 -p 4041:4041 \
 # http://localhost:4040
 ```
 
+Container tags: `ghcr.io/trendyol/stove-server:latest` follows stable releases, while `:snapshot` follows snapshot publications. Each snapshot also has a versioned tag such as `:1.0.0.558-SNAPSHOT` for selecting a specific build.
+
 For shared or multi-pod deployments, use one PostgreSQL database for every replica and load-balance both ports; no session affinity, Redis, or message broker is required. PostgreSQL coordinates ordered, idempotent ingestion, shared retention, and durable cross-pod live updates. Production settings can be mounted as TOML or JSON, with the PostgreSQL URL read from a separate secret file. See the [Dashboard deployment guide](https://trendyol.github.io/stove/Components/18-dashboard/#configuration-files-and-secrets).
 
 For local PostgreSQL development, run `just postgres-up` from `server/stove-server`; the Compose stack builds Stove and starts a persistent PostgreSQL 18 instance. The dedicated `/admin` page includes a native SQLite/PostgreSQL schema browser and SQL workbench running inside the Stove process. It has direct database write access and no built-in authentication, so expose it only on a trusted network.
