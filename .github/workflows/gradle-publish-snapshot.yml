@@ -36,11 +36,12 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   # Publish the server dev channel (rolling `next` prerelease + `stove-next`
-  # Homebrew formula) versioned to match the Maven snapshot above —
-  # github.run_number inside the called workflow is this run's number.
+  # Homebrew formula, plus a container image) versioned to match the Maven
+  # snapshot above — github.run_number inside the called workflow is this run's number.
   publish-server-next:
     needs: publish
     permissions:
       contents: read
+      packages: write
     uses: ./.github/workflows/stove-server-next.yml
     secrets: inherit
