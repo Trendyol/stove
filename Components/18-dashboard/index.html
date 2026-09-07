@@ -2209,6 +2209,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#open-evidence-from-a-report" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Open evidence from a report
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#install-the-server" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -3458,6 +3469,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#open-evidence-from-a-report" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Open evidence from a report
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#install-the-server" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -3951,6 +3973,10 @@ Install <code>stove-server</code>, run <code>stove</code>, add <code>dashboard {
   </div>
 </div>
 
+<h2 id="open-evidence-from-a-report">Open evidence from a report<a class="headerlink" href="#open-evidence-from-a-report" title="Permanent link">&para;</a></h2>
+<p>Agent reports can link directly to a run, test, or specific record. Opening a citation selects the right tab, highlights the record, and opens its inspector. You can copy that link from the dashboard, expand the surrounding context, or choose <strong>Show full test</strong>. Browser back and forward restore earlier selections.</p>
+<p>A cited retry stays on that exact attempt even if a later attempt passed. Snapshot links can open one JSON value and let you return to the complete snapshot. Evidence with no test attribution opens at run scope. If a record was removed by retention or a link points to the wrong scope, the dashboard shows it as unavailable.</p>
+<p>Set <code>public_url = "https://stove.example/observe"</code> in the server configuration to publish links for readers. Stove serves UI assets, REST, SSE, and MCP under that prefix as well as its usual root paths, so gateways can preserve or strip the prefix. The URL accepts HTTP(S), with no credentials, query, or fragment. This configures addresses only; existing deployment access controls still apply.</p>
 <h2 id="install-the-server">Install the server<a class="headerlink" href="#install-the-server" title="Permanent link">&para;</a></h2>
 <div class="tabbed-set tabbed-alternate" data-tabs="1:4"><input checked="checked" id="homebrew" name="__tabbed_1" type="radio" /><input id="curl" name="__tabbed_1" type="radio" /><input id="manual" name="__tabbed_1" type="radio" /><input id="docker" name="__tabbed_1" type="radio" /><div class="tabbed-labels"><label for="homebrew">Homebrew</label><label for="curl">curl</label><label for="manual">Manual</label><label for="docker">Docker</label></div>
 <div class="tabbed-content">
@@ -3989,13 +4015,14 @@ Install <code>stove-server</code>, run <code>stove</code>, add <code>dashboard {
 <p>New snapshots replace the channel in place; <code>brew update &amp;&amp; brew upgrade stove-next</code> moves you to the latest. Older snapshot binaries are not kept — if you need a version that stays put, use the stable <code>stove</code> formula.</p>
 <h2 id="start-the-dashboard">Start the dashboard<a class="headerlink" href="#start-the-dashboard" title="Permanent link">&para;</a></h2>
 <div class="language-bash highlight"><pre><span></span><code><span id="__span-6-1"><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a>stove<span class="w">                                  </span><span class="c1"># default UI/REST/MCP port 4040, gRPC port 4041</span>
-</span><span id="__span-6-2"><a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a>stove<span class="w"> </span>--port<span class="w"> </span><span class="m">9000</span><span class="w"> </span>--grpc-port<span class="w"> </span><span class="m">9001</span><span class="w">     </span><span class="c1"># override ports</span>
-</span><span id="__span-6-3"><a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a>stove<span class="w"> </span>--retention-runs-per-app<span class="w"> </span><span class="m">50</span><span class="w">      </span><span class="c1"># keep 50 completed runs per app (default: 1; 0: unlimited)</span>
-</span><span id="__span-6-4"><a id="__codelineno-6-4" name="__codelineno-6-4" href="#__codelineno-6-4"></a>stove<span class="w"> </span>--fresh-start<span class="w">                    </span><span class="c1"># back up and recreate the DB, then start</span>
-</span><span id="__span-6-5"><a id="__codelineno-6-5" name="__codelineno-6-5" href="#__codelineno-6-5"></a>stove<span class="w"> </span>--db<span class="w"> </span>./my-stove.sqlite<span class="w">           </span><span class="c1"># custom DB path</span>
-</span><span id="__span-6-6"><a id="__codelineno-6-6" name="__codelineno-6-6" href="#__codelineno-6-6"></a>stove<span class="w"> </span>--database-url<span class="w"> </span>postgresql://stove:secret@db.example/stove
-</span><span id="__span-6-7"><a id="__codelineno-6-7" name="__codelineno-6-7" href="#__codelineno-6-7"></a>stove<span class="w"> </span>--config-file<span class="w"> </span>/etc/stove/stove.toml
-</span><span id="__span-6-8"><a id="__codelineno-6-8" name="__codelineno-6-8" href="#__codelineno-6-8"></a>stove<span class="w"> </span>--clear<span class="w">                          </span><span class="c1"># clear stored runs and exit</span>
+</span><span id="__span-6-2"><a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a>stove<span class="w"> </span>--public-url<span class="w"> </span>https://stove.example/observe<span class="w">  </span><span class="c1"># public browser URL and optional gateway prefix</span>
+</span><span id="__span-6-3"><a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a>stove<span class="w"> </span>--port<span class="w"> </span><span class="m">9000</span><span class="w"> </span>--grpc-port<span class="w"> </span><span class="m">9001</span><span class="w">     </span><span class="c1"># override ports</span>
+</span><span id="__span-6-4"><a id="__codelineno-6-4" name="__codelineno-6-4" href="#__codelineno-6-4"></a>stove<span class="w"> </span>--retention-runs-per-app<span class="w"> </span><span class="m">50</span><span class="w">      </span><span class="c1"># keep 50 completed runs per app (default: 1; 0: unlimited)</span>
+</span><span id="__span-6-5"><a id="__codelineno-6-5" name="__codelineno-6-5" href="#__codelineno-6-5"></a>stove<span class="w"> </span>--fresh-start<span class="w">                    </span><span class="c1"># back up and recreate the DB, then start</span>
+</span><span id="__span-6-6"><a id="__codelineno-6-6" name="__codelineno-6-6" href="#__codelineno-6-6"></a>stove<span class="w"> </span>--db<span class="w"> </span>./my-stove.sqlite<span class="w">           </span><span class="c1"># custom DB path</span>
+</span><span id="__span-6-7"><a id="__codelineno-6-7" name="__codelineno-6-7" href="#__codelineno-6-7"></a>stove<span class="w"> </span>--database-url<span class="w"> </span>postgresql://stove:secret@db.example/stove
+</span><span id="__span-6-8"><a id="__codelineno-6-8" name="__codelineno-6-8" href="#__codelineno-6-8"></a>stove<span class="w"> </span>--config-file<span class="w"> </span>/etc/stove/stove.toml
+</span><span id="__span-6-9"><a id="__codelineno-6-9" name="__codelineno-6-9" href="#__codelineno-6-9"></a>stove<span class="w"> </span>--clear<span class="w">                          </span><span class="c1"># clear stored runs and exit</span>
 </span></code></pre></div>
 <p>Open the printed URL. Empty until tests run.</p>
 <h3 id="configuration-files-and-secrets">Configuration files and secrets<a class="headerlink" href="#configuration-files-and-secrets" title="Permanent link">&para;</a></h3>
@@ -4332,6 +4359,11 @@ Install <code>stove-server</code>, run <code>stove</code>, add <code>dashboard {
 <td><code>--config-file</code></td>
 <td>unset</td>
 <td>TOML or JSON configuration path; also <code>STOVE_CONFIG_FILE</code></td>
+</tr>
+<tr>
+<td><code>--public-url</code></td>
+<td>unset</td>
+<td>browser URL for MCP citations, including an optional path prefix; also <code>STOVE_PUBLIC_URL</code> or config-file <code>public_url</code></td>
 </tr>
 <tr>
 <td><code>--port</code></td>

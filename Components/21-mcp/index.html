@@ -2259,6 +2259,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#link-reports-to-exact-evidence" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Link reports to exact evidence
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#data-model" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -3318,6 +3329,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#link-reports-to-exact-evidence" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Link reports to exact evidence
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#data-model" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -3546,27 +3568,39 @@ Start <code>stove</code>. Point your agent at the MCP endpoint. Agents call <cod
 </tr>
 </tbody>
 </table>
+<h2 id="link-reports-to-exact-evidence">Link reports to exact evidence<a class="headerlink" href="#link-reports-to-exact-evidence" title="Permanent link">&para;</a></h2>
+<p>Failure and evidence results include <code>navigation</code> with the exact <code>run_id</code>, optional <code>test_id</code>, browser <code>path</code>, and optional absolute <code>url</code>. Tests with a recorded error also include <code>error_navigation</code> to open that error. Agents can put these links beside their explanation in a report; reports themselves remain in the agent's output.</p>
+<div class="language-json highlight"><pre><span></span><code><span id="__span-3-1"><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="p">{</span>
+</span><span id="__span-3-2"><a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a><span class="w">  </span><span class="nt">"run_id"</span><span class="p">:</span><span class="w"> </span><span class="s2">"pipeline-42"</span><span class="p">,</span>
+</span><span id="__span-3-3"><a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a><span class="w">  </span><span class="nt">"test_id"</span><span class="p">:</span><span class="w"> </span><span class="s2">"test-failed"</span><span class="p">,</span>
+</span><span id="__span-3-4"><a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a><span class="w">  </span><span class="nt">"path"</span><span class="p">:</span><span class="w"> </span><span class="s2">"/observe/runs/pipeline-42/tests/test-failed?tab=timeline&amp;focus=entry:482"</span><span class="p">,</span>
+</span><span id="__span-3-5"><a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a><span class="w">  </span><span class="nt">"url"</span><span class="p">:</span><span class="w"> </span><span class="s2">"https://stove.example/observe/runs/pipeline-42/tests/test-failed?tab=timeline&amp;focus=entry:482"</span>
+</span><span id="__span-3-6"><a id="__codelineno-3-6" name="__codelineno-3-6" href="#__codelineno-3-6"></a><span class="p">}</span>
+</span></code></pre></div>
+<p>Configure the browser address with <code>STOVE_PUBLIC_URL=https://stove.example/observe</code>, <code>--public-url</code>, or <code>public_url</code> in the server configuration file. It can differ from the agent's internal MCP address. Without it, <code>url</code> is null and <code>path</code> is relative to the browser origin; agents should use a known browser origin, never guess one from an internal MCP hostname.</p>
+<p>Use the returned link unchanged. Entry links preserve the exact recorded attempt, even when a later retry passed. Span, snapshot, mock interaction, and warning links open the corresponding inspector. <code>stove_snapshot</code> includes the requested RFC 6901 <code>json_pointer</code> in its citation. Unattributed mocks and trace-only spans can link to run evidence without assigning a test.</p>
+<p>The dashboard starts with bounded context and lets readers expand it or open the full test. Missing or purged evidence produces an unavailable state; it never selects a newer run. Links remain valid only while their evidence is retained. Shared CI deployments should choose an appropriate retention period; the default keeps one completed run per app.</p>
 <h2 id="data-model">Data model<a class="headerlink" href="#data-model" title="Permanent link">&para;</a></h2>
-<div class="language-text highlight"><pre><span></span><code><span id="__span-3-1"><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>database
-</span><span id="__span-3-2"><a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a>└── apps           (one per appName)
-</span><span id="__span-3-3"><a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a>    └── runs       (one per test suite execution)
-</span><span id="__span-3-4"><a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a>        └── tests  (one per test case)
-</span><span id="__span-3-5"><a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a>            ├── entries        HTTP/DB/Kafka/...
-</span><span id="__span-3-6"><a id="__codelineno-3-6" name="__codelineno-3-6" href="#__codelineno-3-6"></a>            ├── spans          OTel tree
-</span><span id="__span-3-7"><a id="__codelineno-3-7" name="__codelineno-3-7" href="#__codelineno-3-7"></a>            ├── snapshots      system state at failure
-</span><span id="__span-3-8"><a id="__codelineno-3-8" name="__codelineno-3-8" href="#__codelineno-3-8"></a>            └── interactions   WireMock/gRPC Mock exchanges and warnings
+<div class="language-text highlight"><pre><span></span><code><span id="__span-4-1"><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>database
+</span><span id="__span-4-2"><a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a>└── apps           (one per appName)
+</span><span id="__span-4-3"><a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a>    └── runs       (one per test suite execution)
+</span><span id="__span-4-4"><a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a>        └── tests  (one per test case)
+</span><span id="__span-4-5"><a id="__codelineno-4-5" name="__codelineno-4-5" href="#__codelineno-4-5"></a>            ├── entries        HTTP/DB/Kafka/...
+</span><span id="__span-4-6"><a id="__codelineno-4-6" name="__codelineno-4-6" href="#__codelineno-4-6"></a>            ├── spans          OTel tree
+</span><span id="__span-4-7"><a id="__codelineno-4-7" name="__codelineno-4-7" href="#__codelineno-4-7"></a>            ├── snapshots      system state at failure
+</span><span id="__span-4-8"><a id="__codelineno-4-8" name="__codelineno-4-8" href="#__codelineno-4-8"></a>            └── interactions   WireMock/gRPC Mock exchanges and warnings
 </span></code></pre></div>
 <p>Tools use <code>app_name</code>, <code>run_id</code>, or <code>test_id</code> to drill down. For one local run, start with <code>stove_failures</code>. On a shared server, select the run by metadata first.</p>
 <p>When multiple GitLab jobs or teams publish to one Stove server, use <code>stove_runs.metadata</code> to select an exact metadata subset. The keys are dynamic and all values are strings:</p>
-<div class="language-json highlight"><pre><span></span><code><span id="__span-4-1"><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="p">{</span>
-</span><span id="__span-4-2"><a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a><span class="w">  </span><span class="nt">"app_name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"checkout-api"</span><span class="p">,</span>
-</span><span id="__span-4-3"><a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a><span class="w">  </span><span class="nt">"status"</span><span class="p">:</span><span class="w"> </span><span class="s2">"FAILED"</span><span class="p">,</span>
-</span><span id="__span-4-4"><a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a><span class="w">  </span><span class="nt">"metadata"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
-</span><span id="__span-4-5"><a id="__codelineno-4-5" name="__codelineno-4-5" href="#__codelineno-4-5"></a><span class="w">    </span><span class="nt">"team"</span><span class="p">:</span><span class="w"> </span><span class="s2">"checkout"</span><span class="p">,</span>
-</span><span id="__span-4-6"><a id="__codelineno-4-6" name="__codelineno-4-6" href="#__codelineno-4-6"></a><span class="w">    </span><span class="nt">"gitlab.project"</span><span class="p">:</span><span class="w"> </span><span class="s2">"commerce/checkout-api"</span><span class="p">,</span>
-</span><span id="__span-4-7"><a id="__codelineno-4-7" name="__codelineno-4-7" href="#__codelineno-4-7"></a><span class="w">    </span><span class="nt">"gitlab.pipeline_id"</span><span class="p">:</span><span class="w"> </span><span class="s2">"12345"</span>
-</span><span id="__span-4-8"><a id="__codelineno-4-8" name="__codelineno-4-8" href="#__codelineno-4-8"></a><span class="w">  </span><span class="p">}</span>
-</span><span id="__span-4-9"><a id="__codelineno-4-9" name="__codelineno-4-9" href="#__codelineno-4-9"></a><span class="p">}</span>
+<div class="language-json highlight"><pre><span></span><code><span id="__span-5-1"><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a><span class="p">{</span>
+</span><span id="__span-5-2"><a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a><span class="w">  </span><span class="nt">"app_name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"checkout-api"</span><span class="p">,</span>
+</span><span id="__span-5-3"><a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a><span class="w">  </span><span class="nt">"status"</span><span class="p">:</span><span class="w"> </span><span class="s2">"FAILED"</span><span class="p">,</span>
+</span><span id="__span-5-4"><a id="__codelineno-5-4" name="__codelineno-5-4" href="#__codelineno-5-4"></a><span class="w">  </span><span class="nt">"metadata"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+</span><span id="__span-5-5"><a id="__codelineno-5-5" name="__codelineno-5-5" href="#__codelineno-5-5"></a><span class="w">    </span><span class="nt">"team"</span><span class="p">:</span><span class="w"> </span><span class="s2">"checkout"</span><span class="p">,</span>
+</span><span id="__span-5-6"><a id="__codelineno-5-6" name="__codelineno-5-6" href="#__codelineno-5-6"></a><span class="w">    </span><span class="nt">"gitlab.project"</span><span class="p">:</span><span class="w"> </span><span class="s2">"commerce/checkout-api"</span><span class="p">,</span>
+</span><span id="__span-5-7"><a id="__codelineno-5-7" name="__codelineno-5-7" href="#__codelineno-5-7"></a><span class="w">    </span><span class="nt">"gitlab.pipeline_id"</span><span class="p">:</span><span class="w"> </span><span class="s2">"12345"</span>
+</span><span id="__span-5-8"><a id="__codelineno-5-8" name="__codelineno-5-8" href="#__codelineno-5-8"></a><span class="w">  </span><span class="p">}</span>
+</span><span id="__span-5-9"><a id="__codelineno-5-9" name="__codelineno-5-9" href="#__codelineno-5-9"></a><span class="p">}</span>
 </span></code></pre></div>
 <p>All supplied key/value pairs must match exactly and only retained runs are searchable. <code>stove_failures</code> does not accept metadata directly: pass a returned <code>run_id</code> to it, then use that same run ID with the failure, timeline, trace, snapshot, interaction, and raw-evidence tools.</p>
 <h2 id="token-budgeting">Token budgeting<a class="headerlink" href="#token-budgeting" title="Permanent link">&para;</a></h2>
@@ -3579,34 +3613,34 @@ Start <code>stove</code>. Point your agent at the MCP endpoint. Agents call <cod
 <p>Sensitive keys are auto-redacted (passwords, JWTs, common secret patterns).</p>
 <h2 id="recommended-agent-workflows">Recommended agent workflows<a class="headerlink" href="#recommended-agent-workflows" title="Permanent link">&para;</a></h2>
 <p>For a local server with one relevant run:</p>
-<div class="language-text highlight"><pre><span></span><code><span id="__span-5-1"><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>1. stove_failures(limit=5, app_name="my-service")
-</span><span id="__span-5-2"><a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a>   → list of recent failures, with test_id and run_id
-</span><span id="__span-5-3"><a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a>
-</span><span id="__span-5-4"><a id="__codelineno-5-4" name="__codelineno-5-4" href="#__codelineno-5-4"></a>2. stove_failure_detail(test_id, run_id, budget="compact")
-</span><span id="__span-5-5"><a id="__codelineno-5-5" name="__codelineno-5-5" href="#__codelineno-5-5"></a>   → assertion, entries leading up to it, snapshot summary
-</span><span id="__span-5-6"><a id="__codelineno-5-6" name="__codelineno-5-6" href="#__codelineno-5-6"></a>
-</span><span id="__span-5-7"><a id="__codelineno-5-7" name="__codelineno-5-7" href="#__codelineno-5-7"></a>3. (optional) stove_trace(test_id, run_id)
-</span><span id="__span-5-8"><a id="__codelineno-5-8" name="__codelineno-5-8" href="#__codelineno-5-8"></a>   → call chain inside the app
-</span><span id="__span-5-9"><a id="__codelineno-5-9" name="__codelineno-5-9" href="#__codelineno-5-9"></a>
-</span><span id="__span-5-10"><a id="__codelineno-5-10" name="__codelineno-5-10" href="#__codelineno-5-10"></a>4. (optional) stove_snapshot(test_id, run_id, system="kafka")
-</span><span id="__span-5-11"><a id="__codelineno-5-11" name="__codelineno-5-11" href="#__codelineno-5-11"></a>   → drill into one system if root cause unclear
+<div class="language-text highlight"><pre><span></span><code><span id="__span-6-1"><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a>1. stove_failures(limit=5, app_name="my-service")
+</span><span id="__span-6-2"><a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a>   → list of recent failures, with test_id and run_id
+</span><span id="__span-6-3"><a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a>
+</span><span id="__span-6-4"><a id="__codelineno-6-4" name="__codelineno-6-4" href="#__codelineno-6-4"></a>2. stove_failure_detail(test_id, run_id, budget="compact")
+</span><span id="__span-6-5"><a id="__codelineno-6-5" name="__codelineno-6-5" href="#__codelineno-6-5"></a>   → assertion, entries leading up to it, snapshot summary
+</span><span id="__span-6-6"><a id="__codelineno-6-6" name="__codelineno-6-6" href="#__codelineno-6-6"></a>
+</span><span id="__span-6-7"><a id="__codelineno-6-7" name="__codelineno-6-7" href="#__codelineno-6-7"></a>3. (optional) stove_trace(test_id, run_id)
+</span><span id="__span-6-8"><a id="__codelineno-6-8" name="__codelineno-6-8" href="#__codelineno-6-8"></a>   → call chain inside the app
+</span><span id="__span-6-9"><a id="__codelineno-6-9" name="__codelineno-6-9" href="#__codelineno-6-9"></a>
+</span><span id="__span-6-10"><a id="__codelineno-6-10" name="__codelineno-6-10" href="#__codelineno-6-10"></a>4. (optional) stove_snapshot(test_id, run_id, system="kafka")
+</span><span id="__span-6-11"><a id="__codelineno-6-11" name="__codelineno-6-11" href="#__codelineno-6-11"></a>   → drill into one system if root cause unclear
 </span></code></pre></div>
 <p>For a shared server receiving several teams or CI jobs:</p>
-<div class="language-text highlight"><pre><span></span><code><span id="__span-6-1"><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a>1. stove_runs(
-</span><span id="__span-6-2"><a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a>       app_name="checkout-api",
-</span><span id="__span-6-3"><a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a>       status="FAILED",
-</span><span id="__span-6-4"><a id="__codelineno-6-4" name="__codelineno-6-4" href="#__codelineno-6-4"></a>       metadata={"gitlab.project":"commerce/checkout-api", "gitlab.pipeline_id":"12345"}
-</span><span id="__span-6-5"><a id="__codelineno-6-5" name="__codelineno-6-5" href="#__codelineno-6-5"></a>   )
-</span><span id="__span-6-6"><a id="__codelineno-6-6" name="__codelineno-6-6" href="#__codelineno-6-6"></a>   → select the exact run_id
-</span><span id="__span-6-7"><a id="__codelineno-6-7" name="__codelineno-6-7" href="#__codelineno-6-7"></a>
-</span><span id="__span-6-8"><a id="__codelineno-6-8" name="__codelineno-6-8" href="#__codelineno-6-8"></a>2. stove_failures(run_id="...")
-</span><span id="__span-6-9"><a id="__codelineno-6-9" name="__codelineno-6-9" href="#__codelineno-6-9"></a>   → select the exact test_id
-</span><span id="__span-6-10"><a id="__codelineno-6-10" name="__codelineno-6-10" href="#__codelineno-6-10"></a>
-</span><span id="__span-6-11"><a id="__codelineno-6-11" name="__codelineno-6-11" href="#__codelineno-6-11"></a>3. stove_failure_detail(run_id="...", test_id="...", budget="compact")
-</span><span id="__span-6-12"><a id="__codelineno-6-12" name="__codelineno-6-12" href="#__codelineno-6-12"></a>   → focused failure packet for that CI run
-</span><span id="__span-6-13"><a id="__codelineno-6-13" name="__codelineno-6-13" href="#__codelineno-6-13"></a>
-</span><span id="__span-6-14"><a id="__codelineno-6-14" name="__codelineno-6-14" href="#__codelineno-6-14"></a>4. (optional) stove_timeline / stove_trace / stove_snapshot / stove_interactions
-</span><span id="__span-6-15"><a id="__codelineno-6-15" name="__codelineno-6-15" href="#__codelineno-6-15"></a>   → query more evidence with the same run_id and test_id
+<div class="language-text highlight"><pre><span></span><code><span id="__span-7-1"><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a>1. stove_runs(
+</span><span id="__span-7-2"><a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a>       app_name="checkout-api",
+</span><span id="__span-7-3"><a id="__codelineno-7-3" name="__codelineno-7-3" href="#__codelineno-7-3"></a>       status="FAILED",
+</span><span id="__span-7-4"><a id="__codelineno-7-4" name="__codelineno-7-4" href="#__codelineno-7-4"></a>       metadata={"gitlab.project":"commerce/checkout-api", "gitlab.pipeline_id":"12345"}
+</span><span id="__span-7-5"><a id="__codelineno-7-5" name="__codelineno-7-5" href="#__codelineno-7-5"></a>   )
+</span><span id="__span-7-6"><a id="__codelineno-7-6" name="__codelineno-7-6" href="#__codelineno-7-6"></a>   → select the exact run_id
+</span><span id="__span-7-7"><a id="__codelineno-7-7" name="__codelineno-7-7" href="#__codelineno-7-7"></a>
+</span><span id="__span-7-8"><a id="__codelineno-7-8" name="__codelineno-7-8" href="#__codelineno-7-8"></a>2. stove_failures(run_id="...")
+</span><span id="__span-7-9"><a id="__codelineno-7-9" name="__codelineno-7-9" href="#__codelineno-7-9"></a>   → select the exact test_id
+</span><span id="__span-7-10"><a id="__codelineno-7-10" name="__codelineno-7-10" href="#__codelineno-7-10"></a>
+</span><span id="__span-7-11"><a id="__codelineno-7-11" name="__codelineno-7-11" href="#__codelineno-7-11"></a>3. stove_failure_detail(run_id="...", test_id="...", budget="compact")
+</span><span id="__span-7-12"><a id="__codelineno-7-12" name="__codelineno-7-12" href="#__codelineno-7-12"></a>   → focused failure packet for that CI run
+</span><span id="__span-7-13"><a id="__codelineno-7-13" name="__codelineno-7-13" href="#__codelineno-7-13"></a>
+</span><span id="__span-7-14"><a id="__codelineno-7-14" name="__codelineno-7-14" href="#__codelineno-7-14"></a>4. (optional) stove_timeline / stove_trace / stove_snapshot / stove_interactions
+</span><span id="__span-7-15"><a id="__codelineno-7-15" name="__codelineno-7-15" href="#__codelineno-7-15"></a>   → query more evidence with the same run_id and test_id
 </span></code></pre></div>
 <p>Do not silently remove metadata after an empty result; confirm the key/value pairs produced by the CI job. The metadata is configured by the test suite's <a href="../18-dashboard/#wire-your-tests"><code>DashboardSystemOptions</code></a>.</p>
 <h2 id="security">Security<a class="headerlink" href="#security" title="Permanent link">&para;</a></h2>
