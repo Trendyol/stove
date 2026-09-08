@@ -50,7 +50,7 @@ export function TestTree({ tests, selectedTestId, onSelectTest }: TestTreeProps)
       ariaLabel="Run navigator"
       items={rows}
       getKey={(row) => row.key}
-      getItemSize={(row) => (row.kind === "group" ? 32 : 50)}
+      getItemSize={(row) => (row.kind === "group" ? 32 : 78)}
       windowThreshold={120}
       renderItem={(row) =>
         row.kind === "group" ? (
@@ -83,6 +83,7 @@ function TreeGroup({
       className="stove-tree-group"
       style={{ paddingLeft: `${row.depth * 12 + 8}px`, paddingTop: "4px", paddingBottom: "4px" }}
       onClick={onToggle}
+      aria-expanded={!row.collapsed}
     >
       {row.expandable && (
         <svg

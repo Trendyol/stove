@@ -8,10 +8,20 @@ import { isEntryIssue } from "./model";
 interface EvidenceRowProps {
   entry: Entry;
   selected: boolean;
+  first: boolean;
+  last: boolean;
+  inspectorId?: string;
   onSelect: () => void;
 }
 
-export function EvidenceRow({ entry, selected, onSelect }: EvidenceRowProps) {
+export function EvidenceRow({
+  entry,
+  selected,
+  first,
+  last,
+  onSelect,
+  inspectorId,
+}: EvidenceRowProps) {
   const system = getSystemInfo(entry.system);
   const issue = isEntryIssue(entry);
 
@@ -21,7 +31,11 @@ export function EvidenceRow({ entry, selected, onSelect }: EvidenceRowProps) {
       className={`evidence-ledger-row ${selected ? "is-selected" : ""} ${
         issue ? "is-issue" : "is-success"
       }`}
-      aria-haspopup="dialog"
+      data-entry-id={entry.id}
+      data-first={first}
+      data-last={last}
+      aria-controls={inspectorId}
+      aria-pressed={selected}
       onClick={onSelect}
     >
       <span className="ledger-rail-point" aria-hidden="true">
@@ -44,8 +58,7 @@ export function EvidenceRow({ entry, selected, onSelect }: EvidenceRowProps) {
             {entry.attempt_count} attempts · {entry.failure_count} failed
           </span>
         )}
-        {entry.trace_id && <span className="ledger-trace-stamp">trace</span>}
-        <span className={`ledger-result is-${issue ? "issue" : "success"}`}>{entry.result}</span>
+        <span className={issue ? "ledger-result is-issue" : "sr-only"}>{entry.result}</span>
         <Icon name="chevron" className="h-4 w-4" />
       </span>
     </button>

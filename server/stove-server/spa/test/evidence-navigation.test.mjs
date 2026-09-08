@@ -15,6 +15,7 @@ Object.assign(globalThis, { window: dom.window, document: dom.window.document,
   IS_REACT_ACT_ENVIRONMENT: true, __STOVE_VERSION__: "test",
   ResizeObserver: class { observe() {} disconnect() {} },
 });
+window.matchMedia = () => ({matches: false, addEventListener() {}, removeEventListener() {}});
 const sources = [];
 globalThis.EventSource = class { constructor() { sources.push(this); } close() {} };
 const jiti = createJiti(import.meta.url, { jsx: { runtime: "automatic" }, fsCache: false, alias: {
@@ -63,12 +64,12 @@ test("dashboard test, tab, error and evidence clicks stay in place without linke
   dashboardApi(t);
   const view = render(h(App), wrapper());
   await waitFor(() => assert.ok(view.getByRole("button", {name: /POST \/products/})));
-  const sidebar = view.getByRole("complementary");
+  const sidebar = view.getByRole("complementary", {name: "Test navigator"});
   const search = within(sidebar).getByRole("textbox", {name: "Search tests"});
   fireEvent.change(search, {target: {value: "product"}});
   const historyLength = window.history.length;
   const assertDashboard = () => {
-    assert.equal(view.getByRole("complementary"), sidebar);
+    assert.equal(view.getByRole("complementary", {name: "Test navigator"}), sidebar);
     assert.equal(search.value, "product");
     assert.equal(window.location.pathname, "/");
     assert.equal(window.location.search, "");
@@ -83,23 +84,26 @@ test("dashboard test, tab, error and evidence clicks stay in place without linke
   await waitFor(() => assert.ok(view.getByRole("button", {name: /POST \/products/})));
   assert.ok(view.getByRole("heading", {name: "updates a product"}));
   assertDashboard();
-  fireEvent.click(view.getByRole("button", {name: /Failure.*update failed/}));
+  fireEvent.click(view.getByRole("button", {name: /Test failed.*update failed/}));
   assert.match(view.getByRole("dialog").textContent, /update failed/);
   assertDashboard();
   fireEvent.keyDown(window, {key: "Escape"});
   assert.equal(view.queryByRole("dialog"), null);
 
   fireEvent.click(view.getByRole("button", {name: /POST \/products/}));
-  const dialog = view.getByRole("dialog", {name: "Evidence details for POST /products"});
+  const dialog = view.getByRole("complementary", {name: "Evidence details for POST /products"});
   assertDashboard();
-  fireEvent.click(within(dialog).getByRole("button", {name: "Open trace"}));
+  fireEvent.click(within(dialog).getByRole("button", {name: "Related trace"}));
   await waitFor(() => assert.ok(view.getByRole("list", {name: "Recorded trace spans"})));
   assert.ok(view.getByRole("tab", {name: /Trace/, selected: true}));
+  assertDashboard();
+  fireEvent.click(view.getByRole("tab", {name: /Timeline/}));
+  await waitFor(() => assert.ok(view.getByRole("complementary", {name: "Evidence details for POST /products"})));
   assertDashboard();
 
   fireEvent.click(within(sidebar).getByRole("button", {name: /creates a product/}));
   await waitFor(() => assert.ok(view.getByRole("heading", {name: "creates a product"})));
-  assert.ok(view.getByRole("tab", {name: /Evidence/, selected: true}));
+  assert.ok(view.getByRole("tab", {name: /Timeline/, selected: true}));
   assert.equal(view.queryByRole("dialog"), null);
   assertDashboard();
   fireEvent.click(view.getByRole("tab", {name: /Trace/}));
@@ -113,15 +117,15 @@ test("changing dashboard runs retains the navigator while tests load", async (t)
   api.getTests.mock.mockImplementation(async (runId) => runId === "run-2" ? pending.promise : [testRecord]);
   const view = render(h(App), wrapper());
   await waitFor(() => assert.ok(view.getByRole("heading", {name: "creates a product"})));
-  const sidebar = view.getByRole("complementary");
+  const sidebar = view.getByRole("complementary", {name: "Test navigator"});
   fireEvent.change(view.getByRole("combobox", {name: "Run"}), {target: {value: "run-2"}});
-  assert.equal(view.getByRole("complementary"), sidebar);
+  assert.equal(view.getByRole("complementary", {name: "Test navigator"}), sidebar);
   assert.equal(window.location.pathname, "/");
   assert.equal(view.getByRole("combobox", {name: "Run"}).value, "run-2");
   assert.equal(view.queryByText("Loading requested test run…"), null);
   await act(async () => pending.resolve([{...testRecord, run_id: "run-2"}]));
   await waitFor(() => assert.ok(view.getByRole("heading", {name: "creates a product"})));
-  assert.equal(view.getByRole("complementary"), sidebar);
+  assert.equal(view.getByRole("complementary", {name: "Test navigator"}), sidebar);
   assert.equal(api.getRun.mock.callCount(), 0);
   assert.equal(api.getTest.mock.callCount(), 0);
   assert.equal(sources.length, 1);
@@ -197,13 +201,13 @@ test("direct links open an earlier retry, preserve it in full view, and never fe
   window.history.replaceState(null,"","/runs/run-1/tests/test-1?focus=entry:1");
   const setup = wrapper();
   const view = render(h(Router),setup);
-  await waitFor(() => assert.ok(view.getByRole("dialog",{name:"Evidence details for POST /products"})));
+  await waitFor(() => assert.ok(view.getByRole("complementary",{name:"Evidence details for POST /products"})));
   assert.equal(api.getFocusedEvidence.mock.callCount(), 1);
   assert.equal(setup.client.getQueryCache().find({queryKey:["focus","run-1","test-1","entry",1,10]}).getObserversCount(), 1);
   assert.equal(api.getEntries.mock.callCount(),0);
   act(() => fireEvent.click(view.getAllByText("Show full test")[0]));
   await waitFor(() => assert.equal(api.getEntries.mock.callCount(),1));
-  await waitFor(() => assert.ok(view.getByRole("dialog",{name:"Evidence details for POST /products"})));
+  await waitFor(() => assert.ok(view.getByRole("complementary",{name:"Evidence details for POST /products"})));
   assert.match(view.container.textContent,/earlier retry failed/);
   for (const method of ["getApps","getRuns","getTests"]) assert.equal(api[method].mock.callCount(),0);
   // A connected SSE stream must also refresh the full-view evidence queries.
@@ -228,6 +232,20 @@ test("virtual ledgers render and scroll to a target outside the initial window",
     className:"ledger",ariaLabel:"records",renderItem:item=>h("span",null,`record ${item.id}`)}));
   assert.ok(view.getByText("record 950")); assert.ok(view.getByRole("list").scrollTop>40000);
   assert.ok(view.queryAllByRole("listitem").length<40);
+});
+
+test("inserting live records before the selection does not move the ledger", () => {
+  const items = Array.from({length: 200}, (_, id) => ({id}));
+  const props = {items, getKey: item => item.id, getItemSize: 64, scrollToKey: 180,
+    renderItem: item => h("button", {}, `record ${item.id}`), className: "ledger", ariaLabel: "Evidence"};
+  const view = render(h(VirtualList, props));
+  const list = view.getByRole("list");
+  list.scrollTop = 640;
+  fireEvent.scroll(list);
+  view.rerender(h(VirtualList, {...props, items: [{id: -1}, ...items]}));
+  assert.equal(list.scrollTop, 640);
+  view.rerender(h(VirtualList, {...props, scrollToKey: 190}));
+  assert.ok(list.scrollTop > 10000);
 });
 
 test("a test named tests cannot collide with the run's test-list cache", async (t) => {
@@ -274,4 +292,110 @@ test("live evidence refresh is limited to the affected record kind and owner", a
   assert.equal(client.getQueryState(keys.run).isInvalidated, true);
   assert.equal(client.getQueryState(keys.otherTest).isInvalidated, true);
   assert.equal(client.getQueryState(keys.otherRun).isInvalidated, false);
+});
+
+test("explicit tab visits restore their URL target; closing and browser history remain authoritative", async () => {
+  window.history.replaceState(null, "", "/runs/run-1/tests/test-1?tab=timeline&focus=entry:1&full=1");
+  const navWrapper = ({children}) => h(EvidenceNavigationProvider, {runId:"run-1", testId:"test-1"}, children);
+  const hook = renderHook(useEvidenceNavigation, {wrapper: navWrapper});
+  act(() => hook.result.current.openTrace("trace/with spaces"));
+  assert.equal(hook.result.current.traceId, "trace/with spaces");
+  assert.equal(hook.result.current.focus, undefined);
+  act(() => hook.result.current.selectTab("timeline"));
+  assert.deepEqual(hook.result.current.focus, {kind:"entry", id:1});
+  assert.equal(hook.result.current.full, true);
+  act(() => hook.result.current.clear());
+  assert.equal(hook.result.current.focus, undefined);
+  act(() => hook.result.current.selectTab("trace"));
+  assert.equal(hook.result.current.traceId, "trace/with spaces");
+  act(() => hook.result.current.selectTab("timeline"));
+  assert.equal(hook.result.current.focus, undefined);
+  act(() => window.history.back());
+  await waitFor(() => assert.equal(hook.result.current.traceId, "trace/with spaces"));
+  act(() => window.history.forward());
+  await waitFor(() => assert.equal(hook.result.current.tab, "timeline"));
+  assert.equal(hook.result.current.focus, undefined);
+});
+
+test("related trace displays the complete matching tree without selecting an arbitrary span", async (t) => {
+  dashboardApi(t);
+  api.getSpans.mock.mockImplementation(async () => [span, {...span, id: 2, span_id: "child", parent_span_id: span.span_id, operation_name: "child operation"}, {...span, id: 3, trace_id: "unrelated", operation_name: "unrelated operation"}]);
+  const view = render(h(App), wrapper());
+  await waitFor(() => assert.ok(view.getByRole("button", {name: /POST \/products/})));
+  fireEvent.click(view.getByRole("button", {name: /POST \/products/}));
+  fireEvent.click(view.getByRole("button", {name: "Related trace"}));
+  await waitFor(() => assert.ok(view.getByRole("button", {name: /Inspect child operation/})));
+  assert.equal(view.queryByRole("button", {name: /Inspect unrelated operation/}), null);
+  assert.equal(view.queryByRole("dialog"), null);
+  fireEvent.click(view.getByRole("button", {name: "Show all traces"}));
+  await waitFor(() => assert.ok(view.getByRole("button", {name: /Inspect unrelated operation/})));
+});
+
+test("a trace citation without recorded spans has an explicit unavailable state", async (t) => {
+  dashboardApi(t);
+  api.getSpans.mock.mockImplementation(async () => [{...span, trace_id: "other"}]);
+  const view = render(h(App), wrapper());
+  await waitFor(() => assert.ok(view.getByRole("button", {name: /POST \/products/})));
+  fireEvent.click(view.getByRole("button", {name: /POST \/products/}));
+  fireEvent.click(view.getByRole("button", {name: "Related trace"}));
+  await waitFor(() => assert.ok(view.getByText("No spans were recorded for this trace.")));
+  assert.equal(view.queryByRole("list", {name: "Recorded trace spans"}), null);
+});
+
+test("tabs have one keyboard stop, directional navigation, and associated panels; navigator resizes by keyboard", async (t) => {
+  dashboardApi(t);
+  const view = render(h(App), wrapper());
+  await waitFor(() => assert.ok(view.getByRole("tab", {name: /Timeline/})));
+  const timeline = view.getByRole("tab", {name: /Timeline/});
+  timeline.focus();
+  fireEvent.keyDown(timeline, {key: "ArrowLeft"});
+  assert.equal(document.activeElement.id, "tab-flow");
+  fireEvent.keyDown(document.activeElement, {key: "Home"});
+  assert.ok(document.activeElement === timeline);
+  assert.equal(view.getAllByRole("tab").filter(tab => tab.tabIndex === 0).length, 1);
+  assert.equal(timeline.getAttribute("aria-controls"), view.getByRole("tabpanel").id);
+  const separator = view.getByRole("separator", {name: "Test navigator width"});
+  separator.focus();
+  fireEvent.keyDown(separator, {key: "Home"});
+  assert.equal(separator.getAttribute("aria-valuenow"), "240");
+  fireEvent.keyDown(separator, {key: "ArrowRight"});
+  assert.equal(separator.getAttribute("aria-valuenow"), "256");
+  fireEvent.keyDown(separator, {key: "Enter"});
+  assert.equal(separator.getAttribute("aria-valuenow"), "280");
+});
+
+test("phone history drills into an event, restores its row on Back, and preserves desktop URL", async (t) => {
+  t.mock.method(window, "matchMedia", () => ({matches: true, addEventListener() {}, removeEventListener() {}}));
+  dashboardApi(t);
+  const view = render(h(App), wrapper());
+  await waitFor(() => assert.ok(view.getByRole("button", {name: /creates a product/})));
+  const testRow = view.getByRole("button", {name: /creates a product/});
+  fireEvent.click(testRow);
+  await waitFor(() => assert.ok(document.activeElement === view.getByRole("heading", {name: "creates a product"})));
+  const eventRow = view.getByRole("button", {name: /POST \/products/});
+  fireEvent.click(eventRow);
+  assert.equal(window.history.state.stovePhone.screen.level, "event");
+  assert.ok(document.activeElement === view.getByRole("heading", {name: "POST /products"}));
+  act(() => window.history.back());
+  await waitFor(() => assert.ok(document.activeElement === eventRow));
+  assert.equal(view.queryByRole("complementary", {name: "Evidence details for POST /products"}), null);
+  act(() => window.history.back());
+  await waitFor(() => assert.ok(document.activeElement === testRow));
+  assert.equal(window.location.pathname, "/");
+  assert.equal(window.location.search, "");
+});
+
+test("a manually scrolled ledger restores its anchor after a tab visit and earlier insertion", async () => {
+  const { EvidenceViewMemoryProvider } = await jiti.import("../src/components/evidence/EvidenceViewMemory.tsx");
+  let rows = Array.from({length: 220}, (_, index) => ({id: index + 1}));
+  const content = () => h(VirtualList, {items: rows, getKey: item => item.id, getItemSize: 64, renderItem: item => h("button", {}, `event ${item.id}`), className: "test-list", ariaLabel: "Scroll memory test"});
+  const view = render(h(EvidenceViewMemoryProvider, {}, content()));
+  const list = view.getByRole("list");
+  list.scrollTop = 3200;
+  fireEvent.scroll(list);
+  view.rerender(h(EvidenceViewMemoryProvider, {}, null));
+  rows = [{id: 999}, ...rows];
+  view.rerender(h(EvidenceViewMemoryProvider, {}, content()));
+  assert.equal(view.getByRole("list").scrollTop, 3264);
+  assert.ok(view.getByRole("button", {name: "event 51"}));
 });

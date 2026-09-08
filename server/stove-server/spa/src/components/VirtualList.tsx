@@ -1,4 +1,6 @@
 import { type Key, type ReactNode, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { useRememberedScroll } from "../hooks/useRememberedScroll";
+import { useEvidenceViewMemory } from "./evidence/EvidenceViewMemory";
 
 const DEFAULT_OVERSCAN_PX = 320;
 const DEFAULT_WINDOW_THRESHOLD = 160;
@@ -32,7 +34,12 @@ export function VirtualList<T>({
   overscanPx = DEFAULT_OVERSCAN_PX,
   scrollToKey,
 }: VirtualListProps<T>) {
+  const memory = useEvidenceViewMemory();
+  const revealedKey = useRef<Key | undefined>(
+    memory?.has(`scroll.${ariaLabel}`) ? scrollToKey : undefined,
+  );
   const viewportRef = useRef<HTMLUListElement>(null);
+  useRememberedScroll(viewportRef, ariaLabel);
   const [viewport, setViewport] = useState({ height: 0, scrollTop: 0 });
   const windowed = items.length > windowThreshold;
   const { layout, totalSize } = useMemo(() => {
@@ -57,12 +64,41 @@ export function VirtualList<T>({
     return () => observer.disconnect();
   }, [windowed]);
 
+  const liveLayout = useRef({ items, layout, getKey });
+  liveLayout.current = { items, layout, getKey };
+  useLayoutEffect(() => {
+    const element = viewportRef.current;
+    if (!element || !memory) return;
+    const saved = memory.get(`anchor.${ariaLabel}`) as { key: Key; offset: number } | undefined;
+    if (saved) {
+      const index = items.findIndex((item) => getKey(item) === saved.key);
+      if (index >= 0) {
+        element.scrollTop = layout[index].start + saved.offset;
+        setViewport({ height: element.clientHeight, scrollTop: element.scrollTop });
+      }
+    }
+    const save = () => {
+      const { items, layout, getKey } = liveLayout.current;
+      const index = layout.findIndex((item) => item.start + item.size > element.scrollTop);
+      if (index >= 0)
+        memory.set(`anchor.${ariaLabel}`, {
+          key: getKey(items[index]),
+          offset: element.scrollTop - layout[index].start,
+        });
+    };
+    element.addEventListener("scroll", save);
+    return () => element.removeEventListener("scroll", save);
+  }, [ariaLabel, memory]);
+
   const targetIndex =
     scrollToKey === undefined ? -1 : items.findIndex((item) => getKey(item) === scrollToKey);
   const targetStart = layout[targetIndex]?.start;
   useLayoutEffect(() => {
     const element = viewportRef.current;
-    if (!element || targetIndex < 0) return;
+    if (scrollToKey === undefined) revealedKey.current = undefined;
+    if (!element || targetIndex < 0 || revealedKey.current === scrollToKey) return;
+    // New live records can change the index without changing the user's selection.
+    revealedKey.current = scrollToKey;
     if (windowed && targetStart !== undefined) {
       element.scrollTop = Math.max(0, targetStart - element.clientHeight / 3);
       setViewport({ height: element.clientHeight, scrollTop: element.scrollTop });

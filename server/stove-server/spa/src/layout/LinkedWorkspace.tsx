@@ -79,6 +79,12 @@ export function LinkedWorkspace({ location }: { location: EvidenceLocation }) {
             />
           </FocusedEvidenceProvider>
         </EvidenceNavigationProvider>
+      ) : location.traceId ? (
+        <main className="stove-empty-state m-4" role="status">
+          <strong>Related trace · {location.traceId}</strong>
+          <p>Trace details are unavailable for evidence with no test attribution.</p>
+          <a href={appPath(evidencePath(runId))}>Back to run</a>
+        </main>
       ) : location.focus ? (
         <EvidenceNavigationProvider runId={runId}>
           <FocusedEvidenceProvider running={isRunning(run.data.status)} liveConnected={connected}>

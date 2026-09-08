@@ -1,4 +1,5 @@
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useMemo } from "react";
+import { useRememberedState } from "../evidence/EvidenceViewMemory";
 import {
   filterInteractions,
   hasInteractionIssue,
@@ -10,10 +11,10 @@ import { useJournalSelection } from "./useJournalSelection";
 
 export function useMockJournal(records: JournalRecords) {
   const { interactions, warnings, ambientInteractions, ambientWarnings } = records;
-  const [includeAmbient, setIncludeAmbient] = useState(false);
-  const [filter, setFilter] = useState<InteractionFilter>("all");
-  const [search, setSearch] = useState("");
-  const [warningsExpanded, setWarningsExpanded] = useState(true);
+  const [includeAmbient, setIncludeAmbient] = useRememberedState("mocks.ambient", false);
+  const [filter, setFilter] = useRememberedState<InteractionFilter>("mocks.filter", "all");
+  const [search, setSearch] = useRememberedState("mocks.search", "");
+  const [warningsExpanded, setWarningsExpanded] = useRememberedState("mocks.warnings", true);
   const resetFilters = useCallback(() => {
     setFilter("all");
     setSearch("");

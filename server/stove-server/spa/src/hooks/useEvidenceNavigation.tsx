@@ -1,4 +1,4 @@
-import { createContext, useContext, useMemo } from "react";
+import { createContext, useContext, useEffect, useMemo, useRef } from "react";
 import type { Tab } from "../layout/detail/TabBar";
 import {
   appPath,
@@ -15,6 +15,8 @@ interface EvidenceNavigation {
   testId?: string;
   focus?: EvidenceFocus;
   pointer?: string;
+  traceId?: string;
+  openTrace: (traceId: string) => void;
   tab: Tab;
   full: boolean;
   context: number;
@@ -51,6 +53,14 @@ export function EvidenceNavigationProvider({
     location.value.testId === testId
       ? location.value
       : undefined;
+  const destinations = useRef(new Map<Tab, string>());
+  useEffect(() => {
+    destinations.current.clear();
+  }, [runId, testId]);
+  useEffect(() => {
+    if (view)
+      destinations.current.set(view.tab, `${evidencePath(runId, testId)}${window.location.search}`);
+  }, [runId, testId, view]);
   const value = useMemo<EvidenceNavigation>(() => {
     const path = evidencePath(runId, testId);
     const update = (tab: Tab, target?: string, full = false) =>
@@ -66,6 +76,8 @@ export function EvidenceNavigationProvider({
       },
       focus: view?.focus,
       pointer: view?.pointer,
+      traceId: view?.traceId,
+      openTrace: (traceId) => navigateTo(`${path}?tab=trace&trace=${encodeURIComponent(traceId)}`),
       tab: view?.tab ?? "timeline",
       full: view?.full ?? false,
       errorOpen: view?.errorOpen ?? false,
@@ -74,7 +86,7 @@ export function EvidenceNavigationProvider({
           `${evidencePath(runId, owner === null ? undefined : (owner ?? testId))}?tab=${focusTab(kind)}&focus=${kind}:${id}${view?.full ? "&full=1" : ""}`,
         ),
       clear: () => update(view?.tab ?? "timeline"),
-      selectTab: (tab) => update(tab),
+      selectTab: (tab) => navigateTo(destinations.current.get(tab) ?? `${path}?tab=${tab}`),
       showFull: () => {
         if (!testId) {
           navigateTo(path);
@@ -94,6 +106,7 @@ export function EvidenceNavigationProvider({
     view?.focus?.kind,
     view?.focus?.id,
     view?.pointer,
+    view?.traceId,
     view?.full,
     view?.errorOpen,
     view?.context,

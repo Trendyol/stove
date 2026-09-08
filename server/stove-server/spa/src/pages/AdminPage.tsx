@@ -40,6 +40,12 @@ export function AdminPage({ apps, onNavigateDashboard }: AdminPageProps) {
           appName={admin.appName}
           olderThan={admin.olderThan}
           includeRunning={admin.includeRunning}
+          metadata={admin.metadata}
+          metadataRuns={admin.metadataRuns}
+          metadataLoading={admin.metadataLoading}
+          metadataError={admin.metadataError}
+          onMetadataChange={admin.setMetadata}
+          onRetryMetadata={admin.retryMetadata}
           preview={admin.preview}
           busy={admin.busy}
           onAppNameChange={admin.setAppName}

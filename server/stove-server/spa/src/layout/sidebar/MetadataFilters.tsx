@@ -21,7 +21,7 @@ export function MetadataFilters({
   value,
   onChange,
 }: MetadataFiltersProps) {
-  const [expanded, setExpanded] = useState(true);
+  const [expanded, setExpanded] = useState(false);
   const panelId = useId();
   const options = useMemo(() => metadataOptionsForRuns(availableRuns), [availableRuns]);
   const selections = metadataSelections(value);
@@ -32,12 +32,7 @@ export function MetadataFilters({
   };
 
   if (options.length === 0 && !hasSelections) {
-    return (
-      <div className="stove-metadata-empty">
-        <span>Run filters</span>
-        <small>No metadata is available yet</small>
-      </div>
-    );
+    return null;
   }
 
   return (
@@ -60,7 +55,7 @@ export function MetadataFilters({
             <small>
               {hasSelections
                 ? `${visibleRunCount} of ${availableRuns.length} matching`
-                : "Choose one or more metadata values"}
+                : "Metadata"}
             </small>
           </span>
           {hasSelections ? (

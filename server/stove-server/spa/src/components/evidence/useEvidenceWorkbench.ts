@@ -1,6 +1,7 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo } from "react";
 import type { Entry } from "../../api/types";
 import { useEvidenceNavigation } from "../../hooks/useEvidenceNavigation";
+import { useRememberedState, useRevealTarget } from "./EvidenceViewMemory";
 import {
   type EvidenceFilter,
   type EvidenceSelection,
@@ -10,10 +11,16 @@ import {
 } from "./model";
 
 export function useEvidenceWorkbench(entries: Entry[]) {
-  const [filter, setFilter] = useState<EvidenceFilter>("all");
-  const [search, setSearch] = useState("");
+  const [filter, setFilter] = useRememberedState<EvidenceFilter>("timeline.filter", "all");
+  const [search, setSearch] = useRememberedState("timeline.search", "");
   const navigation = useEvidenceNavigation();
-  const [localSelection, setLocalSelection] = useState<EvidenceSelection>({ kind: "none" });
+  const [localSelection, setLocalSelection] = useRememberedState<EvidenceSelection>(
+    "timeline.selection",
+    () => {
+      const first = entries.find(isEntryIssue);
+      return first ? { kind: "entry", entryId: first.id } : { kind: "none" };
+    },
+  );
   const selection: EvidenceSelection = navigation
     ? navigation.focus?.kind === "entry"
       ? { kind: "entry", entryId: navigation.focus.id }
@@ -27,12 +34,14 @@ export function useEvidenceWorkbench(entries: Entry[]) {
     },
     [navigation],
   );
-  useEffect(() => {
-    if (navigation?.focus) {
+  useRevealTarget(
+    "timeline.target",
+    navigation?.focus ? `${navigation.focus.kind}:${navigation.focus.id}` : undefined,
+    useCallback(() => {
       setFilter("all");
       setSearch("");
-    }
-  }, [navigation?.focus?.kind, navigation?.focus?.id]);
+    }, []),
+  );
 
   useEffect(() => {
     if (
@@ -44,6 +53,15 @@ export function useEvidenceWorkbench(entries: Entry[]) {
     }
   }, [entries, selection, navigation, setSelection]);
 
+  const [acknowledgedIssues, setAcknowledgedIssues] = useRememberedState<Set<number>>(
+    "timeline.acknowledgedIssues",
+    () => new Set(entries.filter(isEntryIssue).map((entry) => entry.id)),
+  );
+  const newIssue = entries.find(
+    (entry) => isEntryIssue(entry) && !acknowledgedIssues.has(entry.id),
+  );
+  const acknowledgeIssues = () =>
+    setAcknowledgedIssues(new Set(entries.filter(isEntryIssue).map((entry) => entry.id)));
   const issueCount = useMemo(() => entries.filter(isEntryIssue).length, [entries]);
   const visibleEntries = useMemo(
     () => filterEvidence(entries, filter, search),
@@ -70,6 +88,8 @@ export function useEvidenceWorkbench(entries: Entry[]) {
     search,
     setSearch,
     issueCount,
+    newIssue,
+    acknowledgeIssues,
     visibleEntries,
     inspectorState,
     selectedId: selection.kind === "entry" ? selection.entryId : undefined,

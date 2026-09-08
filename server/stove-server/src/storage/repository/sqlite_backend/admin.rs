@@ -1,4 +1,5 @@
 use diesel::prelude::*;
+use std::collections::BTreeMap;
 
 use super::super::admin::{PurgeCandidate, select_purge_candidates, select_requested_run_ids};
 use super::SqliteBackend;
@@ -47,16 +48,24 @@ impl SqliteBackend {
     app_name: Option<&str>,
     older_than: Option<&str>,
     include_running: bool,
+    metadata: &BTreeMap<String, Vec<String>>,
   ) -> Result<PurgePreview> {
     let mut db = self.lock_read();
     let conn = db.conn();
     let candidates = runs::table
       .order((runs::started_at, runs::id))
-      .select((runs::id, runs::app_name, runs::started_at, runs::status))
-      .load::<(String, String, String, String)>(conn)?
+      .select((
+        runs::id,
+        runs::app_name,
+        runs::started_at,
+        runs::status,
+        runs::metadata,
+      ))
+      .load::<(String, String, String, String, String)>(conn)?
       .into_iter()
       .map(PurgeCandidate::from);
-    let run_ids = select_purge_candidates(candidates, app_name, older_than, include_running);
+    let run_ids =
+      select_purge_candidates(candidates, app_name, older_than, include_running, metadata)?;
     let evidence = evidence_counts(conn, &run_ids)?;
     Ok(PurgePreview {
       run_count: run_ids.len(),

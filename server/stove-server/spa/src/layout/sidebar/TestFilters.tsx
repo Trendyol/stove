@@ -16,9 +16,10 @@ export function TestFilters({ filter, onFilterChange, search, onSearchChange }: 
             type="button"
             key={f}
             className={`stove-focus-ring ${filter === f ? "is-active" : ""}`}
+            aria-pressed={filter === f}
             onClick={() => onFilterChange(f)}
           >
-            {f.charAt(0).toUpperCase() + f.slice(1)}
+            {{ all: "All", pass: "Passed", fail: "Failed" }[f]}
           </button>
         ))}
       </div>

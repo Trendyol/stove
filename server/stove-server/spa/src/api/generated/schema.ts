@@ -804,6 +804,10 @@ export interface components {
         PurgePreviewRequest: {
             app_name?: string | null;
             include_running?: boolean;
+            /** @description Exact metadata values: any value within a key, all keys must match. Requires app_name. */
+            metadata?: {
+                [key: string]: string[];
+            };
             older_than?: string | null;
         };
         PurgeRequest: {

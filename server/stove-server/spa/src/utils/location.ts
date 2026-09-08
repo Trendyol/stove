@@ -12,6 +12,7 @@ export interface EvidenceLocation {
   tab: Tab;
   focus?: EvidenceFocus;
   pointer?: string;
+  traceId?: string;
   errorOpen: boolean;
   full: boolean;
   context: number;
@@ -55,7 +56,7 @@ export function parseLocation(pathname: string, search: string): Location {
     const testId = match[2] === undefined ? undefined : decodeURIComponent(match[2]);
     if (!runId || testId === "") return { kind: "invalid" };
     const params = new URLSearchParams(search);
-    for (const key of ["tab", "focus", "pointer", "full", "context"])
+    for (const key of ["tab", "focus", "pointer", "full", "context", "trace"])
       if (params.getAll(key).length > 1) return { kind: "invalid" };
     const tab = params.get("tab") ?? "timeline";
     if (!["timeline", "trace", "snapshots", "mocks", "flow"].includes(tab))
@@ -69,6 +70,9 @@ export function parseLocation(pathname: string, search: string): Location {
       if (!testId && ["entry", "snapshot"].includes(focus.kind)) return { kind: "invalid" };
     }
     if (target === "error" && !testId) return { kind: "invalid" };
+    const traceId = params.get("trace") ?? undefined;
+    if (traceId !== undefined && (!traceId.trim() || tab !== "trace" || target !== null))
+      return { kind: "invalid" };
     const pointer = params.get("pointer") ?? undefined;
     if (
       pointer !== undefined &&
@@ -89,6 +93,7 @@ export function parseLocation(pathname: string, search: string): Location {
         tab: focus ? focusTab(focus.kind) : (tab as Tab),
         focus,
         pointer,
+        traceId,
         errorOpen: target === "error",
         context,
         full: params.get("full") === "1",

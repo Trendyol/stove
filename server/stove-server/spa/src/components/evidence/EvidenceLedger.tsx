@@ -7,12 +7,19 @@ interface EvidenceLedgerProps {
   entries: Entry[];
   selectedId?: Entry["id"];
   filtered: boolean;
+  inspectorId?: string;
   onSelect: (id: Entry["id"]) => void;
 }
 
 const evidenceKey = (entry: Entry) => `${entry.assertion_id}:${entry.id}`;
 
-export function EvidenceLedger({ entries, selectedId, filtered, onSelect }: EvidenceLedgerProps) {
+export function EvidenceLedger({
+  entries,
+  selectedId,
+  filtered,
+  onSelect,
+  inspectorId,
+}: EvidenceLedgerProps) {
   const selectedEntry = entries.find((entry) => entry.id === selectedId);
   return entries.length > 0 ? (
     <VirtualList
@@ -20,11 +27,14 @@ export function EvidenceLedger({ entries, selectedId, filtered, onSelect }: Evid
       ariaLabel="Recorded test evidence"
       items={entries}
       getKey={evidenceKey}
-      getItemSize={56}
+      getItemSize={64}
       scrollToKey={selectedEntry ? evidenceKey(selectedEntry) : undefined}
-      renderItem={(entry) => (
+      renderItem={(entry, index) => (
         <EvidenceRow
+          inspectorId={selectedId === entry.id ? inspectorId : undefined}
           entry={entry}
+          first={index === 0}
+          last={index === entries.length - 1}
           selected={selectedId !== undefined && entry.id === selectedId}
           onSelect={() => onSelect(entry.id)}
         />

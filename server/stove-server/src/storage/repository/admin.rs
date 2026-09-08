@@ -1,7 +1,7 @@
-use std::collections::HashMap;
+use std::collections::{BTreeMap, HashMap};
 
 use super::{Backend, Repository};
-use crate::error::Result;
+use crate::error::{AppError, Result};
 use crate::storage::models::{PurgePreview, PurgeResult, StorageStats};
 
 pub(super) struct PurgeCandidate {
@@ -9,15 +9,19 @@ pub(super) struct PurgeCandidate {
   pub app_name: String,
   pub started_at: String,
   pub status: String,
+  pub metadata: String,
 }
 
-impl From<(String, String, String, String)> for PurgeCandidate {
-  fn from((run_id, app_name, started_at, status): (String, String, String, String)) -> Self {
+impl From<(String, String, String, String, String)> for PurgeCandidate {
+  fn from(
+    (run_id, app_name, started_at, status, metadata): (String, String, String, String, String),
+  ) -> Self {
     Self {
       run_id,
       app_name,
       started_at,
       status,
+      metadata,
     }
   }
 }
@@ -27,16 +31,30 @@ pub(super) fn select_purge_candidates(
   app_name: Option<&str>,
   older_than: Option<&str>,
   include_running: bool,
-) -> Vec<String> {
-  candidates
-    .into_iter()
-    .filter(|candidate| {
-      app_name.is_none_or(|expected| candidate.app_name == expected)
-        && older_than.is_none_or(|cutoff| candidate.started_at.as_str() < cutoff)
-        && is_purgeable(&candidate.status, include_running)
-    })
-    .map(|candidate| candidate.run_id)
-    .collect()
+  metadata: &BTreeMap<String, Vec<String>>,
+) -> Result<Vec<String>> {
+  let mut selected = Vec::new();
+  for candidate in candidates {
+    if app_name.is_some_and(|expected| candidate.app_name != expected)
+      || older_than.is_some_and(|cutoff| candidate.started_at.as_str() >= cutoff)
+      || !is_purgeable(&candidate.status, include_running)
+    {
+      continue;
+    }
+    if !metadata.is_empty() {
+      let values: BTreeMap<String, String> = serde_json::from_str(&candidate.metadata)
+        .map_err(|_| AppError::InvalidStoredField("runs.metadata"))?;
+      if !metadata.iter().all(|(key, accepted)| {
+        values
+          .get(key)
+          .is_some_and(|value| accepted.contains(value))
+      }) {
+        continue;
+      }
+    }
+    selected.push(candidate.run_id);
+  }
+  Ok(selected)
 }
 
 pub(super) fn is_purgeable(status: &str, include_running: bool) -> bool {
@@ -82,10 +100,25 @@ impl Repository {
     app_name: Option<&str>,
     older_than: Option<&str>,
     include_running: bool,
+    metadata: &BTreeMap<String, Vec<String>>,
   ) -> Result<PurgePreview> {
+    if !metadata.is_empty() && app_name.is_none_or(|name| name.trim().is_empty()) {
+      return Err(AppError::InvalidEvent(
+        "Select an application to purge by metadata".into(),
+      ));
+    }
+    if metadata.values().any(Vec::is_empty) {
+      return Err(AppError::InvalidEvent(
+        "Select at least one value for each metadata field".into(),
+      ));
+    }
     self.with_backend(|backend| match backend {
-      Backend::Sqlite(sqlite) => sqlite.preview_purge(app_name, older_than, include_running),
-      Backend::Postgres(postgres) => postgres.preview_purge(app_name, older_than, include_running),
+      Backend::Sqlite(sqlite) => {
+        sqlite.preview_purge(app_name, older_than, include_running, metadata)
+      }
+      Backend::Postgres(postgres) => {
+        postgres.preview_purge(app_name, older_than, include_running, metadata)
+      }
     })
   }
 

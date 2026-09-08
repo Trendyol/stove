@@ -1,7 +1,8 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo } from "react";
 import type { Span } from "../api/types";
 import { useEvidenceNavigation } from "../hooks/useEvidenceNavigation";
 import { getResultTone, isFailed } from "../utils/result";
+import { useRememberedState, useRevealTarget } from "./evidence/EvidenceViewMemory";
 import { buildSpanTreeRows, spanKey } from "./span-tree/model";
 import { SpanInspector } from "./span-tree/SpanInspector";
 import { SpanTreeRow } from "./span-tree/SpanTreeRow";
@@ -9,17 +10,26 @@ import { VirtualList } from "./VirtualList";
 
 interface SpanTreeProps {
   spans: Span[];
+  traceId?: string;
 }
 
 type SpanSelection = { kind: "none" } | { kind: "span"; spanId: string };
 
-export function SpanTree({ spans }: SpanTreeProps) {
-  const [collapsedSpanIds, setCollapsedSpanIds] = useState<Set<string>>(new Set());
+export function SpanTree({ spans, traceId }: SpanTreeProps) {
+  const [collapsedSpanIds, setCollapsedSpanIds] = useRememberedState<Set<string>>(
+    `trace.${traceId ?? "all"}.collapsed`,
+    new Set(),
+  );
   const navigation = useEvidenceNavigation();
-  const [selection, setSelection] = useState<SpanSelection>({ kind: "none" });
-  useEffect(() => {
-    if (navigation?.focus?.kind === "span") setCollapsedSpanIds(new Set());
-  }, [navigation?.focus?.id]);
+  const [selection, setSelection] = useRememberedState<SpanSelection>(
+    `trace.${traceId ?? "all"}.selection`,
+    { kind: "none" },
+  );
+  useRevealTarget(
+    `trace.${traceId ?? "all"}.target`,
+    navigation?.focus?.kind === "span" ? String(navigation.focus.id) : undefined,
+    useCallback(() => setCollapsedSpanIds(new Set()), []),
+  );
   const rows = useMemo(() => buildSpanTreeRows(spans, collapsedSpanIds), [collapsedSpanIds, spans]);
   const totalFailed = useMemo(() => spans.filter((span) => isFailed(span.status)).length, [spans]);
   const totalNeutral = useMemo(

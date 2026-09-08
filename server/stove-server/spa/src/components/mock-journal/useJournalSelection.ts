@@ -1,6 +1,7 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo } from "react";
 import type { MockInteraction, MockWarning } from "../../api/types";
 import { useEvidenceNavigation } from "../../hooks/useEvidenceNavigation";
+import { useRememberedState, useRevealTarget } from "../evidence/EvidenceViewMemory";
 import { hasInteractionIssue, type JournalRecords } from "./model";
 import {
   findRelatedInteraction,
@@ -26,8 +27,14 @@ export function useJournalSelection({
   resetFilters,
 }: JournalSelectionOptions) {
   const navigation = useEvidenceNavigation();
-  const [localSelection, setLocalSelection] = useState<JournalSelection>({ kind: "none" });
-  const initialSelectionMade = useRef(false);
+  const [localSelection, setLocalSelection] = useRememberedState<JournalSelection>(
+    "mocks.selection",
+    { kind: "none" },
+  );
+  const [initialSelectionMade, setInitialSelectionMade] = useRememberedState(
+    "mocks.initialized",
+    false,
+  );
   const sourceInteractions = useMemo(
     () => [...interactions, ...ambientInteractions],
     [interactions, ambientInteractions],
@@ -65,9 +72,11 @@ export function useJournalSelection({
     [navigation, sourceInteractions, sourceWarnings],
   );
 
-  useEffect(() => {
-    if (navigation?.focus) resetFilters();
-  }, [navigation?.focus?.kind, navigation?.focus?.id, resetFilters]);
+  useRevealTarget(
+    "mocks.target",
+    navigation?.focus ? `${navigation.focus.kind}:${navigation.focus.id}` : undefined,
+    resetFilters,
+  );
 
   const inspectorState = useMemo(
     () => resolveJournalInspector(selection, visibleInteractions, allWarnings),
@@ -77,14 +86,14 @@ export function useJournalSelection({
   useEffect(() => {
     if (navigation) return;
     if (selection.kind !== "none") {
-      initialSelectionMade.current = true;
+      setInitialSelectionMade(true);
       if (inspectorState.kind === "empty") setSelection({ kind: "none" });
       return;
     }
-    if (initialSelectionMade.current) return;
+    if (initialSelectionMade) return;
     const initial = allInteractions.find(hasInteractionIssue) ?? allInteractions[0];
     if (initial) {
-      initialSelectionMade.current = true;
+      setInitialSelectionMade(true);
       setSelection({ kind: "interaction", interactionId: initial.id });
     }
   }, [allInteractions, inspectorState.kind, selection, navigation, setSelection]);

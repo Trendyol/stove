@@ -28,6 +28,9 @@ interface TestDetailTabProps {
   testRunning: boolean;
   liveConnected: boolean;
   onSelectTab: (tab: Tab) => void;
+  onOpenTrace: (traceId: string) => void;
+  traceId?: string;
+  onClearTrace: () => void;
   onSummary: (tab: Tab, summary: TabSummary) => void;
 }
 
@@ -44,7 +47,9 @@ export function TestDetailTab({
   testId,
   testRunning,
   liveConnected,
-  onSelectTab,
+  onOpenTrace,
+  traceId,
+  onClearTrace,
   onSummary,
 }: TestDetailTabProps) {
   const navigation = useEvidenceNavigation();
@@ -65,20 +70,26 @@ export function TestDetailTab({
         <EvidenceTab
           citedEntry={focus?.data?.target.kind === "entry" ? focus.data.target.value : undefined}
           scope={scope}
-          onOpenTrace={() => onSelectTab("trace")}
+          onOpenTrace={onOpenTrace}
           onSummary={onSummary}
         />
       );
     case "mocks":
-      return (
-        <MocksTab scope={scope} onOpenTrace={() => onSelectTab("trace")} onSummary={onSummary} />
-      );
+      return <MocksTab scope={scope} onOpenTrace={onOpenTrace} onSummary={onSummary} />;
     case "trace":
-      return <TraceTab scope={scope} onSummary={onSummary} />;
+      return (
+        <TraceTab
+          key={traceId ?? "all"}
+          scope={scope}
+          traceId={traceId}
+          onClearTrace={onClearTrace}
+          onSummary={onSummary}
+        />
+      );
     case "snapshots":
       return <SnapshotsTab scope={scope} onSummary={onSummary} />;
     case "flow":
-      return <FlowView scope={scope} onOpenTrace={() => onSelectTab("trace")} />;
+      return <FlowView scope={scope} onOpenTrace={onOpenTrace} />;
   }
 }
 
@@ -90,7 +101,7 @@ function EvidenceTab({
 }: {
   citedEntry?: Entry;
   scope: TestQueryScope;
-  onOpenTrace: () => void;
+  onOpenTrace: (traceId: string) => void;
   onSummary: TestDetailTabProps["onSummary"];
 }) {
   const query = useEntries(scope);
@@ -121,7 +132,7 @@ function MocksTab({
   onSummary,
 }: {
   scope: TestQueryScope;
-  onOpenTrace: () => void;
+  onOpenTrace: (traceId: string) => void;
   onSummary: TestDetailTabProps["onSummary"];
 }) {
   const interactions = useDashboardListQuery<MockInteraction>({
@@ -169,16 +180,41 @@ function MocksTab({
 
 function TraceTab({
   scope,
+  traceId,
+  onClearTrace,
   onSummary,
 }: {
   scope: TestQueryScope;
+  traceId?: string;
+  onClearTrace: () => void;
   onSummary: TestDetailTabProps["onSummary"];
 }) {
   const query = useSpans(scope);
   useTabSummary("trace", query.data.length, false, onSummary);
   return (
     <ListQueryView query={query} loading="Loading traces…" failure="Failed to load traces">
-      {(spans) => <SpanTree spans={spans} />}
+      {(spans) => (
+        <>
+          {traceId && (
+            <div className="evidence-scope-note" role="status">
+              Related trace · <code>{traceId}</code>{" "}
+              <button type="button" onClick={onClearTrace}>
+                Show all traces
+              </button>
+            </div>
+          )}
+          {traceId && !spans.some((span) => span.trace_id === traceId) ? (
+            <div className="stove-empty-state m-4" role="status">
+              No spans were recorded for this trace.
+            </div>
+          ) : (
+            <SpanTree
+              spans={traceId ? spans.filter((span) => span.trace_id === traceId) : spans}
+              traceId={traceId}
+            />
+          )}
+        </>
+      )}
     </ListQueryView>
   );
 }
@@ -204,7 +240,13 @@ function SnapshotsTab({
   );
 }
 
-function FlowView({ scope, onOpenTrace }: { scope: TestQueryScope; onOpenTrace: () => void }) {
+function FlowView({
+  scope,
+  onOpenTrace,
+}: {
+  scope: TestQueryScope;
+  onOpenTrace: (traceId: string) => void;
+}) {
   const entries = useEntries(scope);
   const spans = useSpans(scope);
   const snapshots = useSnapshots(scope);

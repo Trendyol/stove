@@ -1,10 +1,12 @@
-import { useState } from "react";
+import { useRef } from "react";
 import type { Snapshot } from "../api/types";
 import { useEvidenceNavigation } from "../hooks/useEvidenceNavigation";
 import { useModalDialog } from "../hooks/useModalDialog";
+import { useRememberedScroll } from "../hooks/useRememberedScroll";
 import { useSnapshotExplorer } from "../hooks/useSnapshotExplorer";
 import { getSystemInfo } from "../utils/systems";
 import { EvidenceActions } from "./EvidenceActions";
+import { useRememberedState } from "./evidence/EvidenceViewMemory";
 import { JsonTree } from "./JsonTree";
 import { SnapshotMetricTiles } from "./SnapshotMetricTiles";
 
@@ -15,8 +17,11 @@ interface SnapshotStateDialogProps {
 
 export function SnapshotStateDialog({ snapshot, onClose }: SnapshotStateDialogProps) {
   const navigation = useEvidenceNavigation();
-  const [showAll, setShowAll] = useState(false);
-  const [searchQuery, setSearchQuery] = useState("");
+  const [showAll, setShowAll] = useRememberedState(`state.${snapshot.id}.showAll`, false);
+  const [searchQuery, setSearchQuery] = useRememberedState(`state.${snapshot.id}.search`, "");
+  const [rawExpanded, setRawExpanded] = useRememberedState(`state.${snapshot.id}.raw`, false);
+  const bodyRef = useRef<HTMLDivElement>(null);
+  useRememberedScroll(bodyRef, `state.${snapshot.id}.body`);
   const normalizedSearchQuery = searchQuery.trim();
   const explorer = useSnapshotExplorer(snapshot, normalizedSearchQuery, navigation?.pointer);
   const closeButtonRef = useModalDialog(true, onClose);
@@ -95,7 +100,7 @@ export function SnapshotStateDialog({ snapshot, onClose }: SnapshotStateDialogPr
         </div>
 
         <EvidenceActions />
-        <div className="flex-1 space-y-3 overflow-y-auto p-4">
+        <div ref={bodyRef} className="flex-1 space-y-3 overflow-y-auto p-4">
           {explorer.kind !== "loading" && explorer.metrics.length > 0 && (
             <SnapshotMetricTiles metrics={explorer.metrics} />
           )}
@@ -116,10 +121,15 @@ export function SnapshotStateDialog({ snapshot, onClose }: SnapshotStateDialogPr
             </div>
           )}
           {focused && selected?.found && (
-            <JsonTree value={selected.value} defaultExpandedDepth={2} />
+            <JsonTree
+              memoryKey={`state.${snapshot.id}.selected.${pointer}`}
+              value={selected.value}
+              defaultExpandedDepth={2}
+            />
           )}
           {!focused && explorer.kind === "structured" && explorer.detailed && (
             <StructuredState
+              memoryKey={`state.${snapshot.id}.tree`}
               explorer={explorer}
               searchQuery={searchQuery}
               normalizedSearchQuery={normalizedSearchQuery}
@@ -139,7 +149,11 @@ export function SnapshotStateDialog({ snapshot, onClose }: SnapshotStateDialogPr
           )}
 
           {detailed && (
-            <details className="rounded-lg border border-stove-border bg-stove-base">
+            <details
+              open={rawExpanded}
+              onToggle={(event) => setRawExpanded(event.currentTarget.open)}
+              className="rounded-lg border border-stove-border bg-stove-base"
+            >
               <summary className="cursor-pointer select-none px-3 py-2 text-xs font-medium text-[var(--stove-text-secondary)]">
                 Raw JSON
               </summary>
@@ -155,11 +169,13 @@ export function SnapshotStateDialog({ snapshot, onClose }: SnapshotStateDialogPr
 }
 
 function StructuredState({
+  memoryKey,
   explorer,
   searchQuery,
   normalizedSearchQuery,
   onSearchChange,
 }: {
+  memoryKey: string;
   explorer: Extract<ReturnType<typeof useSnapshotExplorer>, { kind: "structured" }>;
   searchQuery: string;
   normalizedSearchQuery: string;
@@ -197,6 +213,7 @@ function StructuredState({
 
       {explorer.filteredValue !== null ? (
         <JsonTree
+          memoryKey={memoryKey}
           value={explorer.filteredValue}
           defaultExpandedDepth={2}
           searchQuery={normalizedSearchQuery}

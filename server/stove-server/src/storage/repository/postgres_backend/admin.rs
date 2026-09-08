@@ -1,4 +1,5 @@
 use diesel::prelude::*;
+use std::collections::BTreeMap;
 
 use super::PostgresBackend;
 use super::writes::{prune_app, retention_on};
@@ -63,15 +64,25 @@ impl PostgresBackend {
     app_name: Option<&str>,
     older_than: Option<&str>,
     include_running: bool,
+    metadata: &BTreeMap<String, Vec<String>>,
   ) -> Result<PurgePreview> {
     let mut conn = self.lock_read();
     let candidates = runs::table
       .order((runs::started_at, runs::id))
-      .select((runs::id, runs::app_name, runs::started_at, runs::status))
-      .load::<(String, String, String, String)>(&mut *conn)?
+      .select((
+        runs::id,
+        runs::app_name,
+        runs::started_at,
+        runs::status,
+        runs::metadata,
+      ))
+      .load::<(String, String, String, String, serde_json::Value)>(&mut *conn)?
       .into_iter()
-      .map(PurgeCandidate::from);
-    let run_ids = select_purge_candidates(candidates, app_name, older_than, include_running);
+      .map(|(id, app, started_at, status, metadata)| {
+        PurgeCandidate::from((id, app, started_at, status, metadata.to_string()))
+      });
+    let run_ids =
+      select_purge_candidates(candidates, app_name, older_than, include_running, metadata)?;
     let evidence = evidence_counts(&mut conn, &run_ids)?;
     Ok(PurgePreview {
       run_count: run_ids.len(),

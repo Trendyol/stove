@@ -4,44 +4,29 @@
   position: relative;
   z-index: 30;
   display: grid;
-  min-height: 62px;
-  grid-template-columns: minmax(220px, 1fr) auto minmax(220px, 1fr);
+  min-height: 54px;
+  grid-template-columns: minmax(120px, 1fr) auto;
   align-items: center;
   gap: 18px;
   border-bottom: 1px solid var(--stove-border);
   background: var(--stove-panel-strong);
   box-shadow: 0 1px 0 rgba(255, 255, 255, 0.03);
   padding: 8px 16px;
-  backdrop-filter: blur(18px);
-}
-
-.stove-topbar::after {
-  position: absolute;
-  right: 0;
-  bottom: -1px;
-  left: 0;
-  height: 1px;
-  background: linear-gradient(
-    90deg,
-    transparent,
-    var(--stove-ember),
-    var(--stove-blue),
-    transparent
-  );
-  content: "";
-  opacity: 0.38;
 }
 
 .stove-brand {
   display: flex;
   min-width: 0;
+  justify-self: start;
   align-items: center;
   gap: 10px;
+  border-radius: 6px;
+  text-decoration: none;
 }
 
 .stove-brand img {
-  width: 38px;
-  height: 38px;
+  width: 30px;
+  height: 30px;
 }
 
 .stove-brand > span {
@@ -53,9 +38,10 @@
 
 .stove-brand strong {
   color: var(--stove-text-heading);
-  font-family: var(--font-mono);
-  font-size: 14px;
-  letter-spacing: 0.18em;
+  font-family: var(--font-sans);
+  font-size: 16px;
+  font-weight: 600;
+  letter-spacing: -0.02em;
 }
 
 .stove-brand small {
@@ -186,7 +172,6 @@
     opacity 140ms ease,
     transform 140ms ease,
     visibility 140ms ease;
-  backdrop-filter: blur(18px);
 }
 
 .stove-version-warning:hover .stove-version-warning-popover,
@@ -430,4 +415,36 @@
 
 .stove-theme-toggle {
   cursor: pointer;
+}
+
+.stove-help-menu {
+  position: relative;
+}
+.stove-help-menu summary {
+  cursor: pointer;
+}
+.stove-help-popover {
+  position: absolute;
+  top: calc(100% + 10px);
+  right: 0;
+  width: min(300px, calc(100vw - 24px));
+  display: grid;
+  gap: 12px;
+  padding: 18px;
+  border: 1px solid var(--stove-border);
+  border-radius: 10px;
+  background: var(--stove-surface);
+  box-shadow: var(--stove-shadow);
+  font-size: 13px;
+}
+.stove-help-popover a {
+  color: var(--stove-blue);
+}
+.stove-help-popover code {
+  overflow-wrap: anywhere;
+  font-size: 12px;
+}
+.stove-help-popover > span {
+  color: var(--stove-text-muted);
+  font-size: 12px;
 }

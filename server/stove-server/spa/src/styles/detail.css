@@ -90,15 +90,14 @@
   flex-shrink: 0;
   border-bottom: 1px solid var(--stove-border);
   background: var(--stove-panel-strong);
-  box-shadow: 0 8px 22px rgba(0, 0, 0, 0.04);
-  padding: 12px 18px 0;
-  backdrop-filter: blur(18px);
+
+  padding: 22px 24px 0;
 }
 
 .test-dossier {
   position: relative;
   display: block;
-  padding-left: 14px;
+  padding-left: 0;
 }
 
 .test-dossier-beam {
@@ -274,30 +273,35 @@
 
 .test-error-strip {
   display: grid;
+  gap: 4px;
   width: 100%;
-  grid-template-columns: auto minmax(0, 1fr);
-  gap: 10px;
-  overflow: hidden;
-  margin-top: 9px;
+  margin-top: 16px;
   cursor: pointer;
-  border: 1px solid color-mix(in srgb, var(--stove-red) 30%, var(--stove-border));
-  border-radius: 9px;
+  border: 0;
+  border-left: 3px solid var(--stove-red);
+  border-radius: 0 6px 6px 0;
   background: var(--stove-red-bg);
-  padding: 8px 10px;
-  color: var(--stove-red);
-  font-family: var(--font-mono);
-  font-size: 10px;
+  padding: 12px 14px;
+  color: var(--stove-text);
   text-align: left;
-  text-overflow: ellipsis;
-  white-space: nowrap;
 }
 
 .test-error-strip span {
-  border-right: 1px solid color-mix(in srgb, var(--stove-red) 24%, transparent);
-  padding-right: 10px;
-  font-weight: 700;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  overflow-wrap: anywhere;
+  font-size: 13px;
+  color: var(--stove-text-secondary);
+}
+.test-error-strip strong {
+  font-size: 14px;
+  font-weight: 500;
+}
+.test-error-strip small {
+  font-size: 12px;
+  color: var(--stove-blue);
 }
 
 .stove-tab-bar {
@@ -339,8 +343,7 @@
 }
 
 .stove-tab-bar > button.is-active::after {
-  background: linear-gradient(90deg, var(--stove-ember), var(--stove-amber));
-  box-shadow: 0 0 9px color-mix(in srgb, var(--stove-ember) 35%, transparent);
+  background: var(--stove-blue);
 }
 
 .stove-tab-count {
@@ -606,4 +609,34 @@
   color: var(--stove-text-secondary);
   font-size: 12px;
   text-align: center;
+}
+
+.test-breadcrumbs {
+  font-family: var(--font-sans);
+  font-size: 12px;
+  text-transform: none;
+  letter-spacing: 0;
+}
+.test-title-row {
+  align-items: start;
+}
+.test-title-row h1 {
+  white-space: normal;
+  font-size: 23px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  overflow-wrap: anywhere;
+}
+.test-dossier-meta {
+  font-size: 12px;
+  margin-top: 10px;
+}
+.test-dossier-meta code {
+  display: none;
+}
+.stove-tab-bar {
+  margin-top: 18px;
+}
+.stove-tab-bar > button {
+  font-size: 13px;
 }

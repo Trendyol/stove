@@ -7,7 +7,7 @@ import { useMockJournal } from "./mock-journal/useMockJournal";
 import { WarningRibbon } from "./mock-journal/WarningRibbon";
 
 interface MockJournalProps extends JournalRecords {
-  onOpenTrace: () => void;
+  onOpenTrace: (traceId: string) => void;
 }
 
 export function MockJournal({ onOpenTrace, ...records }: MockJournalProps) {

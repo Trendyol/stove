@@ -10,6 +10,7 @@ import {
 import { useCallback } from "react";
 import type { FlowNodeData } from "../utils/flow";
 import { DurationEdge } from "./DurationEdge";
+import { useRememberedState } from "./evidence/EvidenceViewMemory";
 import { GapNode } from "./GapNode";
 import { SystemNode } from "./SystemNode";
 
@@ -29,6 +30,9 @@ interface FlowDagProps {
 }
 
 export function FlowDag({ nodes, edges, onNodeClick, compact }: FlowDagProps) {
+  const [viewport, setViewport] = useRememberedState<
+    { x: number; y: number; zoom: number } | undefined
+  >("flow.viewport", undefined);
   const { fitView } = useReactFlow();
   const handleNodeClick: NodeMouseHandler = useCallback(
     (_, node) => {
@@ -58,7 +62,9 @@ export function FlowDag({ nodes, edges, onNodeClick, compact }: FlowDagProps) {
       edgeTypes={edgeTypes}
       onNodeClick={handleNodeClick}
       defaultEdgeOptions={defaultEdgeOptions}
-      fitView
+      fitView={!viewport}
+      defaultViewport={viewport}
+      onMoveEnd={(_, next) => setViewport(next)}
       nodesDraggable={!compact}
       nodesConnectable={false}
       panOnDrag={!compact}

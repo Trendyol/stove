@@ -1,7 +1,8 @@
-import { useEffect, useState } from "react";
+import { useCallback } from "react";
 import type { MockInteraction } from "../../api/types";
 import { formatDuration } from "../../utils/format";
 import { EvidenceActions } from "../EvidenceActions";
+import { useRememberedState, useRevealTarget } from "../evidence/EvidenceViewMemory";
 import { Icon } from "../Icon";
 import { InspectorBody } from "./InspectorBody";
 import { InspectorHeader, WarningBrief } from "./InspectorHeader";
@@ -14,7 +15,7 @@ interface InteractionInspectorProps {
   interactions: readonly MockInteraction[];
   onSelect: (id: MockInteraction["id"]) => void;
   onClose: () => void;
-  onOpenTrace: () => void;
+  onOpenTrace: (traceId: string) => void;
 }
 
 export function InteractionInspector({
@@ -24,7 +25,7 @@ export function InteractionInspector({
   onClose,
   onOpenTrace,
 }: InteractionInspectorProps) {
-  const [tab, setTab] = useState<InspectorTab>("overview");
+  const [tab, setTab] = useRememberedState<InspectorTab>("mocks.inspectorTab", "overview");
   const interaction = selectedInteraction(state);
   const warning = state.kind === "warning" ? state.warning : undefined;
   const selectionKey =
@@ -34,9 +35,13 @@ export function InteractionInspector({
         ? `interaction:${state.interaction.id}`
         : `warning:${state.warning.id}`;
 
-  useEffect(() => {
-    setTab(state.kind === "warning" ? "diagnostics" : "overview");
-  }, [selectionKey]);
+  useRevealTarget(
+    "mocks.inspectorTarget",
+    selectionKey,
+    useCallback(() => {
+      setTab(state.kind === "warning" ? "diagnostics" : "overview");
+    }, [state.kind]),
+  );
 
   if (state.kind === "empty") {
     return (
@@ -78,8 +83,11 @@ export function InteractionInspector({
                 : formatDuration(interaction.latency_ms)}
             </strong>
             {interaction.trace_id && (
-              <button type="button" onClick={onOpenTrace}>
-                Open trace
+              <button
+                type="button"
+                onClick={() => interaction.trace_id && onOpenTrace(interaction.trace_id)}
+              >
+                Related trace
                 <Icon name="chevron" className="h-3.5 w-3.5" />
               </button>
             )}

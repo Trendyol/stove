@@ -1,5 +1,5 @@
 import type { Test } from "../../api/types";
-import { Badge } from "../../components/Badge";
+import { ResultIcon } from "../../components/ResultIcon";
 import { formatDuration } from "../../utils/format";
 
 interface TestListItemProps {
@@ -14,16 +14,21 @@ export function TestListItem({ test, selected, onSelect, hideSpec }: TestListIte
     <button
       type="button"
       aria-current={selected ? "true" : undefined}
+      title={test.test_name}
       className={`stove-test-item ${selected ? "is-selected" : ""}`}
       onClick={onSelect}
     >
-      <span className={`stove-test-status is-${test.status.toLowerCase()}`} />
+      <span aria-hidden="true">
+        <ResultIcon result={test.status} />
+      </span>
       <div className="stove-test-item-copy">
         {!hideSpec && <span>{test.spec_name}</span>}
         <strong>{test.test_name}</strong>
-        <code>{formatDuration(test.duration_ms)}</code>
+        <small>
+          {test.status.charAt(0) + test.status.slice(1).toLowerCase()} ·{" "}
+          {formatDuration(test.duration_ms)}
+        </small>
       </div>
-      <Badge status={test.status} />
     </button>
   );
 }

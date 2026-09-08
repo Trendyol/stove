@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { api } from "../../api/client";
+import type { MetadataFilter } from "../../utils/metadata-filter";
 import { adminKeys, refreshDatabaseQueries } from "./admin-queries";
 
 type AdminCommand =
@@ -12,6 +13,7 @@ interface PurgeFilters {
   appName: string;
   olderThan: string;
   includeRunning: boolean;
+  metadata: MetadataFilter;
 }
 
 export function useAdminController() {
@@ -25,6 +27,12 @@ export function useAdminController() {
     appName: "",
     olderThan: "",
     includeRunning: false,
+    metadata: {},
+  });
+  const metadataRunsQuery = useQuery({
+    queryKey: [...adminKeys.root, "purge-runs", filters.appName],
+    queryFn: ({ signal }) => api.getRuns(filters.appName, signal),
+    enabled: Boolean(filters.appName),
   });
   const previewMutation = useMutation({ mutationFn: previewPurge });
   const refresh = () => {
@@ -74,7 +82,12 @@ export function useAdminController() {
     retention,
     setRetention,
     ...filters,
-    setAppName: (appName: string) => updateFilter({ appName }),
+    setAppName: (appName: string) => updateFilter({ appName, metadata: {} }),
+    setMetadata: (metadata: MetadataFilter) => updateFilter({ metadata }),
+    metadataRuns: metadataRunsQuery.data ?? [],
+    metadataLoading: Boolean(filters.appName) && metadataRunsQuery.isPending,
+    metadataError: metadataRunsQuery.error?.message ?? null,
+    retryMetadata: () => void metadataRunsQuery.refetch(),
     setOlderThan: (olderThan: string) => updateFilter({ olderThan }),
     setIncludeRunning: (includeRunning: boolean) => updateFilter({ includeRunning }),
     preview,
@@ -106,11 +119,18 @@ async function executeCommand(command: AdminCommand): Promise<void> {
   }
 }
 
-function previewPurge({ appName, olderThan, includeRunning }: PurgeFilters) {
+function previewPurge({ appName, olderThan, includeRunning, metadata }: PurgeFilters) {
   return api.previewPurge({
     ...(appName ? { app_name: appName } : {}),
     ...(olderThan ? { older_than: new Date(olderThan).toISOString() } : {}),
     include_running: includeRunning,
+    ...(appName && Object.keys(metadata).length > 0
+      ? {
+          metadata: Object.fromEntries(
+            Object.entries(metadata).map(([key, values]) => [key, [...values]]),
+          ),
+        }
+      : {}),
   });
 }
 

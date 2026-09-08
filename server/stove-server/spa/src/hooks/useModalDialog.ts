@@ -7,6 +7,9 @@ export function useModalDialog(
 ): RefObject<HTMLButtonElement | null> {
   const initialFocusRef = useRef<HTMLButtonElement>(null);
 
+  const closeRef = useRef(onClose);
+  closeRef.current = onClose;
+
   useEffect(() => {
     if (!open) return;
 
@@ -16,7 +19,7 @@ export function useModalDialog(
     initialFocusRef.current?.focus();
 
     const closeOnEscape = (event: KeyboardEvent) => {
-      if (event.key === "Escape") onClose();
+      if (event.key === "Escape") closeRef.current();
     };
     window.addEventListener("keydown", closeOnEscape);
 
@@ -25,7 +28,7 @@ export function useModalDialog(
       window.removeEventListener("keydown", closeOnEscape);
       if (previouslyFocused instanceof HTMLElement) previouslyFocused.focus();
     };
-  }, [onClose, open]);
+  }, [open]);
 
   return initialFocusRef;
 }

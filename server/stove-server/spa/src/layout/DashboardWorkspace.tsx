@@ -1,4 +1,10 @@
+import { useLayoutEffect, useRef } from "react";
 import type { AppSummary, Run, Test } from "../api/types";
+import {
+  PhoneNavigationProvider,
+  useIsPhone,
+  usePhoneNavigation,
+} from "../hooks/usePhoneNavigation";
 import type { MetadataFilter } from "../utils/metadata-filter";
 import { Sidebar } from "./Sidebar";
 import { TestDetail } from "./TestDetail";
@@ -25,7 +31,14 @@ type WorkspaceContent =
   | { kind: "test"; run: Run; test: Test }
   | { kind: "empty"; waitingForFirstRun: boolean };
 
-export function DashboardWorkspace({
+export function DashboardWorkspace(props: DashboardWorkspaceProps) {
+  return (
+    <PhoneNavigationProvider scope={props.selectedRunId ?? "empty"}>
+      <DashboardWorkspaceContent {...props} />
+    </PhoneNavigationProvider>
+  );
+}
+function DashboardWorkspaceContent({
   apps,
   activeApp,
   mismatchedApps,
@@ -42,10 +55,27 @@ export function DashboardWorkspace({
   onMetadataFilterChange,
   onSelectTest,
 }: DashboardWorkspaceProps) {
+  const phone = usePhoneNavigation();
+  const isPhone = useIsPhone();
+  const workspaceRef = useRef<HTMLDivElement>(null);
+  const lastLevel = useRef(phone?.level);
+  useLayoutEffect(() => {
+    if (!isPhone) return;
+    if (phone?.testId && phone.testId !== selectedTest?.id) onSelectTest(phone.testId);
+    if (lastLevel.current !== phone?.level) {
+      if (phone?.level === "tests")
+        workspaceRef.current
+          ?.querySelector<HTMLElement>('.stove-test-item[aria-current="true"]')
+          ?.focus({ preventScroll: true });
+      if (phone?.level === "test" && lastLevel.current === "tests")
+        workspaceRef.current?.querySelector<HTMLElement>("h1")?.focus();
+    }
+    lastLevel.current = phone?.level;
+  }, [isPhone, phone?.level, phone?.testId, selectedTest?.id, onSelectTest]);
   const content = resolveWorkspaceContent(apps, latestRun, selectedTest);
 
   return (
-    <div className="stove-workspace">
+    <div ref={workspaceRef} className="stove-workspace" data-phone-screen={phone?.level}>
       <Sidebar
         apps={apps}
         mismatchedApps={mismatchedApps}
@@ -60,7 +90,10 @@ export function DashboardWorkspace({
         run={latestRun}
         tests={tests}
         selectedTestId={selectedTest?.id}
-        onSelectTest={onSelectTest}
+        onSelectTest={(testId) => {
+          onSelectTest(testId);
+          if (isPhone) phone?.go({ level: "test", testId });
+        }}
       />
       {content.kind === "test" ? (
         <TestDetail runId={content.run.id} test={content.test} liveConnected={liveConnected} />

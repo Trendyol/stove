@@ -1,7 +1,8 @@
-import { useState } from "react";
+import { useRememberedState } from "./evidence/EvidenceViewMemory";
 
 interface JsonTreeProps {
   value: unknown;
+  memoryKey?: string;
   defaultExpandedDepth?: number;
   searchQuery?: string;
   maxDepth?: number;
@@ -10,6 +11,7 @@ interface JsonTreeProps {
 
 export function JsonTree({
   value,
+  memoryKey = "json",
   defaultExpandedDepth = 1,
   searchQuery = "",
   maxDepth = 20,
@@ -19,6 +21,7 @@ export function JsonTree({
     <div className="rounded-lg border border-stove-border bg-stove-base p-3 font-mono text-xs">
       <JsonTreeNode
         value={value}
+        memoryKey={memoryKey}
         depth={0}
         label="state"
         defaultExpandedDepth={defaultExpandedDepth}
@@ -32,6 +35,7 @@ export function JsonTree({
 
 interface JsonTreeNodeProps {
   value: unknown;
+  memoryKey?: string;
   depth: number;
   label: string;
   defaultExpandedDepth: number;
@@ -42,6 +46,7 @@ interface JsonTreeNodeProps {
 
 function JsonTreeNode({
   value,
+  memoryKey = "json",
   depth,
   label,
   defaultExpandedDepth,
@@ -50,7 +55,10 @@ function JsonTreeNode({
   maxChildren,
 }: JsonTreeNodeProps) {
   const expandable = isExpandable(value);
-  const [expanded, setExpanded] = useState(depth < defaultExpandedDepth);
+  const [expanded, setExpanded] = useRememberedState(
+    `${memoryKey}.expanded`,
+    depth < defaultExpandedDepth,
+  );
   const hasActiveSearch = searchQuery.trim().length > 0;
   const effectiveExpanded = hasActiveSearch || expanded;
 
@@ -122,6 +130,7 @@ function JsonTreeNode({
               <JsonTreeNode
                 key={`${label}-${childLabel}`}
                 value={childValue}
+                memoryKey={`${memoryKey}/${encodeURIComponent(childLabel)}`}
                 depth={depth + 1}
                 label={childLabel}
                 defaultExpandedDepth={defaultExpandedDepth}

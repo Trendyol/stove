@@ -711,7 +711,7 @@
     grid-template-columns: 1fr;
   }
 
-  .ledger-inspector {
+  .ledger-inspector:not(.evidence-side-inspector) {
     position: fixed;
     right: 12px;
     bottom: 12px;
@@ -777,6 +777,7 @@
   }
 
   .evidence-ledger-row {
+    --ledger-rail-x: 23px;
     grid-template-columns: 20px 26px minmax(0, 1fr) auto;
     gap: 7px;
     padding: 10px 9px 10px 13px;
@@ -830,7 +831,7 @@
     grid-column: 2;
   }
 
-  .ledger-inspector {
+  .ledger-inspector:not(.evidence-side-inspector) {
     right: 6px;
     bottom: 6px;
     left: 6px;
@@ -850,7 +851,7 @@
     max-height: 88vh;
   }
 
-  .ledger-inspector::before {
+  .ledger-inspector:not(.evidence-side-inspector)::before {
     align-self: center;
     width: 38px;
     height: 4px;

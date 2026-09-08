@@ -52,9 +52,14 @@ function RunSelect({
         onChange={(event) => onSelectRun(event.target.value)}
       >
         {runs.length === 0 ? <option value="">No matching runs</option> : null}
-        {runs.map((run) => (
+        {runs.map((run, index) => (
           <option key={run.id} value={run.id}>
-            {formatTimestamp(run.started_at)} · {run.status} · {run.id}
+            {index === 0 ? "Latest · " : ""}
+            {new Date(run.started_at).toLocaleDateString(undefined, {
+              month: "short",
+              day: "numeric",
+            })}{" "}
+            · {formatTimestamp(run.started_at).slice(0, 5)} · {run.status.toLowerCase()}
           </option>
         ))}
       </select>

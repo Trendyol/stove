@@ -4,6 +4,7 @@ import type { Entry, Snapshot, Span } from "../api/types";
 import type { FlowNodeData, GapNodeData, SystemNodeData } from "../utils/flow";
 import { applyLinearTimelineLayout, entriesToDag } from "../utils/flow";
 import { CapturedStateLane } from "./CapturedStateLane";
+import { useRememberedState } from "./evidence/EvidenceViewMemory";
 import { FlowDag } from "./FlowDag";
 import { NodePopup } from "./NodePopup";
 import { SnapshotStateDialog } from "./SnapshotStateDialog";
@@ -12,7 +13,7 @@ interface FlowTabProps {
   entries: Entry[];
   spans: Span[];
   snapshots: Snapshot[];
-  onOpenTraceTab?: (() => void) | undefined;
+  onOpenTraceTab?: ((traceId: string) => void) | undefined;
 }
 
 type FlowMode = "timeline" | "trace";
@@ -31,8 +32,10 @@ function modeButtonClass(active: boolean): string {
 }
 
 export function FlowTab({ entries, spans, snapshots, onOpenTraceTab }: FlowTabProps) {
-  const [mode, setMode] = useState<FlowMode>("timeline");
-  const [selection, setSelection] = useState<FlowSelection>({ kind: "none" });
+  const [mode, setMode] = useRememberedState<FlowMode>("flow.mode", "timeline");
+  const [selection, setSelection] = useRememberedState<FlowSelection>("flow.selection", {
+    kind: "none",
+  });
   const [traceGraph, setTraceGraph] = useState<{
     nodes: ReturnType<typeof entriesToDag>["nodes"];
     edges: ReturnType<typeof entriesToDag>["edges"];
@@ -77,8 +80,9 @@ export function FlowTab({ entries, spans, snapshots, onOpenTraceTab }: FlowTabPr
 
   const handleOpenTraceTab = useCallback(() => {
     setSelection({ kind: "none" });
-    onOpenTraceTab?.();
-  }, [onOpenTraceTab]);
+    if (selection.kind === "node" && selection.node.traceId)
+      onOpenTraceTab?.(selection.node.traceId);
+  }, [onOpenTraceTab, selection]);
 
   const summary = useMemo(() => {
     if (mode === "trace") {

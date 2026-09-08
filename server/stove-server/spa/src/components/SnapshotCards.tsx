@@ -1,8 +1,8 @@
-import { useState } from "react";
 import type { Snapshot } from "../api/types";
 import { useEvidenceNavigation } from "../hooks/useEvidenceNavigation";
 import { partitionSnapshotsByDetail } from "../utils/snapshot-state";
 import { getSystemInfo } from "../utils/systems";
+import { useRememberedState } from "./evidence/EvidenceViewMemory";
 import { SnapshotStateDialog } from "./SnapshotStateDialog";
 
 interface SnapshotCardsProps {
@@ -14,7 +14,9 @@ type SnapshotSelection = { kind: "none" } | { kind: "snapshot"; snapshot: Snapsh
 
 export function SnapshotCards({ snapshots, hiddenCount = 0 }: SnapshotCardsProps) {
   const navigation = useEvidenceNavigation();
-  const [localSelection, setSelection] = useState<SnapshotSelection>({ kind: "none" });
+  const [localSelection, setSelection] = useRememberedState<SnapshotSelection>("state.selection", {
+    kind: "none",
+  });
   const focused =
     navigation?.focus?.kind === "snapshot"
       ? snapshots.find((item) => item.id === navigation.focus?.id)

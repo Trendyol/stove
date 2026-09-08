@@ -1,6 +1,7 @@
 use axum::Json;
 use axum::extract::State;
 use serde::Deserialize;
+use std::collections::BTreeMap;
 use utoipa::ToSchema;
 
 use crate::error::{AppError, Result};
@@ -16,6 +17,9 @@ pub struct RetentionRequest {
 pub struct PurgePreviewRequest {
   pub app_name: Option<String>,
   pub older_than: Option<String>,
+  /// Exact metadata values: any value within a key, all keys must match. Requires `app_name`.
+  #[serde(default)]
+  pub metadata: BTreeMap<String, Vec<String>>,
   #[serde(default)]
   pub include_running: bool,
 }
@@ -75,6 +79,7 @@ pub async fn preview_purge(
     request.app_name.as_deref(),
     request.older_than.as_deref(),
     request.include_running,
+    &request.metadata,
   )?))
 }
 

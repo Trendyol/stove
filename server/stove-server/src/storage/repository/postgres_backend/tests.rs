@@ -138,6 +138,24 @@ fn assert_round_trip(repo: &Repository, metadata: &BTreeMap<String, String>) {
   assert_eq!(repo.get_snapshots("run-1", "test-1").unwrap().len(), 1);
   let filter = BTreeMap::from([("gitlab.pipeline_id".to_string(), "42".to_string())]);
   assert_eq!(repo.get_runs_filtered(None, &filter).unwrap().len(), 1);
+  let purge_filter = BTreeMap::from([
+    ("gitlab.pipeline_id".into(), vec!["42".into(), "43".into()]),
+    ("team".into(), vec!["checkout".into()]),
+  ]);
+  assert_eq!(
+    repo
+      .preview_purge(Some("checkout-api"), None, true, &purge_filter)
+      .unwrap()
+      .run_ids,
+    vec!["run-1"]
+  );
+  assert!(
+    repo
+      .preview_purge(Some("another-app"), None, true, &purge_filter)
+      .unwrap()
+      .run_ids
+      .is_empty()
+  );
 }
 
 fn finish_run_and_apply_retention(repo: &Repository) {
@@ -165,7 +183,7 @@ fn assert_admin_operations(repo: &Repository) {
     .save_run_start("run-active", "checkout-api", "2024-04-01T00:00:00Z", &[])
     .unwrap();
   let completed = repo
-    .preview_purge(Some("checkout-api"), None, false)
+    .preview_purge(Some("checkout-api"), None, false, &BTreeMap::new())
     .unwrap();
   assert_eq!(completed.run_ids, vec!["run-2", "run-3"]);
   let purged = repo.purge_runs(&["run-2".to_string()], false).unwrap();
@@ -184,7 +202,10 @@ fn assert_migrations_are_idempotent_and_indexed(database: &TestSchema) {
   assert_eq!(repo.get_runs(None).unwrap().len(), 2);
   let mut client = connect_driver(&database.url).unwrap();
   let version: i64 = client
-    .query_one("SELECT MAX(version) FROM refinery_schema_history", &[])
+    .query_one(
+      "SELECT MAX(version)::BIGINT FROM refinery_schema_history",
+      &[],
+    )
     .unwrap()
     .get(0);
   assert_eq!(version, i64::try_from(migration_count()).unwrap());

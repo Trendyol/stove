@@ -24,19 +24,13 @@ export function Header({
 
   return (
     <header className="stove-topbar">
-      <div className="stove-brand">
+      <a className="stove-brand stove-focus-ring" href={appPath("/")} aria-label="Stove home">
         <img src={stoveMarkUrl} alt="" aria-hidden="true" />
         <span>
-          <strong>STOVE</strong>
-          <small>evidence console</small>
+          <strong>Stove</strong>
+          <small>Test workspace</small>
         </span>
-      </div>
-
-      <div className="stove-topbar-context">
-        <span>Local test intelligence</span>
-        <i />
-        <code>v{__STOVE_VERSION__}</code>
-      </div>
+      </a>
 
       <div className="stove-topbar-actions">
         {versionMismatchSummary ? (
@@ -47,14 +41,8 @@ export function Header({
           title={liveConnected ? "Live SSE stream connected" : "SSE disconnected; polling APIs"}
         >
           <span />
-          {liveConnected ? "Stream live" : "Polling"}
+          {liveConnected ? "Connected" : "Reconnecting"}
         </span>
-        <code
-          className="stove-endpoint"
-          title={`MCP endpoint: ${window.location.origin}${basePath()}/mcp`}
-        >
-          MCP · /mcp
-        </code>
         <a
           aria-current={activeRoute === "admin" ? "page" : undefined}
           className={`stove-topbar-link stove-focus-ring ${activeRoute === "admin" ? "is-active" : ""}`}
@@ -67,50 +55,26 @@ export function Header({
           </svg>
           <span>Admin</span>
         </a>
-        <a
-          href={swaggerUrl}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="stove-topbar-link"
-          title="API documentation"
-        >
-          <svg
-            aria-hidden="true"
-            className="w-3.5 h-3.5"
-            viewBox="0 0 16 16"
-            fill="none"
-            stroke="currentColor"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          >
-            <path d="M5.5 3 1.5 8l4 5M10.5 3l4 5-4 5M9.25 1.5l-2.5 13" />
-          </svg>
-          <span>API</span>
-        </a>
-        <a
-          href="https://trendyol.github.io/stove/"
-          target="_blank"
-          rel="noopener noreferrer"
-          className="stove-topbar-link"
-          title="Documentation"
-        >
-          <svg aria-hidden="true" className="w-3.5 h-3.5" viewBox="0 0 16 16" fill="currentColor">
-            <path d="M1 2.828c.885-.37 2.154-.769 3.388-.893 1.33-.134 2.458.063 3.112.752v9.746c-.935-.53-2.12-.603-3.213-.493-1.18.12-2.37.461-3.287.811V2.828zm7.5-.141c.654-.689 1.782-.886 3.112-.752 1.234.124 2.503.523 3.388.893v9.923c-.918-.35-2.107-.692-3.287-.81-1.094-.111-2.278-.039-3.213.492V2.687zM8 1.783C7.015.936 5.587.81 4.287.94c-1.514.153-3.042.672-3.994 1.105A.5.5 0 000 2.5v11a.5.5 0 00.707.455c.882-.4 2.303-.881 3.68-1.02 1.409-.142 2.59.087 3.223.877a.5.5 0 00.78 0c.633-.79 1.814-1.019 3.222-.877 1.378.139 2.8.62 3.681 1.02A.5.5 0 0016 13.5v-11a.5.5 0 00-.293-.455c-.952-.433-2.48-.952-3.994-1.105C10.413.809 8.985.936 8 1.783z" />
-          </svg>
-          <span>Docs</span>
-        </a>
-        <a
-          href="https://github.com/Trendyol/stove"
-          target="_blank"
-          rel="noopener noreferrer"
-          className="stove-topbar-link"
-          title="GitHub"
-        >
-          <svg aria-hidden="true" className="w-3.5 h-3.5" viewBox="0 0 16 16" fill="currentColor">
-            <path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z" />
-          </svg>
-          <span>GitHub</span>
-        </a>
+        <details className="stove-help-menu">
+          <summary className="stove-topbar-link stove-focus-ring">Help</summary>
+          <div className="stove-help-popover">
+            <strong>Stove v{__STOVE_VERSION__}</strong>
+            <a href={swaggerUrl} target="_blank" rel="noopener noreferrer">
+              API reference ↗
+            </a>
+            <a href="https://trendyol.github.io/stove/" target="_blank" rel="noopener noreferrer">
+              Documentation ↗
+            </a>
+            <a href="https://github.com/Trendyol/stove" target="_blank" rel="noopener noreferrer">
+              GitHub ↗
+            </a>
+            <span>MCP endpoint</span>
+            <code>
+              {window.location.origin}
+              {basePath()}/mcp
+            </code>
+          </div>
+        </details>
         <button
           type="button"
           onClick={toggle}

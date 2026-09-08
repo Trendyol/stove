@@ -40,7 +40,7 @@ export function FocusedEvidenceView({
     );
   const { target, entries, spans, interactions, warnings, has_more_before, has_more_after } =
     query.data;
-  const openTrace = () => navigation?.selectTab("trace");
+  const openTrace = (traceId: string) => navigation?.openTrace(traceId);
   return (
     <>
       <div className="evidence-scope-note" role="status">

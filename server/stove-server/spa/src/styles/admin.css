@@ -224,6 +224,137 @@
   justify-content: flex-start;
 }
 
+.stove-purge-metadata {
+  margin: 4px 0 18px;
+  border-top: 1px solid var(--stove-border);
+  padding-top: 14px;
+}
+
+.stove-purge-metadata-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 8px;
+}
+
+.stove-purge-metadata h4 {
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.stove-purge-metadata button {
+  font-size: 12px;
+  overflow-wrap: anywhere;
+  text-align: left;
+}
+
+.stove-purge-metadata-fields {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(280px, 100%), 1fr));
+  gap: 16px;
+  align-items: start;
+  padding: 3px;
+}
+
+.stove-purge-metadata-fields fieldset {
+  min-width: 0;
+}
+
+.stove-purge-metadata-fields legend {
+  margin-bottom: 8px;
+  color: var(--stove-text-secondary);
+  font-size: 12px;
+  overflow-wrap: anywhere;
+}
+
+.stove-purge-metadata-values {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.stove-purge-metadata-values button {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  min-width: 0;
+  max-width: 100%;
+}
+
+.stove-purge-metadata-values small {
+  color: var(--stove-text-muted);
+}
+
+.stove-purge-metadata-values [aria-pressed="true"] {
+  border-color: var(--stove-blue);
+  background: var(--stove-blue-soft);
+}
+
+.stove-purge-metadata-dropdown {
+  border: 1px solid var(--stove-border);
+  border-radius: 8px;
+  background: var(--stove-surface);
+  font-size: 12px;
+}
+
+.stove-purge-metadata-dropdown summary {
+  padding: 10px 12px;
+  cursor: pointer;
+  color: var(--stove-text-secondary);
+  overflow-wrap: anywhere;
+}
+
+.stove-purge-metadata-menu {
+  display: grid;
+  gap: 8px;
+  border-top: 1px solid var(--stove-border);
+  padding: 10px;
+}
+
+.stove-purge-metadata-menu > input {
+  min-width: 0;
+  width: 100%;
+  border: 1px solid var(--stove-border);
+  border-radius: 6px;
+  padding: 8px;
+  color: var(--stove-text);
+  background: var(--stove-card);
+}
+
+.stove-purge-metadata-options {
+  max-height: 220px;
+  overflow-y: auto;
+}
+
+.stove-purge-metadata-options label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 36px;
+  padding: 6px;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+.stove-purge-metadata-options label:hover {
+  background: var(--stove-hover);
+}
+
+.stove-purge-metadata-options input {
+  flex-shrink: 0;
+  accent-color: var(--stove-blue);
+}
+
+.stove-purge-metadata-options span {
+  flex: 1;
+  overflow-wrap: anywhere;
+}
+
+.stove-purge-metadata-options small {
+  color: var(--stove-text-muted);
+}
+
 .stove-admin-page .is-danger {
   border-color: color-mix(in srgb, var(--stove-red) 45%, var(--stove-border));
   color: var(--stove-red);
@@ -231,16 +362,51 @@
 }
 
 .stove-admin-preview {
-  display: grid;
-  gap: 6px;
-  margin-top: 14px;
+  margin-top: 18px;
+  border-top: 1px solid var(--stove-border);
+  padding-top: 18px;
   color: var(--stove-text-secondary);
   font-size: 12px;
 }
 
-.stove-admin-preview code {
-  max-height: 120px;
+.stove-admin-preview-overview {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 14px;
+}
+
+.stove-admin-preview-summary {
+  display: grid;
+  gap: 5px;
+}
+
+.stove-admin-preview-summary strong {
+  color: var(--stove-text-heading);
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.stove-admin-preview-ids {
+  margin-top: 12px;
+}
+
+.stove-admin-preview-ids summary {
+  width: fit-content;
+  cursor: pointer;
+  padding: 4px 0;
+}
+
+.stove-admin-preview-ids code {
+  display: block;
+  max-height: 160px;
+  margin-top: 8px;
+  padding: 10px;
+  border-radius: 6px;
+  background: var(--stove-surface);
   overflow: auto;
+  overflow-wrap: anywhere;
   white-space: pre-wrap;
 }
 
