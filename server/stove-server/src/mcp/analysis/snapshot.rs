@@ -3,11 +3,9 @@
 use serde_json::Value;
 use serde_json::json;
 
-use super::AnalysisOutput;
 use super::Analyzer;
 use super::common::display_error;
 use super::common::fallback_message;
-use super::common::output;
 use super::common::test_json;
 use super::evidence::snapshot_detail;
 use crate::mcp::args::Budget;
@@ -15,7 +13,7 @@ use crate::mcp::args::SnapshotArgs;
 use crate::mcp::args::parse;
 
 impl Analyzer {
-  pub(super) fn snapshot(&self, arguments: Value) -> Result<AnalysisOutput, String> {
+  pub(super) fn snapshot(&self, arguments: Value) -> Result<Value, String> {
     let args: SnapshotArgs = parse(arguments)?;
     let budget = Budget::from_args(
       args.exact.common.budget.as_deref(),
@@ -44,6 +42,6 @@ impl Analyzer {
       "omitted_snapshots": snapshots.len().saturating_sub(items.len()),
       "fallback": fallback_message(),
     });
-    Ok(output(structured, "Stove snapshots"))
+    Ok(structured)
   }
 }

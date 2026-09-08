@@ -59,13 +59,13 @@ pub(super) fn span_preview(span: &Span, max_chars: usize) -> Value {
 }
 
 pub(super) fn snapshot_summary(snapshot: &Snapshot, max_chars: usize) -> Value {
-  let state = parse_state(&snapshot.state_json, max_chars);
+  let state = state_overview(&snapshot.state_json, max_chars);
   json!({
     "navigation": reference(&snapshot.run_id, Some(&snapshot.test_id), Some(("snapshot", snapshot.id))),
     "id": snapshot.id,
     "system": snapshot.system,
     "summary": clip_string(&snapshot.summary, max_chars),
-    "state_overview": state_overview(&state),
+    "state_overview": state,
     "snapshot_tool_call": tool_call(ToolName::Snapshot, tool_args([
       (ArgName::RunId, json!(&snapshot.run_id)),
       (ArgName::TestId, json!(&snapshot.test_id)),
@@ -79,19 +79,7 @@ pub(super) fn snapshot_detail(
   pointer: Option<&str>,
   max_chars: usize,
 ) -> Value {
-  let parsed = parse_state(&snapshot.state_json, max_chars);
-  let selected_state = pointer.map_or_else(
-    || parsed.clone(),
-    |pointer| {
-      parsed
-        .get("value")
-        .and_then(|value| value.pointer(pointer))
-        .map_or_else(
-          || json!({ "parse_status": "pointer_not_found", "json_pointer": pointer }),
-          |value| json!({ "parse_status": "ok", "json_pointer": pointer, "value": redact_value(value, max_chars) }),
-        )
-    },
-  );
+  let selected_state = parse_state(&snapshot.state_json, pointer, max_chars);
 
   let mut navigation = reference(
     &snapshot.run_id,
@@ -192,24 +180,40 @@ pub(super) fn warning_preview(warning: &MockWarning, max_chars: usize) -> Value 
   })
 }
 
-fn state_overview(parsed: &Value) -> Value {
-  let Some(value) = parsed.get("value") else {
-    return parsed.clone();
+fn state_overview(raw: &str, max_chars: usize) -> Value {
+  let Ok(value) = serde_json::from_str::<Value>(raw) else {
+    return parse_state(raw, None, max_chars);
   };
-  match value {
+  match &value {
     Value::Object(map) => json!({
       "type": "object",
       "keys": map.keys().take(20).collect::<Vec<_>>(),
       "key_count": map.len(),
     }),
     Value::Array(items) => json!({ "type": "array", "item_count": items.len() }),
-    _ => json!({ "type": value_type(value), "value": value }),
+    _ => json!({ "type": value_type(&value), "value": bounded_value(value, max_chars) }),
   }
 }
 
-fn parse_state(raw: &str, max_chars: usize) -> Value {
+fn parse_state(raw: &str, pointer: Option<&str>, max_chars: usize) -> Value {
   match serde_json::from_str::<Value>(raw) {
-    Ok(value) => json!({ "parse_status": "ok", "value": redact_value(&value, max_chars) }),
+    Ok(value) => {
+      // Redact before selection so pointers cannot bypass a sensitive ancestor.
+      // Resolve against the complete structure, before applying preview limits.
+      let redacted = redact_value(&value);
+      let selected = match pointer {
+        Some(pointer) => match redacted.pointer(pointer) {
+          Some(value) => value.clone(),
+          None => return json!({ "parse_status": "pointer_not_found", "json_pointer": pointer }),
+        },
+        None => redacted,
+      };
+      let mut state = json!({ "parse_status": "ok", "value": bounded_value(selected, max_chars) });
+      if let Some(pointer) = pointer {
+        state["json_pointer"] = json!(pointer);
+      }
+      state
+    }
     Err(error) => json!({
       "parse_status": "malformed_json",
       "parse_error": error.to_string(),
@@ -218,13 +222,13 @@ fn parse_state(raw: &str, max_chars: usize) -> Value {
   }
 }
 
-fn preview_field(raw: Option<&str>, max_chars: usize) -> Value {
+pub(super) fn preview_field(raw: Option<&str>, max_chars: usize) -> Value {
   let Some(raw) = raw.filter(|value| !value.is_empty()) else {
     return Value::Null;
   };
 
   match serde_json::from_str::<Value>(raw) {
-    Ok(value) => redact_value(&value, max_chars),
+    Ok(value) => bounded_value(redact_value(&value), max_chars),
     Err(error) => json!({
       "parse_status": "plain_or_malformed",
       "parse_error": error.to_string(),
@@ -233,7 +237,22 @@ fn preview_field(raw: Option<&str>, max_chars: usize) -> Value {
   }
 }
 
-fn redact_value(value: &Value, max_chars: usize) -> Value {
+// Bound the whole JSON field: clipping each string or array separately leaves
+// wide/nested objects effectively unbounded. Keep small values structured, and
+// explicitly mark larger ones as text previews with a route to deeper evidence.
+fn bounded_value(value: Value, max_chars: usize) -> Value {
+  if let Value::String(value) = value {
+    return json!(clip_string(&value, max_chars));
+  }
+  let serialized = value.to_string();
+  if serialized.chars().count() <= max_chars {
+    value
+  } else {
+    json!({ "parse_status": "truncated_json", "preview": clip_string(&serialized, max_chars) })
+  }
+}
+
+fn redact_value(value: &Value) -> Value {
   match value {
     Value::Object(map) => Value::Object(
       map
@@ -242,24 +261,17 @@ fn redact_value(value: &Value, max_chars: usize) -> Value {
           if is_sensitive_key(key) {
             (key.clone(), Value::String("[REDACTED]".to_string()))
           } else {
-            (key.clone(), redact_value(value, max_chars))
+            (key.clone(), redact_value(value))
           }
         })
         .collect(),
     ),
-    Value::Array(items) => Value::Array(
-      items
-        .iter()
-        .take(50)
-        .map(|item| redact_value(item, max_chars))
-        .collect(),
-    ),
-    Value::String(value) => json!(clip_string(value, max_chars)),
+    Value::Array(items) => Value::Array(items.iter().map(redact_value).collect()),
     _ => value.clone(),
   }
 }
 
-fn is_sensitive_key(key: &str) -> bool {
+pub(super) fn is_sensitive_key(key: &str) -> bool {
   let lower = key.to_ascii_lowercase();
   [
     "authorization",
@@ -281,7 +293,7 @@ pub(super) fn clip_opt(value: Option<&str>, max_chars: usize) -> Value {
     .map_or(Value::Null, |value| json!(clip_string(value, max_chars)))
 }
 
-fn clip_string(value: &str, max_chars: usize) -> String {
+pub(super) fn clip_string(value: &str, max_chars: usize) -> String {
   let chars = value.chars().count();
   if chars <= max_chars {
     return value.to_string();
@@ -322,7 +334,7 @@ mod tests {
       "items": [{ "password": "pw" }]
     });
 
-    let redacted = redact_value(&value, 100);
+    let redacted = redact_value(&value);
 
     assert_eq!(redacted["Authorization"], "[REDACTED]");
     assert_eq!(redacted["nested"]["apiKey"], "[REDACTED]");
@@ -343,5 +355,65 @@ mod tests {
 
     assert_eq!(preview["parse_status"], "plain_or_malformed");
     assert!(preview["parse_error"].as_str().unwrap().contains("key"));
+  }
+
+  #[test]
+  fn wide_json_fields_have_explicit_bounded_previews() {
+    let value = json!({ "items": (0..1200).map(|i| json!({
+      "id": i, "password": "never-emit-this", "description": "record".repeat(40),
+    })).collect::<Vec<_>>() });
+    let preview = preview_field(Some(&value.to_string()), 240);
+
+    assert_eq!(preview["parse_status"], "truncated_json");
+    assert!(preview["preview"].as_str().unwrap().contains("truncated"));
+    assert!(preview.to_string().len() < 400);
+    assert!(!preview.to_string().contains("never-emit-this"));
+  }
+
+  #[test]
+  fn snapshot_pointers_resolve_before_preview_limits() {
+    let raw =
+      json!({ "items": (0..100).map(|i| json!({"id": i})).collect::<Vec<_>>() }).to_string();
+
+    assert_eq!(
+      parse_state(&raw, Some("/items/75"), 120)["value"],
+      json!({"id": 75})
+    );
+    assert_eq!(
+      parse_state(&raw, Some("/items/100"), 120)["parse_status"],
+      "pointer_not_found"
+    );
+    assert_eq!(
+      parse_state(&raw, Some(""), 120)["value"]["parse_status"],
+      "truncated_json"
+    );
+  }
+
+  #[test]
+  fn snapshot_pointers_cannot_bypass_redaction() {
+    let raw = json!({ "credentials": {"value": "hidden"}, "a/b": {"~key": "visible"} }).to_string();
+
+    assert_eq!(
+      parse_state(&raw, Some("/credentials"), 120)["value"],
+      "[REDACTED]"
+    );
+    assert_eq!(
+      parse_state(&raw, Some("/credentials/value"), 120)["parse_status"],
+      "pointer_not_found"
+    );
+    assert_eq!(
+      parse_state(&raw, Some("/a~1b/~0key"), 120)["value"],
+      "visible"
+    );
+    assert_eq!(
+      parse_state("{bad", Some("/items"), 120)["parse_status"],
+      "malformed_json"
+    );
+  }
+
+  #[test]
+  fn snapshot_overview_counts_the_complete_structure() {
+    let raw = json!((0..100).collect::<Vec<_>>()).to_string();
+    assert_eq!(state_overview(&raw, 120)["item_count"], 100);
   }
 }

@@ -69,6 +69,9 @@ fn attach_scoped(
   }
   for key in [
     "groups",
+    "diagnoses",
+    "findings",
+    "candidate_runs",
     "failures",
     "test",
     "events",

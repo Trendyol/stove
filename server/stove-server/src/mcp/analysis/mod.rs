@@ -1,13 +1,17 @@
 //! MCP analysis orchestration.
 //!
 //! Each user-facing MCP tool lives in its own per-tool module (`apps`,
-//! `runs`, `failures`, `timeline`, `trace`, `snapshot`, `raw_evidence`) as
+//! `runs`, `failures`, `diagnose`, `timeline`, `trace`, `snapshot`, `raw_evidence`) as
 //! an `impl Analyzer` block. This module owns the shared `Analyzer` handle,
-//! the `call_tool` dispatcher, and `resolve_test`
-//! which several tools share.
+//! argument validation, tool dispatch, and navigation decoration. Protocol
+//! envelopes and the JSON text fallback are assembled outside the analysis layer.
+//! `test_evidence` loads scoped records; `diagnostic_findings` ranks them before
+//! the diagnosis tool renders its response.
 
 mod apps;
 mod common;
+mod diagnose;
+mod diagnostic_findings;
 pub(super) mod evidence;
 mod failures;
 mod interactions;
@@ -15,8 +19,10 @@ mod navigation;
 mod raw_evidence;
 mod runs;
 mod snapshot;
+mod test_evidence;
 mod timeline;
 mod trace;
+mod trace_summary;
 
 use serde_json::Value;
 use std::sync::Arc;
@@ -26,17 +32,6 @@ use crate::mcp::contract::ToolName;
 use crate::storage::models::Run;
 use crate::storage::models::Test;
 use crate::storage::repository::Repository;
-
-#[derive(Debug, Clone)]
-pub struct ToolOutput {
-  pub structured: Value,
-  pub text: String,
-}
-
-pub(super) struct AnalysisOutput {
-  structured: Value,
-  heading: &'static str,
-}
 
 #[derive(Clone)]
 pub struct Analyzer {
@@ -53,29 +48,22 @@ impl Analyzer {
     }
   }
 
-  pub fn call_tool(&self, name: &str, arguments: Value) -> Result<ToolOutput, String> {
-    let mut result = match ToolName::from_str(name) {
-      Some(ToolName::Apps) => self.apps(arguments),
-      Some(ToolName::Runs) => self.runs(arguments),
-      Some(ToolName::Failures) => self.failures(arguments),
-      Some(ToolName::FailureDetail) => self.failure_detail(arguments),
-      Some(ToolName::Timeline) => self.timeline(arguments),
-      Some(ToolName::Trace) => self.trace(arguments),
-      Some(ToolName::Snapshot) => self.snapshot(arguments),
-      Some(ToolName::Interactions) => self.interactions(arguments),
-      Some(ToolName::RawEvidence) => self.raw_evidence(arguments),
-      None => Err(format!("unknown Stove MCP tool: {name}")),
+  pub(crate) fn call_tool(&self, tool: ToolName, arguments: Value) -> Result<Value, String> {
+    crate::mcp::tools::validate_arguments(tool, &arguments)?;
+    let mut result = match tool {
+      ToolName::Apps => self.apps(arguments),
+      ToolName::Runs => self.runs(arguments),
+      ToolName::Failures => self.failures(arguments),
+      ToolName::FailureDetail => self.failure_detail(arguments),
+      ToolName::Diagnose => self.diagnose(&arguments),
+      ToolName::Timeline => self.timeline(arguments),
+      ToolName::Trace => self.trace(arguments),
+      ToolName::Snapshot => self.snapshot(arguments),
+      ToolName::Interactions => self.interactions(arguments),
+      ToolName::RawEvidence => self.raw_evidence(arguments),
     }?;
-    navigation::attach(&mut result.structured, self.public_url.as_deref());
-    let text = format!(
-      "{}\n{}",
-      result.heading,
-      serde_json::to_string_pretty(&result.structured).map_err(|error| error.to_string())?
-    );
-    Ok(ToolOutput {
-      structured: result.structured,
-      text,
-    })
+    navigation::attach(&mut result, self.public_url.as_deref());
+    Ok(result)
   }
 
   pub(super) fn resolve_test(&self, run_id: &str, test_id: &str) -> Result<(Run, Test), String> {

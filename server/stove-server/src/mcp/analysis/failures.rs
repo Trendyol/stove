@@ -4,7 +4,6 @@
 use serde_json::Value;
 use serde_json::json;
 
-use super::AnalysisOutput;
 use super::Analyzer;
 use super::common::display_error;
 use super::common::exact_test_tool_call;
@@ -13,17 +12,17 @@ use super::common::fallback_message;
 use super::common::groups_have_running_runs;
 use super::common::is_failed_status;
 use super::common::is_failed_test;
-use super::common::output;
 use super::common::selected_runs;
 use super::common::selector_rules;
 use super::common::test_json;
 use super::common::timeline_summary;
-use super::common::trace_summary;
 use super::evidence::clip_opt;
 use super::evidence::entry_preview;
 use super::evidence::interaction_preview;
 use super::evidence::snapshot_summary;
 use super::evidence::warning_preview;
+use super::test_evidence::TestEvidence;
+use super::trace_summary::{TraceDetail, summarize};
 use crate::mcp::args::Budget;
 use crate::mcp::args::ExactTestArgs;
 use crate::mcp::args::FailuresArgs;
@@ -35,8 +34,9 @@ use crate::storage::models::Test;
 use crate::storage::models::TestStatus;
 
 impl Analyzer {
-  pub(super) fn failures(&self, arguments: Value) -> Result<AnalysisOutput, String> {
+  pub(super) fn failures(&self, arguments: Value) -> Result<Value, String> {
     let args: FailuresArgs = parse(arguments)?;
+    let budget = Budget::from_args(args.common.budget.as_deref(), args.common.max_chars);
     let limit = args.common.limit();
     let runs = selected_runs(
       &self.repository,
@@ -59,7 +59,7 @@ impl Analyzer {
       let failures: Vec<Value> = failed_tests
         .into_iter()
         .take(remaining)
-        .map(|test| failure_item(&run, &test))
+        .map(|test| failure_item(&run, &test, budget.string_chars))
         .collect();
 
       if failures.is_empty() {
@@ -86,36 +86,20 @@ impl Analyzer {
       "selector_rules": selector_rules(),
       "fallback": fallback_message(),
     });
-    Ok(output(
-      structured,
-      "Stove failed tests grouped by app and run",
-    ))
+    Ok(structured)
   }
 
-  pub(super) fn failure_detail(&self, arguments: Value) -> Result<AnalysisOutput, String> {
+  pub(super) fn failure_detail(&self, arguments: Value) -> Result<Value, String> {
     let args: ExactTestArgs = parse(arguments)?;
     let budget = Budget::from_args(args.common.budget.as_deref(), args.common.max_chars);
     let (run, test) = self.resolve_test(&args.run_id, &args.test_id)?;
-    let entries = self
-      .repository
-      .get_entries(&args.run_id, &args.test_id)
-      .map_err(display_error)?;
-    let snapshots = self
-      .repository
-      .get_snapshots(&args.run_id, &args.test_id)
-      .map_err(display_error)?;
-    let spans = self
-      .repository
-      .get_spans_for_test(&args.run_id, &args.test_id)
-      .map_err(display_error)?;
-    let interactions = self
-      .repository
-      .get_mock_interactions_for_test(&args.run_id, &args.test_id)
-      .map_err(display_error)?;
-    let warnings = self
-      .repository
-      .get_mock_warnings_for_test(&args.run_id, &args.test_id)
-      .map_err(display_error)?;
+    let TestEvidence {
+      entries,
+      snapshots,
+      spans,
+      interactions,
+      warnings,
+    } = TestEvidence::load(&self.repository, &test)?;
 
     let failed_entries: Vec<&Entry> = entries
       .iter()
@@ -126,13 +110,15 @@ impl Analyzer {
       &args.run_id,
       &args.test_id,
       budget.timeline_events,
+      budget.string_chars,
     );
-    let trace_summary = trace_summary(
+    let trace_summary = summarize(
       &spans,
       &entries,
       &args.run_id,
       &args.test_id,
-      budget.trace_spans,
+      budget,
+      TraceDetail::Summary,
     );
     let snapshot_summaries: Vec<Value> = snapshots
       .iter()
@@ -172,7 +158,7 @@ impl Analyzer {
       "omitted": {
         "entries": entries.len().saturating_sub(budget.timeline_events),
         "failed_entries": failed_entries.len().saturating_sub(budget.failed_entries),
-        "spans": spans.len().saturating_sub(budget.trace_spans),
+        "spans": trace_summary["omitted_spans"],
         "snapshots": snapshots.len().saturating_sub(snapshot_summaries.len()),
         "unmatched_interactions": unmatched_total.saturating_sub(unmatched_interactions.len()),
         "mock_warnings": warnings.len().saturating_sub(mock_warnings.len()),
@@ -189,6 +175,6 @@ impl Analyzer {
       "interactions_tool_call": exact_test_tool_call(ToolName::Interactions, &args.run_id, &args.test_id),
       "fallback": fallback_message(),
     });
-    Ok(output(structured, "Stove failure detail"))
+    Ok(structured)
   }
 }

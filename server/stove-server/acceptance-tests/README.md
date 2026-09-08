@@ -50,6 +50,65 @@ budget is 2 seconds. The workload can be tuned with
 `STOVE_LOAD_TEST_RUNS`, `STOVE_LOAD_TEST_REQUESTS`,
 `STOVE_LOAD_TEST_CONCURRENCY`, and `STOVE_LOAD_TEST_P95_MS`.
 
+## MCP failure-evidence benchmark
+
+The standalone harness feeds assertion mismatches, database exceptions, unmatched
+mock requests, a 400-span timeout trace, and a 1,200-record snapshot into the public
+protobuf HTTP endpoint. It measures the release server's MCP responses using a
+temporary SQLite database. It clears inherited `STOVE_*` settings in the child
+process and removes its database and server process when finished.
+
+Install `protoc` on your path, then run from `server/stove-server`:
+
+```shell
+cargo build --release --locked --bin stove
+python3 -m venv target/mcp-benchmark-venv
+target/mcp-benchmark-venv/bin/pip install protobuf==7.36.1 tiktoken==0.14.0
+target/mcp-benchmark-venv/bin/python scripts/benchmark-mcp.py
+```
+
+Use `--suite diagnosis` to benchmark `stove_diagnose` alone: every failure under
+each budget, a complete five-test run in one call, and selection by CI metadata.
+The harness also follows returned continuations with two tests per page and
+requires every failure to appear exactly once in the same run, with each seeded
+cause present. The wide catalog case supplies no JSON pointer to the diagnosis
+tool; the server must find its recorded diagnostic field itself. This verifies
+evidence extraction and traversal, not model reasoning or the correctness of a
+proposed code fix.
+
+Diagnosis cases also require the failed report entry and failed trace target in
+the first response, enforce the five-entry/eight-span context limits, and verify
+omission counts. See the [context benchmark](../benchmarks/mcp-diagnose-context-2026-09-08.md)
+for the added token cost and local latency measurements.
+
+The reference run used `protoc 36.1`; the Python protobuf runtime must support your
+installed compiler. The tokenizer downloads its encoding on first use. No model
+API or Docker daemon is needed.
+
+Defaults: 60 measured requests per case after three warmups, then two 240-request
+workloads with eight concurrent clients. Override `--samples`, `--requests`,
+`--concurrency`, `--binary`, or `--output` as needed. The output directory contains
+`results.json` (raw timings, percentiles, sizes, token counts, error probes), sample
+responses, and `server.log`. It defaults to the ignored `target/mcp-benchmark`.
+
+Latency ends after reading the full HTTP body and excludes client JSON parsing and
+tokenization. Token counts use `o200k_base`; text fallback and complete wire
+envelope counts are separate because clients may expose different content to the
+model. The pretty JSON comparison measures formatting only. The raw REST bundle
+comparison measures selective retrieval versus fetching all four evidence kinds,
+not equal-information compression. Seeded cause-marker checks verify evidence
+presence, not an LLM's diagnostic ability. The wide-record pointer is known to the
+harness; this does not test whether an agent can discover it unaided.
+
+Error probes cover invalid arguments, limits, budgets and trace views, missing
+selectors and runs, unknown tools, malformed calls, and malformed JSON. Any wrong
+error classification, HTTP failure, text/structured mismatch, or synthetic-secret
+leak fails the run. Latencies are observations, not portable CI timing thresholds.
+
+See [the recorded results](../benchmarks/mcp-2026-09-07.md) for the measured
+improvements and remaining limits. This complements the PostgreSQL load suite;
+it does not measure shared-server scale, remote networking, or model latency.
+
 For a manual browser pass against the fixture produced by the first test, run:
 
 ```shell

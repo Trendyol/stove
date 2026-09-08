@@ -3,12 +3,10 @@
 use serde_json::Value;
 use serde_json::json;
 
-use super::AnalysisOutput;
 use super::Analyzer;
 use super::common::display_error;
 use super::common::failure_window;
 use super::common::fallback_message;
-use super::common::output;
 use super::common::test_json;
 use super::evidence::entry_preview;
 use super::evidence::interaction_preview;
@@ -18,7 +16,7 @@ use crate::mcp::args::parse;
 use crate::mcp::contract::TimelineFocus;
 
 impl Analyzer {
-  pub(super) fn timeline(&self, arguments: Value) -> Result<AnalysisOutput, String> {
+  pub(super) fn timeline(&self, arguments: Value) -> Result<Value, String> {
     let args: TimelineArgs = parse(arguments)?;
     let budget = Budget::from_args(
       args.exact.common.budget.as_deref(),
@@ -82,7 +80,7 @@ impl Analyzer {
       "omitted_interactions": interactions.len().saturating_sub(budget.interactions.min(interactions.len())),
       "fallback": fallback_message(),
     });
-    Ok(output(structured, "Stove test timeline"))
+    Ok(structured)
   }
 }
 

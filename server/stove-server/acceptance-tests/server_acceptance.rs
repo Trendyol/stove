@@ -967,6 +967,7 @@ async fn assert_mcp_and_agent_loop(stove: &RunningStove) -> Result<()> {
     "stove_runs",
     "stove_failures",
     "stove_failure_detail",
+    "stove_diagnose",
     "stove_trace",
     "stove_snapshot",
     "stove_raw_evidence",
@@ -975,6 +976,25 @@ async fn assert_mcp_and_agent_loop(stove: &RunningStove) -> Result<()> {
   }
 
   let apps = stove.mcp_tool("stove_apps", json!({})).await?;
+  let diagnosis = stove
+    .mcp_tool(
+      "stove_diagnose",
+      json!({"run_id":"pipeline-42", "test_id":"test-failed"}),
+    )
+    .await?;
+  assert_eq!(diagnosis["result"]["isError"], false);
+  let diagnostic_content = &diagnosis["result"]["structuredContent"];
+  assert_eq!(diagnostic_content["run_id"], "pipeline-42");
+  assert_eq!(
+    diagnostic_content["diagnoses"][0]["test"]["test_id"],
+    "test-failed"
+  );
+  assert!(
+    !diagnostic_content["diagnoses"][0]["findings"]
+      .as_array()
+      .unwrap()
+      .is_empty()
+  );
   assert_eq!(
     apps["result"]["structuredContent"]["apps"][0]["app_name"],
     "service-tests"

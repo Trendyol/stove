@@ -14,6 +14,24 @@ pub(crate) fn definitions() -> Value {
   )
 }
 
+/// Validate against the same field definitions published in tools/list so typos
+/// cannot silently widen a query or select the wrong evidence view.
+pub(crate) fn validate_arguments(tool: ToolName, arguments: &Value) -> Result<(), String> {
+  let arguments = arguments
+    .as_object()
+    .ok_or_else(|| "tool arguments must be an object".to_string())?;
+  let fields = tool_fields(tool);
+  for key in arguments.keys() {
+    if !fields.iter().any(|field| field.name.as_str() == key) {
+      return Err(format!("unknown argument `{key}` for {}", tool.as_str()));
+    }
+  }
+  for field in fields {
+    field.validate(arguments.get(field.name.as_str()))?;
+  }
+  Ok(())
+}
+
 struct ToolSpec {
   tool: ToolName,
   description: &'static str,
@@ -34,6 +52,12 @@ impl ToolSpec {
       "name": self.tool.as_str(),
       "description": self.description,
       "inputSchema": InputSchema::from_fields(&self.fields).to_json(),
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": false,
+      },
     })
   }
 }
@@ -47,7 +71,10 @@ fn tool_description(tool: ToolName) -> &'static str {
       "List Stove runs, optionally filtered by app_name, status, and an exact metadata subset. run_id is the canonical execution boundary for detail tools."
     }
     ToolName::Failures => {
-      "Default entrypoint for agents. Return failed or errored tests grouped by app and run, with ready-to-use detail tool calls."
+      "Survey failed or errored tests grouped by app and run, with ready-to-use detail tool calls. Prefer stove_diagnose for a single-call diagnosis."
+    }
+    ToolName::Diagnose => {
+      "Single-call failure investigation. Select by exact run_id, or app_name plus exact CI metadata identifying one run. Optional test_id narrows the run. Returns ranked recorded findings, assertion differences, exception locations, mock mismatches, nested diagnostic payload fields, a bounded failure timeline and relevant trace path, citations and evidence gaps. Never chooses an arbitrary run or claims an inferred root cause is proven."
     }
     ToolName::FailureDetail => {
       "Return compact failure, timeline, trace, and snapshot summaries for one exact failed test."
@@ -56,7 +83,7 @@ fn tool_description(tool: ToolName) -> &'static str {
       "Return ordered report entries for one exact test. Failure-focused by default."
     }
     ToolName::Trace => {
-      "Return trace evidence by run_id + test_id or explicit trace_id. Multiple trace IDs are ranked with failed-entry traces first."
+      "Return trace evidence by run_id + test_id or explicit trace_id. critical_path returns the failure path, exceptions only exception spans, tree a bounded span list with parent_span_id relationships. Multiple trace IDs are ranked with failed-entry traces first."
     }
     ToolName::Snapshot => {
       "Return snapshot summaries and targeted state drill-down for one exact test."
@@ -91,6 +118,17 @@ fn tool_fields(tool: ToolName) -> Vec<FieldSpec> {
       FieldSpec::max_chars(),
     ],
     ToolName::FailureDetail => exact_test_fields(),
+    ToolName::Diagnose => vec![
+      FieldSpec::string(ArgName::AfterTestId).description("Resume after this test using the returned next_tool_call. Requires run_id; incompatible with test_id."),
+      FieldSpec::string(ArgName::RunId).description("Exact run id; preferred when known."),
+      FieldSpec::string(ArgName::AppName).description("Required with nonempty metadata when run_id is unknown."),
+      FieldSpec::object(ArgName::Metadata).description("Exact run metadata subset, e.g. project, pipeline, job and attempt. All supplied selectors must match."),
+      FieldSpec::string(ArgName::TestId).description("Optional exact test id within the selected run; otherwise diagnose failed tests."),
+      FieldSpec::integer(ArgName::Limit).minimum(1).maximum(5).integer_default(3)
+        .description("Maximum failed tests to diagnose, not a run-selection limit."),
+      FieldSpec::budget(),
+      FieldSpec::max_chars(),
+    ],
     ToolName::Timeline => with_extra(
       exact_test_fields(),
       FieldSpec::string_enum(ArgName::Focus, SchemaEnum::TimelineFocus)
@@ -137,15 +175,13 @@ fn tool_fields(tool: ToolName) -> Vec<FieldSpec> {
   }
 }
 
-struct InputSchema {
-  fields: Vec<FieldSpec>,
+struct InputSchema<'a> {
+  fields: &'a [FieldSpec],
 }
 
-impl InputSchema {
-  fn from_fields(fields: &[FieldSpec]) -> Self {
-    Self {
-      fields: fields.to_vec(),
-    }
+impl<'a> InputSchema<'a> {
+  fn from_fields(fields: &'a [FieldSpec]) -> Self {
+    Self { fields }
   }
 
   fn to_json(&self) -> Value {
@@ -166,7 +202,6 @@ impl InputSchema {
   }
 }
 
-#[derive(Clone)]
 struct FieldSpec {
   name: ArgName,
   kind: FieldKind,
@@ -176,6 +211,56 @@ struct FieldSpec {
 }
 
 impl FieldSpec {
+  fn validate(&self, value: Option<&Value>) -> Result<(), String> {
+    let name = self.name.as_str();
+    let Some(value) = value else {
+      if self.required {
+        return Err(format!("missing required argument `{name}`"));
+      }
+      return Ok(());
+    };
+    // Existing callers serialize absent optional selectors as null. Preserve
+    // that omission behavior while still rejecting null for required fields.
+    if value.is_null() && !self.required {
+      return Ok(());
+    }
+    let expected = match self.kind {
+      FieldKind::String if value.is_string() => return Ok(()),
+      FieldKind::String => "a string".to_string(),
+      FieldKind::StringEnum(kind) => {
+        let values = kind.values();
+        if value.as_str().is_some_and(|value| values.contains(&value)) {
+          return Ok(());
+        }
+        format!("one of: {}", values.join(", "))
+      }
+      FieldKind::Integer if value.as_i64().is_some() => return Ok(()),
+      FieldKind::Integer => "an integer".to_string(),
+      FieldKind::IntegerWithBounds { minimum, maximum } => {
+        if value.as_i64().is_some_and(|value| {
+          minimum.is_none_or(|min| value >= min) && maximum.is_none_or(|max| value <= max)
+        }) {
+          return Ok(());
+        }
+        format!(
+          "an integer between {} and {}",
+          minimum.unwrap_or(i64::MIN),
+          maximum.unwrap_or(i64::MAX)
+        )
+      }
+      FieldKind::StringMap => {
+        if value
+          .as_object()
+          .is_some_and(|map| map.values().all(Value::is_string))
+        {
+          return Ok(());
+        }
+        "an object with string values".to_string()
+      }
+    };
+    Err(format!("argument `{name}` must be {expected}"))
+  }
+
   fn string(name: ArgName) -> Self {
     Self::new(name, FieldKind::String)
   }

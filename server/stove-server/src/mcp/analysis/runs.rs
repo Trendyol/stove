@@ -4,11 +4,9 @@
 use serde_json::Value;
 use serde_json::json;
 
-use super::AnalysisOutput;
 use super::Analyzer;
 use super::common::display_error;
 use super::common::fallback_message;
-use super::common::output;
 use super::common::selector_rules;
 use super::common::tool_args;
 use super::common::tool_call;
@@ -18,7 +16,7 @@ use crate::mcp::contract::ArgName;
 use crate::mcp::contract::ToolName;
 
 impl Analyzer {
-  pub(super) fn runs(&self, arguments: Value) -> Result<AnalysisOutput, String> {
+  pub(super) fn runs(&self, arguments: Value) -> Result<Value, String> {
     let args: RunsArgs = parse(arguments)?;
     let limit = args.common.limit();
     let status_filter = args.status.as_deref().map(str::to_ascii_uppercase);
@@ -64,6 +62,6 @@ impl Analyzer {
       "selector_rules": selector_rules(),
       "fallback": fallback_message(),
     });
-    Ok(output(structured, "Stove runs"))
+    Ok(structured)
   }
 }

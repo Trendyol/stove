@@ -3,20 +3,18 @@
 use serde_json::Value;
 use serde_json::json;
 
-use super::AnalysisOutput;
 use super::Analyzer;
 use super::common::correlated_test_for_trace;
 use super::common::display_error;
 use super::common::fallback_message;
-use super::common::output;
 use super::common::test_json;
-use super::common::trace_summary;
+use super::trace_summary::{TraceDetail, summarize};
 use crate::mcp::args::Budget;
 use crate::mcp::args::TraceArgs;
 use crate::mcp::args::parse;
 
 impl Analyzer {
-  pub(super) fn trace(&self, arguments: Value) -> Result<AnalysisOutput, String> {
+  pub(super) fn trace(&self, arguments: Value) -> Result<Value, String> {
     let args: TraceArgs = parse(arguments)?;
     let budget = Budget::from_args(args.common.budget.as_deref(), args.common.max_chars);
     let (run, test, entries, spans) = if let Some(trace_id) = args.trace_id.as_deref() {
@@ -55,15 +53,15 @@ impl Analyzer {
       (Some(run), Some(test), entries, spans)
     };
 
-    let view = args.view.unwrap_or_else(|| "critical_path".to_string());
+    let view = args.view.unwrap_or_default();
     let structured = json!({
       "app_name": run.as_ref().map(|run| run.app_name.as_str()),
       "run_id": run.as_ref().map(|run| run.id.as_str()),
       "test": test.as_ref().map(test_json),
-      "view": view,
-      "trace": trace_summary(&spans, &entries, run.as_ref().map_or("", |run| &run.id), test.as_ref().map_or("", |test| &test.id), budget.trace_spans),
+      "view": view.as_str(),
+      "trace": summarize(&spans, &entries, run.as_ref().map_or("", |run| &run.id), test.as_ref().map_or("", |test| &test.id), budget, TraceDetail::View(view)),
       "fallback": fallback_message(),
     });
-    Ok(output(structured, "Stove trace evidence"))
+    Ok(structured)
   }
 }

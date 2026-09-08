@@ -14,7 +14,7 @@ use serde_json::{Value, json};
 
 use crate::http::server::AppState;
 
-use self::contract::MethodName;
+use self::contract::{MethodName, ToolName};
 use self::protocol::{JsonRpcRequest, RpcError, ToolCallParams};
 
 pub async fn handle_get(State(_state): State<AppState>) -> Response {
@@ -72,10 +72,13 @@ fn handle_request(state: AppState, request: JsonRpcRequest) -> Result<Value, Rpc
         })?;
       let analyzer = Analyzer::new(state.repository, state.public_url);
       let arguments = params.arguments.unwrap_or_else(|| json!({}));
-      let output = analyzer
-        .call_tool(&params.name, arguments)
-        .map_err(RpcError::tool_error)?;
-      Ok(protocol::tool_result(output))
+      let tool = ToolName::from_str(&params.name).ok_or_else(|| {
+        RpcError::invalid_params(format!("unknown Stove MCP tool: {}", params.name))
+      })?;
+      Ok(match analyzer.call_tool(tool, arguments) {
+        Ok(output) => protocol::tool_result(&output),
+        Err(message) => protocol::tool_error(&message),
+      })
     }
     None => Err(RpcError::method_not_found(format!(
       "unsupported MCP method: {}",

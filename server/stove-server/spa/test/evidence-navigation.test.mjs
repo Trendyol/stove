@@ -4,13 +4,14 @@ import { fileURLToPath } from "node:url";
 import { test, afterEach } from "node:test";
 import { JSDOM } from "jsdom";
 import createJiti from "jiti";
-import { entry, run, testRecord, deferred } from "./helpers/fixtures.mjs";
+import { app, meta, entry, span, run, testRecord, deferred } from "./helpers/fixtures.mjs";
 
 const dom = new JSDOM("<!doctype html><html><head></head><body></body></html>", {
   url: "http://localhost", pretendToBeVisual: true,
 });
 Object.assign(globalThis, { window: dom.window, document: dom.window.document,
   HTMLElement: dom.window.HTMLElement, PopStateEvent: dom.window.PopStateEvent,
+  localStorage: dom.window.localStorage,
   IS_REACT_ACT_ENVIRONMENT: true, __STOVE_VERSION__: "test",
   ResizeObserver: class { observe() {} disconnect() {} },
 });
@@ -20,7 +21,7 @@ const jiti = createJiti(import.meta.url, { jsx: { runtime: "automatic" }, fsCach
   "../assets/stove-mark.svg": fileURLToPath(new URL("./helpers/asset.mjs", import.meta.url)),
 } });
 const { createElement: h } = await jiti.import("react");
-const { render, renderHook, act, waitFor, cleanup, fireEvent } = await jiti.import("@testing-library/react");
+const { render, renderHook, act, waitFor, cleanup, fireEvent, within } = await jiti.import("@testing-library/react");
 const { QueryClient, QueryClientProvider } = await jiti.import("@tanstack/react-query");
 const { api, ApiError } = await jiti.import("../src/api/client.ts");
 const { parseLocation, evidencePath, focusTab, navigateTo, useLocation } = await jiti.import("../src/utils/location.ts");
@@ -29,6 +30,7 @@ const { EvidenceNavigationProvider, useEvidenceNavigation } = await jiti.import(
 const { CopyEvidenceLink } = await jiti.import("../src/components/CopyEvidenceLink.tsx");
 const { VirtualList } = await jiti.import("../src/components/VirtualList.tsx");
 const { LinkedWorkspace } = await jiti.import("../src/layout/LinkedWorkspace.tsx");
+const { default: App } = await jiti.import("../src/App.tsx");
 const { useFocusedEvidence } = await jiti.import("../src/hooks/useFocusedEvidence.ts");
 const clients = [];
 afterEach(() => { cleanup(); clients.splice(0).forEach(c => c.clear()); sources.length = 0;
@@ -42,6 +44,88 @@ function response(item) { return { target: {kind: "entry", value: item}, entries
   interactions: [], warnings: [], context_limit: 10, has_more_before: false, has_more_after: false }; }
 function Router() { const location = useLocation();
   return location.kind === "evidence" ? h(LinkedWorkspace, { location: location.value }) : null; }
+
+function dashboardApi(t) {
+  const tests = [testRecord, {...testRecord, id: "test-2", test_name: "updates a product",
+    test_path: ["updates a product"], status: "FAILED", error: "update failed"}];
+  t.mock.method(api, "getApps", async () => [app]);
+  t.mock.method(api, "getMeta", async () => meta);
+  t.mock.method(api, "getRuns", async () => [{...run, total_tests: 2}, {...run, id: "run-2"}]);
+  t.mock.method(api, "getTests", async () => tests);
+  t.mock.method(api, "getEntries", async (_run, testId) => [{...entry, test_id: testId}]);
+  t.mock.method(api, "getSpans", async () => [span]);
+  for (const method of ["getRun", "getTest", "getFocusedEvidence"]) {
+    t.mock.method(api, method, () => { throw new Error("unexpected linked evidence request"); });
+  }
+}
+
+test("dashboard test, tab, error and evidence clicks stay in place without linked loading", async (t) => {
+  dashboardApi(t);
+  const view = render(h(App), wrapper());
+  await waitFor(() => assert.ok(view.getByRole("button", {name: /POST \/products/})));
+  const sidebar = view.getByRole("complementary");
+  const search = within(sidebar).getByRole("textbox", {name: "Search tests"});
+  fireEvent.change(search, {target: {value: "product"}});
+  const historyLength = window.history.length;
+  const assertDashboard = () => {
+    assert.equal(view.getByRole("complementary"), sidebar);
+    assert.equal(search.value, "product");
+    assert.equal(window.location.pathname, "/");
+    assert.equal(window.location.search, "");
+    assert.equal(window.history.length, historyLength);
+    assert.equal(view.queryByText("Loading requested test run…"), null);
+    for (const method of ["getRun", "getTest", "getFocusedEvidence"]) {
+      assert.equal(api[method].mock.callCount(), 0, method);
+    }
+  };
+
+  fireEvent.click(within(sidebar).getByRole("button", {name: /updates a product/}));
+  await waitFor(() => assert.ok(view.getByRole("button", {name: /POST \/products/})));
+  assert.ok(view.getByRole("heading", {name: "updates a product"}));
+  assertDashboard();
+  fireEvent.click(view.getByRole("button", {name: /Failure.*update failed/}));
+  assert.match(view.getByRole("dialog").textContent, /update failed/);
+  assertDashboard();
+  fireEvent.keyDown(window, {key: "Escape"});
+  assert.equal(view.queryByRole("dialog"), null);
+
+  fireEvent.click(view.getByRole("button", {name: /POST \/products/}));
+  const dialog = view.getByRole("dialog", {name: "Evidence details for POST /products"});
+  assertDashboard();
+  fireEvent.click(within(dialog).getByRole("button", {name: "Open trace"}));
+  await waitFor(() => assert.ok(view.getByRole("list", {name: "Recorded trace spans"})));
+  assert.ok(view.getByRole("tab", {name: /Trace/, selected: true}));
+  assertDashboard();
+
+  fireEvent.click(within(sidebar).getByRole("button", {name: /creates a product/}));
+  await waitFor(() => assert.ok(view.getByRole("heading", {name: "creates a product"})));
+  assert.ok(view.getByRole("tab", {name: /Evidence/, selected: true}));
+  assert.equal(view.queryByRole("dialog"), null);
+  assertDashboard();
+  fireEvent.click(view.getByRole("tab", {name: /Trace/}));
+  await waitFor(() => assert.ok(view.getByRole("list", {name: "Recorded trace spans"})));
+  assertDashboard();
+});
+
+test("changing dashboard runs retains the navigator while tests load", async (t) => {
+  dashboardApi(t);
+  const pending = deferred();
+  api.getTests.mock.mockImplementation(async (runId) => runId === "run-2" ? pending.promise : [testRecord]);
+  const view = render(h(App), wrapper());
+  await waitFor(() => assert.ok(view.getByRole("heading", {name: "creates a product"})));
+  const sidebar = view.getByRole("complementary");
+  fireEvent.change(view.getByRole("combobox", {name: "Run"}), {target: {value: "run-2"}});
+  assert.equal(view.getByRole("complementary"), sidebar);
+  assert.equal(window.location.pathname, "/");
+  assert.equal(view.getByRole("combobox", {name: "Run"}).value, "run-2");
+  assert.equal(view.queryByText("Loading requested test run…"), null);
+  await act(async () => pending.resolve([{...testRecord, run_id: "run-2"}]));
+  await waitFor(() => assert.ok(view.getByRole("heading", {name: "creates a product"})));
+  assert.equal(view.getByRole("complementary"), sidebar);
+  assert.equal(api.getRun.mock.callCount(), 0);
+  assert.equal(api.getTest.mock.callCount(), 0);
+  assert.equal(sources.length, 1);
+});
 
 test("Rust and browser share canonical links, including encoded identifiers and run evidence", () => {
   const cases = JSON.parse(readFileSync(new URL("../../tests/fixtures/navigation.json", import.meta.url)));

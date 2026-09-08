@@ -69,12 +69,16 @@ export function LinkedWorkspace({ location }: { location: EvidenceLocation }) {
           Loading requested test run…
         </div>
       ) : test.data && testId ? (
-        <TestDetail
-          key={JSON.stringify([runId, testId])}
-          runId={runId}
-          test={test.data}
-          liveConnected={connected}
-        />
+        <EvidenceNavigationProvider runId={runId} testId={testId}>
+          <FocusedEvidenceProvider running={isRunning(test.data.status)} liveConnected={connected}>
+            <TestDetail
+              key={JSON.stringify([runId, testId])}
+              runId={runId}
+              test={test.data}
+              liveConnected={connected}
+            />
+          </FocusedEvidenceProvider>
+        </EvidenceNavigationProvider>
       ) : location.focus ? (
         <EvidenceNavigationProvider runId={runId}>
           <FocusedEvidenceProvider running={isRunning(run.data.status)} liveConnected={connected}>

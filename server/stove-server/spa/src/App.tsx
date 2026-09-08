@@ -4,7 +4,7 @@ import { DashboardWorkspace } from "./layout/DashboardWorkspace";
 import { Header } from "./layout/Header";
 import { LinkedWorkspace } from "./layout/LinkedWorkspace";
 import { AdminPage } from "./pages/AdminPage";
-import { appPath, evidencePath, navigateTo, useLocation } from "./utils/location";
+import { appPath, navigateTo, useLocation } from "./utils/location";
 import { pathForRoute, type StoveRoute } from "./utils/routes";
 
 export default function App() {
@@ -84,15 +84,9 @@ function DashboardApp({ route }: { route: StoveRoute }) {
           selectedTest={selectedTest}
           liveConnected={liveConnected}
           onSelectApp={selectApp}
-          onSelectRun={(runId) => {
-            selectRun(runId);
-            navigateTo(evidencePath(runId));
-          }}
+          onSelectRun={selectRun}
           onMetadataFilterChange={filterRunsByMetadata}
-          onSelectTest={(testId) => {
-            selectTest(testId);
-            if (latestRun) navigateTo(evidencePath(latestRun.id, testId));
-          }}
+          onSelectTest={selectTest}
         />
       )}
     </div>

@@ -3,7 +3,7 @@ use std::collections::BTreeMap;
 use serde::Deserialize;
 use serde_json::Value;
 
-use super::contract::BudgetValue;
+use super::contract::{BudgetValue, TraceView};
 
 const DEFAULT_LIMIT: usize = 20;
 const MAX_LIMIT: usize = 100;
@@ -59,6 +59,17 @@ pub(crate) struct ExactTestArgs {
 }
 
 #[derive(Debug, Deserialize)]
+pub(crate) struct DiagnoseArgs {
+  #[serde(flatten)]
+  pub(crate) common: CommonArgs,
+  pub(crate) run_id: Option<String>,
+  pub(crate) test_id: Option<String>,
+  pub(crate) after_test_id: Option<String>,
+  pub(crate) app_name: Option<String>,
+  pub(crate) metadata: Option<BTreeMap<String, String>>,
+}
+
+#[derive(Debug, Deserialize)]
 pub(crate) struct TimelineArgs {
   #[serde(flatten)]
   pub(crate) exact: ExactTestArgs,
@@ -72,7 +83,7 @@ pub(crate) struct TraceArgs {
   pub(crate) run_id: Option<String>,
   pub(crate) test_id: Option<String>,
   pub(crate) trace_id: Option<String>,
-  pub(crate) view: Option<String>,
+  pub(crate) view: Option<TraceView>,
 }
 
 #[derive(Debug, Deserialize)]

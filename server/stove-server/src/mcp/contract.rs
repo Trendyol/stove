@@ -24,6 +24,7 @@ pub(crate) enum ToolName {
   Runs,
   Failures,
   FailureDetail,
+  Diagnose,
   Timeline,
   Trace,
   Snapshot,
@@ -32,11 +33,12 @@ pub(crate) enum ToolName {
 }
 
 impl ToolName {
-  pub(crate) const ALL: [Self; 9] = [
+  pub(crate) const ALL: [Self; 10] = [
     Self::Apps,
     Self::Runs,
     Self::Failures,
     Self::FailureDetail,
+    Self::Diagnose,
     Self::Timeline,
     Self::Trace,
     Self::Snapshot,
@@ -50,6 +52,7 @@ impl ToolName {
       Self::Runs => "stove_runs",
       Self::Failures => "stove_failures",
       Self::FailureDetail => "stove_failure_detail",
+      Self::Diagnose => "stove_diagnose",
       Self::Timeline => "stove_timeline",
       Self::Trace => "stove_trace",
       Self::Snapshot => "stove_snapshot",
@@ -65,6 +68,7 @@ impl ToolName {
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub(crate) enum ArgName {
+  AfterTestId,
   AppName,
   Budget,
   Focus,
@@ -85,6 +89,7 @@ pub(crate) enum ArgName {
 impl ArgName {
   pub(crate) const fn as_str(self) -> &'static str {
     match self {
+      Self::AfterTestId => "after_test_id",
       Self::AppName => "app_name",
       Self::Budget => "budget",
       Self::Focus => "focus",
@@ -146,8 +151,10 @@ impl TimelineFocus {
   }
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Default, Clone, Copy, PartialEq, Eq, serde::Deserialize)]
+#[serde(rename_all = "snake_case")]
 pub(crate) enum TraceView {
+  #[default]
   CriticalPath,
   Exceptions,
   Tree,

@@ -209,6 +209,14 @@ async fn all_mcp_evidence_citations_resolve_and_preserve_snapshot_pointers() {
     ),
     ("stove_trace", json!({"run_id":"run-1","test_id":"test-1"})),
     (
+      "stove_trace",
+      json!({"run_id":"run-1","test_id":"test-1","view":"tree"}),
+    ),
+    (
+      "stove_trace",
+      json!({"run_id":"run-1","test_id":"test-1","view":"exceptions"}),
+    ),
+    (
       "stove_snapshot",
       json!({"run_id":"run-1","test_id":"test-1","json_pointer":""}),
     ),

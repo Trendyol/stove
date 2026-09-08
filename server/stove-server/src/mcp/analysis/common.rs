@@ -4,24 +4,19 @@
 //! only the small set it needs without dragging the others in.
 
 use crate::navigation::{error_reference, reference};
-use std::collections::BTreeMap;
 use std::collections::BTreeSet;
-use std::collections::HashMap;
-use std::collections::HashSet;
 
 use serde_json::Map;
 use serde_json::Value;
 use serde_json::json;
 
-use super::evidence::clip_opt;
-use super::evidence::span_preview;
+use super::evidence::{clip_opt, clip_string};
 use crate::mcp::contract::ArgName;
 use crate::mcp::contract::RunStatusValue;
 use crate::mcp::contract::ToolName;
 use crate::storage::models::Entry;
 use crate::storage::models::Run;
 use crate::storage::models::RunStatus;
-use crate::storage::models::Span;
 use crate::storage::models::Test;
 use crate::storage::models::TestStatus;
 use crate::storage::repository::Repository;
@@ -43,7 +38,7 @@ pub(super) fn selected_runs(
   Ok(runs)
 }
 
-pub(super) fn failure_item(run: &Run, test: &Test) -> Value {
+pub(super) fn failure_item(run: &Run, test: &Test, max_chars: usize) -> Value {
   json!({
     "navigation": reference(&run.id, Some(&test.id), None),
     "error_navigation": error_reference(&run.id, &test.id, test.error.as_deref()),
@@ -55,7 +50,7 @@ pub(super) fn failure_item(run: &Run, test: &Test) -> Value {
     "test_name": test.test_name,
     "status": test.status,
     "duration_ms": test.duration_ms,
-    "error_summary": clip_opt(test.error.as_deref(), 600),
+    "error_summary": clip_opt(test.error.as_deref(), max_chars),
     "detail_tool_call": exact_test_tool_call(ToolName::FailureDetail, &run.id, &test.id),
     "timeline_tool_call": exact_test_tool_call(ToolName::Timeline, &run.id, &test.id),
     "trace_tool_call": exact_test_tool_call(ToolName::Trace, &run.id, &test.id),
@@ -82,12 +77,15 @@ pub(super) fn timeline_summary(
   run_id: &str,
   test_id: &str,
   max_events: usize,
+  max_chars: usize,
 ) -> Value {
   let selected = failure_window(entries, max_events);
   json!({
     "total_events": entries.len(),
+    "event_scope": "report_entries",
+    "omitted_events": entries.len().saturating_sub(selected.len()),
     "failed_entries": entries.iter().filter(|entry| is_failed_status(&entry.result)).count(),
-    "events": selected.iter().map(|entry| compact_event(entry)).collect::<Vec<_>>(),
+    "events": selected.iter().map(|entry| compact_event(entry, max_chars)).collect::<Vec<_>>(),
     "timeline_tool_call": exact_test_tool_call(ToolName::Timeline, run_id, test_id),
   })
 }
@@ -122,132 +120,13 @@ pub(super) fn failure_window(entries: &[Entry], max_events: usize) -> Vec<&Entry
     .collect()
 }
 
-pub(super) fn trace_summary(
-  spans: &[Span],
-  entries: &[Entry],
-  run_id: &str,
-  test_id: &str,
-  max_spans: usize,
-) -> Value {
-  if spans.is_empty() {
-    return json!({
-      "trace_status": "uncorrelated",
-      "trace_ids": trace_ids_from_entries(entries),
-      "failed_spans": 0,
-      "exception_spans": 0,
-      "message": "No spans were correlated to this test. Fall back to timeline entries and logs if trace evidence is needed.",
-    });
-  }
-
-  let ranked_trace_ids = ranked_trace_ids(spans, entries);
-  let failed_spans: Vec<&Span> = spans.iter().filter(|span| is_failed_span(span)).collect();
-  let exception_spans: Vec<&Span> = spans
-    .iter()
-    .filter(|span| span.exception_type.is_some())
-    .collect();
-  let primary_trace_id = ranked_trace_ids.first().cloned();
-  let critical_path = primary_trace_id.map_or_else(Vec::new, |trace_id| {
-    critical_path_for_trace(spans, &trace_id, max_spans)
-  });
-
-  json!({
-    "trace_status": "correlated",
-    "trace_ids": ranked_trace_ids,
-    "total_spans": spans.len(),
-    "omitted_spans": spans.len().saturating_sub(max_spans),
-    "failed_spans": failed_spans.len(),
-    "exception_spans": exception_spans.len(),
-    "critical_path": critical_path,
-    "exceptions": exception_spans
-      .iter()
-      .take(max_spans)
-      .map(|span| span_preview(span, 600))
-      .collect::<Vec<_>>(),
-    "trace_tool_call": exact_test_tool_call(ToolName::Trace, run_id, test_id),
-  })
-}
-
-fn trace_ids_from_entries(entries: &[Entry]) -> Vec<String> {
-  entries
-    .iter()
-    .filter_map(|entry| entry.trace_id.clone())
-    .filter(|trace_id| !trace_id.is_empty())
-    .collect::<BTreeSet<_>>()
-    .into_iter()
-    .collect()
-}
-
-fn ranked_trace_ids(spans: &[Span], entries: &[Entry]) -> Vec<String> {
-  let failed_entry_traces: HashSet<String> = entries
-    .iter()
-    .filter(|entry| is_failed_status(&entry.result))
-    .filter_map(|entry| entry.trace_id.clone())
-    .filter(|trace_id| !trace_id.is_empty())
-    .collect();
-
-  let mut scores: BTreeMap<String, i32> = BTreeMap::new();
-  for span in spans {
-    let mut score = 1;
-    if is_failed_span(span) {
-      score += 10;
-    }
-    if failed_entry_traces.contains(&span.trace_id) {
-      score += 20;
-    }
-    *scores.entry(span.trace_id.clone()).or_insert(0) += score;
-  }
-
-  let mut ranked: Vec<(String, i32)> = scores.into_iter().collect();
-  ranked.sort_by(|left, right| right.1.cmp(&left.1).then_with(|| left.0.cmp(&right.0)));
-  ranked.into_iter().map(|(trace_id, _)| trace_id).collect()
-}
-
-fn critical_path_for_trace(spans: &[Span], trace_id: &str, max_spans: usize) -> Vec<Value> {
-  let trace_spans: Vec<&Span> = spans
-    .iter()
-    .filter(|span| span.trace_id == trace_id)
-    .collect();
-  let target = trace_spans
-    .iter()
-    .find(|span| is_failed_span(span))
-    .or_else(|| {
-      trace_spans
-        .iter()
-        .max_by_key(|span| span.end_time_nanos - span.start_time_nanos)
-    });
-
-  let Some(target) = target else {
-    return Vec::new();
-  };
-
-  let by_span_id: HashMap<&str, &Span> = trace_spans
-    .iter()
-    .map(|span| (span.span_id.as_str(), *span))
-    .collect();
-  let mut path = Vec::new();
-  let mut current = Some(*target);
-  let mut seen = HashSet::new();
-  while let Some(span) = current {
-    if !seen.insert(span.span_id.clone()) {
-      break;
-    }
-    path.push(span_preview(span, 240));
-    current = span
-      .parent_span_id
-      .as_deref()
-      .and_then(|parent_id| by_span_id.get(parent_id).copied());
-  }
-  path.reverse();
-  path.into_iter().take(max_spans).collect()
-}
-
-fn compact_event(entry: &Entry) -> Value {
+fn compact_event(entry: &Entry, max_chars: usize) -> Value {
   json!({
     "navigation": reference(&entry.run_id, Some(&entry.test_id), Some(("entry", entry.id))),
     "id": entry.id,
     "timestamp": entry.timestamp,
-    "system": entry.system,
-    "action": entry.action,
+    "system": clip_string(&entry.system, max_chars),
+    "action": clip_string(&entry.action, max_chars),
     "result": entry.result,
     "trace_id": entry.trace_id,
   })
@@ -287,10 +166,6 @@ pub(super) fn is_failed_status(status: &TestStatus) -> bool {
   matches!(status, TestStatus::Failed | TestStatus::Error)
 }
 
-pub(super) fn is_failed_span(span: &Span) -> bool {
-  span.status == crate::storage::models::SpanStatus::Error || span.exception_type.is_some()
-}
-
 pub(super) fn tool_call(tool: ToolName, arguments: Value) -> Value {
   let mut call = Map::new();
   call.insert("tool".to_string(), Value::String(tool.as_str().to_string()));
@@ -328,13 +203,6 @@ pub(super) fn selector_rules() -> Value {
 
 pub(super) fn fallback_message() -> &'static str {
   "If Stove MCP is unavailable, incomplete, or ambiguous, fall back to normal test output, Stove failure reports, and logs."
-}
-
-pub(super) fn output(structured: Value, heading: &'static str) -> super::AnalysisOutput {
-  super::AnalysisOutput {
-    structured,
-    heading,
-  }
 }
 
 pub(super) fn display_error(error: impl std::fmt::Display) -> String {

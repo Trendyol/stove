@@ -1,0 +1,648 @@
+{
+  "created_at": "2026-09-08T09:15:38.857052+00:00",
+  "suite": "diagnosis",
+  "platform": "macOS-26.6.2-arm64-arm-64bit-Mach-O",
+  "machine": "arm64",
+  "cpu": "Apple M1 Pro",
+  "binary_sha256": "61430f66b9bfd073f07f3f45db6461c4fb579e0788e266c1d9dddb9bc2aa1c4c",
+  "git_head": "ee58f43afa7c53c7f8e63e8462e7a292336c8a8c",
+  "working_tree_dirty": true,
+  "tokenizer": "o200k_base",
+  "tiktoken_version": "0.14.0",
+  "method": "loopback HTTP/1.1, persistent connections, temporary SQLite, 3 warmups per case; RTT ends after full body read, excludes JSON parsing/tokenization; synthetic fixtures; not an LLM diagnosis evaluation",
+  "events": 888,
+  "scenarios": {
+    "assertion": [
+      30,
+      0,
+      "expected EUR 100.00, received EUR 99.00"
+    ],
+    "database": [
+      40,
+      80,
+      "SQLSTATE 23505 duplicate key orders_pkey"
+    ],
+    "mock": [
+      40,
+      0,
+      "header X-Tenant expected checkout, received catalog"
+    ],
+    "long_trace": [
+      250,
+      400,
+      "DEADLINE_EXCEEDED inventory reservation timed out"
+    ],
+    "wide_payload": [
+      10,
+      0,
+      "SKU-0999 unavailable in warehouse AMS"
+    ]
+  },
+  "measurements": [
+    {
+      "case": "diagnose/assertion/tiny",
+      "tool": "stove_diagnose",
+      "arguments": {
+        "run_id": "benchmark-run",
+        "test_id": "assertion",
+        "budget": "tiny"
+      },
+      "samples": 60,
+      "p50_ms": 0.775,
+      "p95_ms": 0.884,
+      "p99_ms": 0.979,
+      "max_ms": 0.979,
+      "wire_bytes": 9628,
+      "text_bytes": 4520,
+      "text_tokens": 1152,
+      "pretty_text_tokens": 1659,
+      "wire_tokens": 2382,
+      "causes_present": {
+        "assertion": true
+      },
+      "context_checks": {
+        "assertion": true
+      }
+    },
+    {
+      "case": "diagnose/assertion/compact",
+      "tool": "stove_diagnose",
+      "arguments": {
+        "run_id": "benchmark-run",
+        "test_id": "assertion",
+        "budget": "compact"
+      },
+      "samples": 60,
+      "p50_ms": 0.758,
+      "p95_ms": 0.88,
+      "p99_ms": 0.943,
+      "max_ms": 0.943,
+      "wire_bytes": 9628,
+      "text_bytes": 4520,
+      "text_tokens": 1152,
+      "pretty_text_tokens": 1659,
+      "wire_tokens": 2382,
+      "causes_present": {
+        "assertion": true
+      },
+      "context_checks": {
+        "assertion": true
+      }
+    },
+    {
+      "case": "diagnose/assertion/full",
+      "tool": "stove_diagnose",
+      "arguments": {
+        "run_id": "benchmark-run",
+        "test_id": "assertion",
+        "budget": "full"
+      },
+      "samples": 60,
+      "p50_ms": 0.671,
+      "p95_ms": 0.72,
+      "p99_ms": 0.775,
+      "max_ms": 0.775,
+      "wire_bytes": 9628,
+      "text_bytes": 4520,
+      "text_tokens": 1152,
+      "pretty_text_tokens": 1659,
+      "wire_tokens": 2382,
+      "causes_present": {
+        "assertion": true
+      },
+      "context_checks": {
+        "assertion": true
+      }
+    },
+    {
+      "case": "diagnose/database/tiny",
+      "tool": "stove_diagnose",
+      "arguments": {
+        "run_id": "benchmark-run",
+        "test_id": "database",
+        "budget": "tiny"
+      },
+      "samples": 60,
+      "p50_ms": 0.947,
+      "p95_ms": 1.013,
+      "p99_ms": 1.106,
+      "max_ms": 1.106,
+      "wire_bytes": 18046,
+      "text_bytes": 8494,
+      "text_tokens": 2173,
+      "pretty_text_tokens": 3150,
+      "wire_tokens": 4468,
+      "causes_present": {
+        "database": true
+      },
+      "context_checks": {
+        "database": true
+      }
+    },
+    {
+      "case": "diagnose/database/compact",
+      "tool": "stove_diagnose",
+      "arguments": {
+        "run_id": "benchmark-run",
+        "test_id": "database",
+        "budget": "compact"
+      },
+      "samples": 60,
+      "p50_ms": 0.937,
+      "p95_ms": 0.999,
+      "p99_ms": 1.091,
+      "max_ms": 1.091,
+      "wire_bytes": 18046,
+      "text_bytes": 8494,
+      "text_tokens": 2173,
+      "pretty_text_tokens": 3150,
+      "wire_tokens": 4468,
+      "causes_present": {
+        "database": true
+      },
+      "context_checks": {
+        "database": true
+      }
+    },
+    {
+      "case": "diagnose/database/full",
+      "tool": "stove_diagnose",
+      "arguments": {
+        "run_id": "benchmark-run",
+        "test_id": "database",
+        "budget": "full"
+      },
+      "samples": 60,
+      "p50_ms": 0.969,
+      "p95_ms": 1.058,
+      "p99_ms": 1.164,
+      "max_ms": 1.164,
+      "wire_bytes": 18046,
+      "text_bytes": 8494,
+      "text_tokens": 2173,
+      "pretty_text_tokens": 3150,
+      "wire_tokens": 4468,
+      "causes_present": {
+        "database": true
+      },
+      "context_checks": {
+        "database": true
+      }
+    },
+    {
+      "case": "diagnose/mock/tiny",
+      "tool": "stove_diagnose",
+      "arguments": {
+        "run_id": "benchmark-run",
+        "test_id": "mock",
+        "budget": "tiny"
+      },
+      "samples": 60,
+      "p50_ms": 0.872,
+      "p95_ms": 0.901,
+      "p99_ms": 0.94,
+      "max_ms": 0.94,
+      "wire_bytes": 10452,
+      "text_bytes": 4897,
+      "text_tokens": 1241,
+      "pretty_text_tokens": 1819,
+      "wire_tokens": 2568,
+      "causes_present": {
+        "mock": true
+      },
+      "context_checks": {
+        "mock": true
+      }
+    },
+    {
+      "case": "diagnose/mock/compact",
+      "tool": "stove_diagnose",
+      "arguments": {
+        "run_id": "benchmark-run",
+        "test_id": "mock",
+        "budget": "compact"
+      },
+      "samples": 60,
+      "p50_ms": 0.884,
+      "p95_ms": 0.928,
+      "p99_ms": 1.107,
+      "max_ms": 1.107,
+      "wire_bytes": 10452,
+      "text_bytes": 4897,
+      "text_tokens": 1241,
+      "pretty_text_tokens": 1819,
+      "wire_tokens": 2568,
+      "causes_present": {
+        "mock": true
+      },
+      "context_checks": {
+        "mock": true
+      }
+    },
+    {
+      "case": "diagnose/mock/full",
+      "tool": "stove_diagnose",
+      "arguments": {
+        "run_id": "benchmark-run",
+        "test_id": "mock",
+        "budget": "full"
+      },
+      "samples": 60,
+      "p50_ms": 0.851,
+      "p95_ms": 0.9,
+      "p99_ms": 0.914,
+      "max_ms": 0.914,
+      "wire_bytes": 10452,
+      "text_bytes": 4897,
+      "text_tokens": 1241,
+      "pretty_text_tokens": 1819,
+      "wire_tokens": 2568,
+      "causes_present": {
+        "mock": true
+      },
+      "context_checks": {
+        "mock": true
+      }
+    },
+    {
+      "case": "diagnose/long_trace/tiny",
+      "tool": "stove_diagnose",
+      "arguments": {
+        "run_id": "benchmark-run",
+        "test_id": "long_trace",
+        "budget": "tiny"
+      },
+      "samples": 60,
+      "p50_ms": 2.562,
+      "p95_ms": 2.743,
+      "p99_ms": 3.064,
+      "max_ms": 3.064,
+      "wire_bytes": 18398,
+      "text_bytes": 8670,
+      "text_tokens": 2230,
+      "pretty_text_tokens": 3207,
+      "wire_tokens": 4582,
+      "causes_present": {
+        "long_trace": true
+      },
+      "context_checks": {
+        "long_trace": true
+      }
+    },
+    {
+      "case": "diagnose/long_trace/compact",
+      "tool": "stove_diagnose",
+      "arguments": {
+        "run_id": "benchmark-run",
+        "test_id": "long_trace",
+        "budget": "compact"
+      },
+      "samples": 60,
+      "p50_ms": 2.523,
+      "p95_ms": 2.753,
+      "p99_ms": 2.872,
+      "max_ms": 2.872,
+      "wire_bytes": 18398,
+      "text_bytes": 8670,
+      "text_tokens": 2230,
+      "pretty_text_tokens": 3207,
+      "wire_tokens": 4582,
+      "causes_present": {
+        "long_trace": true
+      },
+      "context_checks": {
+        "long_trace": true
+      }
+    },
+    {
+      "case": "diagnose/long_trace/full",
+      "tool": "stove_diagnose",
+      "arguments": {
+        "run_id": "benchmark-run",
+        "test_id": "long_trace",
+        "budget": "full"
+      },
+      "samples": 60,
+      "p50_ms": 2.54,
+      "p95_ms": 2.866,
+      "p99_ms": 3.16,
+      "max_ms": 3.16,
+      "wire_bytes": 18398,
+      "text_bytes": 8670,
+      "text_tokens": 2230,
+      "pretty_text_tokens": 3207,
+      "wire_tokens": 4582,
+      "causes_present": {
+        "long_trace": true
+      },
+      "context_checks": {
+        "long_trace": true
+      }
+    },
+    {
+      "case": "diagnose/wide_payload/tiny",
+      "tool": "stove_diagnose",
+      "arguments": {
+        "run_id": "benchmark-run",
+        "test_id": "wide_payload",
+        "budget": "tiny"
+      },
+      "samples": 60,
+      "p50_ms": 4.456,
+      "p95_ms": 4.931,
+      "p99_ms": 5.32,
+      "max_ms": 5.32,
+      "wire_bytes": 12080,
+      "text_bytes": 5690,
+      "text_tokens": 1430,
+      "pretty_text_tokens": 2052,
+      "wire_tokens": 2951,
+      "causes_present": {
+        "wide_payload": true
+      },
+      "context_checks": {
+        "wide_payload": true
+      }
+    },
+    {
+      "case": "diagnose/wide_payload/compact",
+      "tool": "stove_diagnose",
+      "arguments": {
+        "run_id": "benchmark-run",
+        "test_id": "wide_payload",
+        "budget": "compact"
+      },
+      "samples": 60,
+      "p50_ms": 4.474,
+      "p95_ms": 4.811,
+      "p99_ms": 5.039,
+      "max_ms": 5.039,
+      "wire_bytes": 12080,
+      "text_bytes": 5690,
+      "text_tokens": 1430,
+      "pretty_text_tokens": 2052,
+      "wire_tokens": 2951,
+      "causes_present": {
+        "wide_payload": true
+      },
+      "context_checks": {
+        "wide_payload": true
+      }
+    },
+    {
+      "case": "diagnose/wide_payload/full",
+      "tool": "stove_diagnose",
+      "arguments": {
+        "run_id": "benchmark-run",
+        "test_id": "wide_payload",
+        "budget": "full"
+      },
+      "samples": 60,
+      "p50_ms": 4.455,
+      "p95_ms": 4.704,
+      "p99_ms": 4.75,
+      "max_ms": 4.75,
+      "wire_bytes": 12080,
+      "text_bytes": 5690,
+      "text_tokens": 1430,
+      "pretty_text_tokens": 2052,
+      "wire_tokens": 2951,
+      "causes_present": {
+        "wide_payload": true
+      },
+      "context_checks": {
+        "wide_payload": true
+      }
+    },
+    {
+      "case": "diagnose/run",
+      "tool": "stove_diagnose",
+      "arguments": {
+        "run_id": "benchmark-run",
+        "limit": 5
+      },
+      "samples": 60,
+      "p50_ms": 8.562,
+      "p95_ms": 9.341,
+      "p99_ms": 9.451,
+      "max_ms": 9.451,
+      "wire_bytes": 61884,
+      "text_bytes": 29251,
+      "text_tokens": 7536,
+      "pretty_text_tokens": 10967,
+      "wire_tokens": 15409,
+      "causes_present": {
+        "assertion": true,
+        "database": true,
+        "mock": true,
+        "long_trace": true,
+        "wide_payload": true
+      },
+      "context_checks": {
+        "assertion": true,
+        "database": true,
+        "long_trace": true,
+        "mock": true,
+        "wide_payload": true
+      }
+    },
+    {
+      "case": "diagnose/metadata",
+      "tool": "stove_diagnose",
+      "arguments": {
+        "app_name": "mcp-benchmark",
+        "metadata": {
+          "team": "checkout",
+          "pipeline": "benchmark"
+        },
+        "limit": 5
+      },
+      "samples": 60,
+      "p50_ms": 8.532,
+      "p95_ms": 9.065,
+      "p99_ms": 9.429,
+      "max_ms": 9.429,
+      "wire_bytes": 61884,
+      "text_bytes": 29251,
+      "text_tokens": 7536,
+      "pretty_text_tokens": 10967,
+      "wire_tokens": 15409,
+      "causes_present": {
+        "assertion": true,
+        "database": true,
+        "mock": true,
+        "long_trace": true,
+        "wide_payload": true
+      },
+      "context_checks": {
+        "assertion": true,
+        "database": true,
+        "long_trace": true,
+        "mock": true,
+        "wide_payload": true
+      }
+    }
+  ],
+  "concurrent": {
+    "ordinary": {
+      "samples": 240,
+      "p50_ms": 6.508,
+      "p95_ms": 16.788,
+      "p99_ms": 24.232,
+      "max_ms": 29.755,
+      "concurrency": 8,
+      "requests_per_second": 1005.6,
+      "cases": [
+        "diagnose/assertion/compact",
+        "diagnose/database/compact",
+        "diagnose/mock/compact",
+        "diagnose/long_trace/compact"
+      ]
+    },
+    "with_wide_payload": {
+      "samples": 240,
+      "p50_ms": 6.105,
+      "p95_ms": 15.759,
+      "p99_ms": 25.528,
+      "max_ms": 30.792,
+      "concurrency": 8,
+      "requests_per_second": 1051.7,
+      "cases": [
+        "diagnose/assertion/compact",
+        "diagnose/database/compact",
+        "diagnose/mock/compact",
+        "diagnose/long_trace/compact",
+        "diagnose/wide_payload/compact"
+      ]
+    }
+  },
+  "raw_rest_baselines": [
+    {
+      "scenario": "assertion",
+      "text_tokens": 12508,
+      "text_bytes": 62523,
+      "requests": 4
+    },
+    {
+      "scenario": "database",
+      "text_tokens": 27516,
+      "text_bytes": 127562,
+      "requests": 4
+    },
+    {
+      "scenario": "mock",
+      "text_tokens": 20709,
+      "text_bytes": 98556,
+      "requests": 4
+    },
+    {
+      "scenario": "long_trace",
+      "text_tokens": 147129,
+      "text_bytes": 691219,
+      "requests": 4
+    },
+    {
+      "scenario": "wide_payload",
+      "text_tokens": 126872,
+      "text_bytes": 699047,
+      "requests": 4
+    }
+  ],
+  "error_probes": [
+    {
+      "case": "unknown_argument",
+      "passed": true,
+      "latency_ms": 0.1705,
+      "message": "unknown argument `metdata` for stove_runs"
+    },
+    {
+      "case": "invalid_budget",
+      "passed": true,
+      "latency_ms": 0.126833,
+      "message": "argument `budget` must be one of: tiny, compact, full"
+    },
+    {
+      "case": "invalid_limit",
+      "passed": true,
+      "latency_ms": 0.111833,
+      "message": "argument `limit` must be an integer between 1 and 100"
+    },
+    {
+      "case": "invalid_view",
+      "passed": true,
+      "latency_ms": 0.16675,
+      "message": "argument `view` must be one of: critical_path, exceptions, tree"
+    },
+    {
+      "case": "missing_selector",
+      "passed": true,
+      "latency_ms": 0.179125,
+      "message": "missing required argument `run_id`"
+    },
+    {
+      "case": "missing_run",
+      "passed": true,
+      "latency_ms": 0.284083,
+      "message": "run `absent` was not found"
+    },
+    {
+      "case": "unknown_tool",
+      "passed": true,
+      "latency_ms": 0.116084,
+      "response": {
+        "error": {
+          "code": -32602,
+          "message": "unknown Stove MCP tool: stove_absent"
+        },
+        "id": 1,
+        "jsonrpc": "2.0"
+      }
+    },
+    {
+      "case": "malformed_call",
+      "passed": true,
+      "latency_ms": 0.104417,
+      "response": {
+        "error": {
+          "code": -32602,
+          "message": "invalid tools/call params: missing field `name`"
+        },
+        "id": 1,
+        "jsonrpc": "2.0"
+      }
+    },
+    {
+      "case": "malformed_json",
+      "passed": true,
+      "latency_ms": 0.141375,
+      "response": {
+        "error": {
+          "code": -32700,
+          "data": {
+            "error": "key must be a string at line 1 column 2"
+          },
+          "message": "Parse error"
+        },
+        "id": null,
+        "jsonrpc": "2.0"
+      }
+    }
+  ],
+  "diagnosis_loop": {
+    "requests": 3,
+    "tests": 5,
+    "causes_present": {
+      "assertion": true,
+      "database": true,
+      "long_trace": true,
+      "mock": true,
+      "wide_payload": true
+    },
+    "total_text_tokens": 7961,
+    "latencies_ms": [
+      2.220083,
+      3.845834,
+      5.519125
+    ]
+  }
+}

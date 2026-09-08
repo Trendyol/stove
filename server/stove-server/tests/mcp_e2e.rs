@@ -69,6 +69,45 @@ async fn mcp_lists_tools_and_initializes() {
 }
 
 #[tokio::test]
+async fn snapshot_previews_are_bounded_and_deep_array_items_remain_accessible() {
+  let server = TestServer::start().await;
+  server.seed_run("run-preview", "checkout");
+  server.seed_test(
+    "run-preview",
+    "test-preview",
+    "wide snapshot",
+    "PreviewSpec",
+  );
+  let state = json!({"items": (0..1200).map(|id| json!({"id": id, "description": "record".repeat(40)})).collect::<Vec<_>>() });
+  server.seed_snapshot(
+    "run-preview",
+    "test-preview",
+    "Kafka",
+    &state.to_string(),
+    "wide snapshot",
+  );
+
+  let all = mcp_tool(
+    &server,
+    "stove_snapshot",
+    json!({"run_id": "run-preview", "test_id": "test-preview", "budget": "tiny"}),
+  )
+  .await;
+  let snapshot = &all["result"]["structuredContent"]["snapshots"][0];
+  assert_eq!(snapshot["state"]["value"]["parse_status"], "truncated_json");
+  assert!(
+    all.to_string().len() < 5000,
+    "wide payload escaped the preview budget"
+  );
+
+  let targeted = mcp_tool(&server, "stove_snapshot", json!({"run_id": "run-preview", "test_id": "test-preview", "budget": "tiny", "json_pointer": "/items/75/id"})).await;
+  assert_eq!(
+    targeted["result"]["structuredContent"]["snapshots"][0]["state"]["value"],
+    75
+  );
+}
+
+#[tokio::test]
 async fn apps_omit_the_redundant_run_count() {
   let server = TestServer::start().await;
   server.seed_run("run-1", "checkout-api");
@@ -411,8 +450,12 @@ async fn mcp_handles_no_failures_and_caps_oversized_detail() {
   .await;
   let detail_content = &detail["result"]["structuredContent"];
 
+  assert_eq!(
+    detail_content["failed_entries"][0]["input"]["parse_status"],
+    "truncated_json"
+  );
   assert!(
-    detail_content["failed_entries"][0]["input"]["payload"]
+    detail_content["failed_entries"][0]["input"]["preview"]
       .as_str()
       .unwrap()
       .contains("<truncated")
@@ -591,4 +634,211 @@ fn test_ended_failed(run_id: &str, test_id: &str) -> proto::DashboardEvent {
       },
     )),
   }
+}
+
+#[tokio::test]
+async fn tool_errors_are_recoverable_and_do_not_silently_drop_filters() {
+  let server = TestServer::start().await;
+  for (name, arguments, message) in [
+    (
+      "stove_failure_detail",
+      json!({"run_id": "missing", "test_id": null}),
+      "argument `test_id` must be a string",
+    ),
+    (
+      "stove_runs",
+      json!({"metdata": {"team": "checkout"}}),
+      "unknown argument `metdata`",
+    ),
+    (
+      "stove_runs",
+      json!({"metadata": {"pipeline": 42}}),
+      "string values",
+    ),
+    (
+      "stove_failures",
+      json!({"budget": "small"}),
+      "tiny, compact, full",
+    ),
+    ("stove_failures", json!({"limit": 0}), "between 1 and 100"),
+    (
+      "stove_failures",
+      json!({"max_chars": 20001}),
+      "between 120 and 20000",
+    ),
+    (
+      "stove_failure_detail",
+      json!({"run_id": "missing"}),
+      "missing required argument `test_id`",
+    ),
+    (
+      "stove_failure_detail",
+      json!({"run_id": "missing", "test_id": "missing"}),
+      "was not found",
+    ),
+    (
+      "stove_trace",
+      json!({"trace_id": "missing", "view": "invalid"}),
+      "critical_path, exceptions, tree",
+    ),
+    ("stove_apps", json!([]), "must be an object"),
+  ] {
+    let response = mcp_tool(&server, name, arguments).await;
+    assert!(response.get("error").is_none(), "{response}");
+    assert_eq!(response["result"]["isError"], true, "{response}");
+    assert!(
+      response["result"]["content"][0]["text"]
+        .as_str()
+        .unwrap()
+        .contains(message),
+      "{response}"
+    );
+  }
+  let unknown = mcp_tool(&server, "stove_typo", json!({})).await;
+  assert_eq!(unknown["error"]["code"], -32602);
+  let malformed = mcp_call(&server, "tools/call", json!({"arguments": {}})).await;
+  assert_eq!(malformed["error"]["code"], -32602);
+
+  let recovered = mcp_tool(
+    &server,
+    "stove_runs",
+    json!({"metadata": {"pipeline": "42"}}),
+  )
+  .await;
+  assert_eq!(recovered["result"]["isError"], false);
+}
+
+#[tokio::test]
+async fn tools_advertise_read_only_behavior_and_return_compact_json_fallback() {
+  let server = TestServer::start().await;
+  seed_multi_app_failures(&server);
+  let tools = mcp_call(&server, "tools/list", json!({})).await;
+  for tool in tools["result"]["tools"].as_array().unwrap() {
+    assert_eq!(tool["annotations"]["readOnlyHint"], true);
+    assert_eq!(tool["annotations"]["openWorldHint"], false);
+    assert_eq!(tool["annotations"]["destructiveHint"], false);
+  }
+  let response = mcp_tool(&server, "stove_failures", json!({})).await;
+  let structured = &response["result"]["structuredContent"];
+  let text = response["result"]["content"][0]["text"].as_str().unwrap();
+  assert_eq!(serde_json::from_str::<Value>(text).unwrap(), *structured);
+  let pretty = serde_json::to_string_pretty(structured).unwrap();
+  assert!(text.len() < pretty.len());
+  println!(
+    "Failure survey JSON text: {} compact bytes vs {} indented bytes",
+    text.len(),
+    pretty.len()
+  );
+}
+
+#[tokio::test]
+async fn failure_surveys_honor_field_budgets() {
+  let server = TestServer::start().await;
+  server.seed_run("run-1", "checkout-api");
+  server.seed_test("run-1", "test-1", "fails", "Spec");
+  server.end_test_failed("run-1", "test-1", 1, &"x".repeat(1000));
+  for (budget, max_chars, prefix_len) in [("tiny", 20000, 240), ("compact", 120, 120)] {
+    let response = mcp_tool(
+      &server,
+      "stove_failures",
+      json!({"run_id": "run-1", "budget": budget, "max_chars": max_chars}),
+    )
+    .await;
+    let error =
+      response["result"]["structuredContent"]["groups"][0]["failures"][0]["error_summary"]
+        .as_str()
+        .unwrap();
+    assert_eq!(
+      error,
+      format!(
+        "{}...<truncated {} chars>",
+        "x".repeat(prefix_len),
+        1000 - prefix_len
+      )
+    );
+  }
+}
+
+#[tokio::test]
+async fn trace_views_select_evidence_and_keep_the_failure_when_capped() {
+  let server = TestServer::start().await;
+  server.seed_run("run-1", "checkout-api");
+  for index in 0..11 {
+    server.seed_span(
+      "run-1",
+      "trace-1",
+      &format!("span-{index}"),
+      &if index == 0 {
+        String::new()
+      } else {
+        format!("span-{}", index - 1)
+      },
+      "call",
+      "checkout-api",
+    );
+  }
+  server.seed_span_with_exception(
+    "run-1",
+    "trace-1",
+    "failed",
+    "span-10",
+    "authorize",
+    "checkout-api",
+    "ERROR",
+    "PaymentException",
+    &"é".repeat(1000),
+    &"stack".repeat(1000),
+  );
+  for (view, field, expected_count) in [
+    ("critical_path", "critical_path", 8),
+    ("exceptions", "exceptions", 1),
+    ("tree", "spans", 8),
+  ] {
+    let response = mcp_tool(
+      &server,
+      "stove_trace",
+      json!({"trace_id": "trace-1", "view": view, "budget": "tiny", "max_chars": 120}),
+    )
+    .await;
+    let trace = &response["result"]["structuredContent"]["trace"];
+    assert_eq!(trace["total_spans"], 12);
+    assert_eq!(trace["omitted_spans"], 12 - expected_count);
+    let selected = trace[field].as_array().unwrap();
+    assert_eq!(selected.len(), expected_count);
+    for other in ["critical_path", "exceptions", "spans"] {
+      if other != field {
+        assert!(trace.get(other).is_none());
+      }
+    }
+    // Trace-only evidence must not suggest an unusable call with empty test IDs.
+    assert!(trace.get("trace_tool_call").is_none());
+    if view == "critical_path" || view == "exceptions" {
+      let failure = selected.last().unwrap();
+      assert_eq!(failure["span_id"], "failed");
+      assert_eq!(
+        failure["exception_message"],
+        format!("{}...<truncated 880 chars>", "é".repeat(120))
+      );
+    }
+    if view == "tree" {
+      assert_eq!(selected[1]["parent_span_id"], "span-0");
+    }
+  }
+  let full_tree = mcp_tool(
+    &server,
+    "stove_trace",
+    json!({"trace_id": "trace-1", "view": "tree", "budget": "full"}),
+  )
+  .await;
+  assert_eq!(
+    full_tree["result"]["structuredContent"]["trace"]["omitted_spans"],
+    0
+  );
+  assert_eq!(
+    full_tree["result"]["structuredContent"]["trace"]["spans"]
+      .as_array()
+      .unwrap()
+      .len(),
+    12
+  );
 }

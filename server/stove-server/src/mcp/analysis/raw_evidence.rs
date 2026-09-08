@@ -1,7 +1,7 @@
 //! Exact raw evidence uses the same ownership checks as dashboard citations.
 use super::{
-  AnalysisOutput, Analyzer,
-  common::{display_error, fallback_message, output},
+  Analyzer,
+  common::{display_error, fallback_message},
   evidence::{entry_preview, interaction_preview, snapshot_detail, span_preview, warning_preview},
 };
 use crate::{
@@ -11,7 +11,7 @@ use crate::{
 use serde_json::{Value, json};
 
 impl Analyzer {
-  pub(super) fn raw_evidence(&self, arguments: Value) -> Result<AnalysisOutput, String> {
+  pub(super) fn raw_evidence(&self, arguments: Value) -> Result<Value, String> {
     let args: RawEvidenceArgs = parse(arguments)?;
     let budget = Budget::from_args(args.common.budget.as_deref(), args.common.max_chars);
     let kind: EvidenceKind = serde_json::from_value(json!(args.kind.to_ascii_lowercase()))
@@ -70,9 +70,8 @@ impl Analyzer {
       ),
       EvidenceTarget::Warning(item) => ("warning", warning_preview(&item, budget.raw_string_chars)),
     };
-    Ok(output(
+    Ok(
       json!({ "run_id": run_id, "test_id": test_id, "raw_evidence": { "kind": kind, "evidence": evidence }, "fallback": fallback_message() }),
-      "Raw Stove evidence",
-    ))
+    )
   }
 }

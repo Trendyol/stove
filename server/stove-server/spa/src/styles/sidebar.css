@@ -34,18 +34,14 @@
 
 .stove-app-select-wrap {
   position: relative;
-  display: grid;
-  grid-template-columns: 32px minmax(0, 1fr) 16px;
-  align-items: center;
-  gap: 9px;
-  border: 1px solid var(--stove-border);
-  border-radius: 12px;
-  background: var(--stove-surface);
-  box-shadow: var(--stove-shadow-soft);
-  padding: 7px 9px;
 }
 
 .stove-app-glyph {
+  position: absolute;
+  top: 50%;
+  left: 10px;
+  transform: translateY(-50%);
+  pointer-events: none;
   display: grid;
   width: 30px;
   height: 30px;
@@ -60,18 +56,32 @@
 }
 
 .stove-app-select-wrap select {
+  display: block;
   min-width: 0;
   width: 100%;
+  height: 46px;
   appearance: none;
-  border: 0;
+  cursor: pointer;
+  border: 1px solid var(--stove-border);
+  border-radius: 12px;
   outline: 0;
-  background: transparent;
+  background: var(--stove-surface);
+  box-shadow: var(--stove-shadow-soft);
+  padding: 7px 34px 7px 51px;
   color: var(--stove-text-heading);
   font-size: 13px;
   font-weight: 600;
 }
 
+.stove-app-select-wrap select:hover {
+  border-color: var(--stove-border-strong);
+}
+
 .stove-app-select-wrap svg {
+  position: absolute;
+  top: 50%;
+  right: 10px;
+  transform: translateY(-50%);
   width: 14px;
   color: var(--stove-text-muted);
   pointer-events: none;
