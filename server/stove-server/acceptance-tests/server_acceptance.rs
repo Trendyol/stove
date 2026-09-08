@@ -1105,7 +1105,7 @@ async fn assert_embedded_spa(stove: &RunningStove) -> Result<()> {
   assert!(asset.status().is_success());
   let javascript = asset.text().await?;
   assert!(javascript.contains("Filter runs by metadata"));
-  assert!(javascript.contains("Choose one or more metadata values"));
+  assert!(javascript.contains("Active metadata filters"));
   assert!(javascript.contains("Pick several values"));
   assert!(javascript.contains("Dashboard administration"));
   Ok(())
