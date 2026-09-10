@@ -3,8 +3,8 @@ min_version = "2026.9.1"
 [tools]
 # Keep Java 25 first: it runs Gradle; the other JDKs compile individual modules.
 java = ["temurin-25.0.4+101.0.LTS", "temurin-21.0.12+101.0.LTS", "temurin-17.0.20+101"]
-node = "24.20.0"
-go = "1.26.2"
+node = "24.21.0"
+go = "1.27.1"
 rust = { version = "1.98.1", profile = "minimal", components = ["rustfmt", "clippy"] }
 just = "1.58.0"
 lefthook = "2.1.12"

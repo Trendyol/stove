@@ -245,6 +245,12 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "72b3254f16251a8381aa12e40e3c4d2f0199f8c6508fbecb9d91f575e0fbb8c6"
 
 [[package]]
+name = "base64"
+version = "0.23.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "ac07cdecf99051d9a5238b80f35af32cdeba5b336e55d957b318b50137e18da5"
+
+[[package]]
 name = "bitflags"
 version = "1.3.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -272,7 +278,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "dbe8358268799ebb3e4df23cb9d47f4c72bbc4f5247e2fa6a1bf7b6c0baea220"
 dependencies = [
  "async-stream",
- "base64",
+ "base64 0.22.1",
  "bitflags 2.11.0",
  "bollard-buildkit-proto",
  "bollard-stubs",
@@ -328,7 +334,7 @@ version = "1.53.1-rc.29.3.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "ce412eb6f7096743011dc3cb5c674caeb24ced61d8c498fe07cf7998a4fea889"
 dependencies = [
- "base64",
+ "base64 0.22.1",
  "bollard-buildkit-proto",
  "bytes",
  "prost",
@@ -768,7 +774,7 @@ version = "1.4.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "29547a1dc60885a552306986316bc9701ba120c1a8db6769fa68691529ad373d"
 dependencies = [
- "base64",
+ "base64 0.22.1",
  "serde",
  "serde_json",
 ]
@@ -1280,7 +1286,7 @@ version = "0.1.20"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "96547c2556ec9d12fb1578c4eaf448b04993e7fb79cbaad930a656880a6bdfa0"
 dependencies = [
- "base64",
+ "base64 0.22.1",
  "bytes",
  "futures-channel",
  "futures-util",
@@ -2124,7 +2130,7 @@ version = "0.6.12"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "08808e3c483c46e999108051c78334f473d5adb59d78bb80a1268c7e6aa6c514"
 dependencies = [
- "base64",
+ "base64 0.22.1",
  "byteorder",
  "bytes",
  "fallible-iterator 0.2.0",
@@ -2510,11 +2516,11 @@ checksum = "dc897dd8d9e8bd1ed8cdad82b5966c3e0ecae09fb1907d58efaa013543185d0a"
 
 [[package]]
 name = "reqwest"
-version = "0.13.4"
+version = "0.13.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "219c5811de6525e5416c7d5d53bb656d3afdbc6c5af816e0802bcfa42dbdc1c3"
+checksum = "16a1cfa75cc186dd73d5818e510e042e40927bccc9c236b061cea97e1eb08029"
 dependencies = [
- "base64",
+ "base64 0.23.1",
  "bytes",
  "futures-core",
  "h2",
@@ -2896,7 +2902,7 @@ version = "3.22.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "ee78f1fbe43ac4a0e47aadb3dbd357b69eb0d3793e948624cd03dd2750ab1c0a"
 dependencies = [
- "base64",
+ "base64 0.22.1",
  "bs58",
  "chrono",
  "hex",
@@ -3147,7 +3153,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "32497e9a4c7b38532efcdebeef879707aa9f794296a4f0244f6f69e9bc8574bd"
 dependencies = [
  "fastrand",
- "getrandom 0.4.2",
+ "getrandom 0.3.4",
  "once_cell",
  "rustix",
  "windows-sys 0.61.2",
@@ -3425,7 +3431,7 @@ checksum = "ac2a5518c70fa84342385732db33fb3f44bc4cc748936eb5833d2df34d6445ef"
 dependencies = [
  "async-trait",
  "axum",
- "base64",
+ "base64 0.22.1",
  "bytes",
  "h2",
  "http",
@@ -3728,7 +3734,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "d047458f1b5b65237c2f6dc6db136945667f40a7668627b3490b9513a3d43a55"
 dependencies = [
  "axum",
- "base64",
+ "base64 0.22.1",
  "mime_guess",
  "regex",
  "rust-embed",
@@ -3748,9 +3754,9 @@ checksum = "e2eebbbfe4093922c2b6734d7c679ebfebd704a0d7e56dfcb0d05818ce28977d"
 
 [[package]]
 name = "uuid"
-version = "1.26.0"
+version = "1.26.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b5772d71c9be8a8a6ac2117d949c5b224c1b72241bb611d9a3012edcf8af7812"
+checksum = "2ef6dac1e96601b4fb3acccccff2139741fcb757cb9a36089bf5be91cfb285ce"
 dependencies = [
  "getrandom 0.4.2",
  "js-sys",
