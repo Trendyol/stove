@@ -78,7 +78,7 @@ jobs:
       - name: Validate onboarding configuration
         run: mise tasks ls
 
-      - uses: extractions/setup-just@v3
+      - uses: extractions/setup-just@v4
         with:
           just-version: '1.58.0'
 
