@@ -9,12 +9,12 @@ require (
 	github.com/lib/pq v1.12.3
 	github.com/segmentio/kafka-go v0.4.51
 	github.com/trendyol/stove/go/stove-kafka v0.0.0-20260622074357-4c0623ac06bf
-	github.com/twmb/franz-go v1.21.6
+	github.com/twmb/franz-go v1.22.0
 	go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp v0.71.0
 	go.opentelemetry.io/otel v1.46.0
 	go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc v1.46.0
 	go.opentelemetry.io/otel/sdk v1.46.0
-	google.golang.org/grpc v1.83.2
+	google.golang.org/grpc v1.84.0
 )
 
 require (
@@ -32,10 +32,10 @@ require (
 	github.com/jcmturner/gofork v1.7.6 // indirect
 	github.com/jcmturner/gokrb5/v8 v8.4.4 // indirect
 	github.com/jcmturner/rpc/v2 v2.0.3 // indirect
-	github.com/klauspost/compress v1.19.2 // indirect
-	github.com/pierrec/lz4/v4 v4.1.29 // indirect
+	github.com/klauspost/compress v1.20.0 // indirect
+	github.com/pierrec/lz4/v4 v4.1.30 // indirect
 	github.com/rcrowley/go-metrics v0.0.0-20250401214520-65e299d6c5c9 // indirect
-	github.com/twmb/franz-go/pkg/kmsg v1.13.1 // indirect
+	github.com/twmb/franz-go/pkg/kmsg v1.14.0 // indirect
 	go.opentelemetry.io/auto/sdk v1.2.1 // indirect
 	go.opentelemetry.io/otel/exporters/otlp/otlptrace v1.46.0 // indirect
 	go.opentelemetry.io/otel/metric v1.46.0 // indirect
