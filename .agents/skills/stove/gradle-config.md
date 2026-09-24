@@ -4,11 +4,14 @@
 - [Dependencies (BOM)](#dependencies-bom)
 - [Register test-e2e source set](#register-test-e2e-source-set)
 - [Register e2eTest task](#register-e2etest-task)
+- [Test discovery and verification](#test-discovery-and-verification)
 - [IDE integration](#ide-integration)
 - [JUnit base test class](#junit-base-test-class)
 - [Available artifacts](#available-artifacts)
 
 ## Dependencies (BOM)
+
+Reuse an existing test source set/task when the project already has one; the `test-e2e` / `e2eTest` names below are an example convention. Read the Stove version from the project's version catalog or build configuration and keep Stove modules aligned through its BOM.
 
 Stove e2e tests are Kotlin-first. Even for Java/Scala projects, keep e2e test sources in `src/test-e2e/kotlin`.
 
@@ -54,7 +57,7 @@ sourceSets {
     val testE2eImplementation by configurations.getting {
         extendsFrom(configurations.testImplementation.get())
     }
-    configurations["testE2eRuntimeOnly"].extendsFrom(configurations.runtimeOnly.get())
+    configurations["testE2eRuntimeOnly"].extendsFrom(configurations.testRuntimeOnly.get())
 }
 ```
 
@@ -75,6 +78,25 @@ tasks.register<Test>("e2eTest") {
 }
 ```
 
+## Test discovery and verification
+
+For Kotest, put `kotest.properties` on the selected source set's resource path (for this example, `src/test-e2e/resources/kotest.properties`):
+
+```properties
+kotest.framework.config.fqn=com.yourcompany.e2e.StoveConfig
+```
+
+Use the actual fully qualified config class name and register `StoveKotestExtension()` there; see [system-setup.md](system-setup.md#reporting). Keep the project's Kotest/JUnit engine and JUnit Platform launcher dependencies on the e2e runtime classpath. The Stove reporting extension does not replace the test engine.
+
+Compile the selected test source set first, then run the affected suite using the project's Gradle wrapper and actual module/task names, for example:
+
+```bash
+./gradlew :service:compileTestE2eKotlin
+./gradlew :service:e2eTest --tests 'com.yourcompany.e2e.OrderTest'
+```
+
+Ensure the configured container runtime is available for Testcontainers-managed systems. A successful Gradle invocation with zero discovered tests does not verify the setup; inspect the test report for executed tests.
+
 ## IDE integration
 
 ```kotlin
@@ -88,7 +110,14 @@ idea {
 
 ## Resolve API ambiguity from local artifacts
 
-When API names/signatures are unclear, inspect locally downloaded Stove artifacts instead of guessing.
+When API names/signatures are unclear, inspect the version actually resolved on the e2e runtime classpath before opening cached source artifacts. A cache may contain several versions:
+
+```bash
+./gradlew :service:dependencyInsight --dependency stove --configuration testE2eRuntimeClasspath
+./gradlew :service:dependencyInsight --dependency kotlinx-coroutines-core --configuration testE2eRuntimeClasspath
+```
+
+Replace `:service` and the configuration with the project's actual names. Then inspect the matching source JAR or class signatures:
 
 ```bash
 # Find Stove artifacts in Gradle cache

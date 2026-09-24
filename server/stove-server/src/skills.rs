@@ -1,9 +1,8 @@
 //! Stove agent skills sync.
 //!
-//! Discovers the local Stove skill directory under a project (preferring
-//! `.agents/skills/stove`, falling back to `.claude/skills/stove` and
-//! `.agent/skills/stove`), compares it against the canonical copy on GitHub,
-//! and offers to install or update.
+//! Installs under `.agents/skills/stove`, compares that directory against the
+//! canonical copy on GitHub, and offers to install or update. Legacy local
+//! directories are left untouched; older remote paths remain download fallbacks.
 //!
 //! Network and prompt behavior is conservative by default:
 //! - never modifies anything without explicit user consent on a TTY
@@ -31,14 +30,11 @@ mod github {
   pub const REQUEST_TIMEOUT: Duration = Duration::from_secs(5);
 }
 
-/// Candidate skill directory paths, probed in order both locally and remotely.
-/// First entry is the preferred vendor-neutral path used as the install
-/// default when nothing exists yet.
-const SKILL_PATHS: &[&str] = &[
-  ".agents/skills/stove",
-  ".claude/skills/stove",
-  ".agent/skills/stove",
-];
+const SKILL_PATH: &str = ".agents/skills/stove";
+
+/// Remote paths, in preference order. Keep legacy fallbacks so installation
+/// works while the canonical directory rename is being rolled out on GitHub.
+const REMOTE_SKILL_PATHS: &[&str] = &[SKILL_PATH, ".claude/skills/stove", ".agent/skills/stove"];
 
 /// Handle a `skills` subcommand if one was requested.
 ///
@@ -174,15 +170,11 @@ pub fn find_git_root(start: &Path) -> Option<PathBuf> {
 
 /// Resolve the local skill target for installation.
 ///
-/// Picks the first existing skill directory in [`SKILL_PATHS`]. If none
-/// exist, returns the first candidate (the vendor-neutral default).
+/// Always use the canonical vendor-neutral path. Existing legacy skills may
+/// contain project customizations, so neither overwrite nor remove them.
 #[must_use]
 pub fn resolve_local_target(root: &Path) -> PathBuf {
-  SKILL_PATHS
-    .iter()
-    .map(|candidate| root.join(candidate))
-    .find(|path| path.is_dir())
-    .unwrap_or_else(|| root.join(SKILL_PATHS[0]))
+  root.join(SKILL_PATH)
 }
 
 /// Snapshot of the canonical Stove skill directory on GitHub.
@@ -217,7 +209,7 @@ struct ContentsEntry {
 
 /// Fetch the Stove skill files from GitHub.
 ///
-/// Probes [`SKILL_PATHS`] in order and uses the first path that returns a
+/// Probes [`REMOTE_SKILL_PATHS`] in order and uses the first path that returns a
 /// non-empty directory listing.
 async fn fetch_remote_skills() -> anyhow::Result<RemoteSkills> {
   let client = reqwest::Client::builder()
@@ -225,7 +217,7 @@ async fn fetch_remote_skills() -> anyhow::Result<RemoteSkills> {
     .timeout(github::REQUEST_TIMEOUT)
     .build()?;
 
-  for remote_path in SKILL_PATHS {
+  for remote_path in REMOTE_SKILL_PATHS {
     match fetch_remote_skills_for_path(&client, remote_path).await {
       Ok(snapshot) if !snapshot.is_empty() => return Ok(snapshot),
       Ok(_) => {}
@@ -435,13 +427,25 @@ mod tests {
   }
 
   #[test]
-  fn resolve_local_target_falls_back_to_claude() {
+  fn install_uses_agents_and_preserves_legacy_skills() {
     let dir = TempDir::new().unwrap();
-    let claude = dir.path().join(".claude/skills/stove");
-    fs::create_dir_all(&claude).unwrap();
+    for legacy_path in [".claude/skills/stove", ".agent/skills/stove"] {
+      let legacy = dir.path().join(legacy_path);
+      fs::create_dir_all(&legacy).unwrap();
+      fs::write(legacy.join("SKILL.md"), b"project customizations").unwrap();
 
-    let target = resolve_local_target(dir.path());
-    assert_eq!(target, claude);
+      let target = resolve_local_target(dir.path());
+      assert_eq!(target, dir.path().join(".agents/skills/stove"));
+      let remote = remote_with(&[("SKILL.md", b"canonical skill")]);
+      install_skills(&target, &remote).unwrap();
+
+      assert!(skills_match(&target, &remote));
+      assert_eq!(
+        fs::read(legacy.join("SKILL.md")).unwrap(),
+        b"project customizations"
+      );
+      fs::remove_dir_all(&target).unwrap();
+    }
   }
 
   #[test]

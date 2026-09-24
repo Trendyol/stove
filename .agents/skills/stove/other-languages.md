@@ -42,7 +42,7 @@ dependencies {
 
 ## Step 2-3: Project structure, Gradle
 
-Same as JVM setup (see SKILL.md). Build your app binary before tests:
+Use the source-set and task setup in [gradle-config.md](gradle-config.md). Build your app binary before tests:
 
 ```kotlin
 val appSourceDir = project.file("my-app")

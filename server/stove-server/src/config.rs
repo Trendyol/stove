@@ -80,7 +80,7 @@ struct CliConfig {
   #[arg(long)]
   fresh_start: bool,
 
-  /// Fetch and apply Stove agent skills from GitHub on startup without prompting.
+  /// Fetch and apply Stove agent skills to .agents/skills/stove on startup without prompting.
   /// Useful for automation inside repositories.
   #[arg(long)]
   update_skills: bool,
@@ -119,10 +119,10 @@ pub enum StoveCommand {
 /// `stove skills <...>` subcommands.
 #[derive(Subcommand, Debug)]
 pub enum SkillsCommand {
-  /// Install or update Stove agent skills from GitHub.
+  /// Install or update Stove agent skills from GitHub at .agents/skills/stove.
   Install {
-    /// Skip git repository detection and overwrite without prompting.
-    /// Installs into the resolved skill target relative to the current directory.
+    /// Install at .agents/skills/stove in the current directory instead of the git root.
+    /// Works outside git repositories. Installation replaces the skill directory.
     #[arg(long)]
     force: bool,
   },
