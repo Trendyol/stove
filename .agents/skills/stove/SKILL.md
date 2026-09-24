@@ -21,6 +21,14 @@ Open only the focused guides needed for the user's task. Guide links are relativ
 
 Paths such as `docs/`, `examples/`, and `lib/` in these guides refer to the [Stove repository](https://github.com/Trendyol/stove), not the downstream application. When they are absent locally, consult that repository at the matching release tag, or [published documentation](https://trendyol.github.io/stove/).
 
+## Use Stove APIs before native handles
+
+Use the system DSL for every operation it already supports. Before adding native access such as WireMock `server()`, HTTP `client()`, database `session()` / `operations()`, or a helper built on those handles, inspect the resolved version's relevant public methods, overloads, extensions (including companion extensions), inherited APIs, and builders. Familiarity with the underlying SDK, or not finding one guessed method name, is not evidence of a missing Stove API.
+
+Choose in this order: existing system DSL, configuration or supported callback, managed native extension, then unrestricted native handle for a demonstrated gap. For a fallback, briefly name the required capability and the closest Stove API checked in a code comment or implementation note. Keep operations that Stove supports in its DSL.
+
+Native access is correct when it is the documented API contract: Redis currently uses its client for data operations, and some configuration, migration, and cleanup callbacks receive native types. Do not invent missing wrappers. Before finishing, review new handle calls/imports and helpers for duplicated Stove functionality; inspect their receiver and purpose rather than banning a method name. See [api-selection.md](api-selection.md) for the lookup workflow, common replacements, and valid exceptions.
+
 ## Route by task
 
 | User need | Open |
@@ -28,6 +36,7 @@ Paths such as `docs/`, `examples/`, and `lib/` in these guides refer to the [Sto
 | Gradle source sets, BOM, `e2eTest`, local artifact ambiguity | [gradle-config.md](gradle-config.md) |
 | JVM setup, system options, provided instances (existing infra), keyed systems (`SystemKey`) | [system-setup.md](system-setup.md) |
 | Writing `stove {}` assertions and validation DSL | [writing-tests.md](writing-tests.md) |
+| Choosing an API, using a native handle, or reviewing SDK-based helpers | [api-selection.md](api-selection.md) |
 | Go or other non-JVM process mode | [other-languages.md](other-languages.md), then [go-setup.md](go-setup.md) for Go |
 | Docker-image AUT / Testcontainers runner | [container.md](container.md) |
 | OpenTelemetry setup, Gradle plugin wiring, and trace assertions | [tracing.md](tracing.md), then [gradle-config.md](gradle-config.md) for task wiring |

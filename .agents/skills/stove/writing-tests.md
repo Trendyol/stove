@@ -22,7 +22,7 @@
 - [Multi-system test](#multi-system-test)
 - [Anti-patterns](#anti-patterns)
 
-All tests use the `stove { }` entry point.
+All tests use the `stove { }` entry point. Use the system DSL for supported operations; before introducing native handles or SDK-based helpers, follow [API selection](api-selection.md).
 
 ## HTTP requests
 
@@ -133,21 +133,14 @@ http {
 
 ## HTTP streaming
 
-For JSON streaming (NDJSON) endpoints, use Flow-based extensions on `HttpStatement`:
+For JSON streaming (NDJSON) endpoints, use `readJsonStream<T>`. It deserializes with the configured content converter and reports the streaming operation:
 
 ```kotlin
 http {
-    // Read NDJSON stream line by line, transform each line
-    val items = client().prepareGet("/api/events/stream").readJsonTextStream { line ->
-        StoveSerde.jackson.default.readValue(line, EventResponse::class.java)
-    }.toList()
-
-    items.size shouldBeGreaterThan 0
-
-    // Read stream as ByteReadChannel for binary processing
-    client().prepareGet("/api/binary/stream").readJsonContentStream { channel ->
-        channel.readRemaining().readText()
-    }.toList().shouldNotBeEmpty()
+    readJsonStream<EventResponse>("/api/events/stream") { events ->
+        val items = events.take(3).toList()
+        items.map { it.id } shouldBe listOf("e1", "e2", "e3")
+    }
 }
 
 // Serialize items to NDJSON for request body
@@ -155,6 +148,8 @@ val body = StoveSerde.jackson.anyByteArraySerde().serializeToStreamJson(
     listOf(Event("e1"), Event("e2"), Event("e3"))
 )
 ```
+
+For long-lived streams, bound collection with `take` and configure a test timeout in case too few items arrive. The lower-level `HttpStatement.readJsonTextStream` / `readJsonContentStream` extensions are options only when the required format or processing cannot be expressed through `readJsonStream`; check [native access guidance](api-selection.md#use-native-access-for-an-actual-gap) first.
 
 ## PostgreSQL queries
 
@@ -232,7 +227,7 @@ cassandra {
         row.getString("status") shouldBe "NEW"
     }
 
-    // Execute with BoundStatement
+    // Native preparation is needed; execution stays in Stove.
     shouldExecute(session().prepare("DELETE FROM orders WHERE id = ?").bind("o1"))
 
     // Query with BoundStatement
@@ -246,9 +241,9 @@ cassandra {
     unpause()
 }
 
-// Direct session access
+// Execute cleanup CQL through Stove too.
 cassandra {
-    session().execute("TRUNCATE orders")
+    shouldExecute("TRUNCATE orders")
 }
 ```
 
@@ -283,28 +278,26 @@ mongodb {
     pause()
     unpause()
 }
-
-// Direct client access
-mongodb {
-    client().getDatabase("testdb").getCollection("orders").drop()
-}
 ```
+
+For collection administration beyond these APIs, check setup/migrations and [native access guidance](api-selection.md#use-native-access-for-an-actual-gap) before using `client()`.
 
 ## Redis assertions
 
-Redis uses the Lettuce client directly via `client()`:
+Redis uses the Lettuce client directly via `client()` as its primary data API. Close connections opened by the test; Stove owns the client lifecycle:
 
 ```kotlin
 redis {
     // All operations via the Lettuce RedisClient
     val connection = client().connect()
-    val commands = connection.sync()
-
-    commands.set("order:o1", """{"status":"NEW"}""")
-    commands.get("order:o1") shouldNotBe null
-    commands.del("order:o1")
-
-    connection.close()
+    try {
+        val commands = connection.sync()
+        commands.set("order:o1", """{"status":"NEW"}""")
+        commands.get("order:o1") shouldNotBe null
+        commands.del("order:o1")
+    } finally {
+        connection.close()
+    }
 }
 
 // Simulate downtime
@@ -352,12 +345,9 @@ elasticsearch {
     pause()
     unpause()
 }
-
-// Direct client access
-elasticsearch {
-    client().indices().create { it.index("new-index") }
-}
 ```
+
+For index administration beyond these APIs, check setup/migrations and [native access guidance](api-selection.md#use-native-access-for-an-actual-gap) before using `client()`.
 
 ## Couchbase assertions
 
@@ -398,13 +388,9 @@ couchbase {
     pause()
     unpause()
 }
-
-// Direct cluster/bucket access
-couchbase {
-    cluster().queryIndexes().createPrimaryIndex("test-bucket")
-    bucket().defaultCollection().upsert("doc1", JsonObject.create())
-}
 ```
+
+`save` / `saveToDefaultCollection` currently insert documents; they do not upsert existing ones. A required upsert can justify native access after checking the resolved API. For index or cluster administration, check setup/migrations and [native access guidance](api-selection.md#use-native-access-for-an-actual-gap) before using `cluster()` / `bucket()`.
 
 ## Kafka assertions
 
@@ -577,24 +563,30 @@ wiremock {
 }
 ```
 
-Use `rawStub(name?)` for native WireMock features while retaining Stove naming, test scoping, reporting, journaling, and cleanup:
+Dynamic responses and network faults already have Stove APIs:
 
 ```kotlin
 wiremock {
-    rawStub("dynamic order response") {
-        post(urlPathEqualTo("/orders"))
-            .willReturn(aResponse().withTransformers("response-template"))
-    }
-
-    // Existing specialized APIs remain available.
     mockFault(RequestMethod.GET, "/payments/status", Fault.CONNECTION_RESET_BY_PEER)
-    mockDynamic(RequestMethod.POST, "/orders") { request, serde ->
+    mockDynamic(RequestMethod.POST, "/orders") { request, _ ->
         aResponse().withStatus(201).withBody("""{"echo":${request.bodyAsString}}""")
     }
 }
 ```
 
-`rawStub` assigns a managed mapping ID and replaces any `.withId(...)` value from the native builder.
+If a required mapping feature is absent from the DSL, use `rawStub(name?)` before `server()`. For example, enabling the native response-template transformer requires a native builder:
+
+```kotlin
+wiremock {
+    // The response DSL has no transformer selector; use a managed native mapping.
+    rawStub("templated order response") {
+        post(urlPathEqualTo("/orders"))
+            .willReturn(aResponse().withBody("{{request.path}}").withTransformers("response-template"))
+    }
+}
+```
+
+`rawStub` retains Stove naming, test scoping, reporting, journaling, and cleanup. It assigns a managed mapping ID and replaces any `.withId(...)` value from the native builder. Unrestricted `server()` access requires a remaining gap; stubbing, verification, and captured-request inspection already have APIs. See [API selection](api-selection.md).
 
 The stable `mock*(statusCode = ...)`, `mock*Containing`, `behaviourFor`, and verification overloads remain available for existing tests:
 
@@ -960,3 +952,4 @@ test("complete order flow") {
 | Only assert `status shouldBe 200` | Assert response body, DB state, events |
 | Call real external services | Use WireMock / gRPC Mock |
 | Start Stove inside individual tests | Kotest project lifecycle or the project's JUnit class/suite lifecycle; pair startup with teardown |
+| Rebuild supported operations through native handles | Inspect system APIs, overloads, extensions, and builders; justify any remaining gap before using native access |
