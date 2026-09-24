@@ -42,7 +42,7 @@ google-protobuf = "4.36.2"
 hoplite = "2.9.0"
 junit-jupiter = "6.1.3"
 kotest = "6.2.5"
-mockito = "6.3.0"
+mockito = "6.4.0"
 kotlinx-serialization = "1.11.0"
 kotlinBinaryCompatibilityValidator = "0.18.2"
 snakeyaml = "2.7"
@@ -290,7 +290,7 @@ exposed-json = { module = "org.jetbrains.exposed:exposed-json", version.ref = "e
 # Recipes - flyway / r2dbc
 flyway-core = { module = "org.flywaydb:flyway-core", version.ref = "flyway" }
 flyway-database-postgresql = { module = "org.flywaydb:flyway-database-postgresql", version.ref = "flyway" }
-postgresql-r2dbc = { module = "org.postgresql:r2dbc-postgresql", version = "1.1.2.RELEASE" }
+postgresql-r2dbc = { module = "org.postgresql:r2dbc-postgresql", version = "1.1.3.RELEASE" }
 r2dbc-pool = { module = "io.r2dbc:r2dbc-pool", version = "1.0.2.RELEASE" }
 
 # Recipes - gRPC / protobuf (additional accessors)
