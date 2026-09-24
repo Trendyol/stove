@@ -1245,7 +1245,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": null | components["schemas"]["Run"];
+                    "application/json": components["schemas"]["Run"] | null;
                 };
             };
         };
