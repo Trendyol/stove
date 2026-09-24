@@ -14,7 +14,8 @@ dashboard {
             "team" to "checkout",
             "tribe" to "commerce",
             "gitlab.project" to (System.getenv("CI_PROJECT_PATH") ?: "local"),
-            "gitlab.pipeline_id" to (System.getenv("CI_PIPELINE_ID") ?: "local")
+            "gitlab.pipeline_id" to (System.getenv("CI_PIPELINE_ID") ?: "local"),
+            "gitlab.job_id" to (System.getenv("CI_JOB_ID") ?: "local")
         )
     )
 }
@@ -26,6 +27,7 @@ Keep these invariants:
 - Keys and values must be strings. Convert numeric pipeline or job IDs to strings.
 - Prefer stable, namespaced keys such as `gitlab.project`, `gitlab.pipeline_id`, `team`, and `environment`.
 - Filtering uses exact string equality and AND-combines every supplied pair.
+- A pipeline can contain several jobs, shards, or retries. Include job/shard/attempt identifiers when available, then select the returned `run_id`; team and pipeline alone may be ambiguous.
 - Metadata is a selector, not a security boundary. Stove has no authentication or authorization.
 
 `DashboardIngestion.Grpc(host, port)` identifies the Stove gRPC ingestion endpoint. Point it at the shared server and its gRPC port when the tests and server run on different hosts.
@@ -54,7 +56,7 @@ PostgreSQL uses TLS by default. Add `sslmode=disable` only for an intentionally 
 - SQLite: `server/stove-server/src/storage/migrations/sqlite/`
 - PostgreSQL: `server/stove-server/src/storage/migrations/postgres/`
 
-Refinery discovers those migrations and records them in `refinery_schema_history`. Diesel handles ordinary persistence; raw SQL is reserved for database-specific coordination and complex queries. This is a clean storage break: databases with the former `schema_migrations` history must be deleted (SQLite) or recreated (PostgreSQL), not upgraded in place.
+Refinery discovers those migrations and records them in `refinery_schema_history`. Diesel handles ordinary persistence; raw SQL is reserved for database-specific coordination and complex queries. Databases with the former `schema_migrations` history are not supported for in-place upgrade. Back up retained evidence and point the new server at a fresh SQLite file or PostgreSQL database; consult the version's migration guidance before replacing an existing database.
 
 PostgreSQL stores metadata as `JSONB` and indexes it with GIN `jsonb_path_ops`. SQLite provides the same exact-subset behavior through application filtering. `--fresh-start` is SQLite-only; `--clear` operates on whichever backend is selected.
 
@@ -131,7 +133,7 @@ MCP applies the same semantics through `stove_runs`:
 }
 ```
 
-Use the returned `run_id` with `stove_failures` and the evidence tools. `stove_failures` does not accept metadata directly.
+Select the exact returned `run_id` and use `stove_diagnose` for initial triage, then follow its evidence references. On older servers without that tool, use `stove_failures`; it does not accept metadata directly. See [mcp.md](mcp.md) for discovery, pagination, and run selection.
 
 Mock evidence uses explicit REST resource names. Query `/api/v1/runs/{run_id}/mock-interactions` and `/api/v1/runs/{run_id}/mock-warnings`; append `/ambient` for unattributed evidence, or place the resource below `/tests/{test_id}` for evidence attributed to one test.
 
@@ -159,14 +161,16 @@ Stove intentionally has no authentication or authorization. The HTTP server, MCP
 
 ## Verify changes
 
-From `server/stove-server`, with a Docker-compatible daemon running:
+For downstream dashboard setup, run a small test suite and verify that its app, metadata, tests, and final status appear on the intended server. Check both the gRPC ingestion address and HTTP/MCP address from the hosts that use them.
+
+For changes to Stove server storage, APIs, or ingestion itself, run the relevant server checks. From `server/stove-server`, with a Docker-compatible daemon running:
 
 ```bash
 cargo test --test acceptance
 cargo test --test load -- --nocapture
 ```
 
-The acceptance suite runs against SQLite and a disposable PostgreSQL instance through `testcontainers` 0.28.0. The load test seeds 50,000 PostgreSQL runs, verifies use of the metadata GIN index, and exercises concurrent dashboard, REST, admin, and MCP reads under a p95 latency budget. Tune it with `STOVE_LOAD_TEST_RUNS`, `STOVE_LOAD_TEST_REQUESTS`, `STOVE_LOAD_TEST_CONCURRENCY`, and `STOVE_LOAD_TEST_P95_MS`.
+The acceptance suite runs against SQLite and a disposable PostgreSQL instance. Use the load suite for changes affecting storage/query performance: it seeds 50,000 PostgreSQL runs, verifies use of the metadata GIN index, and exercises concurrent dashboard, REST, admin, and MCP reads under a p95 latency budget. Tune it with `STOVE_LOAD_TEST_RUNS`, `STOVE_LOAD_TEST_REQUESTS`, `STOVE_LOAD_TEST_CONCURRENCY`, and `STOVE_LOAD_TEST_P95_MS`.
 
 ## References
 

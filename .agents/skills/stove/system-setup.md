@@ -229,7 +229,7 @@ Stove().with {
 
 **Important**: `Bridge` (DI access via `using<T>`) is **not available** with `providedApplication()` — there is no local DI container. Use `cleanup` lambdas to manage test data on external infrastructure.
 
-**Kafka in provided mode**: the deployed app has no Stove interceptor/bridge, so sink-based assertions (`shouldBePublished`, `shouldBeConsumed`) won't observe its messages. Use the inflight `consumer(topic) { record -> ... }` API instead — it reads directly from the broker and needs nothing in the AUT (see [writing-tests.md](writing-tests.md#kafka-assertions)).
+**Kafka in provided mode**: if the deployed app has no Stove interceptor/bridge, observer-based assertions (`shouldBePublished`, `shouldBeConsumed`) won't observe its traffic. Standalone `stove-kafka` offers `consumer(topic) { record -> ... }` to read directly from the broker without AUT instrumentation (see [writing-tests.md](writing-tests.md#kafka-assertions)).
 
 ## Keyed systems (multiple instances)
 
@@ -319,7 +319,7 @@ postgresql(AppDb) {
 }
 ```
 
-All `provided()` factories accept `runMigrations: Boolean = true` — migrations run against the external instance by default. Pass `runMigrations = false` for shared infrastructure whose schema is managed elsewhere.
+The database and Kafka `provided()` factories accept `runMigrations: Boolean = true` — registered migrations run against the external instance by default. Pass `runMigrations = false` when its schema is managed elsewhere.
 
 ## HTTP Client
 
@@ -662,33 +662,44 @@ Migration class uses `Cluster` as context. Container operations: `pause()` / `un
 
 ## Kafka
 
-Use `stove-kafka` for standalone. Use `stove-spring-kafka` for Spring Boot Kafka listeners (`shouldBeConsumed`, `shouldBeFailed`, `shouldBeRetried`).
+Choose one integration; the artifacts define overlapping `com.trendyol.stove.kafka` classes and must not be combined on a runtime classpath:
+
+| Integration | Observation | Options specific to that integration |
+|---|---|---|
+| `stove-kafka` | JVM client interceptors or the Go/gRPC bridge | `serde`, `valueSerializer`, `useEmbeddedKafka`, `bridgeGrpcServerPort`, `listenPublishedMessagesFromStove`, `topicSuffixes` |
+| `stove-spring-kafka` | Spring listener interceptor and producer listener | `fallbackSerde`, `ops`; requires a Spring application context |
+
+Both support `shouldBePublished`, `shouldBeConsumed`, and `shouldBeFailed`. Current standalone source also provides `shouldBeRetried` and the direct broker `consumer` API; do not assume those exist in Spring. See [writing-tests.md](writing-tests.md#kafka-assertions).
+
+### Standalone Kafka
+
+For a JVM app using the Kafka client API, configure its producer and consumer interceptors:
 
 ```kotlin
 kafka {
     KafkaSystemOptions(
-        serde = StoveSerde.jackson.anyByteArraySerde(),
-        valueSerializer = JsonSerializer(),
-        containerOptions = KafkaContainerOptions(tag = "8.0.3") {
-            withStartupAttempts(3)
-        },
         configureExposedConfiguration = { cfg ->
             listOf(
-                "spring.kafka.bootstrap-servers=${cfg.bootstrapServers}",
-                "spring.kafka.producer.properties.interceptor.classes=${cfg.interceptorClass}",
-                "spring.kafka.consumer.properties.interceptor.classes=${cfg.interceptorClass}"
+                "kafka.bootstrapServers=${cfg.bootstrapServers}",
+                "kafka.producer.interceptor.classes=${cfg.interceptorClass}",
+                "kafka.consumer.interceptor.classes=${cfg.interceptorClass}"
             )
         }
     )
 }
 ```
 
-For embedded Kafka (no Docker container):
+The `kafka.*` application keys above are examples: adapt them to the app's configuration and pass the interceptor class to Kafka's `interceptor.classes` producer/consumer properties. Current Stove also exposes `stove.kafka.bridge.id` and `stove.kafka.bridge.port` as configuration entries; forward them unchanged into each client's properties, especially with keyed Kafka systems. Do not substitute one process-global bridge port for multiple systems. For Go env mapping, see [go-setup.md](go-setup.md#step-5-stoveconfig).
+
+Standalone options can use `useEmbeddedKafka = true` to run an embedded broker. This option does not exist on the Spring integration.
+
+For an external cluster, use `KafkaSystemOptions.provided(bootstrapServers = "broker:9092", configureExposedConfiguration = { ... })`. Both integrations accept `properties` for security settings, `cleanup`, and `runMigrations`; only standalone has `bridgeGrpcServerPort`.
+
+### Spring Kafka
 
 ```kotlin
 kafka {
     KafkaSystemOptions(
-        useEmbeddedKafka = true,
         configureExposedConfiguration = { cfg ->
             listOf("spring.kafka.bootstrap-servers=${cfg.bootstrapServers}")
         }
@@ -696,93 +707,19 @@ kafka {
 }
 ```
 
-For an externally managed cluster: `KafkaSystemOptions.provided(bootstrapServers = "broker:9092", configureExposedConfiguration = { ... })` — also accepts `cleanup`, `properties`, and `bridgeGrpcServerPort`.
+Register `TestSystemKafkaInterceptor<*, *>` and the matching `StoveSerde` bean in the Spring test dependencies. Connect the interceptor to each relevant `ConcurrentKafkaListenerContainerFactory` with `setRecordInterceptor`. Stove attaches its producer listener to the app's `KafkaTemplate`s during startup. The Spring `KafkaExposedConfiguration` exposes `bootstrapServers`, not a JVM Kafka `interceptorClass`.
 
-**Application-side requirements (Spring Boot Kafka)**:
-- Inject `RecordInterceptor<String, String>` into your `ConcurrentKafkaListenerContainerFactory` and call `factory.setRecordInterceptor(interceptor)`.
-- Register `TestSystemKafkaInterceptor<*, *>` and a `StoveSerde` bean in test dependencies.
+Use the version-matched tests under `starters/spring/tests/` for the application's serializers and Spring Kafka version. Spring consumption records listener success/failure; it does not use the standalone observer's commit check.
 
-### Test-friendly Kafka settings
+### Kafka timing and isolation
 
-Default Kafka producer/consumer settings are tuned for production throughput, not test speed. In e2e tests, this causes timeouts, flaky assertions, and slow feedback. Configure for **immediate delivery and fast commits**:
-
-**Container-level** — enable auto-topic creation so topics exist when producers/consumers first connect:
-
-```kotlin
-kafka {
-    KafkaSystemOptions(
-        containerOptions = KafkaContainerOptions(tag = "8.0.3") {
-            withEnv("KAFKA_AUTO_CREATE_TOPICS_ENABLE", "true")
-        },
-        configureExposedConfiguration = { cfg ->
-            listOf("spring.kafka.bootstrap-servers=${cfg.bootstrapServers}")
-        }
-    )
-}
-```
-
-**Producer settings** — flush immediately, don't batch:
-
-```properties
-# Spring Boot application.yml or exposed via Stove config
-spring.kafka.producer.properties.linger.ms=0          # Send immediately, don't wait to batch
-spring.kafka.producer.properties.batch.size=1          # Single-message batches
-spring.kafka.producer.acks=all                         # Wait for all replicas (reliable in single-broker test)
-```
-
-**Consumer settings** — commit fast, start from beginning, short timeouts:
-
-```properties
-spring.kafka.consumer.auto-offset-reset=earliest            # Start from beginning (don't miss messages)
-spring.kafka.consumer.properties.auto.commit.interval.ms=100  # Commit offsets every 100ms (default: 5000ms)
-spring.kafka.consumer.properties.max.poll.interval.ms=10000   # Shorter poll timeout (default: 300000ms)
-spring.kafka.consumer.properties.session.timeout.ms=10000     # Faster rebalance on failure (default: 45000ms)
-spring.kafka.consumer.properties.heartbeat.interval.ms=3000   # Faster heartbeat (default: 3000ms, keep ≤ session/3)
-```
-
-**Why this matters for Stove assertions:**
-
-- `shouldBePublished` checks the Stove interceptor sink — messages must reach it promptly. `linger.ms=0` and `batch.size=1` prevent the producer from holding messages.
-- `shouldBeConsumed` checks that the message was consumed AND its offset committed. `auto.commit.interval.ms=100` makes committed offsets visible within 100ms instead of the 5-second default.
-- `shouldBeFailed` / `shouldBeRetried` check error and retry sinks — short `max.poll.interval.ms` prevents long waits before Kafka considers a consumer dead.
-- Without `auto-offset-reset=earliest`, consumers joining after a message is produced will never see it, causing `shouldBeConsumed` to timeout.
-
-**Passing these via Stove's `configureExposedConfiguration`:**
-
-```kotlin
-kafka {
-    KafkaSystemOptions(
-        containerOptions = KafkaContainerOptions {
-            withEnv("KAFKA_AUTO_CREATE_TOPICS_ENABLE", "true")
-        },
-        configureExposedConfiguration = { cfg ->
-            listOf(
-                "spring.kafka.bootstrap-servers=${cfg.bootstrapServers}",
-                "spring.kafka.producer.properties.interceptor.classes=${cfg.interceptorClass}",
-                "spring.kafka.consumer.properties.interceptor.classes=${cfg.interceptorClass}",
-                // Test-friendly overrides
-                "spring.kafka.producer.properties.linger.ms=0",
-                "spring.kafka.producer.properties.batch.size=1",
-                "spring.kafka.consumer.auto-offset-reset=earliest",
-                "spring.kafka.consumer.properties.auto.commit.interval.ms=100"
-            )
-        }
-    )
-}
-```
-
-**Non-Spring JVM apps** — the same principles apply. Pass equivalent properties through your app's configuration mechanism:
-
-| Setting | Production default | Test-friendly value | Why |
-|---------|-------------------|--------------------|----|
-| `linger.ms` | 5-100 | `0` | Immediate send |
-| `batch.size` | 16384 | `1` | No batching |
-| `auto.commit.interval.ms` | 5000 | `100` | Fast offset visibility |
-| `auto.offset.reset` | `latest` | `earliest` | Don't miss messages |
-| `max.poll.interval.ms` | 300000 | `10000` | Faster failure detection |
-| `auto.create.topics.enable` (broker) | `true` | `true` | Topics exist on first use |
-
-**Go applications** — see [go-setup.md](go-setup.md) for per-library settings (sarama, franz-go, segmentio/kafka-go) including auto-topic creation, batch timeouts, commit intervals, and the separate producer/consumer client pattern for franz-go.
+- Create required topics before producing, through migrations or broker administration. Auto-topic creation is an option when the test environment permits it; configure both broker and client where required.
+- Keep producer batching within the assertion timeout. Lower `linger.ms` only when it causes unwanted test latency; preserve acknowledgment and delivery-error handling.
+- Use unique message IDs and, when offsets must be isolated, a group ID per run. A group name per library is not unique per run.
+- `auto.offset.reset=earliest` applies only when the group has no valid committed offset. It does not reset an existing group's offsets.
+- Keep the app's acknowledgment strategy. `auto.commit.interval.ms` matters only for clients with auto-commit enabled; it does not control Spring's manual/container acknowledgment or Go bridge pre-reports.
+- `max.poll.interval.ms` limits time between polls. Reducing it can trigger rebalances during slow handlers; it does not make retry-topic assertions faster.
+- For container AUTs, bootstrap and advertised listener addresses must be reachable from both clients' networks; see [container.md](container.md#step-5-networking-strategies).
 
 ## WireMock
 
@@ -917,19 +854,21 @@ Annotate your base test class with `@ExtendWith(StoveJUnitExtension::class)`:
 @ExtendWith(StoveJUnitExtension::class)
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 abstract class BaseE2ETest {
-    companion object {
-        @JvmStatic @BeforeAll
-        fun setup() = runBlocking {
+    @BeforeAll
+    fun setup() {
+        runBlocking {
             Stove().with { /* systems */ }.run()
         }
+    }
 
-        @JvmStatic @AfterAll
-        fun teardown() = runBlocking { Stove.stop() }
+    @AfterAll
+    fun teardown() {
+        runBlocking { Stove.stop() }
     }
 }
 ```
 
-Requires `stove-extensions-junit` dependency. Supports `@Nested` class hierarchy.
+Requires `stove-extensions-junit` dependency. Supports `@Nested` class hierarchy. The extension handles per-test context and reporting; these callbacks start and stop Stove once per concrete subclass. Keep classes sharing the global Stove instance sequential, or use an existing suite lifecycle. Lifecycle methods must return `Unit` (JVM `void`).
 
 ## Application runner
 
@@ -1213,7 +1152,7 @@ wiremock {
 
 ## Cleanup
 
-Every system accepts a `cleanup` lambda in its options. This runs during `Stove.stop()` (after all tests complete) and receives the system's native client. Use it to wipe test data — especially important for provided (external) instances that persist between runs.
+The database and Kafka options below accept a `cleanup` lambda. It runs when that system closes during `Stove.stop()`, not between tests, and receives its native client. Scope cleanup to the test's own data, especially on provided instances. Container reuse does not imply cleanup is skipped; check the system's `close()` implementation. Mock systems have separate cleanup controls.
 
 ```kotlin
 postgresql {

@@ -1,6 +1,6 @@
 # Go Application Setup with Stove
 
-Complete guide for testing Go applications with Stove. Covers HTTP, PostgreSQL, Kafka (with bridge), OpenTelemetry tracing, dashboard, MCP triage, and integration coverage.
+Use this guide for Go process tests. Add PostgreSQL, Kafka, tracing, dashboard, and coverage only when the application or task needs them.
 
 This skill focuses on **process mode** (`stove-process` / `goApp`) — fastest local iteration. For container-image AUT (`stove-container` / `containerApp`) — language-agnostic, image source is your responsibility — see [container.md](container.md). For agent-driven failure triage via the `stove` CLI MCP endpoint, see [mcp.md](mcp.md).
 
@@ -9,8 +9,8 @@ The same `StoveConfig.kt` can serve both modes by branching on a system property
 ## Setup Checklist
 
 ```
-- [ ] Step 1: Create Go app with env var config + health endpoint + SIGTERM handling
-- [ ] Step 2: Add OpenTelemetry instrumentation (otelhttp, otelsql)
+- [ ] Step 1: Identify configuration inputs, readiness, and graceful shutdown
+- [ ] Step 2: Add OpenTelemetry instrumentation if traces are needed
 - [ ] Step 3: Add Kafka with Stove bridge interceptors (optional)
 - [ ] Step 4: Add stove-process dependency (provides goApp() DSL)
 - [ ] Step 5: Create test-e2e source set + StoveConfig
@@ -20,12 +20,11 @@ The same `StoveConfig.kt` can serve both modes by branching on a system property
 
 ## Step 1: Go app requirements
 
-The Go app must:
-- Read config from **environment variables**
-- Expose **GET /health** returning 200
-- Handle **SIGTERM** for graceful shutdown
+Make dependency addresses configurable and handle SIGTERM for graceful shutdown. `goApp` accepts a binary path, target, and environment provider. For CLI arguments, working directory, startup hooks, or a longer shutdown timeout, use `processApp` with `ProcessApplicationOptions`.
 
-Key env vars:
+`ProcessTarget.Server` defaults to GET `/health`; select another URL, a TCP probe, or a custom probe when appropriate. `ProcessTarget.Worker` does not require an HTTP port.
+
+Example environment contract (adapt app-specific names):
 
 | Variable | Purpose |
 |----------|---------|
@@ -33,11 +32,15 @@ Key env vars:
 | `DB_HOST`, `DB_PORT`, `DB_NAME`, `DB_USER`, `DB_PASS` | PostgreSQL |
 | `OTEL_EXPORTER_OTLP_ENDPOINT` | OTLP gRPC endpoint |
 | `KAFKA_BROKERS` | Kafka broker addresses |
-| `KAFKA_LIBRARY` | Kafka client: `sarama`, `franz`, or `segmentio` (default: `sarama`) |
-| `STOVE_KAFKA_BRIDGE_PORT` | Stove bridge gRPC port (test-only) |
+| `STOVE_KAFKA_BRIDGE_PORT` | Actual Stove Kafka observer gRPC port (test-only) |
+| `STOVE_KAFKA_BRIDGE_HOST` | Observer host; defaults to `localhost`, change for container AUTs |
 | `GOCOVERDIR` | Directory for Go integration test coverage data (test-only) |
 
 ## Step 2: OpenTelemetry
+
+Use an OTLP gRPC exporter pointed at the receiver in the test JVM. Endpoint syntax depends on the SDK API: `otlptracegrpc.WithEndpoint` takes `host:port`, while the standard `OTEL_EXPORTER_OTLP_ENDPOINT` variable takes a URL such as `http://localhost:4317`. Configure plaintext for Stove's local receiver. See [tracing.md](tracing.md) for port selection and propagation.
+
+Illustrative instrumentation hooks (handle setup errors in the application):
 
 ```go
 // HTTP: wrap mux with otelhttp
@@ -46,8 +49,9 @@ handler := otelhttp.NewHandler(mux, "http.request")
 // DB: use otelsql instead of database/sql
 db, _ := otelsql.Open("postgres", connStr, otelsql.WithAttributes(semconv.DBSystemPostgreSQL))
 
-// Tracing: use WithSyncer for tests (not WithBatcher)
-tp := sdktrace.NewTracerProvider(sdktrace.WithSyncer(exporter), ...)
+// Test option: export completed spans synchronously to reduce assertion races.
+tp := sdktrace.NewTracerProvider(sdktrace.WithSyncer(exporter))
+otel.SetTracerProvider(tp)
 
 // Propagation: must set W3C TraceContext for Stove trace correlation
 otel.SetTextMapPropagator(propagation.NewCompositeTextMapPropagator(
@@ -81,15 +85,21 @@ go get github.com/trendyol/stove/go/stove-kafka
 
 ### Initialize bridge + wire into your Kafka client
 
+These setup fragments belong inside a function returning an error. Preserve the app's existing Kafka configuration and close clients on shutdown.
+
 **IBM/sarama:**
 
 ```go
 import (
+    "github.com/IBM/sarama"
     stovekafka "github.com/trendyol/stove/go/stove-kafka"
     stovesarama "github.com/trendyol/stove/go/stove-kafka/sarama"
 )
 
-bridge, _ := stovekafka.NewBridgeFromEnv()
+bridge, err := stovekafka.NewBridgeFromEnv()
+if err != nil {
+    return err
+}
 defer bridge.Close()
 
 config := sarama.NewConfig()
@@ -107,15 +117,23 @@ config.Consumer.Interceptors = []sarama.ConsumerInterceptor{
 import (
     stovekafka "github.com/trendyol/stove/go/stove-kafka"
     "github.com/trendyol/stove/go/stove-kafka/franz"
+    "github.com/twmb/franz-go/pkg/kgo"
 )
 
-bridge, _ := stovekafka.NewBridgeFromEnv()
+bridge, err := stovekafka.NewBridgeFromEnv()
+if err != nil {
+    return err
+}
 defer bridge.Close()
 
-client, _ := kgo.NewClient(
-    kgo.SeedBrokers("localhost:9092"),
+client, err := kgo.NewClient(
+    kgo.SeedBrokers(brokerList...),
     kgo.WithHooks(&franz.Hook{Bridge: bridge}),
 )
+if err != nil {
+    return err
+}
+defer client.Close()
 ```
 
 **segmentio/kafka-go:**
@@ -126,15 +144,28 @@ import (
     "github.com/trendyol/stove/go/stove-kafka/segmentio"
 )
 
-bridge, _ := stovekafka.NewBridgeFromEnv()
+bridge, err := stovekafka.NewBridgeFromEnv()
+if err != nil {
+    return err
+}
 defer bridge.Close()
 
-// After producing
-_ = writer.WriteMessages(ctx, msgs...)
-segmentio.ReportWritten(ctx, bridge, msgs...)
+// With a synchronous writer (Async: false), report only successful writes.
+if err := writer.WriteMessages(ctx, msgs...); err != nil {
+    return err
+}
+for _, msg := range msgs {
+    // Writer.Topic can supply the topic while Message.Topic is empty.
+    if msg.Topic == "" {
+        msg.Topic = writer.Topic
+    }
+    segmentio.ReportWritten(ctx, bridge, msg)
+}
 
-// After consuming
-msg, _ := reader.ReadMessage(ctx)
+msg, err := reader.ReadMessage(ctx)
+if err != nil {
+    return err
+}
 segmentio.ReportRead(ctx, bridge, msg)
 ```
 
@@ -155,111 +186,42 @@ _ = bridge.ReportConsumed(ctx, &stovekafka.ConsumedMessage{
 _ = bridge.ReportCommitted(ctx, msg.Topic, msg.Partition, msg.Offset+1)
 ```
 
-### How it works
+### What the bridge proves
 
-- All subpackages convert client-specific types to core `PublishedMessage`/`ConsumedMessage` and call bridge methods
-- Consumer interceptors/helpers pre-report commit at `offset+1` (needed for `shouldBeConsumed`)
-- All Bridge methods are nil-safe: `(*Bridge)(nil).ReportPublished(...)` is a no-op
-- All interceptors/hooks/helpers check for nil bridge first — zero overhead in production
+- Sarama reports before send and on consumption; franz-go reports records entering its produce/fetch buffers. These hooks do not prove broker acknowledgment or handler completion.
+- Consumer helpers pre-report `offset+1` to satisfy Stove's observer commit check. That report is bookkeeping, not confirmation of a broker commit.
+- For processing tests, follow observation with a bounded assertion on the business outcome (database state, response, or output event). Match a unique message ID and the expected topic.
+- With no bridge port set, `NewBridgeFromEnv` returns a nil bridge; bridge methods and helpers return without reporting. Do not enable the bridge in ordinary production configuration.
+- Async producers need delivery-completion/error handling. A successful enqueue is not a successful publish.
 
-### Test-friendly Kafka settings (Go side)
+### Kafka timing and isolation
 
-When running against Testcontainers (Stove e2e tests), configure Kafka clients for **fast feedback**. Default production settings (large batches, long commit intervals, no auto-topic creation) cause timeouts, missed messages, and flaky tests.
+Create topics before sending, or enable auto-topic creation where supported. Choose batch/flush settings that fit the test timeout and check send errors. Preserve the app's acknowledgment behavior; short auto-commit intervals are not needed for the Go helper's pre-reported commit.
 
-**Key principles:**
+Use unique message IDs and a distinct consumer group per test run when offsets must be isolated. A name such as `"myapp-" + library` only separates libraries; include a run identifier to separate runs. `earliest` only applies when no valid committed offset exists.
 
-1. **Auto-create topics** — test containers may not have topics pre-created; without this, produces fail silently or block
-2. **Small batch size / low batch timeout** — flush produces immediately so `shouldBePublished` sees them
-3. **Short auto-commit interval** — make consumed offsets visible to Stove bridge quickly so `shouldBeConsumed` passes
-4. **Unique consumer groups per test run** — prevent offset carryover between runs (e.g. `"myapp-" + library`)
-
-**IBM/sarama:**
-
-```go
-config := sarama.NewConfig()
-config.Producer.Return.Successes = true
-config.Consumer.Offsets.Initial = sarama.OffsetOldest
-config.Consumer.Offsets.AutoCommit.Interval = 100 * time.Millisecond
-// sarama relies on broker-side auto.create.topics.enable (no client-side setting)
-```
-
-**twmb/franz-go:**
-
-```go
-client, _ := kgo.NewClient(
-    kgo.SeedBrokers(brokerList...),
-    kgo.AllowAutoTopicCreation(),                    // client-side topic creation
-    kgo.AutoCommitInterval(100 * time.Millisecond),  // fast offset commits
-    kgo.ConsumeResetOffset(kgo.NewOffset().AtStart()),
-    kgo.WithHooks(&franz.Hook{Bridge: bridge}),
-)
-```
-
-**segmentio/kafka-go:**
-
-```go
-// Writer — flush immediately, auto-create topics
-writer := &kafka.Writer{
-    Addr:                   kafka.TCP(brokerList...),
-    BatchSize:              1,
-    BatchTimeout:           10 * time.Millisecond,
-    RequiredAcks:           kafka.RequireAll,
-    AllowAutoTopicCreation: true,
-}
-
-// Reader — fast commits, low wait
-reader := kafka.NewReader(kafka.ReaderConfig{
-    Brokers:        brokerList,
-    GroupID:         groupID,
-    Topic:           topic,
-    MinBytes:        1,
-    MaxBytes:        10e6,
-    CommitInterval:  100 * time.Millisecond,
-    MaxWait:         500 * time.Millisecond,
-})
-```
-
-**franz-go: separate producer and consumer clients.** Using a single `kgo.Client` for both produce and consume causes consumer group coordination to block `ProduceSync`, leading to 10-30s delays. Always create two clients:
-
-```go
-// Producer — no consumer group overhead
-producerClient, _ := kgo.NewClient(
-    kgo.SeedBrokers(brokerList...),
-    kgo.AllowAutoTopicCreation(),
-    kgo.WithHooks(hook),
-)
-
-// Consumer — consumer group coordination won't block produces
-consumerClient, _ := kgo.NewClient(
-    kgo.SeedBrokers(brokerList...),
-    kgo.ConsumeTopics(topic),
-    kgo.ConsumerGroup(groupID),
-    kgo.ConsumeResetOffset(kgo.NewOffset().AtStart()),
-    kgo.AutoCommitInterval(100 * time.Millisecond),
-    kgo.AllowAutoTopicCreation(),
-    kgo.WithHooks(hook),
-)
-```
-
-**Common pitfall — consumer group offset carryover:** If running the same tests against multiple Kafka libraries sequentially (e.g. sarama → franz → segmentio), use a unique consumer group per library. Otherwise the second run sees committed offsets from the first and skips messages:
-
-```go
-groupID := "myapp-" + library  // e.g. "myapp-sarama", "myapp-franz"
-```
+Use the Kafka library already used by the application. Running Sarama, franz-go, and segmentio as a matrix is a showcase feature, not a Stove requirement. A single franz-go client supports producing and consuming; diagnose delivery/rebalance delays before introducing separate clients.
 
 ## Step 4: Add stove-process dependency
 
-The `stove-process` module provides `goApp()` out of the box — no custom `ApplicationUnderTest` needed. It supports passing configs as environment variables (`envMapper`) or CLI arguments (`argsMapper`). Go apps typically use env vars.
+The `stove-process` module provides `goApp()` out of the box — no custom `ApplicationUnderTest` needed. `goApp` supports `envMapper`; use the underlying `processApp` for `argsMapper` and other process options.
 
 ```kotlin
 dependencies {
-    testImplementation(stoveLibs.stoveProcess) // or "com.trendyol:stove-process"
+    testImplementation(platform("com.trendyol:stove-bom:$stoveVersion"))
+    testImplementation("com.trendyol:stove-process")
+    testImplementation("com.trendyol:stove-http")
+    testImplementation("com.trendyol:stove-extensions-kotest") // or stove-extensions-junit
 }
 ```
 
 Source: `starters/process/stove-process/`
 
 ## Step 5: StoveConfig
+
+Create/reuse the source set, test engine, and lifecycle in [gradle-config.md](gradle-config.md) and [system-setup.md](system-setup.md#reporting). Put this setup in Kotest `beforeProject()` or the existing JUnit lifecycle and call `Stove.stop()` in teardown.
+
+The example below includes PostgreSQL, Kafka, tracing, and dashboard; add their matching Stove modules only if keeping those blocks. Define `APP_PORT` and `OTLP_PORT` once for the suite and use distinct ports for concurrent suites. Supply the app-specific `ProductMigration` or use the app's schema initialization.
 
 ```kotlin
 Stove().with {
@@ -297,48 +259,41 @@ Stove().with {
             "database.username" to "DB_USER"
             "database.password" to "DB_PASS"
             "kafka.bootstrapServers" to "KAFKA_BROKERS"
-            env("OTEL_EXPORTER_OTLP_ENDPOINT", "localhost:$OTLP_PORT")
-            env("KAFKA_LIBRARY") { System.getProperty("kafka.library") ?: "sarama" }
-            env("STOVE_KAFKA_BRIDGE_PORT", stoveKafkaBridgePortDefault)
+            env("OTEL_EXPORTER_OTLP_ENDPOINT", "http://localhost:$OTLP_PORT")
+            "stove.kafka.bridge.port" to "STOVE_KAFKA_BRIDGE_PORT"
         }
     )
 }.run()
 ```
 
+Current standalone Stove exposes the bound observer port as `stove.kafka.bridge.port`; map that value rather than a global default, especially for keyed systems. For older releases without this entry, explicitly configure `bridgeGrpcServerPort` and pass the same port to the app. Go's host defaults to `localhost`; container mode also needs a reachable `STOVE_KAFKA_BRIDGE_HOST`.
+
 ## Step 6: Gradle
 
+Configure the existing `e2eTest` task from [gradle-config.md](gradle-config.md); do not disable it or register the same name twice:
+
 ```kotlin
+val goSourceDir = projectDir // Directory containing go.mod; adapt to the project.
 val goBinary = layout.buildDirectory.file("go-app").get().asFile
 
 tasks.register<Exec>("buildGoApp") {
+    workingDir = goSourceDir
     commandLine("go", "build", "-o", goBinary.absolutePath, ".")
-    inputs.files(fileTree(".") { include("*.go", "go.mod", "go.sum") })
+    inputs.files(fileTree(goSourceDir) {
+        include("**/*.go", "go.mod", "go.sum")
+        exclude("build/**", ".gradle/**") // Keep Gradle outputs out of the Go inputs.
+    })
     outputs.file(goBinary)
+    doFirst { goBinary.parentFile.mkdirs() }
 }
 
-// Per-library e2e test tasks — each passes KAFKA_LIBRARY to the Go app
-val kafkaLibraries = listOf("sarama", "franz", "segmentio")
-val kafkaE2eTasks = kafkaLibraries.mapIndexed { index, lib ->
-    tasks.register<Test>("e2eTest_$lib") {
-        dependsOn("buildGoApp")
-        systemProperty("go.app.binary", goBinary.absolutePath)
-        systemProperty("kafka.library", lib)
-        if (index > 0) mustRunAfter("e2eTest_${kafkaLibraries[index - 1]}")
-    }
-}
-tasks.named<Test>("e2eTest") { dependsOn(kafkaE2eTasks); enabled = false }
-
-dependencies {
-    testImplementation(stoveLibs.stove)
-    testImplementation(stoveLibs.stoveProcess)
-    testImplementation(stoveLibs.stovePostgres)
-    testImplementation(stoveLibs.stoveHttp)
-    testImplementation(stoveLibs.stoveTracing)
-    testImplementation(stoveLibs.stoveDashboard)
-    testImplementation(stoveLibs.stoveKafka)
-    testImplementation(stoveLibs.stoveExtensionsKotest)
+tasks.named<Test>("e2eTest") {
+    dependsOn("buildGoApp")
+    systemProperty("go.app.binary", goBinary.absolutePath)
 }
 ```
+
+Declare embedded assets (`//go:embed`), local replacement modules, workspace files, and build flags as inputs when used. Adapt `.` to the actual main package (for example, `./cmd/server`) and the exclusions if Gradle's build directory is customized. New matrix `Test` tasks need the same `testClassesDirs`, `classpath`, and `useJUnitPlatform()` wiring as the base task; serialize runs that share ports.
 
 ## Step 7: Write tests
 
@@ -397,11 +352,15 @@ class GoShowcaseTest : FunSpec({
                 }
             }
 
-            postgresql {
-                shouldQuery<ProductRow>(
-                    query = "SELECT id, name, price FROM products WHERE id = '$productId'",
-                    mapper = { row -> ProductRow(row.string("id"), row.string("name"), row.double("price")) }
-                ) { rows -> rows.first().name shouldBe "Updated" }
+            // import io.kotest.assertions.nondeterministic.eventually
+            // The Go hook can report consumption before the database update.
+            eventually(10.seconds) {
+                postgresql {
+                    shouldQuery<ProductRow>(
+                        query = "SELECT id, name, price FROM products WHERE id = '$productId'",
+                        mapper = { row -> ProductRow(row.string("id"), row.string("name"), row.double("price")) }
+                    ) { rows -> rows.first().name shouldBe "Updated" }
+                }
             }
         }
     }
@@ -410,91 +369,85 @@ class GoShowcaseTest : FunSpec({
 
 ## Code Coverage
 
-Go 1.20+ supports integration test coverage for binaries not run via `go test`. Build with `go build -cover`, set `GOCOVERDIR`, and coverage data is written on graceful shutdown — fits perfectly with Stove's lifecycle.
+Go 1.20+ supports coverage of built binaries. Compile with `go build -cover`, provide an existing `GOCOVERDIR`, and make the application's SIGTERM handler return cleanly from `main` after flushing/shutting down. Forced termination or an unhandled signal can lose coverage; increase the `processApp` shutdown timeout if necessary.
 
 ### Gradle setup
 
-Enable with `-Pgo.coverage=true`:
+Add this to the build from Step 6. It configures existing tasks and creates coverage tasks only with `-Pgo.coverage=true`:
 
 ```kotlin
 val coverageEnabled = providers.gradleProperty("go.coverage")
     .map { it.toBoolean() }.getOrElse(false)
-val goCoverDirPath = layout.buildDirectory.dir("go-coverage").get().asFile.absolutePath
+val goCoverDir = layout.buildDirectory.dir("go-coverage/raw").get().asFile
+val goCoverProfile = layout.buildDirectory.file("go-coverage/coverage.out").get().asFile
+val goCoverHtml = layout.buildDirectory.file("go-coverage/coverage.html").get().asFile
 
-// Build with -cover when enabled
-tasks.register<Exec>("buildGoApp") {
-    val args = mutableListOf("go", "build")
-    if (coverageEnabled) args.add("-cover")
-    args.addAll(listOf("-o", goBinary.absolutePath, "."))
-    commandLine(args)
-}
-
-// Pass GOCOVERDIR to test JVM, disable build cache for coverage runs
-tasks.register<Test>("e2eTest_sarama") {
+tasks.named<Exec>("buildGoApp") {
+    inputs.property("coverageEnabled", coverageEnabled)
     if (coverageEnabled) {
-        systemProperty("go.cover.dir", goCoverDirPath)
-        outputs.cacheIf { false }  // Coverage data is a side effect
+        commandLine("go", "build", "-cover", "-o", goBinary.absolutePath, ".")
     }
 }
 
-// Coverage report tasks (register only when coverage is enabled)
 if (coverageEnabled) {
-    tasks.register<Exec>("goCoverageReport") {
-        mustRunAfter(kafkaE2eTasks)
-        commandLine("go", "tool", "covdata", "textfmt", "-i=$goCoverDirPath", "-o=$goCoverOutPath")
+    val prepareGoCoverage = tasks.register<Delete>("prepareGoCoverage") {
+        delete(goCoverDir)
     }
-    tasks.register<Exec>("goCoverageSummary") { dependsOn("goCoverageReport"); /* go tool cover -func */ }
-    tasks.register<Exec>("goCoverageHtml") { dependsOn("goCoverageReport"); /* go tool cover -html */ }
+    tasks.named<Test>("e2eTest") {
+        dependsOn(prepareGoCoverage)
+        systemProperty("go.cover.dir", goCoverDir.absolutePath)
+        outputs.upToDateWhen { false }
+        outputs.cacheIf { false }
+        doFirst { goCoverDir.mkdirs() }
+    }
+    val goCoverageReport = tasks.register<Exec>("goCoverageReport") {
+        dependsOn("e2eTest")
+        workingDir = goSourceDir
+        commandLine("go", "tool", "covdata", "textfmt",
+            "-i=${goCoverDir.absolutePath}", "-o=${goCoverProfile.absolutePath}")
+    }
+    val goCoverageSummary = tasks.register<Exec>("goCoverageSummary") {
+        dependsOn(goCoverageReport)
+        workingDir = goSourceDir
+        commandLine("go", "tool", "cover", "-func=${goCoverProfile.absolutePath}")
+    }
+    val goCoverageHtmlTask = tasks.register<Exec>("goCoverageHtml") {
+        dependsOn(goCoverageReport)
+        workingDir = goSourceDir
+        commandLine("go", "tool", "cover",
+            "-html=${goCoverProfile.absolutePath}", "-o=${goCoverHtml.absolutePath}")
+    }
     tasks.register("e2eTestWithCoverage") {
-        dependsOn(kafkaE2eTasks)
-        finalizedBy("goCoverageSummary", "goCoverageHtml")
+        dependsOn(goCoverageSummary, goCoverageHtmlTask)
     }
 }
 ```
+
+The report tasks run after successful test completion and process shutdown. They require actual raw coverage data. Disabling the build cache alone does not disable Gradle's up-to-date skipping, so coverage runs disable both for the test task. Use a separate raw directory per task/shard if adapting this to a matrix.
 
 ### StoveConfig
 
-Pass `GOCOVERDIR` via `envMapper` — empty when disabled, Go ignores it:
+Inside the runner's `envMapper`, pass the directory when coverage is enabled:
 
 ```kotlin
-env("GOCOVERDIR") {
-    System.getProperty("go.cover.dir")?.also { java.io.File(it).mkdirs() } ?: ""
-}
+System.getProperty("go.cover.dir")?.let { env("GOCOVERDIR", it) }
 ```
 
-### SIGPIPE handling
+For container coverage, compile the image with coverage enabled, bind-mount the raw directory, and set `GOCOVERDIR` to its container path. The mount must be writable by the image's user; setting a host path in the environment alone does not mount it. See [container.md](container.md#step-6-bind-mounts-optional).
 
-When Go runs under Java's `ProcessBuilder`, stdout pipe can close before process exit. Log writes trigger SIGPIPE (exit 141), killing the process before coverage flush. Fix:
-
-```go
-func main() {
-    signal.Ignore(syscall.SIGPIPE) // Ensures clean shutdown + coverage flush
-    // ...
-}
-```
-
-### Running with coverage
-
-```bash
-./gradlew e2eTestWithCoverage -Pgo.coverage=true
-# Output: per-function coverage + HTML report at build/go-coverage/coverage.html
-```
+If logs show SIGPIPE/exit 141 when a JVM-owned stdout pipe closes, diagnose that shutdown path; Go's `signal.Ignore(syscall.SIGPIPE)` can be appropriate there. It is not a universal prerequisite for coverage.
 
 ## Running
 
+From the downstream project, using its actual module/task path:
+
 ```bash
-# From the go-showcase directory — runs all three Kafka libraries
-cd recipes/process/golang/go-showcase
 ./gradlew e2eTest
-
-# Run a specific library only
-./gradlew e2eTest_sarama
-./gradlew e2eTest_franz
-./gradlew e2eTest_segmentio
-
-# With Go code coverage
 ./gradlew e2eTestWithCoverage -Pgo.coverage=true
+# Coverage HTML: build/go-coverage/coverage.html
 ```
+
+The upstream `recipes/process/golang/go-showcase/` additionally has per-library and container tasks. Those names are recipe-specific; inspect its build before using them.
 
 ## Go dependencies
 

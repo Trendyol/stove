@@ -7,7 +7,7 @@
 - [Register the listener](#4-register-the-listener)
 - [Use in tests](#5-use-in-tests)
 
-Complete working example: `recipes/jvm/kotlin-recipes/spring-showcase/src/test-e2e/kotlin/.../setup/DbSchedulerSystem.kt`
+The fragments below show the extension points. For the complete listener, polling, imports, and registration, use the [DbSchedulerSystem recipe](https://github.com/Trendyol/stove/blob/main/recipes/jvm/kotlin-recipes/spring-showcase/src/test-e2e/kotlin/com/trendyol/stove/examples/kotlin/spring/e2e/setup/DbSchedulerSystem.kt) at the project's Stove version.
 
 ## 1. Implement PluggedSystem
 
@@ -25,11 +25,14 @@ class DbSchedulerSystem(
         listener = context.getBean()
     }
 
-    override fun snapshot(): SystemSnapshot = SystemSnapshot(
-        system = reportSystemName,
-        state = mapOf("completedExecutions" to listener.getCompletedExecutionsSnapshot()),
-        summary = "Completed: ${listener.getCompletedExecutionsSnapshot().size} task(s)"
-    )
+    override fun snapshot(): SystemSnapshot {
+        val completed = if (::listener.isInitialized) listener.getCompletedExecutionsSnapshot() else emptyList()
+        return SystemSnapshot(
+            system = reportSystemName,
+            state = mapOf("completedExecutions" to completed),
+            summary = "Completed: ${completed.size} task(s)"
+        )
+    }
 
     suspend inline fun <reified T : Any> shouldBeExecuted(
         atLeastIn: Duration = 5.seconds,
@@ -52,10 +55,10 @@ class DbSchedulerSystem(
 |---|---|---|
 | `PluggedSystem` | Always (required) | Base interface, provides `close()` |
 | `RunAware` | Before app starts | System needs to do setup before the app |
-| `AfterRunAware<T>` | After app starts | Receives the test system instance |
+| `AfterRunAware` | After app starts | Runs `suspend fun afterRun()` without a context argument |
 | `AfterRunAwareWithContext<T>` | After app starts | Receives app DI container (e.g., `ApplicationContext`) |
 | `ExposesConfiguration` | During setup | System exposes config to the application (like containers) |
-| `Reports` | On test failure | Contributes to failure reports via `snapshot()` |
+| `Reports` | During actions and snapshot collection | `report()` records outcomes; `snapshot()` supplies failure reports and dashboard snapshots at test end |
 
 ## 2. Create a listener
 
@@ -69,11 +72,18 @@ class StoveDbSchedulerListener : AbstractSchedulerListener() {
         completedExecutions[executionComplete.execution.taskInstance.id] = executionComplete
     }
 
+    fun getCompletedExecutionsSnapshot(): List<Map<String, Any?>> =
+        completedExecutions.map { (id, execution) ->
+            mapOf("instanceId" to id, "result" to execution.result.toString())
+        }
+
     suspend fun <T : Any> waitUntilObservedSuccessfully(
         atLeastIn: Duration, clazz: KClass<T>, condition: (T) -> Boolean
-    ): Collection<ExecutionComplete> { /* poll until match or timeout */ }
+    ): Collection<ExecutionComplete> = TODO("Use bounded polling as in the linked recipe")
 }
 ```
+
+Match events to unique test data and check successful completion, not just arrival. Make snapshots safe before initialization and return copies of concurrent state; reporting can run while the application is active.
 
 ## 3. Write DSL extensions
 

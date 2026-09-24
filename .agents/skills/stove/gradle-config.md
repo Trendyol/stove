@@ -32,8 +32,7 @@ dependencies {
     testImplementation("com.trendyol:stove-redis")
     testImplementation("com.trendyol:stove-elasticsearch")
     testImplementation("com.trendyol:stove-couchbase")
-    testImplementation("com.trendyol:stove-kafka")              // standalone Kafka assertions
-    testImplementation("com.trendyol:stove-spring-kafka")       // Spring Kafka assertions + interceptor
+    testImplementation("com.trendyol:stove-kafka")              // or stove-spring-kafka; choose one
     testImplementation("com.trendyol:stove-wiremock")
     testImplementation("com.trendyol:stove-grpc")
     testImplementation("com.trendyol:stove-grpc-mock")
@@ -44,21 +43,19 @@ dependencies {
 }
 ```
 
+Choose one Kafka integration: `stove-kafka` and `stove-spring-kafka` define overlapping classes and should not share a runtime classpath. The BOM aligns Stove artifacts; reuse the project's Kotlin plugin and test engine versions.
+
 ## Register test-e2e source set
 
 ```kotlin
-sourceSets {
-    @Suppress("LocalVariableName")
-    val `test-e2e` by creating {
-        compileClasspath += sourceSets.main.get().output
-        runtimeClasspath += sourceSets.main.get().output
-    }
-
-    val testE2eImplementation by configurations.getting {
-        extendsFrom(configurations.testImplementation.get())
-    }
-    configurations["testE2eRuntimeOnly"].extendsFrom(configurations.testRuntimeOnly.get())
+val e2eSourceSet = sourceSets.create("test-e2e") {
+    compileClasspath += sourceSets.main.get().output
+    runtimeClasspath += sourceSets.main.get().output
 }
+configurations[e2eSourceSet.implementationConfigurationName]
+    .extendsFrom(configurations.testImplementation.get())
+configurations[e2eSourceSet.runtimeOnlyConfigurationName]
+    .extendsFrom(configurations.testRuntimeOnly.get())
 ```
 
 ## Register e2eTest task
@@ -91,11 +88,13 @@ Use the actual fully qualified config class name and register `StoveKotestExtens
 Compile the selected test source set first, then run the affected suite using the project's Gradle wrapper and actual module/task names, for example:
 
 ```bash
-./gradlew :service:compileTestE2eKotlin
+./gradlew :service:testE2eClasses
 ./gradlew :service:e2eTest --tests 'com.yourcompany.e2e.OrderTest'
 ```
 
 Ensure the configured container runtime is available for Testcontainers-managed systems. A successful Gradle invocation with zero discovered tests does not verify the setup; inspect the test report for executed tests.
+
+Use the source set's classes task to include Kotlin, Java, and resources. Kotlin can retain the source-set hyphen in its task name (`compileTest-e2eKotlin`); do not assume `compileTestE2eKotlin` exists.
 
 ## IDE integration
 
@@ -138,23 +137,27 @@ Prefer `*-sources.jar` when available for more accurate reading of function name
 
 ## JUnit base test class
 
-Use this instead of `AbstractProjectConfig` when using JUnit:
+Use this instead of `AbstractProjectConfig` when using JUnit. `StoveJUnitExtension` manages per-test context and reporting; it does not start or stop Stove:
 
 ```kotlin
 @ExtendWith(StoveJUnitExtension::class)
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 abstract class BaseE2ETest {
-    companion object {
-        @JvmStatic @BeforeAll
-        fun setup() = runBlocking {
+    @BeforeAll
+    fun setup() {
+        runBlocking {
             Stove().with { /* systems */ }.run()
         }
+    }
 
-        @JvmStatic @AfterAll
-        fun teardown() = runBlocking { Stove.stop() }
+    @AfterAll
+    fun teardown() {
+        runBlocking { Stove.stop() }
     }
 }
 ```
+
+These callbacks run once per concrete subclass. Keep classes sharing Stove's global instance sequential, or reuse an existing suite-level lifecycle that starts and stops it once. Lifecycle methods must return `Unit` (JVM `void`).
 
 ## Available artifacts
 
@@ -175,7 +178,7 @@ abstract class BaseE2ETest {
 | `stove-elasticsearch` | Elasticsearch system |
 | `stove-couchbase` | Couchbase system |
 | `stove-kafka` | Standalone Kafka system |
-| `stove-spring-kafka` | Spring Kafka (adds `shouldBeConsumed`, `shouldBeFailed`, `shouldBeRetried`) |
+| `stove-spring-kafka` | Spring Kafka with listener and producer observation (`shouldBeConsumed`, `shouldBeFailed`, `shouldBePublished`) |
 | `stove-wiremock` | WireMock system |
 | `stove-grpc` | gRPC client system |
 | `stove-grpc-mock` | gRPC mock server system |

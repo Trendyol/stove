@@ -15,7 +15,7 @@ Open only the focused guides needed for the user's task. Guide links are relativ
    - Host process: Go, Python, Rust, Node.js, or another binary via `processApp` / `goApp`.
    - Container image: any language via `containerApp`.
    - Already running app: staging/dev smoke tests via `providedApplication`.
-3. Identify test framework: Kotest uses `StoveKotestExtension()` and `kotest.properties`; JUnit uses `StoveJUnitExtension`.
+3. Identify test framework: Kotest uses `StoveKotestExtension()` and `kotest.properties`; JUnit uses `StoveJUnitExtension`. Both need explicit Stove startup and teardown in the framework lifecycle; the reporting extension alone does not launch the app.
 4. Identify needed systems: HTTP, databases, Kafka, WireMock, gRPC, tracing, dashboard.
 5. Verify uncertain APIs against the resolved version's source artifacts; see [gradle-config.md](gradle-config.md#resolve-api-ambiguity-from-local-artifacts). In a Stove checkout, source also lives under `lib/`, `starters/`, `test-extensions/`, and `server/stove-server/`.
 
@@ -124,6 +124,9 @@ In test code, `DashboardIngestion.Grpc(host, port)` defaults to `localhost:4041`
 - Configure `Stove().with { ... }.run()` in the framework lifecycle, usually `beforeProject()` for Kotest, and pair it with `Stove.stop()` in teardown. Reuse the existing setup rather than starting Stove inside individual tests.
 - System `cleanup` callbacks run at `Stove.stop()`, not between tests. Use unique test data or explicit per-test cleanup when tests share state.
 - Keep examples minimal and app-specific. Add only the systems the user actually needs.
+- Choose either `stove-kafka` or `stove-spring-kafka`; they have overlapping classes and different options. Verify which integration the project uses before copying Kafka examples.
+- Every custom Gradle `Test` task needs test classes, runtime classpath, and the test engine configured; see [gradle-config.md](gradle-config.md).
+- Container AUTs need addresses reachable from inside the container. Host-mapped database, broker, and tracing endpoints are not automatically valid there; see [container.md](container.md#step-5-networking-strategies).
 - Ktor runners must not block: the app's `run` must start the engine with `wait = false` (a blocking main hangs the suite).
 - Mock verifications (`wiremock`/`grpcMock` `shouldHaveBeenCalled`) are point-in-time — do not invent a `within`/timeout parameter. Await async flows with the Kafka `atLeastIn` or HTTP assertion first, then verify the mock.
 - WireMock (0.26+): prefer the structured `request` / `respond` / `behaviour` DSL for new examples. String verb functions match URL paths; use reusable `RequestSpec`s across stubbing, verification, and `callsFor`, and use `rawStub` before unmanaged `server()` access. No compiler opt-in is required; Stove APIs may evolve in minor releases and release notes provide migration guidance.

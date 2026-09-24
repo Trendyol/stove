@@ -51,19 +51,22 @@ val appBinary = project.layout.buildDirectory.file("my-app").get().asFile
 tasks.register<Exec>("buildApp") {
     workingDir = appSourceDir
     commandLine("go", "build", "-o", appBinary.absolutePath, ".")  // or npm, cargo, etc.
-    inputs.files(fileTree(appSourceDir) { include("*.go", "go.mod", "go.sum") })
+    inputs.files(fileTree(appSourceDir) { include("**/*.go", "go.mod", "go.sum") })
     outputs.file(appBinary)
+    doFirst { appBinary.parentFile.mkdirs() }
 }
 
 tasks.named<Test>("e2eTest") {
     dependsOn("buildApp")
-    systemProperty("app.binary", appBinary.absolutePath)
+    systemProperty("go.app.binary", appBinary.absolutePath)
 }
 ```
 
 ## Step 4: StoveConfig with processApp / goApp / containerApp
 
-Use `processApp()` for any language binary, `goApp()` as a Go convenience, or `containerApp()` when tests should launch an image directly.
+Use `processApp()` for any language binary, `goApp()` as a Go convenience, or `containerApp()` when tests should launch an image directly. `goApp` only accepts `binaryPath`, `target`, and `envProvider`; use `processApp` for arguments, working directory, hooks, or shutdown timeout.
+
+Put setup inside the project's framework lifecycle and pair it with `Stove.stop()`; see [system-setup.md](system-setup.md#reporting). Define `APP_PORT` and `OTLP_PORT` once for the suite. The example includes optional database, Kafka, tracing, and dashboard systems; retain only the ones needed and add their dependencies. Supply the app's `SchemaMigration` implementation.
 
 ```kotlin
 Stove().with {
@@ -104,7 +107,8 @@ Stove().with {
             "database.username" to "DB_USER"
             "database.password" to "DB_PASS"
             "kafka.bootstrapServers" to "KAFKA_BROKERS"
-            env("OTEL_EXPORTER_OTLP_ENDPOINT", "localhost:$OTLP_PORT")
+            env("OTEL_EXPORTER_OTLP_ENDPOINT", "http://localhost:$OTLP_PORT")
+            "stove.kafka.bridge.port" to "STOVE_KAFKA_BRIDGE_PORT"
         }
     )
 
@@ -182,35 +186,22 @@ argsMapper(prefix = "-", separator = " ") {
 
 Use your language's OTel SDK. Key points:
 
-- Use **sync exporter** (`WithSyncer`) for tests, not batched
-- Set **W3C Trace Context propagation** so spans share the test's trace ID
+- Export completed spans within the assertion window; use a short batch delay or explicit flush. Go's `sdktrace.WithSyncer` is one test-specific option.
+- Point the app's OTLP gRPC exporter at the test JVM's receiver; configuring the Gradle Java agent does not instrument a separate process.
+- Set **W3C Trace Context propagation** so spans share the test's trace ID; propagate context through asynchronous work as well.
 - Stove's HTTP client sends `traceparent` headers automatically
+
+See [tracing.md](tracing.md) for endpoint, port, and instrumentation details.
 
 ## Step 6: Kafka bridge (Go only)
 
 For Go apps using IBM/sarama, twmb/franz-go, or segmentio/kafka-go, add the `stove-kafka` bridge library. See [go-setup.md](go-setup.md) for details.
 
-The bridge intercepts produced/consumed messages and forwards them via gRPC to Stove's observer, enabling `shouldBePublished` and `shouldBeConsumed` assertions.
+The bridge forwards observed produced/consumed messages via gRPC to Stove. Observation can occur before broker acknowledgment or business processing completes; assert the final outcome as well. See [go-setup.md](go-setup.md#what-the-bridge-proves).
 
 ## Code Coverage (Go)
 
-Go 1.20+ supports integration test coverage: build with `go build -cover`, set `GOCOVERDIR` env var, and coverage data is written on graceful shutdown. This fits Stove's lifecycle (SIGTERM → graceful shutdown → coverage files).
-
-Key pieces:
-- **Gradle**: `-Pgo.coverage=true` adds `-cover` to build, sets `go.cover.dir` system property, disables build cache for coverage runs
-- **StoveConfig**: `env("GOCOVERDIR") { System.getProperty("go.cover.dir")?.also { File(it).mkdirs() } ?: "" }`
-- **Go app**: `signal.Ignore(syscall.SIGPIPE)` in `main()` — prevents SIGPIPE (exit 141) from killing the process before coverage flush when stdout pipe closes under `ProcessBuilder`
-- **Report tasks**: `goCoverageReport` (textfmt), `goCoverageSummary` (per-function), `goCoverageHtml` (visual)
-- **Umbrella task**: `e2eTestWithCoverage` runs tests + generates reports
-
-```bash
-./gradlew e2eTestWithCoverage -Pgo.coverage=true
-./gradlew e2eTest-containerWithCoverage -Pgo.coverage=true
-```
-
-No Stove framework changes needed — uses existing `envMapper`, Gradle tasks, and SIGTERM shutdown.
-
-See [go-setup.md](go-setup.md#code-coverage) for full details.
+Go 1.20+ supports coverage for built binaries: compile with `go build -cover`, set `GOCOVERDIR` to an existing writable directory, and let the app exit cleanly after SIGTERM. Register the build/report tasks and force test execution on coverage runs; those task names are not built into Stove. See [go-setup.md](go-setup.md#code-coverage) for a composable Gradle example and container mount requirements.
 
 ## What you can't do
 
@@ -230,22 +221,16 @@ containerApp(
     image = "my-app:local",
     target = ContainerTarget.Server(
         hostPort = 8090, internalPort = 8090,
-        portEnvVar = "APP_PORT", bindHostPort = false
-    ),
-    envProvider = envMapper {
-        "database.host" to "DB_HOST"
-        "kafka.bootstrapServers" to "KAFKA_BROKERS"
-        env("OTEL_EXPORTER_OTLP_ENDPOINT", "localhost:4317")
-    },
-    configureContainer = {
-        withNetworkMode("host")  // Linux only; use port binding + shared network on macOS/Windows
-    }
+        portEnvVar = "APP_PORT"
+    )
 )
 ```
 
+Add dependency configuration only after choosing the network model: aliases/internal ports on a shared network, or a supported host-access setup. The app must listen on a container-accessible interface such as `0.0.0.0`; the JVM's mapped endpoints are not automatically reachable from the container.
+
 `ContainerTarget.Server(hostPort, internalPort, portEnvVar, bindHostPort)` for HTTP/gRPC servers, `ContainerTarget.Worker()` for jobs. See [container.md](container.md) for the full guide (Dockerfile, Gradle wiring, networking strategies, coverage volume mounts, common pitfalls).
 
-A common pattern: one `StoveConfig.kt` branches on `-Dgo.aut.mode=process|container` to switch between starters. The infrastructure systems and tests stay identical.
+A common pattern: one `StoveConfig.kt` branches on `aut.mode=process|container` to switch between starters, with Gradle passing that property into each test JVM as shown in [container.md](container.md#single-stoveconfig-both-modes). Infrastructure and test code can be shared; addresses must fit the selected runner's network.
 
 ## MCP triage on failures
 

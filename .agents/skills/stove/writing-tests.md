@@ -40,9 +40,10 @@ http {
 
 // POST expecting JSON directly
 http {
-    postAndExpectJson<OrderResponse>("/orders") {
-        CreateOrderRequest(userId = "u1", amount = 99.99)
-    } { order ->
+    postAndExpectJson<OrderResponse>(
+        uri = "/orders",
+        body = CreateOrderRequest(userId = "u1", amount = 99.99).some()
+    ) { order ->
         order.id shouldNotBe null
     }
 }
@@ -439,7 +440,7 @@ kafka {
     }
 }
 
-// Verify retries (needs retry topic-suffix conventions; bridge required)
+// Standalone stove-kafka only: verify retries using the configured topic suffixes
 kafka {
     shouldBeRetried<FailingEvent>(atLeastIn = 1.minutes, times = 3) {
         actual.id == "789"
@@ -455,7 +456,7 @@ kafka {
     }
 }
 
-// Peek raw records on a topic (no deserialization to a type)
+// Standalone stove-kafka: peek observed records (no deserialization to a type)
 kafka {
     peekPublishedMessages(atLeastIn = 5.seconds, topic = "order-events") { record ->
         record.key == "order-456"   // return true to stop peeking
@@ -470,7 +471,7 @@ kafka {
     }
 }
 
-// Inflight consumer (stove-kafka standalone only, like peek*) — a real
+// Inflight consumer (stove-kafka standalone only) — a real
 // KafkaConsumer inside the test, reading straight from the broker. Needs NO
 // bridge/interceptor in the AUT, so it works against .provided() clusters
 // (staging/pre-prod) as well as containers.
@@ -478,6 +479,8 @@ kafka {
     val seen = mutableListOf<ConsumerRecord<String, String>>()
     consumer<String, String>(
         topic = "order-events",
+        keyDeserializer = StringDeserializer(),
+        valueDeserializer = StringDeserializer(),
         keepConsumingAtLeastFor = 10.seconds  // poll window (default: 5s)
     ) { record ->
         seen += record
@@ -488,7 +491,11 @@ kafka {
 // random groupId per call. Override deserializers/config/groupId as needed.
 ```
 
-`shouldBePublished` / `shouldBeConsumed` / `shouldBeFailed` / `shouldBeRetried` exist in both `stove-kafka` (standalone) and `stove-spring-kafka`. All of them only see what the AUT-side bridge reports: Spring apps register `TestSystemKafkaInterceptor`, Go apps use the `go/stove-kafka` bridge, JVM non-Spring apps put `cfg.interceptorClass` on the client's interceptor list.
+Both integrations expose `shouldBePublished`, `shouldBeConsumed`, and `shouldBeFailed`. In current source, `shouldBeRetried`, `consumer`, and `peekCommittedMessages` belong to standalone `stove-kafka`. Spring also has `peekPublishedMessages`, `peekConsumedMessages`, and `peekFailedMessages`, but their callbacks receive `MessageProperties` (use `record.metadata.key`). Check the resolved module's API before sharing helpers between integrations.
+
+The typed and `peek*` assertions read Stove's observer store. AUT traffic needs the matching bridge/interceptor; Spring uses `TestSystemKafkaInterceptor`, Go uses the [Go bridge](go-setup.md#step-3-kafka-bridge). Test-side sends can also enter the store: standalone has `listenPublishedMessagesFromStove` (default `false`), and Spring records through its producer listener. Match the output topic and a unique payload ID so the test cannot pass by observing its own input.
+
+Observation is distinct from business completion. Go consumer hooks pre-report commits and can fire before the handler runs; producer hooks can fire before broker acknowledgment. Await an observable outcome such as a database change or response when testing processing. The standalone `consumer` reads the broker directly, but consuming there does not prove the AUT consumed the message. Select deserializers that match the wire format, as in the string example above.
 
 ## WireMock mocking
 
@@ -705,7 +712,7 @@ grpcMock {
 
     // Typed, point-in-time, test-scoped verification (exact count; no timeout param)
     shouldHaveBeenCalled<GetUserRequest>("users.UserService", "GetUser") { it.userId == "123" }
-    shouldNotHaveBeenCalled<GetUserRequest>(GreeterGrpc.getSayHelloMethod())
+    shouldNotHaveBeenCalled(GreeterGrpc.getSayHelloMethod())
 }
 ```
 
@@ -756,8 +763,7 @@ tracing {
     shouldContainSpanMatching { it.operationName.contains("Repository") }
     shouldNotContainSpan("AdminService.delete")
     shouldNotHaveFailedSpans()
-    shouldHaveFailedSpan("PaymentGateway.charge")
-    shouldHaveSpanWithAttribute("http.method", "GET")
+    shouldHaveSpanWithAttribute("http.request.method", "GET")
 
     // Performance assertions
     executionTimeShouldBeLessThan(500.milliseconds)
@@ -768,6 +774,8 @@ tracing {
     println(renderSummary()) // Compact summary
 }
 ```
+
+For an expected failure, use `shouldHaveFailedSpan("PaymentGateway.charge")` instead of the no-failures assertion. Attribute names depend on the instrumentation version; inspect collected spans before choosing them. See [tracing.md](tracing.md) for instrumentation and asynchronous export.
 
 ## Keyed system tests
 
@@ -951,4 +959,4 @@ test("complete order flow") {
 | Shared mutable state | Independent tests with unique data |
 | Only assert `status shouldBe 200` | Assert response body, DB state, events |
 | Call real external services | Use WireMock / gRPC Mock |
-| Configure Stove per test class | Single `AbstractProjectConfig` |
+| Start Stove inside individual tests | Kotest project lifecycle or the project's JUnit class/suite lifecycle; pair startup with teardown |

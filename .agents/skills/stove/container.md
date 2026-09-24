@@ -57,10 +57,16 @@ val containerImage = providers.environmentVariable("APP_IMAGE")
     .orElse("my-app:local")           // local fallback only
 
 tasks.register<Test>("e2eTest-container") {
+    group = "verification"
+    testClassesDirs = sourceSets["test-e2e"].output.classesDirs
+    classpath = sourceSets["test-e2e"].runtimeClasspath
     useJUnitPlatform()
+    systemProperty("aut.mode", "container")
     systemProperty("app.container.image", containerImage.get())
 }
 ```
+
+This assumes the source set and test engine from [gradle-config.md](gradle-config.md) already exist. Reuse their actual names. If a task already exists, configure it with `tasks.named<Test>` instead of registering it again.
 
 If you also want a Gradle-driven local build (optional), add an `Exec` task and depend on it explicitly:
 
@@ -79,8 +85,13 @@ tasks.register<Exec>("buildContainerImage") {
 }
 
 // Only depend on it for the local-build path:
-tasks.named<Test>("e2eTest-container-local") {
+tasks.register<Test>("e2eTest-container-local") {
+    group = "verification"
+    testClassesDirs = sourceSets["test-e2e"].output.classesDirs
+    classpath = sourceSets["test-e2e"].runtimeClasspath
+    useJUnitPlatform()
     dependsOn("buildContainerImage")
+    systemProperty("aut.mode", "container")
     systemProperty("app.container.image", "my-app:local")
 }
 ```
@@ -88,6 +99,8 @@ tasks.named<Test>("e2eTest-container-local") {
 The CI path uses the image already produced by the upstream build; the local path opts into building. The Stove test code does not change.
 
 ## Step 4: StoveConfig
+
+Register the runner last inside the existing `Stove().with { ... }.run()` lifecycle. This minimal example publishes the AUT port; configure dependency connectivity in Step 5 before adding databases, Kafka, or tracing.
 
 ```kotlin
 import com.trendyol.stove.container.ContainerTarget
@@ -101,22 +114,8 @@ containerApp(
         hostPort = 8090,
         internalPort = 8090,
         portEnvVar = "APP_PORT",
-        bindHostPort = false      // host network → no need to bind
-    ),
-    envProvider = envMapper {
-        "database.host" to "DB_HOST"
-        "database.port" to "DB_PORT"
-        "database.name" to "DB_NAME"
-        "kafka.bootstrapServers" to "KAFKA_BROKERS"
-        env("OTEL_EXPORTER_OTLP_ENDPOINT", "localhost:4317")
-    },
-    configureContainer = {
-        withNetworkMode("host")
-        // bind mounts, log consumers, capabilities — anything Testcontainers exposes
-    },
-    beforeStarted = { configurations ->
-        // optional pre-start hook with resolved configs
-    }
+        bindHostPort = true
+    )
 )
 ```
 
@@ -144,21 +143,61 @@ containerApp(
 
 ## Step 5: Networking strategies
 
-**Host network (Linux only)** — container shares the host network namespace. Reach Postgres / Kafka on `localhost`. Set `bindHostPort = false`:
+There are two address spaces: the test JVM reaches services through host-mapped ports; the AUT container reaches them through its own network. `configureExposedConfiguration` maps values for the AUT but does not automatically translate host addresses into container addresses.
+
+**Port binding and a shared network** — attach the AUT and every container dependency to the same network. Give each dependency an alias and pass that alias plus its internal port to the AUT. Connecting only the AUT to `Network.SHARED` is insufficient.
+
+Example with PostgreSQL (add the Postgres and HTTP dependencies). Create `appNetwork` for the suite and close it after `Stove.stop()` in teardown:
+
+```kotlin
+val appNetwork = Network.newNetwork()
+
+Stove().with {
+    httpClient { HttpClientSystemOptions(baseUrl = "http://localhost:8090") }
+    postgresql {
+        PostgresqlOptions(
+            databaseName = "app_test",
+            container = PostgresqlContainerOptions {
+                withNetwork(appNetwork)
+                withNetworkAliases("app-db")
+            },
+            configureExposedConfiguration = { cfg ->
+                listOf(
+                    "database.host=app-db", "database.port=5432", "database.name=app_test",
+                    "database.username=${cfg.username}", "database.password=${cfg.password}"
+                )
+            }
+        )
+    }
+    containerApp(
+        image = System.getProperty("app.container.image") ?: error("Missing app.container.image"),
+        target = ContainerTarget.Server(hostPort = 8090, internalPort = 8090, portEnvVar = "APP_PORT"),
+        envProvider = envMapper {
+            "database.host" to "DB_HOST"
+            "database.port" to "DB_PORT"
+            "database.name" to "DB_NAME"
+            "database.username" to "DB_USER"
+            "database.password" to "DB_PASS"
+        },
+        configureContainer = { withNetwork(appNetwork) }
+    )
+}.run()
+```
+
+The app must bind to a container-accessible interface such as `0.0.0.0`, not just its loopback address. Stove's database client still uses the mapped host endpoint; the app receives `app-db:5432`.
+
+**Host network** — use only when the container runtime supports and enables it and the test JVM can reach that same host network. It is common on Linux; Docker Desktop versions with optional host networking need that feature enabled. Set `bindHostPort = false` and use matching host/internal ports:
 
 ```kotlin
 target = ContainerTarget.Server(hostPort = 8090, internalPort = 8090, portEnvVar = "APP_PORT", bindHostPort = false),
 configureContainer = { withNetworkMode("host") }
 ```
 
-**Port binding (cross-platform)** — Stove binds `hostPort → internalPort`. The app must reach databases / brokers via shared network aliases or `host.docker.internal`:
+**Callbacks into the test JVM** — OTLP and the Go Kafka observer usually run in the JVM's host network. Expose their actual ports using the runtime's supported host-access mechanism (for example, Testcontainers `exposeHostPorts` before the AUT starts and `host.testcontainers.internal` inside it). The host alias and receiver ports must be reachable; container `localhost` refers to the container itself. See [tracing.md](tracing.md) and [go-setup.md](go-setup.md).
 
-```kotlin
-target = ContainerTarget.Server(hostPort = 8090, internalPort = 8090, portEnvVar = "APP_PORT", bindHostPort = true),
-configureContainer = { withNetwork(Network.SHARED) }
-```
+**Kafka** — configure a listener/advertised listener reachable from the AUT and preserve one reachable from the test JVM. Replacing only the bootstrap hostname cannot fix unreachable addresses returned in broker metadata. Check the selected Kafka image and Testcontainers version's listener configuration.
 
-Docker Desktop on macOS / Windows does **not** support host networking — use port binding there.
+Default readiness probes run from the test JVM at `http://localhost:$hostPort/health`. For a remote Docker host, supply a reachable readiness URL and HTTP client base URL. Disabling fixed port binding does not discover a replacement port for the HTTP client. Use distinct fixed ports or serialized suites when tests share a host.
 
 ## Step 6: Bind mounts (optional)
 
@@ -195,6 +234,8 @@ when (resolveAutMode()) {
     AutMode.Container -> containerApp(/* ... */)
 }
 
+private enum class AutMode { Process, Container }
+
 private fun resolveAutMode(): AutMode =
     when ((System.getProperty("aut.mode") ?: "process").lowercase()) {
         "process" -> AutMode.Process
@@ -206,15 +247,15 @@ private fun resolveAutMode(): AutMode =
 Drive the choice from Gradle:
 
 ```kotlin
-tasks.register<Test>("e2eTest") { systemProperty("aut.mode", "process") /* ... */ }
-tasks.register<Test>("e2eTest-container") { systemProperty("aut.mode", "container") /* ... */ }
+tasks.named<Test>("e2eTest") { systemProperty("aut.mode", "process") }
+tasks.named<Test>("e2eTest-container") { systemProperty("aut.mode", "container") }
 ```
 
 ## Common pitfalls
 
 | Symptom | Cause | Fix |
 |---------|-------|-----|
-| `connection refused` to Postgres / Kafka inside container | Container can't reach Testcontainers on `localhost` | `withNetworkMode("host")` (Linux) or shared network + aliases |
+| `connection refused` to Postgres / Kafka inside container | Container can't reach dependencies at JVM addresses | Shared network on both sides with aliases/internal ports, or supported host networking; verify Kafka advertised listeners |
 | Stove never sees `/health` | Wrong port / binding | Confirm `bindHostPort` matches network mode; verify app listens on `internalPort` |
 | `Failed to start container application` | Image missing or unauthorized pull | Verify the image exists locally / in the registry; check `docker images` and registry credentials |
 | Slow inner loop | Image build dominates | Use `stove-process` for daily dev; container mode in CI |
