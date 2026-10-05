@@ -54,7 +54,7 @@ diesel = { version = "2.3", default-features = false, features = ["postgres", "s
 # a system-installed libpq/OpenSSL. Normal development builds stay fast.
 pq-sys = { version = "0.7", default-features = false, optional = true }
 openssl-sys = { version = "0.9", optional = true }
-refinery = { version = "0.9", default-features = false, features = ["postgres", "rusqlite-bundled"] }
+refinery = { version = "0.10", default-features = false, features = ["postgres", "rusqlite-bundled"] }
 # Keep this compatible with refinery-core's rusqlite dependency.
 rusqlite = { version = "=0.39.0", features = ["bundled"] }
 postgres = "0.19"
