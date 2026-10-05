@@ -76,6 +76,7 @@ nav:
     - Mocks:
       - WireMock: Components/04-wiremock.md
       - gRPC Mock: Components/14-grpc-mock.md
+      - OIDC: Components/23-oidc.md
     - Multiple Systems: Components/20-multiple-systems.md
     - Provided Instances: Components/11-provided-instances.md
   - Observability:

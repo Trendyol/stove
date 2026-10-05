@@ -1,0 +1,13 @@
+{
+  "realm": "imported",
+  "enabled": true,
+  "clients": [
+    {
+      "clientId": "imported-service",
+      "secret": "imported-secret",
+      "publicClient": false,
+      "serviceAccountsEnabled": true,
+      "protocol": "openid-connect"
+    }
+  ]
+}

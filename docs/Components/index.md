@@ -18,6 +18,7 @@ output.
 | HTTP API + SQL | `stove-http` + `stove-postgres` (or `-mysql`) |
 | Event-driven service | `stove-kafka` + your DB + `stove-tracing` |
 | Service calling external API | `stove-http` + `stove-wiremock` |
+| Authentication and token validation | [`stove-oidc`](23-oidc.md) + `stove-http` |
 | gRPC service | `stove-grpc` + `stove-grpc-mock` |
 | Stateful service with caching | your DB + `stove-redis` |
 | Already-running service (any language) | `stove-http` + any provided dependencies + `providedApplication()` |

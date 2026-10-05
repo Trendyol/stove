@@ -24,6 +24,8 @@
 
 All tests use the `stove { }` entry point. Use the system DSL for supported operations; before introducing native handles or SDK-based helpers, follow [API selection](api-selection.md).
 
+For authenticated HTTP requests, controllable JWTs, OAuth token grants, and token-request verification, read [OIDC usage](oidc.md).
+
 ## HTTP requests
 
 ```kotlin

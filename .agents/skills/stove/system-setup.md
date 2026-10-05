@@ -1272,3 +1272,7 @@ Stove {
     keepDependenciesRunning()
 }.with { /* systems */ }.run()
 ```
+
+## OIDC providers
+
+Use `stove-oidc` for authentication tests with NAV's in-process mock or a Keycloak container in the same module. Read [OIDC usage](oidc.md) for provider selection, application configuration, keyed issuers, token issuance, and test isolation.

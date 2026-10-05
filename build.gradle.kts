@@ -181,6 +181,7 @@ val publishedProjects = listOf(
   projects.lib.stoveGrpc.name,
   projects.lib.stoveGrpcMock.name,
   projects.lib.stoveHttp.name,
+  projects.lib.stoveOidc.name,
   projects.lib.stoveKafka.name,
   projects.lib.stoveMongodb.name,
   projects.lib.stoveRdbms.name,

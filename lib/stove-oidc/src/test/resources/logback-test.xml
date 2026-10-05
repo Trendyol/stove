@@ -1,0 +1,7 @@
+<configuration>
+  <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
+    <encoder><pattern>%level %logger{36} - %msg%n</pattern></encoder>
+  </appender>
+  <logger name="no.nav.security.mock.oauth2" level="OFF"/>
+  <root level="WARN"><appender-ref ref="STDOUT"/></root>
+</configuration>

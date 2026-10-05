@@ -18,6 +18,7 @@ include(
   "lib:stove-wiremock",
   "lib:stove-grpc-mock",
   "lib:stove-http",
+  "lib:stove-oidc",
   "lib:stove-grpc",
   "lib:stove-kafka",
   "lib:stove-couchbase",

@@ -1,4 +1,8 @@
 [versions]
+nav-oidc = "6.0.4"
+keycloak-testcontainers = "4.4.0"
+keycloak-admin = "26.0.12"
+nimbus-jose = "10.9.1"
 kotlin = "2.4.20"
 kotlinx = "1.11.0"
 exposed = "1.5.0"
@@ -66,6 +70,10 @@ flyway = "13.9.0"
 lombok = "1.18.48"
 
 [libraries]
+nav-oidc = { module = "no.nav.security:mock-oauth2-server", version.ref = "nav-oidc" }
+keycloak-testcontainers = { module = "com.github.dasniko:testcontainers-keycloak", version.ref = "keycloak-testcontainers" }
+keycloak-admin = { module = "org.keycloak:keycloak-admin-client", version.ref = "keycloak-admin" }
+nimbus-jose = { module = "com.nimbusds:nimbus-jose-jwt", version.ref = "nimbus-jose" }
 # exposed
 exposed-core = { module = "org.jetbrains.exposed:exposed-core", version.ref = "exposed" }
 exposed-jdbc = { module = "org.jetbrains.exposed:exposed-jdbc", version.ref = "exposed" }
