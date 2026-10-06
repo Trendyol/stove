@@ -93,6 +93,16 @@ jobs:
           distribution: temurin
           java-version: 25
 
+      - name: Set up GraalVM for native compilation
+        uses: graalvm/setup-graalvm@v1
+        with:
+          distribution: graalvm-community
+          java-version: '25'
+          set-java-home: 'false'
+
+      - name: Verify native-image installation
+        run: '"$GRAALVM_HOME/bin/native-image" --version'
+
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v6
         with:

@@ -58,6 +58,8 @@ GRAALVM_HOME=/path/to/graalvm just bff run-native-dpop
 
 This starts Keycloak, builds the executable, and runs it with DPoP. Use `run-native` for bearer tokens or `native` to build without starting anything. The native build includes the web assets, enables HTTPS client support, and uses GraalVM reachability metadata. The native plugin is supplied by this repository's shared build; a standalone copy should declare `org.graalvm.buildtools.native` version `1.1.2` explicitly.
 
+The CI build installs GraalVM Community JDK 25 alongside Temurin and exports `GRAALVM_HOME`; Gradle itself continues to use Temurin through `JAVA_HOME`. Native compilation has toolchain detection disabled and needs a GraalVM installation containing `bin/native-image`. If the error points at a Temurin directory, set `GRAALVM_HOME` to GraalVM and verify `"$GRAALVM_HOME/bin/native-image" --version` before retrying.
+
 ## Configuration
 
 Set environment variables or pass `--KEY=value` arguments; arguments take precedence.
