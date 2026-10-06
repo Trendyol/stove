@@ -21,7 +21,8 @@ pub mod sse;
 pub mod storage;
 
 /// Generated protobuf types from shared `.proto` contract.
-#[allow(clippy::pedantic)]
+// async-trait emits a redundant must_use attribute on generated service futures.
+#[allow(clippy::pedantic, clippy::double_must_use)]
 pub mod proto {
   tonic::include_proto!("stove.dashboard.v1");
 }

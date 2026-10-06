@@ -149,12 +149,13 @@ fn assert_round_trip(repo: &Repository, metadata: &BTreeMap<String, String>) {
       .run_ids,
     vec!["run-1"]
   );
-  assert!(
+  assert_eq!(
     repo
       .preview_purge(Some("another-app"), None, true, &purge_filter)
       .unwrap()
       .run_ids
-      .is_empty()
+      .len(),
+    0
   );
 }
 

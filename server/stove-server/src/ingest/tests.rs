@@ -118,8 +118,8 @@ async fn no_broadcast_on_invalid_event_order() {
     rx.try_recv().is_err(),
     "invalid events must not be broadcast"
   );
-  assert!(svc.repository.get_runs(None).unwrap().is_empty());
-  assert!(svc.repository.get_runs(None).unwrap().is_empty());
+  assert_eq!(svc.repository.get_runs(None).unwrap().len(), 0);
+  assert_eq!(svc.repository.get_runs(None).unwrap().len(), 0);
 }
 
 #[tokio::test]
@@ -540,11 +540,8 @@ async fn invalid_statuses_never_commit_domain_or_live_events() {
     svc.repository.get_tests_for_run("run-1").unwrap()[0].status,
     crate::storage::models::TestStatus::Running
   );
-  assert!(
-    svc
-      .repository
-      .get_entries("run-1", "test-1")
-      .unwrap()
-      .is_empty()
+  assert_eq!(
+    svc.repository.get_entries("run-1", "test-1").unwrap().len(),
+    0
   );
 }

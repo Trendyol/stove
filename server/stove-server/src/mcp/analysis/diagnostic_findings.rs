@@ -367,7 +367,7 @@ mod tests {
     assert_eq!(result.coverage["scan_limited"], true);
     assert_eq!(result.coverage["malformed_payloads"], 1);
     assert_eq!(result.coverage["skipped_payloads"], 1);
-    assert!(result.findings.is_empty());
+    assert_eq!(result.findings.len(), 0);
   }
 
   #[test]

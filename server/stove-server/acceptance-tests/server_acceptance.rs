@@ -896,7 +896,7 @@ async fn assert_rest_lifecycle(stove: &RunningStove) -> Result<()> {
   missing_url
     .query_pairs_mut()
     .append_pair("metadata", r#"{"team":"unknown"}"#);
-  assert!(
+  assert_eq!(
     stove
       .client
       .get(missing_url)
@@ -906,7 +906,8 @@ async fn assert_rest_lifecycle(stove: &RunningStove) -> Result<()> {
       .await?
       .as_array()
       .context("missing runs array")?
-      .is_empty()
+      .len(),
+    0
   );
 
   let run = stove.get_json("/runs/pipeline-42").await?;

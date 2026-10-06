@@ -1,3 +1,6 @@
+// Diesel generates explicit field initializers in QueryableByName implementations.
+#![allow(clippy::redundant_field_names)]
+
 use crate::error::{AppError, Result};
 use diesel::Queryable;
 use diesel::QueryableByName;

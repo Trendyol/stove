@@ -1,3 +1,6 @@
+// Diesel generates explicit field initializers in QueryableByName implementations.
+#![allow(clippy::redundant_field_names)]
+
 use std::sync::atomic::{AtomicUsize, Ordering};
 
 use diesel::connection::SimpleConnection;

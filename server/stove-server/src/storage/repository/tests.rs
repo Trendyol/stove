@@ -1,3 +1,6 @@
+// Diesel generates explicit field initializers in QueryableByName implementations.
+#![allow(clippy::redundant_field_names)]
+
 use super::Repository;
 use crate::storage::models::AppSummary;
 use crate::storage::models::Entry;
@@ -366,7 +369,7 @@ fn mock_interactions_and_warnings_roundtrip() {
   assert!(test_interactions[0].matched);
   assert_eq!(test_interactions[0].attribution, "PROVEN_STUB");
   assert_eq!(test_interactions[0].latency_ms, Some(12));
-  assert!(test_interactions[0].near_misses.is_empty());
+  assert_eq!(test_interactions[0].near_misses.len(), 0);
   assert_eq!(
     test_interactions[0].scenario_name.as_deref(),
     Some("payment retry")
@@ -406,13 +409,11 @@ fn mock_interactions_and_warnings_roundtrip() {
   assert!(ambient_warnings[0].test_id.is_none());
 
   repo.clear_all().unwrap();
-  assert!(
-    repo
-      .get_mock_interactions_for_run("run-1")
-      .unwrap()
-      .is_empty()
+  assert_eq!(
+    repo.get_mock_interactions_for_run("run-1").unwrap().len(),
+    0
   );
-  assert!(repo.get_mock_warnings_for_run("run-1").unwrap().is_empty());
+  assert_eq!(repo.get_mock_warnings_for_run("run-1").unwrap().len(), 0);
 }
 
 #[test]
@@ -577,7 +578,7 @@ fn ending_a_run_prunes_previous_completed_results_for_that_app() {
     .unwrap();
 
   assert!(repo.get_run("old-run").unwrap().is_none());
-  assert!(repo.get_tests_for_run("old-run").unwrap().is_empty());
+  assert_eq!(repo.get_tests_for_run("old-run").unwrap().len(), 0);
   assert!(repo.get_run("new-run").unwrap().is_some());
   assert!(repo.get_run("other-run").unwrap().is_some());
 
@@ -629,8 +630,8 @@ fn clear_all_removes_everything() {
 
   repo.clear_all().unwrap();
 
-  assert!(repo.get_runs(None).unwrap().is_empty());
-  assert!(repo.get_tests_for_run("run-1").unwrap().is_empty());
+  assert_eq!(repo.get_runs(None).unwrap().len(), 0);
+  assert_eq!(repo.get_tests_for_run("run-1").unwrap().len(), 0);
 }
 
 #[test]
@@ -767,7 +768,7 @@ fn ending_an_unknown_run_remains_a_no_op() {
     .save_run_end("unknown-run", "2024-06-01T00:01:00Z", 0, 0, 0, 60_000)
     .unwrap();
 
-  assert!(repo.get_runs(None).unwrap().is_empty());
+  assert_eq!(repo.get_runs(None).unwrap().len(), 0);
 }
 
 #[test]
@@ -877,7 +878,7 @@ fn get_spans_for_test_does_not_cross_match_similar_test_ids() {
 
   let spans = repo.get_spans_for_test("run-1", "test-1").unwrap();
 
-  assert!(spans.is_empty());
+  assert_eq!(spans.len(), 0);
 }
 
 #[test]

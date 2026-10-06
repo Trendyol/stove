@@ -2048,7 +2048,7 @@ async fn run_metadata_round_trips_from_proto_and_filters_by_exact_subset() {
     .json::<Value>()
     .await
     .unwrap();
-  assert!(missing.as_array().unwrap().is_empty());
+  assert_eq!(missing.as_array().unwrap().len(), 0);
 }
 
 #[tokio::test]

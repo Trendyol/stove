@@ -1,3 +1,6 @@
+// Diesel generates explicit field initializers in QueryableByName implementations.
+#![allow(clippy::redundant_field_names)]
+
 //! Diesel-backed `SQLite` writes. Explicit SQL is reserved for the set-based
 //! retention query, whose ordering depends on `SQLite`'s `rowid`.
 
