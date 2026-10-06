@@ -1,0 +1,26 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Stove · OIDC BFF</title>
+  <link rel="stylesheet" href="/style.css">
+  <script src="/app.js" defer></script>
+</head>
+<body>
+<main>
+  <p class="eyebrow">STOVE / KOTLIN + KTOR + GRAALVM</p>
+  <h1>A small BFF.<br>A real OIDC login.</h1>
+  <p class="intro">Sign in through your identity provider. This app keeps your tokens on the server and gives your browser a session cookie.</p>
+  <section aria-labelledby="session-title">
+    <p class="eyebrow" id="session-title">YOUR SESSION</p>
+    <p id="status" role="status">Checking your session…</p>
+    <dl id="profile" hidden></dl>
+    <a class="button" id="login" href="/auth/login" hidden>Sign in</a>
+    <button id="reload" hidden>Reload profile</button>
+    <button id="logout" hidden>Sign out of this app</button>
+  </section>
+  <p class="note">The same app runs on the JVM or as a GraalVM native executable. Stove supplies the identity provider in tests.</p>
+</main>
+</body>
+</html>

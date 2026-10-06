@@ -61,6 +61,7 @@ include(
   "examples:spring-standalone-example",
   "examples:spring-4x-example",
   "examples:ktor-example",
+  "examples:ktor-oidc-bff",
   "examples:quarkus-example",
   "examples:spring-streams-example",
   "examples:micronaut-example"

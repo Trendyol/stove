@@ -24,6 +24,7 @@ version = CI.version(project)
 apiValidation {
   ignoredProjects += listOf(
     "ktor-example",
+    "ktor-oidc-bff",
     "micronaut-example",
     "spring-example",
     "spring-4x-example",
@@ -60,6 +61,7 @@ kover {
           "stove.spring.standalone.example.*",
           "stove.spring.streams.example.*",
           "stove.ktor.example.*",
+          "stove.ktor.bff.*",
           "stove.quarkus.example.*",
           "stove.micronaut.example.*",
         )

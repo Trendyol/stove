@@ -1,0 +1,27 @@
+services:
+  postgres:
+    image: postgres:17-alpine
+    profiles: ["sessions"]
+    environment:
+      POSTGRES_DB: bff
+      POSTGRES_USER: bff
+      POSTGRES_PASSWORD: bff
+    ports:
+      - "127.0.0.1:5433:5432"
+    volumes:
+      - bff_sessions:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U bff -d bff"]
+      interval: 2s
+      timeout: 2s
+      retries: 30
+  keycloak:
+    image: quay.io/keycloak/keycloak:26.8.0
+    command: ["start-dev", "--import-realm"]
+    ports:
+      - "127.0.0.1:8081:8080"
+    volumes:
+      - ./keycloak/stove-realm.json:/opt/keycloak/data/import/stove-realm.json:ro
+
+volumes:
+  bff_sessions:

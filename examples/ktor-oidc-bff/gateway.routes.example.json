@@ -1,0 +1,68 @@
+{
+  "services": [
+    {
+      "name": "orders",
+      "upstream": "${ORDERS_API_URL}",
+      "scopes": [
+        "orders:read",
+        "orders:write"
+      ],
+      "routes": [
+        {
+          "path": "/orders/**",
+          "upstreamPath": "/orders",
+          "methods": [
+            "GET",
+            "HEAD",
+            "POST",
+            "PUT",
+            "PATCH",
+            "DELETE"
+          ],
+          "timeoutMillis": 5000,
+          "requestLimitBytes": 1048576,
+          "responseLimitBytes": 1048576
+        },
+        {
+          "path": "/api/orders/**",
+          "upstreamPath": "/orders"
+        },
+        {
+          "path": "/api/order-events/**",
+          "upstreamPath": "/order-events",
+          "transport": "sse",
+          "sse": {
+            "idleTimeoutMillis": 60000
+          }
+        },
+        {
+          "path": "/api/order-socket/**",
+          "upstreamPath": "/order-socket",
+          "transport": "websocket",
+          "websocket": {
+            "subprotocols": [
+              "orders.v1"
+            ],
+            "requireSubprotocol": true,
+            "maxFrameBytes": 65536,
+            "maxMessageBytes": 1048576
+          }
+        }
+      ]
+    },
+    {
+      "name": "catalog",
+      "upstream": "${CATALOG_API_URL}",
+      "scopes": [
+        "catalog:read"
+      ],
+      "routes": [
+        {
+          "path": "/catalog/**",
+          "upstreamPath": "/inventory",
+          "timeoutMillis": 2000
+        }
+      ]
+    }
+  ]
+}

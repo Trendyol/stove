@@ -5,6 +5,10 @@ default:
 hooks:
     python3 scripts/onboarding.py hooks
 
+# Run the Ktor OIDC BFF example's shortcuts (try: just bff run-dpop).
+bff *args:
+    just --justfile examples/ktor-oidc-bff/justfile {{ args }}
+
 # Check every project, including on a clean working tree.
 lint: lint-jvm lint-rust lint-spa lint-recipes lint-go
 

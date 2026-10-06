@@ -10,6 +10,8 @@ dependencies {
 
 The module targets Java 17. It pins NAV `6.0.4`, the Keycloak Testcontainers wrapper `4.4.0`, Keycloak admin client `26.0.12` and the default Keycloak image `26.8.0`. Both provider libraries are included in this single artifact. Align older framework dependency-management overrides with these versions, particularly OkHttp, Jackson and Testcontainers.
 
+For a complete browser login example, see the [Ktor OIDC BFF](https://github.com/Trendyol/stove/tree/main/examples/ktor-oidc-bff). It implements authorization code with PKCE, server-side sessions, refresh-token rotation, optional DPoP, profile retrieval and logout. Stove tests run against the JVM app and a GraalVM native executable; dedicated Keycloak scenarios verify DPoP enforcement and refresh rotation. A Keycloak realm is included for manual browser login.
+
 ## Register and configure the application
 
 ```kotlin

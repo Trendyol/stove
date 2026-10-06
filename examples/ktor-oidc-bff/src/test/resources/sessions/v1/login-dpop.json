@@ -1,0 +1,7 @@
+{
+  "format": 1,
+  "state": "login-state",
+  "nonce": "login-nonce",
+  "verifier": "pkce-verifier",
+  "binding": { "type": "dpop", "privateJwk": "opaque-private-key-material" }
+}

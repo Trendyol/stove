@@ -1,0 +1,14 @@
+{
+  "format": 1,
+  "subject": "legacy-user",
+  "csrfToken": "legacy-csrf",
+  "nonce": "login-nonce",
+  "binding": { "type": "dpop", "privateJwk": "opaque-private-key-material" },
+  "expiresAt": "2099-01-02T03:04:05.123456789Z",
+  "state": {
+    "type": "ready",
+    "accessToken": "legacy-access",
+    "expiresAt": "2099-01-02T03:04:05.123456789Z",
+    "refreshAt": "2099-01-02T03:03:05Z"
+  }
+}

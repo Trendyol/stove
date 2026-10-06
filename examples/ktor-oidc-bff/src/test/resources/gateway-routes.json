@@ -1,0 +1,83 @@
+{
+  "services": [
+    {
+      "name": "orders",
+      "upstream": "${RESOURCE_API_URL}",
+      "scopes": [
+        "orders:read"
+      ],
+      "routes": [
+        {
+          "path": "/orders/**",
+          "upstreamPath": "/orders",
+          "methods": [
+            "GET",
+            "HEAD",
+            "POST",
+            "PATCH",
+            "DELETE"
+          ]
+        },
+        {
+          "path": "/api/orders/**",
+          "upstreamPath": "/orders"
+        },
+        {
+          "path": "/purchases/**",
+          "upstreamPath": "/orders",
+          "methods": [
+            "GET",
+            "POST",
+            "PATCH",
+            "DELETE"
+          ]
+        },
+        {
+          "path": "/limited/**",
+          "upstreamPath": "/orders",
+          "methods": [
+            "GET",
+            "POST"
+          ],
+          "requestLimitBytes": 32,
+          "responseLimitBytes": 32
+        },
+        {
+          "path": "/slow-orders/**",
+          "upstreamPath": "/orders",
+          "timeoutMillis": 100
+        },
+        {
+          "path": "/api/order-events/**",
+          "upstreamPath": "/order-events",
+          "transport": "sse"
+        },
+        {
+          "path": "/api/order-socket/**",
+          "upstreamPath": "/order-socket",
+          "transport": "websocket",
+          "websocket": {
+            "subprotocols": [
+              "orders.v1"
+            ],
+            "requireSubprotocol": true
+          }
+        }
+      ]
+    },
+    {
+      "name": "catalog",
+      "upstream": "${RESOURCE_API_URL}",
+      "routes": [
+        {
+          "path": "/catalog/**",
+          "upstreamPath": "/inventory"
+        },
+        {
+          "path": "/orders/archive/**",
+          "upstreamPath": "/inventory"
+        }
+      ]
+    }
+  ]
+}

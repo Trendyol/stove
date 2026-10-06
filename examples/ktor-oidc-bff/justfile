@@ -1,0 +1,89 @@
+gradle := "../../gradlew --project-dir ../.. :examples:ktor-oidc-bff"
+compose := "docker compose -p stove-oidc-bff-example -f compose.yaml"
+postgres_env := "BFF_SESSION_STORE=postgres BFF_SESSION_JDBC_URL=jdbc:postgresql://localhost:5433/bff BFF_SESSION_DB_USER=bff BFF_SESSION_DB_PASSWORD=bff"
+
+default:
+    @just --list
+
+# Start Keycloak, wait for readiness, and run the JVM app. Stop with Ctrl+C.
+run: up
+    OIDC_DPOP=false {{ gradle }}:run
+
+# Run the JVM app with DPoP enabled.
+run-dpop: up
+    OIDC_DPOP=true {{ gradle }}:run
+
+# Run with DPoP and persistent PostgreSQL sessions (Flyway migrates automatically).
+run-postgres: up postgres-up
+    {{ postgres_env }} OIDC_DPOP=true {{ gradle }}:run
+
+# Run the native executable with PostgreSQL sessions and DPoP.
+run-native-postgres: up postgres-up native
+    {{ postgres_env }} OIDC_DPOP=true ./build/native/nativeCompile/stove-oidc-bff
+
+# Start the optional local session database on port 5433 and wait for readiness.
+postgres-up:
+    {{ compose }} --profile sessions up -d --wait postgres
+
+# Build the native executable. Requires GraalVM JDK 25 (GRAALVM_HOME) and a C compiler.
+native:
+    {{ gradle }}:nativeCompile
+
+# Start Keycloak, build, and run the native app. Stop with Ctrl+C.
+run-native: up native
+    OIDC_DPOP=false ./build/native/nativeCompile/stove-oidc-bff
+
+# Run the native app with DPoP enabled.
+run-native-dpop: up native
+    OIDC_DPOP=true ./build/native/nativeCompile/stove-oidc-bff
+
+# Start the example Keycloak container and wait for its realm to become ready.
+up:
+    #!/bin/sh
+    set -eu
+    {{ compose }} up -d
+    printf '%s\n' 'Waiting for Keycloak…'
+    attempt=0
+    until curl --fail --silent --max-time 2 --output /dev/null \
+        http://localhost:8081/realms/stove/.well-known/openid-configuration; do
+        attempt=$((attempt + 1))
+        if [ "$attempt" -ge 60 ]; then
+            printf '%s\n' 'Keycloak did not become ready; recent logs follow.' >&2
+            {{ compose }} logs --tail=50 keycloak
+            exit 1
+        fi
+        sleep 2
+    done
+    printf '%s\n' 'Keycloak is ready. BFF: http://localhost:8080 · Login: alice / alice'
+
+# Remove the example containers, retaining PostgreSQL data. Stop the foreground BFF first.
+down:
+    {{ compose }} --profile sessions down
+
+# Follow Keycloak logs.
+logs:
+    {{ compose }} logs --follow keycloak
+
+# Run JVM tests with NAV; Docker is not needed.
+test:
+    {{ gradle }}:test
+
+# Run NAV scenarios against the native executable; requires GRAALVM_HOME.
+test-native:
+    {{ gradle }}:nativeE2eTest
+
+# Verify DPoP and refresh rotation with real Keycloak; requires Docker.
+test-keycloak:
+    {{ gradle }}:keycloakE2eTest
+
+# Run Keycloak scenarios against the native executable; requires Docker and GRAALVM_HOME.
+test-keycloak-native:
+    {{ gradle }}:keycloakNativeE2eTest
+
+# Verify shared sessions, replica switching and refresh races using real PostgreSQL.
+test-postgres:
+    {{ gradle }}:postgresE2eTest
+
+# Verify PostgreSQL with a native BFF, Keycloak/DPoP, and a second JVM replica.
+test-postgres-native:
+    {{ gradle }}:postgresNativeE2eTest
