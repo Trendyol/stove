@@ -106,6 +106,21 @@ sequenceDiagram
 
 The reusable Ktor integration lives in [`stove.ktor.oidc`](src/main/kotlin/stove/ktor/oidc/). It has no dependency on BFF configuration, browser routes, orders, or Stove. It remains source code within this example, rather than a separately published artifact. The BFF composes it with application-specific login and session services.
 
+### Built-in Ktor OIDC compatibility
+
+This example does **not** use `ktor-server-auth-oidc`. Ktor's [built-in OIDC plugin](https://ktor.io/docs/server-oidc.html) implements discovery, authorization-code login, S256 PKCE, state, nonce, and ID-token verification. It is a candidate for replacing the corresponding services here, but its **3.6.0** API cannot preserve all of this example's behavior.
+
+The compatibility review used the published [3.6.0 JVM sources](https://repo.maven.apache.org/maven2/io/ktor/ktor-server-auth-oidc-jvm/3.6.0/ktor-server-auth-oidc-jvm-3.6.0-sources.jar):
+
+| Requirement | Ktor 3.6.0 behavior | Consequence |
+|---|---|---|
+| DPoP-bound login | `OidcTokens.kt` calls `requireBearerTokenType` during `buildOAuthToken`. | A valid `token_type=DPoP` response is rejected, even if a supplied HTTP client adds the correct proof. |
+| DPoP-bound refresh | `refreshTokenInternal` requires Bearer when the response includes an ID token. | Refresh behavior cannot support all valid DPoP responses. |
+| Access-token expiry | `onAuthenticated` receives `OidcToken.Id`, which contains tokens and identity claims but no access-token `expires_in` or `token_type`. | The session cannot schedule refresh from the token endpoint's lifetime through this callback. ID-token expiry is not a substitute; access tokens may also be opaque. |
+| Shared session ownership | `disableSessions()` and `onAuthenticated` allow application-owned sessions. The provider's refresh coalescing is process-local. | Our storage contract and distributed refresh claims would still be needed after migration. |
+
+The built-in plugin remains an option for standard Bearer flows. Missing access-token metadata is an integration gap potentially bridgeable through HTTP client interception; the explicit Bearer validation is the blocker for directly migrating DPoP flows. This example retains its current protocol services. Do not rewrite DPoP responses as Bearer to bypass validation. A future migration must also retain server-side one-time login consumption, cross-pod DPoP key recovery, and the refresh/logout race guarantees. Validate it against NAV and Keycloak with both session stores on JVM and GraalVM; these findings are source-verified, not an executable compatibility test, and the built-in plugin's native-image compatibility has not been established.
+
 ### Outgoing requests
 
 Install [`OidcAuthentication`](src/main/kotlin/stove/ktor/oidc/client/OidcAuthentication.kt) once on a shared client. Select the session's binding and credentials on each request:
@@ -172,7 +187,7 @@ The provider validates credentials and registers a principal or authentication c
 
 Protected routes live under `authenticate("browser")`. [`SessionCsrf`](src/main/kotlin/stove/ktor/oidc/server/SessionCsrf.kt) is a route plugin installed inside that block. It validates the configured origin and session-specific CSRF header for unsafe methods, before handlers execute. Authentication failures and refresh failures are translated by `StatusPages`.
 
-Authorization-code exchange, state consumption, S256 PKCE, nonce and ID-token validation remain explicit in the login service. Ktor's OAuth helper alone does not implement these OIDC guarantees. The [session store](#browser-session-storage) and refresh state machine are application services. Memory and PostgreSQL adapters share the same atomic contract; PostgreSQL uses Exposed and Flyway. Cookie validation consults shared storage, while token rotation uses an expiring versioned claim and revocation reaches other pods through polling.
+Authorization-code exchange, state consumption, S256 PKCE, nonce and ID-token validation remain explicit in the login service for the [compatibility reasons above](#built-in-ktor-oidc-compatibility). The [session store](#browser-session-storage) and refresh state machine are application services. Memory and PostgreSQL adapters share the same atomic contract; PostgreSQL uses Exposed and Flyway. Cookie validation consults shared storage, while token rotation uses an expiring versioned claim and revocation reaches other pods through polling.
 
 ### Gateway composition
 
