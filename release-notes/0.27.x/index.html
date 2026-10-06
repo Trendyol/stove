@@ -1806,6 +1806,8 @@
       
         
       
+        
+      
     
     
     
@@ -1894,6 +1896,34 @@
     
   
     gRPC Mock
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../Components/23-oidc/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    OIDC
   
 
     
@@ -3114,6 +3144,17 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#oidc-provider-module" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        OIDC provider module
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#development-snapshots-and-build-tooling" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -3807,6 +3848,17 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#oidc-provider-module" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        OIDC provider module
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#development-snapshots-and-build-tooling" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -4174,6 +4226,8 @@
 <p>Retention forms and database queries also preserve local edits during refreshes, surface command errors, and discard obsolete responses. Purging data invalidates the affected dashboard caches.</p>
 <h3 id="stricter-contracts-and-validation">Stricter contracts and validation<a class="headerlink" href="#stricter-contracts-and-validation" title="Permanent link">&para;</a></h3>
 <p>The dashboard's REST and live-event types are generated from the server's OpenAPI contract, with CI checking for drift. Runtime validation rejects malformed responses and invalid event statuses; invalid ingestion does not persist evidence or publish live events. Stored malformed JSON, unknown statuses, and empty assertion IDs now produce explicit errors instead of fabricated defaults.</p>
+<h3 id="oidc-provider-module">OIDC provider module<a class="headerlink" href="#oidc-provider-module" title="Permanent link">&para;</a></h3>
+<p><code>stove-oidc</code> adds NAV and Keycloak providers in one artifact, with default and keyed registration, discovered endpoint configuration, a shared OAuth token client, controllable mock JWTs, and test-scoped mock request rules. Rule handles provide precise assertions and routing evidence; factory-specific builders prevent ignored settings. Keycloak uses a single <code>RealmSetup</code> choice with common service-client fixtures, and access tokens adapt directly to Stove HTTP. NAV runs without Docker; Keycloak uses its own container and realm per registration. Test diagnostics include token results, provider error descriptions and response bodies, with original exception causes preserved. See the <a href="../../Components/23-oidc/">OIDC guide</a> for configuration, provider limitations and container networking. Federation and cross-provider startup wiring remain deferred.</p>
 <h3 id="development-snapshots-and-build-tooling">Development snapshots and build tooling<a class="headerlink" href="#development-snapshots-and-build-tooling" title="Permanent link">&para;</a></h3>
 <p>Maven snapshot publishing now also publishes a matching versioned Stove Server container and updates <code>ghcr.io/trendyol/stove-server:snapshot</code>. Stable releases continue to use <code>:latest</code>; snapshot builds do not move that tag.</p>
 <p>Contributor setup now provides shared <code>just</code> commands, <code>mise</code> configuration, and Lefthook checks scoped to the changed projects. CI uses the Gradle wrapper and revised build caches. The dashboard declares TypeScript <code>~7.0.2</code>; its OpenAPI generator retains TypeScript 5 as a tooling peer dependency for compiler-API compatibility.</p>
