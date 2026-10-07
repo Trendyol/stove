@@ -31,7 +31,7 @@ ktor = "3.6.0"
 koin = "4.2.2"
 quarkus = "3.40.1"
 r2dbc-postgresql = "0.8.13.RELEASE"
-elastic = "9.5.4"
+elastic = "9.5.5"
 mongodb = "5.13.0"
 wiremock = "3.13.2"
 testcontainers = "2.0.5"
@@ -61,7 +61,7 @@ bytebuddy = "1.18.14"
 mordant = "3.1.0"
 
 # Recipes
-stove = "1.0.0.562-SNAPSHOT"
+stove = "1.0.0.563-SNAPSHOT"
 scala2x = "2.13.18"
 kotlinLogging = "8.0.4"
 kediatr = "4.4.0"
@@ -181,7 +181,7 @@ mysql-connector = { module = "com.mysql:mysql-connector-j", version.ref = "mysql
 
 # elastic
 elastic = { module = "co.elastic.clients:elasticsearch-java", version.ref = "elastic" }
-elastic-rest-client = { module = "org.elasticsearch.client:elasticsearch-rest-client", version = "9.5.4" }
+elastic-rest-client = { module = "org.elasticsearch.client:elasticsearch-rest-client", version = "9.5.5" }
 
 # mongo
 mongodb-kotlin-coroutine = { module = "org.mongodb:mongodb-driver-kotlin-coroutine", version.ref = "mongodb" }
