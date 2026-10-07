@@ -100,6 +100,7 @@ nav:
       - "Stove Dashboard in 0.23.0": blog/dashboard-0.23.0.md
       - "Execution Tracing in 0.21.0": blog/tracing-0.21.0.md
   - Release Notes:
+      - Overview: release-notes/index.md
       - "0.27.x": release-notes/0.27.x.md
       - "0.26.0": release-notes/0.26.0.md
       - "0.25.0": release-notes/0.25.0.md

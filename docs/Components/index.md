@@ -154,6 +154,11 @@ Wizard composes this for you: <a class="open-in-wizard" data-sys="http,postgresq
       <a class="open-in-wizard" data-mk="grpc-mock">→ wizard</a>
     </div>
   </div>
+  <div class="stove-sys-card">
+    <div class="stove-sys-card-head"><strong>OIDC</strong><span class="stove-sys-card-badge">Auth</span></div>
+    <p class="stove-sys-card-desc">Test authentication and token validation with NAV mock or Keycloak providers.</p>
+    <div class="stove-sys-card-actions"><a href="23-oidc/">Reference</a></div>
+  </div>
 </div>
 </div>
 
