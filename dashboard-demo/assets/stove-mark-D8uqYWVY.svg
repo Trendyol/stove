@@ -1,0 +1,36 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="Stove">
+  <defs>
+    <linearGradient id="stove-mark-bg" x1="10" y1="8" x2="54" y2="58" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#0f172a"/>
+      <stop offset="0.58" stop-color="#111827"/>
+      <stop offset="1" stop-color="#042f2e"/>
+    </linearGradient>
+    <linearGradient id="stove-mark-flame" x1="25" y1="13" x2="40" y2="43" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#fff7ad"/>
+      <stop offset="0.38" stop-color="#f59e0b"/>
+      <stop offset="1" stop-color="#ef4444"/>
+    </linearGradient>
+    <linearGradient id="stove-mark-body" x1="18" y1="34" x2="47" y2="55" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#f8fafc"/>
+      <stop offset="1" stop-color="#cbd5e1"/>
+    </linearGradient>
+    <filter id="stove-mark-shadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="5" stdDeviation="5" flood-color="#020617" flood-opacity="0.35"/>
+    </filter>
+  </defs>
+
+  <rect x="4" y="4" width="56" height="56" rx="14" fill="url(#stove-mark-bg)" filter="url(#stove-mark-shadow)"/>
+  <rect x="5.5" y="5.5" width="53" height="53" rx="12.5" fill="none" stroke="#2dd4bf" stroke-opacity="0.28"/>
+
+  <path d="M32 13c5 5 1 9 6 14 3 3 4 7 2 10-2 4-6 6-8 6s-7-2-9-6c-2-4-1-8 3-12 3-4 4-7 4-11 0-1 1-2 2-1z" fill="url(#stove-mark-flame)"/>
+  <path d="M32 26c3 3 0 5 3 8 1 2 1 5-3 5-3 0-6-3-4-7 1-2 3-3 4-6z" fill="#fef3c7"/>
+
+  <rect x="17" y="38" width="30" height="16" rx="5" fill="url(#stove-mark-body)"/>
+  <path d="M21 42h22" stroke="#64748b" stroke-width="2" stroke-linecap="round" opacity="0.65"/>
+  <circle cx="25" cy="48" r="2.2" fill="#0f172a" opacity="0.72"/>
+  <circle cx="32" cy="48" r="2.2" fill="#14b8a6"/>
+  <circle cx="39" cy="48" r="2.2" fill="#0f172a" opacity="0.72"/>
+  <path d="M19 55h26" stroke="#f59e0b" stroke-width="3" stroke-linecap="round"/>
+  <circle cx="16" cy="27" r="2" fill="#60a5fa"/>
+  <circle cx="48" cy="27" r="2" fill="#14b8a6"/>
+</svg>
