@@ -1,5 +1,6 @@
 import { appPath, type EvidenceFocus } from "../utils/location";
 import * as schema from "./response-schemas";
+import { request } from "./transport";
 import type {
   DatabaseQueryRequest,
   PurgePreviewRequest,
@@ -20,13 +21,13 @@ export class ApiError extends Error {
 const encodePath = (value: string) => encodeURIComponent(value);
 
 async function get<T>(url: string, validate: Validator<T>, signal?: AbortSignal): Promise<T> {
-  const res = await fetch(appPath(`${BASE}${url}`), { signal });
+  const res = await request(appPath(`${BASE}${url}`), { signal });
   if (!res.ok) throw new ApiError(res.status, `${res.status} ${res.statusText}`);
   return readResponse(res, url, validate);
 }
 
 async function del(url: string): Promise<void> {
-  const res = await fetch(appPath(`${BASE}${url}`), { method: "DELETE" });
+  const res = await request(appPath(`${BASE}${url}`), { method: "DELETE" });
   if (!res.ok) throw new ApiError(res.status, `${res.status} ${res.statusText}`);
 }
 
@@ -36,7 +37,7 @@ async function send<T>(
   body: unknown,
   validate: Validator<T>,
 ): Promise<T> {
-  const res = await fetch(appPath(`${BASE}${url}`), {
+  const res = await request(appPath(`${BASE}${url}`), {
     method,
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(body),

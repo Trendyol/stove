@@ -5,8 +5,8 @@
 <h1 align="center">Stove</h1>
 
 <p align="center">
-  Kotlin-first end-to-end testing for JVM and polyglot applications.<br/>
-  Boot the application under test, wire real dependencies, and assert the full runtime flow from one DSL.
+  End-to-end tests in Kotlin for JVM and non-JVM applications.<br/>
+  Start your app and its dependencies, make a request, then check what happened in the database and on the message bus.
 </p>
 
 <p align="center">
@@ -17,699 +17,159 @@
   <a href="https://scorecard.dev/viewer/?uri=github.com/Trendyol/stove"><img src="https://img.shields.io/ossf-scorecard/github.com/Trendyol/stove?label=openssf%20scorecard&style=flat" alt="OpenSSF Scorecard"/></a>
 </p>
 
+<p align="center">
+  <a href="https://trendyol.github.io/stove/getting-started/">Get started</a> ·
+  <a href="https://trendyol.github.io/stove/">Documentation</a> ·
+  <a href="https://trendyol.github.io/stove/recipes/">Recipes</a> ·
+  <a href="https://trendyol.github.io/stove/dashboard-demo/">Try the dashboard</a> ·
+  <a href="https://trendyol.github.io/stove/release-notes/">Release notes</a>
+</p>
+
+An order endpoint can return `201` and still fail to save the order or publish its event. Stove lets you check all three in the same test:
+
 ```kotlin
 stove {
-  // Call API and verify response
   http {
     postAndExpectBodilessResponse("/orders", body = CreateOrderRequest(userId, productId).some()) {
       it.status shouldBe 201
     }
   }
 
-  // Verify database state
   postgresql {
-    shouldQuery<Order>("SELECT * FROM orders WHERE user_id = '$userId'", mapper = { row ->
+    shouldQuery<Order>("SELECT status FROM orders WHERE user_id = '$userId'", mapper = { row ->
       Order(row.string("status"))
     }) {
-      it.first().status shouldBe "CONFIRMED"
+      it.single().status shouldBe "CONFIRMED"
     }
   }
 
-  // Verify event was published
   kafka {
     shouldBePublished<OrderCreatedEvent> {
       actual.userId == userId
     }
   }
-
-  // Access application beans directly
-  using<InventoryService> {
-    getStock(productId) shouldBe 9
-  }
 }
 ```
+
+This example assumes the test has seeded a customer and product and configured the three systems. Request, row, and event types come from your application. The [Spring showcase recipe](recipes/jvm/kotlin-recipes/spring-showcase/) has a complete application and test suite you can run.
 
 ## Why Stove?
 
-The JVM ecosystem has mature frameworks for building applications, but end-to-end test setup is still fragmented.
-Testcontainers can start infrastructure, but most teams still write their own lifecycle code for container startup,
-runtime configuration, application boot, cleanup, and assertions. That boilerplate usually looks different for every
-framework.
+Testcontainers starts infrastructure. An end-to-end test also needs to pass connection details to the app, boot it, wait for asynchronous work, make assertions, and clean up. Stove handles that lifecycle and gives you Kotlin blocks for the systems involved.
 
-Stove puts those pieces behind one lifecycle. You register the systems your app talks to, then register one AUT runner.
-Stove starts or connects to the systems, exposes their runtime configuration to framework/process/container AUT runners,
-boots or targets the application under test (AUT), and gives your tests a single Kotlin DSL for driving and verifying the flow.
-A system is a Stove dependency, client, mock, or observability module such as HTTP, PostgreSQL, Kafka, WireMock, tracing,
-or dashboard. An AUT runner registers how Stove starts or targets the app.
+- **Test through your app.** Drive HTTP, WebSocket, or gRPC calls, then inspect database state, Kafka messages, and calls to mocked services.
+- **Debug the whole flow.** In-process JVM runners let you use breakpoints and access application beans. Failure reports collect operations and system snapshots; optional tracing shows the call chain.
+- **Use the same test style across stacks.** Run Spring Boot, Ktor, Micronaut, or Quarkus in the test JVM; launch another language as a process or container; or connect to an app that is already running.
 
-Stove works with Java, Kotlin, and Scala applications across Spring Boot, Ktor, Micronaut, and Quarkus. The same test DSL
-also supports non-JVM applications through process/container runners, or targets already-running applications with
-`providedApplication()`. Because assertions are system-oriented rather than framework-specific, teams can verify HTTP
-APIs, async message flows, database side effects, external service calls, and traces without rewriting the test model for
-each stack.
+Stove is useful when the behavior crosses component boundaries. Your test framework still handles test discovery, assertions, and unit tests.
 
-**What Stove does:**
+## Get started
 
-- Starts dependencies with Testcontainers or connects to **provided** infrastructure (existing PostgreSQL, MySQL, Kafka, etc.)
-- Passes generated connection details to framework, process, or container runners before the AUT starts
-- Starts your **actual** application through a framework, process, or container runner, or targets an already-running app with `providedApplication()`
-- Exposes one DSL for HTTP, database, Kafka, WireMock, gRPC, tracing, and custom-system assertions; dashboard adds reporting evidence when enabled
-- Provides DI-container access for supported JVM frameworks via `bridge()` and `using<T> { ... }`
-- For in-process JVM runners, keeps breakpoints and e2e coverage in the same runtime path your use case follows
-- Supports Spring Boot, Ktor, Micronaut, Quarkus, and non-JVM apps through process/container modes
-- Extensible architecture for adding new components and
-  frameworks ([Writing Custom Systems](https://trendyol.github.io/stove/writing-custom-systems/))
+Tests are written in **Kotlin**, even when the application is Java, Scala, Go, Python, or another language. Stove supports **JDK 17+**. You'll need **Docker** for dependencies started through Testcontainers; [provided instances](https://trendyol.github.io/stove/Components/11-provided-instances/) let you use infrastructure you already have.
 
-## Dashboard (New in 0.23.0)
+### Run an existing example
 
-Stove Dashboard is a local UI and API for end-to-end test runs. When the `stove` server is running and `dashboard { }` is
-registered, it receives events from your test JVM, stores run data in local SQLite or configured PostgreSQL, and shows
-timelines, system snapshots, and traces in one place. Trace data still requires the tracing setup shown below.
-
-https://github.com/user-attachments/assets/14597dc6-e9d4-43ab-8cfa-578ab3c3e6df
-
-**Quick start**
+The Spring showcase exercises HTTP, PostgreSQL, Kafka, WireMock, gRPC, and tracing. To run it from this repository, use **JDK 25** (the repository's Gradle runtime) and start Docker:
 
 ```bash
-# 1) Install and start the Dashboard server
-brew install Trendyol/trendyol-tap/stove
-# upgrade an existing install: brew update && brew upgrade stove
-stove
-
-# Or run the matching version as a container (SQLite persists in stove-data)
-docker run -d --name stove -p 4040:4040 -p 4041:4041 \
-  -v stove-data:/data ghcr.io/trendyol/stove-server:0.26.0
-
-# 2) Run your tests and open the dashboard
-./gradlew test
-# http://localhost:4040
+git clone https://github.com/Trendyol/stove.git
+cd stove/recipes/jvm
+./gradlew :kotlin-recipes:spring-showcase:e2eTest
 ```
 
-Container tags: `ghcr.io/trendyol/stove-server:latest` follows stable releases, while `:snapshot` follows snapshot publications. Each snapshot also has a versioned tag such as `:1.0.0.558-SNAPSHOT` for selecting a specific build.
+The first run downloads dependencies and container images. Start with the recipe's [Stove configuration](recipes/jvm/kotlin-recipes/spring-showcase/src/test-e2e/kotlin/com/trendyol/stove/examples/kotlin/spring/e2e/setup/StoveConfig.kt) to see how connection details reach the application and how startup and teardown fit together.
 
-For shared or multi-pod deployments, use one PostgreSQL database for every replica and load-balance both ports; no session affinity, Redis, or message broker is required. PostgreSQL coordinates ordered, idempotent ingestion, shared retention, and durable cross-pod live updates. Production settings can be mounted as TOML or JSON, with the PostgreSQL URL read from a separate secret file. See the [Dashboard deployment guide](https://trendyol.github.io/stove/Components/18-dashboard/#configuration-files-and-secrets).
+### Add Stove to your application
 
-For local PostgreSQL development, run `just postgres-up` from `server/stove-server`; the Compose stack builds Stove and starts a persistent PostgreSQL 18 instance. The dedicated `/admin` page includes a native SQLite/PostgreSQL schema browser and SQL workbench running inside the Stove process. It has direct database write access and no built-in authentication, so expose it only on a trusted network.
+Follow [Getting Started](https://trendyol.github.io/stove/getting-started/) for dependencies, test discovery, and a complete setup. Pick the runner that matches how you want to launch your app:
 
-```kotlin
-// build.gradle.kts
-plugins {
-  id("com.trendyol.stove.tracing") version "$stoveVersion"
-}
+| Application | Setup guide |
+|-------------|-------------|
+| In the test JVM | [Spring Boot](https://trendyol.github.io/stove/frameworks/spring-boot/), [Ktor](https://trendyol.github.io/stove/frameworks/ktor/), [Micronaut](https://trendyol.github.io/stove/frameworks/micronaut/), [Quarkus](https://trendyol.github.io/stove/frameworks/quarkus/) |
+| A separate process | [Polyglot testing](https://trendyol.github.io/stove/other-languages/) |
+| A container | [Container runner](https://trendyol.github.io/stove/Components/22-container/) |
+| Already running | [Provided application](https://trendyol.github.io/stove/Components/19-provided-application/) |
 
-dependencies {
-  testImplementation(platform("com.trendyol:stove-bom:$version"))
-  testImplementation("com.trendyol:stove-extensions-kotest")  // or stove-extensions-junit
-  testImplementation("com.trendyol:stove-dashboard")
-  testImplementation("com.trendyol:stove-tracing")
-}
+Register dependencies and one application runner in `Stove().with { ... }.run()` before the suite, and call `Stove.stop()` at teardown. For Kotest 6, configure project discovery in `kotest.properties` and register `StoveKotestExtension`; JUnit uses `StoveJUnitExtension`. Both attach Stove evidence to failed tests.
 
-stoveTracing {
-  serviceName.set("product-api")
-}
-```
+Keep the Stove BOM, test modules, tracing plugin, and dashboard server on matching versions. Kafka publish/consume assertions also need the [application-side interceptors](https://trendyol.github.io/stove/Components/02-kafka/); setting only the broker address is not enough.
 
-```kotlin
-// Kotest
-class StoveConfig : AbstractProjectConfig() {
-  override val extensions = listOf(StoveKotestExtension())
-  override suspend fun beforeProject() {
-    Stove().with {
-      dashboard { DashboardSystemOptions(appName = "product-api") }
-      tracing { enableSpanReceiver() } // recommended
-    }.run()
-  }
-  override suspend fun afterProject() = Stove.stop()
-}
+## When a test fails
 
-// JUnit
-@ExtendWith(StoveJUnitExtension::class)
-abstract class BaseE2ETest { /* Stove().with { ... }.run() in @BeforeAll */ }
-```
+The console report includes the operations leading up to the failure, their inputs and outputs, and available system snapshots. Enable [tracing](https://trendyol.github.io/stove/Components/15-tracing/) to add the application call chain:
 
-Keep `stove-server`, the Stove BOM, the tracing Gradle plugin, and your Stove test dependencies on the same Stove version. The dashboard warns on version mismatches, but aligning versions avoids missing or inconsistent dashboard data.
-
-See [Dashboard docs](https://trendyol.github.io/stove/Components/18-dashboard/) and
-[0.23.0 release notes](https://trendyol.github.io/stove/release-notes/0.23.0/) for full details.
-
-## Getting Started
-
-**1. Add dependencies**
-
-```kotlin
-dependencies {
-  // Import BOM for version management
-  testImplementation(platform("com.trendyol:stove-bom:$version"))
-  
-  // Core and framework starter
-  testImplementation("com.trendyol:stove")
-  testImplementation("com.trendyol:stove-spring")  // or stove-ktor, stove-micronaut, stove-quarkus
-  
-  // Component modules
-  testImplementation("com.trendyol:stove-postgres")
-  testImplementation("com.trendyol:stove-mysql")
-  testImplementation("com.trendyol:stove-kafka")
-}
-```
-
-> **Snapshots:** As of 5th June 2025, Stove's snapshot packages are hosted on [Central Sonatype](https://central.sonatype.com/service/rest/repository/browse/maven-snapshots/com/trendyol/).
-> ```kotlin
-> repositories {
->   maven("https://central.sonatype.com/repository/maven-snapshots")
-> }
-> ```
-
-**2. Configure Stove** (runs once before the e2e suite)
-
-```kotlin
-class StoveConfig : AbstractProjectConfig() {
-  override suspend fun beforeProject() = Stove()
-    .with {
-      httpClient {
-        HttpClientSystemOptions(baseUrl = "http://localhost:8080")
-      }
-      postgresql {
-        PostgresqlOptions(
-          cleanup = { it.execute("TRUNCATE orders, users") },
-          configureExposedConfiguration = { listOf("spring.datasource.url=${it.jdbcUrl}") }
-        ).migrations {
-          register<CreateUsersTable>()
-        }
-      }
-      kafka {
-        KafkaSystemOptions(
-          cleanup = { it.deleteTopics(listOf("orders")) },
-          configureExposedConfiguration = { listOf("kafka.bootstrapServers=${it.bootstrapServers}") }
-        ).migrations {
-          register<CreateOrdersTopic>()
-        }
-      }
-      bridge()
-      springBoot(runner = { params ->
-        myApp.run(params) { addTestDependencies() }
-      })
-    }.run()
-
-  override suspend fun afterProject() = Stove.stop()
-}
-```
-
-**3. Write tests**
-
-```kotlin
-test("should process order") {
-  stove {
-    http {
-      get<Order>("/orders/123") {
-        it.status shouldBe "CONFIRMED"
-      }
-    }
-    postgresql {
-      shouldQuery<Order>("SELECT * FROM orders", mapper = { row ->
-        Order(row.string("status"))
-      }) {
-        it.size shouldBe 1
-      }
-    }
-    kafka {
-      shouldBePublished<OrderCreatedEvent> {
-        actual.orderId == "123"
-      }
-    }
-  }
-}
-```
-
-## Writing Tests
-
-All assertions happen inside `stove { }`. Each block resolves the system registered in `Stove().with { ... }`, so test
-code stays focused on the behavior under test instead of client construction or container plumbing.
-
-### HTTP
-
-```kotlin
-http {
-  get<User>("/users/$id") {
-    it.name shouldBe "John"
-  }
-  postAndExpectBodilessResponse("/users", body = request.some()) {
-    it.status shouldBe 201
-  }
-  postAndExpectBody<User>("/users", body = request.some()) {
-    it.id shouldNotBe null
-  }
-}
-```
-
-### Database
-
-```kotlin
-postgresql {  // also: mysql, mongodb, couchbase, mssql, elasticsearch, redis
-  shouldExecute("INSERT INTO users (name) VALUES ('Jane')")
-  shouldQuery<User>("SELECT * FROM users", mapper = { row ->
-    User(row.string("name"))
-  }) {
-    it.size shouldBe 1
-  }
-}
-```
-
-### Kafka
-
-```kotlin
-kafka {
-  publish("orders.created", OrderCreatedEvent(orderId = "123"))
-  shouldBeConsumed<OrderCreatedEvent> {
-    actual.orderId == "123"
-  }
-  shouldBePublished<OrderConfirmedEvent> {
-    actual.orderId == "123"
-  }
-}
-```
-
-### External API Mocking
-
-```kotlin
-wiremock {
-  mockGet("/external-api/users/1", responseBody = User(id = 1, name = "John").some())
-  mockPost("/external-api/notify", statusCode = 202)
-}
-```
-
-### Application Beans
-
-For supported JVM frameworks, `bridge()` exposes the application DI container so a test can inspect or call beans after
-driving the public API:
-
-```kotlin
-using<OrderService> { processOrder(orderId) }
-using<UserRepo, EmailService> { userRepo, emailService ->
-  userRepo.findById(id) shouldNotBe null
-}
-```
-
-### Reporting
-
-When the Kotest or JUnit extension is registered, Stove enriches failures with an execution report. The report records
-the timeline of Stove operations and the latest snapshots each system can provide:
-
-<details>
-<summary><strong>Example Report</strong></summary>
-
-```
-╔══════════════════════════════════════════════════════════════════════════════════════════════════╗
-║                                   STOVE TEST EXECUTION REPORT                                    ║
-║                                                                                                  ║
-║ Test: should create new product when send product create request from api for the allowed        ║
-║ supplier                                                                                         ║
-║ ID: ExampleTest::should create new product when send product create request from api for the     ║
-║ allowed supplier                                                                                 ║
-║ Status: FAILED                                                                                   ║
-╠══════════════════════════════════════════════════════════════════════════════════════════════════╣
-║                                                                                                  ║
-║ TIMELINE                                                                                         ║
-║ ────────                                                                                         ║
-║                                                                                                  ║
-║ 12:41:12.371 ✓ PASSED [WireMock] Register stub: GET /suppliers/99/allowed                        ║
-║     Output: kotlin.Unit                                                                          ║
-║     Metadata: {statusCode=200, responseHeaders={}}                                               ║
-║                                                                                                  ║
-║ 12:41:13.405 ✓ PASSED [HTTP] POST /api/product/create                                            ║
-║     Input: ProductCreateRequest(id=1, name=product name, supplierId=99)                          ║
-║     Output: kotlin.Unit                                                                          ║
-║     Metadata: {status=200, headers={}}                                                           ║
-║                                                                                                  ║
-║ 12:41:13.424 ✓ PASSED [Kafka] shouldBePublished<ProductCreatedEvent>                             ║
-║     Output: ProductCreatedEvent(id=1, name=product name, supplierId=99, createdDate=Thu Jan 08   ║
-║     12:41:12 CET 2026, type=ProductCreatedEvent)                                                 ║
-║     Metadata: {timeout=5s}                                                                       ║
-║                                                                                                  ║
-║ 12:41:13.455 ✗ FAILED [Couchbase] Get document                                                   ║
-║     Input: {id=product:1}                                                                        ║
-║     Error: expected:<100L> but was:<99L>                                                         ║
-║                                                                                                  ║
-╠══════════════════════════════════════════════════════════════════════════════════════════════════╣
-║                                                                                                  ║
-║ SYSTEM SNAPSHOTS                                                                                 ║
-║ ────────────────                                                                                 ║
-║                                                                                                  ║
-║ ┌─ HTTP ──────────────────────────────────────────────────────────────────────────────────────── ║
-║                                                                                                  ║
-║   No detailed state available                                                                    ║
-║                                                                                                  ║
-║ ┌─ COUCHBASE ─────────────────────────────────────────────────────────────────────────────────── ║
-║                                                                                                  ║
-║   No detailed state available                                                                    ║
-║                                                                                                  ║
-║ ┌─ KAFKA ─────────────────────────────────────────────────────────────────────────────────────── ║
-║                                                                                                  ║
-║   Consumed: 0                                                                                    ║
-║   Published: 1                                                                                   ║
-║   Committed: 0                                                                                   ║
-║                                                                                                  ║
-║   State Details:                                                                                 ║
-║     consumed: 0 item(s)                                                                          ║
-║     published: 1 item(s)                                                                         ║
-║       [0]                                                                                        ║
-║         id: 376db940-a367-4419-a628-4754c9466421                                                 ║
-║         topic: stove-standalone-example.productCreated.1                                         ║
-║         key: 1                                                                                   ║
-║         headers: {X-EventType=ProductCreatedEvent, X-MessageId=29902970-056d-4ae9-9a84-...}      ║
-║         message: {"id":1,"name":"product name","supplierId":99,...}                              ║
-║     committed: 0 item(s)                                                                         ║
-║                                                                                                  ║
-║ ┌─ WIREMOCK ──────────────────────────────────────────────────────────────────────────────────── ║
-║                                                                                                  ║
-║   Registered stubs: 0                                                                            ║
-║   Served requests: 0 (matched: 0)                                                                ║
-║   Unmatched requests: 0                                                                          ║
-║                                                                                                  ║
-╚══════════════════════════════════════════════════════════════════════════════════════════════════╝
-```
-
-</details>
-
-**Features:**
-- Timeline of all operations with timestamps and results
-- Input/output for each action
-- Expected vs actual values on failures
-- System snapshots (Kafka messages, WireMock stubs, etc.)
-
-**Test Framework Extensions:**
-
-Use the provided extensions to automatically enrich failures:
-
-```kotlin
-// Kotest - register in project config
-class StoveConfig : AbstractProjectConfig() {
-  override val extensions = listOf(StoveKotestExtension())
-}
-
-// JUnit 5 - annotate test class
-@ExtendWith(StoveJUnitExtension::class)
-class MyTest { ... }
-```
-
-**Configuration:**
-
-```kotlin
-Stove(
-  StoveOptions(
-    reportingEnabled = true,           // Enable/disable reporting (default: true)
-    dumpReportOnTestFailure = true,    // Enrich failures with report (default: true)
-    // Default: full pretty output locally, compact pretty output on CI
-    failureRenderer = PrettyConsoleRenderer.ciAware()
-  )
-).with { ... }
-```
-
-### Tracing
-
-When tracing is enabled, failed tests can show the **execution call chain** inside your application: controllers,
-services, database calls, Kafka publish/consume spans, and the failure point, powered by OpenTelemetry:
-
-```
+```text
 EXECUTION TRACE (Call Chain)
-═══════════════════════════════════════════════════════════════════
-✓ POST (377ms)
-  ✓ POST /api/product/create (361ms)
-    ✓ ProductController.create (141ms)
-      ✓ ProductCreator.create (0ms)
-      ✓ KafkaProducer.send (137ms)
-        ✓ orders.created publish (81ms)
-          ✗ orders.created process (82ms)  ← FAILURE POINT
+✓ POST /orders
+  ✓ OrderController.create
+    ✓ OrderService.placeOrder
+      ✓ SELECT inventory
+      ✗ POST /payments/charge — PaymentTimeoutException
+      ✓ orders.created publish
 ```
 
-**Setup** (two steps):
+This illustrative trace points to the payment call behind a failed order assertion. See [When a Test Fails](https://trendyol.github.io/stove/observability/when-it-fails/) for the path from a console failure to the relevant trace, mock interaction, or database snapshot.
 
-```kotlin
-// 1. In your Stove config
-tracing { enableSpanReceiver() }
+## Explore the dashboard
 
-// 2. In build.gradle.kts
-plugins { id("com.trendyol.stove.tracing") version "$stoveVersion" }
-stoveTracing { serviceName.set("my-service") }
+**[Open the interactive demo →](https://trendyol.github.io/stove/dashboard-demo/)**
+
+Browse sample applications and historical runs, inspect a failing checkout, follow its trace, compare expected and actual values, and open Kafka, OIDC, and database snapshots. The demo uses the same dashboard as the Stove server. You can replay a test, try the SQL workbench, change retention, and reset the sample data. Everything stays in your browser.
+
+To collect evidence from your own tests, install and start the server:
+
+```bash
+brew install trendyol/trendyol-tap/stove
+stove
 ```
 
-**Validate traces in tests:**
+Then add `stove-dashboard` and register `dashboard { }` alongside your application's existing Stove setup. Open [localhost:4040](http://localhost:4040) and run your tests. Traces require the tracing module and its setup too.
 
-```kotlin
-tracing {
-    shouldContainSpan("OrderService.processOrder")
-    shouldNotHaveFailedSpans()
-    executionTimeShouldBeLessThan(500.milliseconds)
-}
-```
+The [Dashboard guide](https://trendyol.github.io/stove/Components/18-dashboard/) covers container installation, test configuration, shared PostgreSQL storage, and deployment. The server's admin tools can modify stored data and have no built-in authentication; keep your own server on a trusted network.
 
-For in-process JVM applications launched by Stove with the tracing Gradle plugin, no application-code changes are
-required. The plugin attaches the OpenTelemetry Java agent to the test JVM and configures the agent endpoint for the
-application under test.
+## Supported systems
 
-### AI Agent Integration
+Register only what your tests need. Each link covers dependencies, configuration, and assertions.
 
-Stove's execution reports and tracing data are structured and deterministic, making them ideal for **AI agent workflows**. When an AI agent runs e2e tests during implementation, it can parse the failure reports — including the full execution trace, system snapshots, and timeline — to understand exactly what went wrong inside the application. This enables agents to iterate on fixes with precise feedback rather than guessing from opaque test failures.
+| Area | Modules |
+|------|---------|
+| Databases | [PostgreSQL](https://trendyol.github.io/stove/Components/06-postgresql/), [MySQL](https://trendyol.github.io/stove/Components/16-mysql/), [MSSQL](https://trendyol.github.io/stove/Components/08-mssql/), [MongoDB](https://trendyol.github.io/stove/Components/07-mongodb/), [Couchbase](https://trendyol.github.io/stove/Components/01-couchbase/), [Cassandra](https://trendyol.github.io/stove/Components/17-cassandra/) |
+| Search and cache | [Elasticsearch](https://trendyol.github.io/stove/Components/03-elasticsearch/), [Redis](https://trendyol.github.io/stove/Components/09-redis/) |
+| Messaging | [Kafka](https://trendyol.github.io/stove/Components/02-kafka/) |
+| Clients | [HTTP and WebSockets](https://trendyol.github.io/stove/Components/05-http/), [gRPC](https://trendyol.github.io/stove/Components/12-grpc/) |
+| Mocks | [WireMock](https://trendyol.github.io/stove/Components/04-wiremock/), [gRPC mock server](https://trendyol.github.io/stove/Components/14-grpc-mock/), [OIDC](https://trendyol.github.io/stove/Components/23-oidc/) |
+| Diagnostics | [Reporting](https://trendyol.github.io/stove/Components/13-reporting/), [Tracing](https://trendyol.github.io/stove/Components/15-tracing/), [Dashboard](https://trendyol.github.io/stove/Components/18-dashboard/) |
 
-When `stove` is running, it also exposes a read-only MCP endpoint at `http://localhost:4040/mcp`, or at the equivalent URL on a shared internal server. For a known execution, agents can start with `stove_diagnose` using its exact `run_id` or `app_name` plus CI metadata identifying one run, then follow the returned pagination and evidence calls. For local discovery, `stove_failures` provides a lightweight survey; `stove_runs` can filter by app and metadata when the run ID is unknown. MCP is optional: if it is unavailable or incomplete, agents should fall back to normal test output, Stove failure reports, and logs. Stove has no authentication or authorization, so shared deployments must stay behind a trusted network boundary.
+Need something else? [Write a custom system](https://trendyol.github.io/stove/writing-custom-systems/) to give it the same lifecycle and test DSL.
 
-**Agent Skills:** Stove ships with a ready-to-use [agent skill](https://github.com/Trendyol/stove/tree/main/.agents/skills/stove) that teaches AI agents how to set up and write Stove e2e tests. Run `stove skills install` inside your downstream Git repository to install or update it at `.agents/skills/stove/`, or copy that directory manually. The skill covers system setup, test assertions, tracing, dashboard/MCP triage, and custom systems.
+## Working with coding agents
 
-`stove skills install --force` installs relative to the current directory, even outside Git. `stove --update-skills` updates skills before starting the server; `stove --no-skills-check` disables the startup check. Updates replace the entire Stove skill directory, so keep project-specific guidance elsewhere. Skills are fetched from Stove's `main` branch; verify examples against your project's resolved Stove version.
+The server exposes a read-only [MCP endpoint](https://trendyol.github.io/stove/Components/21-mcp/) at `http://localhost:4040/mcp`. An agent can inspect failed runs, trace spans, and system evidence using the same run and test IDs as the dashboard. Console reports and logs remain available without MCP.
 
-For an existing `.claude/skills/stove/` or `.agent/skills/stove/` installation, install a fresh copy at `.agents/skills/stove/` and preserve any project-specific customizations outside that managed directory. The installer leaves legacy directories untouched. Remove duplicate legacy copies once migrated; keep client-specific settings and worktrees in their original directories.
+Run `stove skills install` in your repository to install the [Stove agent skill](.agents/skills/stove/). It covers setup, assertions, and failure investigation. See the [MCP guide](https://trendyol.github.io/stove/Components/21-mcp/) for configuration and usage.
 
-## Configuration
+## Common questions
 
-### Framework Setup
+**Does Stove replace Testcontainers?**
+Stove uses Testcontainers to manage dependency containers and adds application startup, configuration, assertions, and diagnostics around them.
 
-<table>
-<tr><th>Spring Boot</th><th>Ktor</th></tr>
-<tr>
-<td>
+**Can I reuse containers locally?**
+Yes: `Stove { keepDependenciesRunning() }` keeps reusable dependency containers running between suites. This reduces container startup work; the application and tests still need to start.
 
-```kotlin
-springBoot(
-  runner = { params ->
-    myApp.run(params) {
-      addTestDependencies()
-    }
-  }
-)
-```
+**When does cleanup run?**
+A system's `cleanup` callback runs when Stove stops at suite teardown. It does not reset state between individual tests. [Migrations](https://trendyol.github.io/stove/Components/06-postgresql/#migrations) run during system startup.
 
-</td>
-<td>
-
-```kotlin
-ktor(
-  runner = { params ->
-    run(params, shouldWait = false)
-  }
-)
-```
-
-</td>
-</tr>
-<tr><th>Micronaut</th><th>Quarkus</th></tr>
-<tr>
-<td>
-
-```kotlin
-micronaut(
-  runner = { params ->
-    myApp.run(params)
-  }
-)
-```
-
-</td>
-<td>
-
-```kotlin
-quarkus(
-  runner = { params ->
-    MyApp.main(params)
-  }
-)
-```
-
-</td>
-</tr>
-</table>
-
-### Container Reuse
-
-Speed up local development by keeping reusable dependency containers running between test runs:
-
-```kotlin
-Stove { keepDependenciesRunning() }.with { ... }
-```
-
-### Cleanup
-
-Run cleanup logic when Stove stops at suite teardown:
-
-```kotlin
-postgresql {
-  PostgresqlOptions(cleanup = { it.execute("TRUNCATE users") }, ...)
-}
-
-kafka {
-  KafkaSystemOptions(cleanup = { it.deleteTopics(listOf("test-topic")) }, ...)
-}
-```
-
-Available for Kafka, PostgreSQL, MySQL, MongoDB, Couchbase, Cassandra, MSSQL, Elasticsearch, Redis.
-
-### Migrations
-
-Run system migrations during suite startup before the application under test receives dependency configuration:
-
-```kotlin
-postgresql {
-  PostgresqlOptions(...)
-   .migrations {
-      register<CreateUsersTable>()
-      register<CreateOrdersTable>()
-  }
-}
-```
-
-Available for Kafka, PostgreSQL, MySQL, MongoDB, Couchbase, Cassandra, MSSQL, Elasticsearch, Redis.
-
-### Provided Instances
-
-Connect to existing infrastructure instead of starting Testcontainers (useful when CI already provides shared services):
-
-```kotlin
-postgresql { PostgresqlOptions.provided(jdbcUrl = "jdbc:postgresql://ci-db:5432/test", ...) }
-kafka { KafkaSystemOptions.provided(bootstrapServers = "ci-kafka:9092", ...) }
-```
-
-> **Tip:** When using provided instances, use migrations to create isolated test schemas and cleanups to remove test
-> data afterwards. This ensures test isolation on shared infrastructure.
-
-<strong>Complete Example</strong>
-
-```kotlin
-test("should create order with payment processing") {
-  stove {
-    val userId = UUID.randomUUID().toString()
-    val productId = UUID.randomUUID().toString()
-
-    // 1. Seed database
-    postgresql {
-      shouldExecute("INSERT INTO users (id, name) VALUES ('$userId', 'John')")
-      shouldExecute("INSERT INTO products (id, price, stock) VALUES ('$productId', 99.99, 10)")
-    }
-
-    // 2. Mock external payment API
-    wiremock {
-      mockPost(
-        "/payments/charge", statusCode = 200,
-        responseBody = PaymentResult(success = true).some()
-      )
-    }
-
-    // 3. Call API
-    http {
-      postAndExpectBody<OrderResponse>(
-        "/orders",
-        body = CreateOrderRequest(userId, productId).some()
-      ) {
-        it.status shouldBe 201
-      }
-    }
-
-    // 4. Verify database
-    postgresql {
-      shouldQuery<Order>("SELECT * FROM orders WHERE user_id = '$userId'", mapper = { row ->
-        Order(row.string("status"))
-      }) {
-        it.first().status shouldBe "CONFIRMED"
-      }
-    }
-
-    // 5. Verify event published
-    kafka {
-      shouldBePublished<OrderCreatedEvent> {
-        actual.userId == userId
-      }
-    }
-
-    // 6. Verify via application service
-    using<InventoryService> { getStock(productId) shouldBe 9 }
-  }
-}
-```
-
-## Reference
-
-### Supported Components
-
-| Category   | Components                                                  |
-|------------|-------------------------------------------------------------|
-| Databases  | PostgreSQL, MySQL, MongoDB, Couchbase, Cassandra, MSSQL, Elasticsearch, Redis |
-| Messaging  | Kafka                                                       |
-| HTTP       | Built-in client, WebSockets, WireMock                       |
-| gRPC       | Client (grpc-kotlin), Mock Server (native)                  |
-| Frameworks | Spring Boot, Ktor, Micronaut, Quarkus                       |
-
-### Feature Matrix
-
-| Component     | Migrations | Cleanup | Provided Instance | Pause/Unpause |
-|---------------|:----------:|:-------:|:-----------------:|:-------------:|
-| PostgreSQL    |     ✅      |    ✅    |         ✅         |       ✅       |
-| MySQL         |     ✅      |    ✅    |         ✅         |       ✅       |
-| MSSQL         |     ✅      |    ✅    |         ✅         |       ✅       |
-| MongoDB       |     ✅      |    ✅    |         ✅         |       ✅       |
-| Couchbase     |     ✅      |    ✅    |         ✅         |       ✅       |
-| Cassandra     |     ✅      |    ✅    |         ✅         |       ✅       |
-| Elasticsearch |     ✅      |    ✅    |         ✅         |       ✅       |
-| Redis         |     ✅      |    ✅    |         ✅         |       ✅       |
-| Kafka         |     ✅      |    ✅    |         ✅         |       ✅       |
-| WireMock      |    n/a     |   n/a   |        n/a        |      n/a      |
-| HTTP Client   |    n/a     |   n/a   |        n/a        |      n/a      |
-| gRPC Mock     |    n/a     |   n/a   |        n/a        |      n/a      |
-
-<details>
-<summary><strong>FAQ</strong></summary>
-
-**Can I use Stove with Java applications?**  
-Yes. Your application can be Java, Scala, or any JVM language. Tests are written in Kotlin for the DSL.
-
-**Does Stove replace Testcontainers?**  
-No. Stove uses Testcontainers underneath and adds the unified DSL on top.
-
-**How slow is the first run?**  
-First run pulls Docker images (~1-2 min). Use `keepDependenciesRunning()` for instant subsequent runs.
-
-**Can I run tests in parallel?**  
-Yes, with unique test data per test.
-See [provided instances docs](https://trendyol.github.io/stove/Components/11-provided-instances/).
-
-</details>
-
-## Resources
-
-- **[Documentation](https://trendyol.github.io/stove/)**: Full guides and API reference
-- **[Examples](https://github.com/Trendyol/stove/tree/main/examples)**: Working sample projects
-- **[AI Agent Skill](https://github.com/Trendyol/stove/tree/main/.agents/skills/stove)**: Install with `stove skills install` into `.agents/skills/stove/`
-- **[Blog Post](https://medium.com/trendyol-tech/a-new-approach-to-the-api-end-to-end-testing-in-kotlin-f743fd1901f5)**:
-  Motivation and design decisions
-- **[Video Walkthrough](https://youtu.be/DJ0CI5cBanc?t=669)**: Live demo (Turkish)
+**Can tests run in parallel?**
+Yes, when their state and assertions are isolated. Use distinct IDs and filter queries and event assertions by those IDs. Shared tables, topics, mock stubs, and application state can still cause interference; use separate schemas, resources, or suites where needed.
 
 ## Community
 
-**Used by:**
+Used at [Trendyol](https://www.trendyol.com). Using Stove elsewhere? Open a PR to add your company.
 
-1. [Trendyol](https://www.trendyol.com): Leading e-commerce platform, Turkey
+[Issues](https://github.com/Trendyol/stove/issues) and contributions are welcome. See [CONTRIBUTING.md](CONTRIBUTING.md) for local checks and CI, or explore the [recipes](recipes/) for more examples.
 
-*Using Stove? Open a PR to add your company.*
+- [Background and design](https://medium.com/trendyol-tech/a-new-approach-to-the-api-end-to-end-testing-in-kotlin-f743fd1901f5)
+- [Video walkthrough (Turkish)](https://youtu.be/DJ0CI5cBanc?t=669)
+- [Release notes and migration guides](https://trendyol.github.io/stove/release-notes/)
 
-**Contributions:** [Issues](https://github.com/Trendyol/stove/issues) and PRs welcome. See [local checks and CI](CONTRIBUTING.md).
-
-**License:** Apache 2.0
-
-> **Note:** Production-ready and used at scale. API still evolving; breaking changes possible in minor releases with
-> migration guides.
+Licensed under [Apache 2.0](LICENSE). APIs are evolving; check the release notes when upgrading.

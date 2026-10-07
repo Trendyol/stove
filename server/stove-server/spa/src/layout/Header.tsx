@@ -2,6 +2,7 @@ import type { MouseEventHandler } from "react";
 import stoveMarkUrl from "../assets/stove-mark.svg";
 import { VersionMismatchWarning } from "../components/VersionMismatchWarning";
 import { useTheme } from "../hooks/useTheme";
+import { isDemo } from "../utils/demo-mode";
 import { appPath, basePath } from "../utils/location";
 import type { StoveRoute } from "../utils/routes";
 import type { VersionMismatchSummary } from "../utils/version-mismatch";
@@ -20,7 +21,9 @@ export function Header({
   onNavigateAdmin,
 }: HeaderProps) {
   const { theme, toggle } = useTheme();
-  const swaggerUrl = appPath("/swagger-ui/");
+  const swaggerUrl = isDemo
+    ? "https://trendyol.github.io/stove/Components/18-dashboard/#rest-api"
+    : appPath("/swagger-ui/");
 
   return (
     <header className="stove-topbar">
@@ -38,10 +41,16 @@ export function Header({
         ) : null}
         <span
           className={`stove-stream-status ${liveConnected ? "is-live" : "is-polling"}`}
-          title={liveConnected ? "Live SSE stream connected" : "SSE disconnected; polling APIs"}
+          title={
+            isDemo
+              ? "Sample data with a replayable test run"
+              : liveConnected
+                ? "Live SSE stream connected"
+                : "SSE disconnected; polling APIs"
+          }
         >
           <span />
-          {liveConnected ? "Connected" : "Reconnecting"}
+          {isDemo ? "Demo data" : liveConnected ? "Connected" : "Reconnecting"}
         </span>
         <a
           aria-current={activeRoute === "admin" ? "page" : undefined}
@@ -68,11 +77,13 @@ export function Header({
             <a href="https://github.com/Trendyol/stove" target="_blank" rel="noopener noreferrer">
               GitHub ↗
             </a>
-            <span>MCP endpoint</span>
-            <code>
-              {window.location.origin}
-              {basePath()}/mcp
-            </code>
+            <span>{isDemo ? "MCP is available with your own Stove server." : "MCP endpoint"}</span>
+            {!isDemo && (
+              <code>
+                {window.location.origin}
+                {basePath()}/mcp
+              </code>
+            )}
           </div>
         </details>
         <button

@@ -1,5 +1,6 @@
 import { useMemo, useSyncExternalStore } from "react";
 import type { Tab } from "../layout/detail/TabBar";
+import { isDemo } from "./demo-mode";
 
 export type EvidenceKind = "entry" | "span" | "snapshot" | "interaction" | "warning";
 export interface EvidenceFocus {
@@ -25,8 +26,11 @@ export type Location =
 export const basePath = () =>
   typeof document === "undefined"
     ? ""
-    : (document.querySelector('meta[name="stove-base"]')?.getAttribute("content") ?? "");
-export const appPath = (path: string) => `${basePath()}${path}`;
+    : isDemo
+      ? window.location.pathname.replace(/\/(?:index\.html)?$/, "")
+      : (document.querySelector('meta[name="stove-base"]')?.getAttribute("content") ?? "");
+export const appPath = (path: string) =>
+  `${basePath()}${isDemo && !path.startsWith("/api/") ? "/#" : ""}${path}`;
 export const encodeComponent = (value: string) =>
   encodeURIComponent(value).replace(
     /[!'()*]/g,
@@ -106,12 +110,22 @@ export function parseLocation(pathname: string, search: string): Location {
 
 const subscribe = (listener: () => void) => {
   window.addEventListener("popstate", listener);
-  return () => window.removeEventListener("popstate", listener);
+  window.addEventListener("hashchange", listener);
+  return () => {
+    window.removeEventListener("popstate", listener);
+    window.removeEventListener("hashchange", listener);
+  };
 };
-const snapshot = () => window.location.pathname + window.location.search;
+const snapshot = () =>
+  isDemo ? window.location.hash.slice(1) || "/" : window.location.pathname + window.location.search;
+export function locationSearch(): string {
+  const location = snapshot();
+  const index = location.indexOf("?");
+  return index < 0 ? "" : location.slice(index);
+}
 export function useLocation(): Location {
   const location = useSyncExternalStore(subscribe, snapshot);
-  const prefix = basePath();
+  const prefix = isDemo ? "" : basePath();
   return useMemo(() => {
     const index = location.indexOf("?");
     const pathname = index < 0 ? location : location.slice(0, index);
@@ -127,7 +141,7 @@ export function useLocation(): Location {
 }
 export function navigateTo(path: string, replace = false) {
   const destination = appPath(path);
-  if (destination === snapshot()) return;
+  if ((isDemo ? path : destination) === snapshot()) return;
   window.history[replace ? "replaceState" : "pushState"](null, "", destination);
   window.dispatchEvent(new PopStateEvent("popstate"));
 }

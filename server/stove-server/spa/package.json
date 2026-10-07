@@ -13,7 +13,9 @@
     "typecheck": "tsc -b",
     "format": "biome check --write src",
     "generate:api": "node scripts/api-types/generate.mjs",
-    "check:api": "node scripts/api-types/generate.mjs --check"
+    "check:api": "node scripts/api-types/generate.mjs --check",
+    "build:demo": "tsc -b && vite build --mode demo --outDir dist-demo",
+    "dev:demo": "vite --mode demo"
   },
   "dependencies": {
     "@dagrejs/dagre": "^3.0.0",
@@ -28,8 +30,10 @@
     "@testing-library/react": "^16.3.3",
     "@types/react": "^19.1.0",
     "@types/react-dom": "^19.1.0",
+    "@types/sql.js": "^1.4.11",
     "@vitejs/plugin-react": "^6.0.0",
     "jsdom": "^30.0.1",
+    "sql.js": "^1.14.2",
     "tailwindcss": "^4.0.0",
     "typescript": "~7.0.2",
     "vite": "^8.0.0"

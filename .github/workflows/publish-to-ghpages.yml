@@ -7,6 +7,8 @@ on:
       - 'docs/**'
       - 'hooks/**'
       - 'mkdocs.yml'
+      - 'server/stove-server/spa/**'
+      - 'gradle.properties'
       - 'requirements-docs.txt'
       - '.github/workflows/publish-to-ghpages.yml'
 
@@ -29,8 +31,24 @@ jobs:
       - name: Install Dependencies
         run: pip install -r requirements-docs.txt
 
+      - name: Set up Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: '24'
+          cache: 'npm'
+          cache-dependency-path: server/stove-server/spa/package-lock.json
+
+      - name: Build interactive dashboard demo
+        working-directory: server/stove-server/spa
+        run: |
+          npm ci
+          npm run build:demo
+
       - name: Build Site
         run: mkdocs build --strict
+
+      - name: Include dashboard demo
+        run: cp -R server/stove-server/spa/dist-demo site/dashboard-demo
 
       - name: Deploy to GitHub Pages
         uses: peaceiris/actions-gh-pages@v4

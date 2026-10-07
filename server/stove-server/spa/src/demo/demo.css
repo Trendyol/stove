@@ -1,0 +1,77 @@
+.stove-demo-root {
+  display: flex;
+  flex-direction: column;
+  height: 100dvh;
+  overflow: hidden;
+}
+.stove-demo-root > .stove-app-shell {
+  flex: 1;
+  height: auto;
+  min-height: 0;
+}
+.stove-demo-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 20px;
+  background: #123b36;
+  color: #f0fdfa;
+  font:
+    12px / 1.4 system-ui,
+    sans-serif;
+  flex-shrink: 0;
+}
+.stove-demo-intro {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 4px 12px;
+}
+.stove-demo-intro strong {
+  color: #a7f3d0;
+  font-size: 13px;
+}
+.stove-demo-intro span {
+  opacity: 0.85;
+}
+.stove-demo-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+.stove-demo-actions button,
+.stove-demo-actions a {
+  padding: 5px 9px;
+  border: 1px solid #56877c;
+  border-radius: 6px;
+  color: inherit;
+  text-decoration: none;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.stove-demo-actions button:hover,
+.stove-demo-actions a:hover {
+  background: #205549;
+}
+.stove-demo-actions button:disabled {
+  opacity: 0.55;
+  cursor: default;
+}
+.stove-demo-actions :focus-visible {
+  outline: 2px solid #a7f3d0;
+  outline-offset: 3px;
+}
+@media (max-width: 760px) {
+  .stove-demo-toolbar {
+    padding: 8px 12px;
+    flex-wrap: wrap;
+  }
+  .stove-demo-intro {
+    display: block;
+  }
+  .stove-demo-intro span {
+    display: block;
+  }
+}

@@ -45,6 +45,23 @@ export function useSSE({
   };
 
   useEffect(() => {
+    if (typeof __STOVE_DEMO__ !== "undefined" && __STOVE_DEMO__) {
+      let cancelled = false;
+      let unsubscribe: (() => void) | undefined;
+      import("../demo/bootstrap")
+        .then(({ demo }) => demo)
+        .then((backend) => {
+          if (cancelled) return;
+          setConnected(true);
+          callbacksRef.current.onConnect?.();
+          unsubscribe = backend.subscribe((events) => callbacksRef.current.onEvents(events));
+        })
+        .catch(() => setConnected(false));
+      return () => {
+        cancelled = true;
+        unsubscribe?.();
+      };
+    }
     let disposed = false;
     let source: EventSource | null = null;
     let frame: number | null = null;

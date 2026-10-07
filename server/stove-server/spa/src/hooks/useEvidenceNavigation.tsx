@@ -6,6 +6,7 @@ import {
   type EvidenceKind,
   evidencePath,
   focusTab,
+  locationSearch,
   navigateTo,
   useLocation,
 } from "../utils/location";
@@ -59,7 +60,7 @@ export function EvidenceNavigationProvider({
   }, [runId, testId]);
   useEffect(() => {
     if (view)
-      destinations.current.set(view.tab, `${evidencePath(runId, testId)}${window.location.search}`);
+      destinations.current.set(view.tab, `${evidencePath(runId, testId)}${locationSearch()}`);
   }, [runId, testId, view]);
   const value = useMemo<EvidenceNavigation>(() => {
     const path = evidencePath(runId, testId);
@@ -70,7 +71,7 @@ export function EvidenceNavigationProvider({
       testId,
       context: view?.context ?? 10,
       moreContext: () => {
-        const params = new URLSearchParams(window.location.search);
+        const params = new URLSearchParams(locationSearch());
         params.set("context", String(Math.min(100, (view?.context ?? 10) + 10)));
         navigateTo(`${path}?${params}`, true);
       },
@@ -92,12 +93,12 @@ export function EvidenceNavigationProvider({
           navigateTo(path);
           return;
         }
-        const params = new URLSearchParams(window.location.search);
+        const params = new URLSearchParams(locationSearch());
         params.set("full", "1");
         navigateTo(`${path}?${params}`);
       },
       openError: () => update(view?.tab ?? "timeline", "error"),
-      href: `${window.location.origin}${window.location.pathname === appPath(path) ? window.location.pathname + window.location.search : appPath(path)}`,
+      href: `${window.location.origin}${appPath(path)}${view ? locationSearch() : ""}`,
     };
   }, [
     runId,

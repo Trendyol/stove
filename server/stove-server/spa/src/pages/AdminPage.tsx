@@ -1,5 +1,6 @@
 import type { MouseEventHandler } from "react";
 import type { AppSummary } from "../api/types";
+import { appPath } from "../utils/location";
 import { ClearAllCard, PurgeCard, RetentionCard, StorageCard } from "./admin/AdminSections";
 import { DatabaseExplorer } from "./admin/DatabaseExplorer";
 import { useAdminController } from "./admin/useAdminController";
@@ -19,7 +20,11 @@ export function AdminPage({ apps, onNavigateDashboard }: AdminPageProps) {
             <div className="stove-kicker">Runtime controls</div>
             <h2 id="stove-admin-title">Dashboard administration</h2>
           </div>
-          <a className="stove-admin-back stove-focus-ring" href="/" onClick={onNavigateDashboard}>
+          <a
+            className="stove-admin-back stove-focus-ring"
+            href={appPath("/")}
+            onClick={onNavigateDashboard}
+          >
             <span aria-hidden="true">←</span>
             Back to dashboard
           </a>

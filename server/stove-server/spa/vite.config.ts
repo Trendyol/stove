@@ -9,15 +9,16 @@ const version =
   readFileSync(propsPath, "utf-8").match(/^version=(.+)$/m)?.[1] ??
   "dev";
 
-export default defineConfig({
-  base: "./",
+export default defineConfig(({ mode }) => ({
+  base: mode === "demo" ? "/stove/dashboard-demo/" : "./",
   plugins: [react()],
   define: {
     __STOVE_VERSION__: JSON.stringify(version),
+    __STOVE_DEMO__: mode === "demo",
   },
   server: {
     proxy: {
       "/api": "http://localhost:4040",
     },
   },
-});
+}));

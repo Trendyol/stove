@@ -11,7 +11,11 @@ Current server versions start the dashboard with bare `stove`; older docs and sc
 
 ## Preview
 
-The dashboard is useful because the test timeline, trace tree, and system evidence stay linked to the same run instead of living in separate tools.
+**[Open the interactive dashboard demo →](https://trendyol.github.io/stove/dashboard-demo/)**
+
+Explore the full dashboard with fictional checkout runs: follow a payment timeout through the timeline and trace, inspect mock requests and OIDC snapshots, browse Kafka evidence, and compare historical runs. **Replay a test** streams a fresh run into the interface. The admin page includes a working SQLite workbench and retention controls.
+
+The demo stores its data only in browser memory. **Reset demo** restores the sample runs; reloading starts fresh too. No Stove server, Docker, or installation is required.
 
 {{ dashboard_preview() }}
 
