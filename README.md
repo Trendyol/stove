@@ -20,6 +20,7 @@
 
 <p align="center">
   <a href="https://trendyol.github.io/stove/getting-started/">Get started</a> ·
+  <a href="https://trendyol.github.io/stove/wizard/">Setup wizard</a> ·
   <a href="https://trendyol.github.io/stove/">Documentation</a> ·
   <a href="https://trendyol.github.io/stove/recipes/">Recipes</a> ·
   <a href="https://trendyol.github.io/stove/dashboard-demo/">Try the dashboard</a> ·
