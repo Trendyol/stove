@@ -6,7 +6,7 @@
 
 <p align="center">
   End-to-end tests in Kotlin for JVM and non-JVM applications.<br/>
-  Start your app and its dependencies, make a request, then check what happened in the database and on the message bus.
+  Run your application with its dependencies, test complete use cases, and see what happened when they fail.
 </p>
 
 <p align="center">
@@ -26,7 +26,17 @@
   <a href="https://trendyol.github.io/stove/release-notes/">Release notes</a>
 </p>
 
-An order endpoint can return `201` and still fail to save the order or publish its event. Stove lets you check all three in the same test:
+## Why Stove?
+
+An end-to-end test suite can become a small framework of its own. There is code to boot the application, connect its dependencies, prepare data, wait for background work, and explain what went wrong. Start another service or switch application frameworks, and much of that work starts over.
+
+Stove exists to make that work reusable. It brings application startup, dependency configuration, assertions, and diagnostics into one test lifecycle. You describe the environment your application needs, then write tests around its use cases.
+
+That same approach works across Spring Boot, Ktor, Micronaut, and Quarkus, and extends to applications in other languages. Your test suite can keep a familiar shape as the stack around it changes.
+
+## What a Stove test looks like
+
+Call your application, then check its database and messages in the same test:
 
 ```kotlin
 stove {
@@ -52,17 +62,33 @@ stove {
 }
 ```
 
-This example assumes the test has seeded a customer and product and configured the three systems. Request, row, and event types come from your application. The [Spring showcase recipe](recipes/jvm/kotlin-recipes/spring-showcase/) has a complete application and test suite you can run.
+The HTTP, PostgreSQL, and Kafka blocks give the test direct access to each part of the flow. Add the systems your application uses, including mocks for external services you want to control.
 
-## Why Stove?
+For JVM applications running in the test process, you can set a breakpoint in your application code and step through the request from the test. You can also access application beans when a test needs them. Applications running as a separate process, in a container, or in an existing environment use the same style of assertions.
 
-Testcontainers starts infrastructure. An end-to-end test also needs to pass connection details to the app, boot it, wait for asynchronous work, make assertions, and clean up. Stove handles that lifecycle and gives you Kotlin blocks for the systems involved.
+## When a test fails
 
-- **Test through your app.** Drive HTTP, WebSocket, or gRPC calls, then inspect database state, Kafka messages, and calls to mocked services.
-- **Debug the whole flow.** In-process JVM runners let you use breakpoints and access application beans. Failure reports collect operations and system snapshots; optional tracing shows the call chain.
-- **Use the same test style across stacks.** Run Spring Boot, Ktor, Micronaut, or Quarkus in the test JVM; launch another language as a process or container; or connect to an app that is already running.
+Stove keeps the evidence from a failed test together in the console report: operations, inputs, outputs, and system snapshots. With [tracing](https://trendyol.github.io/stove/Components/15-tracing/) enabled, you can follow the request into your application:
 
-Stove is useful when the behavior crosses component boundaries. Your test framework still handles test discovery, assertions, and unit tests.
+```text
+EXECUTION TRACE (Call Chain)
+✓ POST /orders
+  ✓ OrderController.create
+    ✓ OrderService.placeOrder
+      ✓ SELECT inventory
+      ✗ POST /payments/charge — PaymentTimeoutException
+      ✓ orders.created publish
+```
+
+Here, the payment call is where the investigation starts. From there, inspect the mock response, the database state, or the surrounding trace. [When a Test Fails](https://trendyol.github.io/stove/observability/when-it-fails/) walks through that process.
+
+## Explore the dashboard
+
+**[Open the interactive demo →](https://trendyol.github.io/stove/dashboard-demo/)**
+
+Browse sample applications and historical runs, inspect a failing checkout, follow its trace, compare expected and actual values, and open Kafka, OIDC, and database snapshots. The demo uses the same dashboard as the Stove server. You can replay a test, try the SQL workbench, change retention, and reset the sample data. Everything stays in your browser.
+
+For your own tests, [Stove Server](https://trendyol.github.io/stove/Components/18-dashboard/) collects this evidence and keeps it available after the run. Use it locally while developing or share a server with your team and CI jobs.
 
 ## Get started
 
@@ -82,7 +108,7 @@ The first run downloads dependencies and container images. Start with the recipe
 
 ### Add Stove to your application
 
-Follow [Getting Started](https://trendyol.github.io/stove/getting-started/) for dependencies, test discovery, and a complete setup. Pick the runner that matches how you want to launch your app:
+The [Getting Started guide](https://trendyol.github.io/stove/getting-started/) walks through a complete setup with Kotest or JUnit. Choose how you want to run your app:
 
 | Application | Setup guide |
 |-------------|-------------|
@@ -90,43 +116,6 @@ Follow [Getting Started](https://trendyol.github.io/stove/getting-started/) for 
 | A separate process | [Polyglot testing](https://trendyol.github.io/stove/other-languages/) |
 | A container | [Container runner](https://trendyol.github.io/stove/Components/22-container/) |
 | Already running | [Provided application](https://trendyol.github.io/stove/Components/19-provided-application/) |
-
-Register dependencies and one application runner in `Stove().with { ... }.run()` before the suite, and call `Stove.stop()` at teardown. For Kotest 6, configure project discovery in `kotest.properties` and register `StoveKotestExtension`; JUnit uses `StoveJUnitExtension`. Both attach Stove evidence to failed tests.
-
-Keep the Stove BOM, test modules, tracing plugin, and dashboard server on matching versions. Kafka publish/consume assertions also need the [application-side interceptors](https://trendyol.github.io/stove/Components/02-kafka/); setting only the broker address is not enough.
-
-## When a test fails
-
-The console report includes the operations leading up to the failure, their inputs and outputs, and available system snapshots. Enable [tracing](https://trendyol.github.io/stove/Components/15-tracing/) to add the application call chain:
-
-```text
-EXECUTION TRACE (Call Chain)
-✓ POST /orders
-  ✓ OrderController.create
-    ✓ OrderService.placeOrder
-      ✓ SELECT inventory
-      ✗ POST /payments/charge — PaymentTimeoutException
-      ✓ orders.created publish
-```
-
-This illustrative trace points to the payment call behind a failed order assertion. See [When a Test Fails](https://trendyol.github.io/stove/observability/when-it-fails/) for the path from a console failure to the relevant trace, mock interaction, or database snapshot.
-
-## Explore the dashboard
-
-**[Open the interactive demo →](https://trendyol.github.io/stove/dashboard-demo/)**
-
-Browse sample applications and historical runs, inspect a failing checkout, follow its trace, compare expected and actual values, and open Kafka, OIDC, and database snapshots. The demo uses the same dashboard as the Stove server. You can replay a test, try the SQL workbench, change retention, and reset the sample data. Everything stays in your browser.
-
-To collect evidence from your own tests, install and start the server:
-
-```bash
-brew install trendyol/trendyol-tap/stove
-stove
-```
-
-Then add `stove-dashboard` and register `dashboard { }` alongside your application's existing Stove setup. Open [localhost:4040](http://localhost:4040) and run your tests. Traces require the tracing module and its setup too.
-
-The [Dashboard guide](https://trendyol.github.io/stove/Components/18-dashboard/) covers container installation, test configuration, shared PostgreSQL storage, and deployment. The server's admin tools can modify stored data and have no built-in authentication; keep your own server on a trusted network.
 
 ## Supported systems
 
@@ -145,7 +134,7 @@ Need something else? [Write a custom system](https://trendyol.github.io/stove/wr
 
 ## Working with coding agents
 
-The server exposes a read-only [MCP endpoint](https://trendyol.github.io/stove/Components/21-mcp/) at `http://localhost:4040/mcp`. An agent can inspect failed runs, trace spans, and system evidence using the same run and test IDs as the dashboard. Console reports and logs remain available without MCP.
+The evidence in the dashboard is also available to coding agents through the server's read-only [MCP tools](https://trendyol.github.io/stove/Components/21-mcp/). An agent can inspect a failed run, follow its trace, and look at the recorded system state while helping you investigate.
 
 Run `stove skills install` in your repository to install the [Stove agent skill](.agents/skills/stove/). It covers setup, assertions, and failure investigation. See the [MCP guide](https://trendyol.github.io/stove/Components/21-mcp/) for configuration and usage.
 
