@@ -71,7 +71,7 @@ jobs:
 
       - uses: jdx/mise-action@v5
         with:
-          version: '2026.10.3'
+          version: '2026.10.4'
           install: false
           env: false
 
