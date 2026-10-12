@@ -36,7 +36,7 @@ Stove exists to make that work reusable. It brings application startup, dependen
 That same approach works across Spring Boot, Ktor, Micronaut, and Quarkus, and extends to applications in other languages. Your test suite can keep a familiar shape as the stack around it changes.
 
 <p align="center">
-  <img src="docs/assets/stove_new.svg" alt="A Stove test drives the application under test and its dependencies through one lifecycle" width="640"/>
+  <img src="docs/assets/stove_new.svg" alt="A Stove test drives the application under test and its dependencies through one lifecycle" width="100%"/>
 </p>
 
 ## What a Stove test looks like
