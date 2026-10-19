@@ -61,6 +61,7 @@ fn to_status(error: AppError) -> Status {
     AppError::Database(_)
     | AppError::Diesel(_)
     | AppError::DieselConnection(_)
+    | AppError::DatabasePool(_)
     | AppError::Migration(_)
     | AppError::Postgres(_)
     | AppError::PostgresTls(_)

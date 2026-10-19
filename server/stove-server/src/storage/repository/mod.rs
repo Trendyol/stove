@@ -1,9 +1,9 @@
 //! Thread-safe storage facade for dashboard runs, tests, entries, spans, and
 //! snapshots.
 //!
-//! Writes and reads use separate database connections so the UI can keep
-//! polling while ingestion is busy. Each side is serialized through its own
-//! mutex because Diesel connections are not `Sync`.
+//! Writes and reads use separate database capacity so the UI can keep polling
+//! while ingestion is busy. SQLite serializes each connection through a mutex;
+//! PostgreSQL uses separate connection pools for writes, reads, and the explorer.
 //!
 //! This module owns backend selection and exposes backend-neutral operations.
 //! Engine-specific connections, queries, writes, and administration live in

@@ -17,12 +17,12 @@ use crate::storage::schema::postgres::{
 impl PostgresBackend {
   pub fn save_run_start(&self, run: &RunStart<'_>) -> Result<()> {
     self
-      .lock_write()?
+      .checkout_write()?
       .transaction(|conn| save_run_start_on(conn, run))
   }
 
   pub fn save_run_end(&self, run: &RunEnd<'_>) -> Result<()> {
-    self.lock_write()?.transaction(|conn| {
+    self.checkout_write()?.transaction(|conn| {
       let retention = retention_on(conn)?;
       save_run_end_on(conn, run)?;
       prune_for_completed_run(conn, run.run_id, retention)
@@ -30,35 +30,35 @@ impl PostgresBackend {
   }
 
   pub fn save_test_start(&self, test: &TestStart<'_>) -> Result<()> {
-    save_test_start_on(&mut *self.lock_write()?, test)
+    save_test_start_on(&mut *self.checkout_write()?, test)
   }
 
   pub fn save_test_end(&self, test: &TestEnd<'_>) -> Result<()> {
-    save_test_end_on(&mut *self.lock_write()?, test)
+    save_test_end_on(&mut *self.checkout_write()?, test)
   }
 
   pub fn save_entry(&self, entry: &NewEntry) -> Result<()> {
-    save_entry_on(&mut *self.lock_write()?, entry)
+    save_entry_on(&mut *self.checkout_write()?, entry)
   }
 
   pub fn save_span(&self, span: &NewSpan) -> Result<()> {
-    save_span_on(&mut *self.lock_write()?, span)
+    save_span_on(&mut *self.checkout_write()?, span)
   }
 
   pub fn save_snapshot(&self, snapshot: &SnapshotWrite<'_>) -> Result<()> {
-    save_snapshot_on(&mut *self.lock_write()?, snapshot)
+    save_snapshot_on(&mut *self.checkout_write()?, snapshot)
   }
 
   pub fn save_mock_interaction(&self, interaction: &NewMockInteraction) -> Result<()> {
-    save_mock_interaction_on(&mut *self.lock_write()?, interaction)
+    save_mock_interaction_on(&mut *self.checkout_write()?, interaction)
   }
 
   pub fn save_mock_warning(&self, warning: &NewMockWarning) -> Result<()> {
-    save_mock_warning_on(&mut *self.lock_write()?, warning)
+    save_mock_warning_on(&mut *self.checkout_write()?, warning)
   }
 
   pub fn clear_all(&self) -> Result<()> {
-    let mut conn = self.lock_write()?;
+    let mut conn = self.checkout_write()?;
     diesel::delete(runs::table).execute(&mut *conn)?;
     Ok(())
   }

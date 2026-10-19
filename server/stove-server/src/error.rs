@@ -18,6 +18,9 @@ pub enum AppError {
   #[error("Database connection error: {0}")]
   DieselConnection(#[from] diesel::ConnectionError),
 
+  #[error("Database connection pool unavailable: {0}")]
+  DatabasePool(#[from] diesel::r2d2::PoolError),
+
   #[error("Migration error: {0}")]
   Migration(#[from] refinery::Error),
 
@@ -53,6 +56,7 @@ impl AppError {
 
     match self {
       Self::DieselConnection(_)
+      | Self::DatabasePool(_)
       | Self::PostgresTls(_)
       | Self::Diesel(Error::DatabaseError(
         DatabaseErrorKind::UnableToSendCommand | DatabaseErrorKind::ClosedConnection,
@@ -82,6 +86,7 @@ impl axum::response::IntoResponse for AppError {
       AppError::Database(_)
       | AppError::Diesel(_)
       | AppError::DieselConnection(_)
+      | AppError::DatabasePool(_)
       | AppError::Migration(_)
       | AppError::Postgres(_)
       | AppError::PostgresTls(_)

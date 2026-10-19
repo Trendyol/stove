@@ -49,7 +49,7 @@ utoipa-swagger-ui = { version = "10", features = ["axum", "vendored"] }
 tokio-stream = "0.1"
 
 # Database
-diesel = { version = "2.3", default-features = false, features = ["postgres", "sqlite", "serde_json", "returning_clauses_for_sqlite_3_35", "32-column-tables"] }
+diesel = { version = "2.3", default-features = false, features = ["postgres", "sqlite", "r2d2", "serde_json", "returning_clauses_for_sqlite_3_35", "32-column-tables"] }
 # Publishing enables `vendored-postgres` so release archives do not depend on
 # a system-installed libpq/OpenSSL. Normal development builds stay fast.
 pq-sys = { version = "0.7", default-features = false, optional = true }
@@ -58,6 +58,7 @@ refinery = { version = "0.10", default-features = false, features = ["postgres",
 # Keep this compatible with refinery-core's rusqlite dependency.
 rusqlite = { version = "=0.39.0", features = ["bundled"] }
 postgres = "0.19"
+r2d2_postgres = "0.18"
 postgres-native-tls = "0.5"
 native-tls = "0.2"
 

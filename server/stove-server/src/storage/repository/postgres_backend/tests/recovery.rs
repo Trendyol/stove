@@ -45,11 +45,11 @@ fn reconnects_read_write_and_explorer_without_losing_data_or_settings() {
   };
 
   for _ in 0..2 {
-    terminate(&mut database, pid(&mut backend.read.lock().unwrap()));
-    terminate(&mut database, pid(&mut backend.write.lock().unwrap()));
+    terminate(&mut database, pid(&mut backend.read.get().unwrap()));
+    terminate(&mut database, pid(&mut backend.write.get().unwrap()));
     let explorer_pid = backend
       .explorer
-      .lock()
+      .get()
       .unwrap()
       .query_one("SELECT pg_backend_pid()", &[])
       .unwrap()
@@ -79,42 +79,57 @@ fn reconnects_read_write_and_explorer_without_losing_data_or_settings() {
 }
 
 #[test]
-fn health_reports_explorer_outage_and_recovers_when_database_returns() {
-  let Some(mut database) = TestSchema::from_env() else {
+fn health_reports_explorer_pool_exhaustion_and_recovers_after_return() {
+  let Some(database) = TestSchema::from_env() else {
     return;
   };
-  let mut backend = PostgresBackend::connect(&database.url, 2).unwrap();
-  let explorer_pid = backend
-    .explorer
-    .lock()
-    .unwrap()
-    .query_one("SELECT pg_backend_pid()", &[])
-    .unwrap()
-    .get(0);
-  terminate(&mut database, explorer_pid);
-  // Existing read/write connections remain healthy; only explorer must reconnect.
-  // Accept and immediately close sockets to simulate an unavailable database.
-  let socket = std::net::TcpListener::bind("127.0.0.1:0").unwrap();
-  let port = socket.local_addr().unwrap().port();
-  backend.database_url = format!(
-    "postgresql://stove_test@127.0.0.1:{port}/stove_test?sslmode=disable&connect_timeout=1"
+  let backend = PostgresBackend::connect(&database.url, 2).unwrap();
+  let held: Vec<_> = (0..backend.explorer.max_size())
+    .map(|_| backend.explorer.get().unwrap())
+    .collect();
+  let started = Instant::now();
+  let error = backend.check_health().unwrap_err();
+  assert!(error.is_database_unavailable());
+  assert_eq!(
+    error.into_response().status(),
+    StatusCode::SERVICE_UNAVAILABLE
   );
-  let reject = std::thread::spawn(move || {
-    for _ in 0..2 {
-      drop(socket.accept().unwrap());
-    }
-  });
-  for _ in 0..2 {
-    let error = backend.check_health().unwrap_err();
-    assert!(error.is_database_unavailable());
-    assert_eq!(
-      error.into_response().status(),
-      StatusCode::SERVICE_UNAVAILABLE
-    );
-  }
-  reject.join().unwrap();
-  backend.database_url.clone_from(&database.url);
+  assert!(
+    started.elapsed() < Duration::from_secs(5),
+    "pool exhaustion must not block indefinitely"
+  );
+  drop(held);
   backend.check_health().unwrap();
+}
+
+#[test]
+fn concurrent_reads_have_separate_capacity_from_ingestion() {
+  let Some(database) = TestSchema::from_env() else {
+    return;
+  };
+  let repo = database.repository();
+  let Backend::Postgres(backend) = &repo.backend else {
+    unreachable!()
+  };
+  let held: Vec<_> = (0..backend.read.max_size())
+    .map(|_| backend.read.get().unwrap())
+    .collect();
+  // All read slots are occupied, but writes and explorer queries still work.
+  repo
+    .save_run_start("pooled-run", "app", "2024-01-01T00:00:00Z", &[])
+    .unwrap();
+  assert_eq!(
+    repo
+      .execute_database_query("SELECT count(*) FROM runs", 1)
+      .unwrap()
+      .rows[0][0]
+      .as_deref(),
+    Some("1")
+  );
+  let error = repo.get_runs(None).unwrap_err();
+  assert!(error.is_database_unavailable());
+  drop(held);
+  assert_eq!(repo.get_runs(None).unwrap().len(), 1);
 }
 
 #[test]

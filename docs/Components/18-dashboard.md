@@ -182,7 +182,9 @@ Multiple Stove pods must all use the same PostgreSQL database. SQLite is intenti
 
 Each dashboard event carries a stable UUID and a per-run sequence. A pod commits the domain update, deduplication record, and durable live event in one PostgreSQL transaction before acknowledging it. PostgreSQL advisory locks serialize events for the same run, preserve commit order in the live-event log, and coordinate retention pruning for the same application. The UI receives cross-pod updates through PostgreSQL `LISTEN/NOTIFY`, with durable outbox polling and `Last-Event-ID` replay as the correctness fallback. PostgreSQL is therefore both the data store and the coordination dependency; no Redis or message broker is required.
 
-Allow four PostgreSQL connections per replica (read, write, database explorer, and notification listener), plus operational headroom. Run the same Stove image version on every replica. Concurrent first starts are safe because migrations are serialized in PostgreSQL.
+Allow up to eight PostgreSQL connections per replica (four dashboard reads, one ingestion write, two database explorer queries, and one dedicated notification listener), plus operational headroom. Run the same Stove image version on every replica. Concurrent first starts are safe because migrations are serialized in PostgreSQL.
+
+Query connections are managed by Diesel’s `r2d2` integration and `r2d2_postgres`. The pools create connections on demand, validate them on checkout, and replace broken connections. Waiting for pool capacity times out after two seconds with HTTP 503 or gRPC `UNAVAILABLE`; idle connections expire after five minutes and connections are retired after thirty minutes. An interrupted operation is returned as an error rather than automatically replayed.
 
 For Kubernetes, use `/api/v1/meta` as a startup/readiness endpoint, expose `4040` for UI/REST/MCP and `4041` for gRPC, and give SIGTERM at least 10 seconds to drain. Mount ordinary settings from a `ConfigMap` and the connection URL from a `Secret`:
 
