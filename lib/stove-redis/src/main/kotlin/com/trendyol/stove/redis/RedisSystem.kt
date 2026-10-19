@@ -208,7 +208,7 @@ class RedisSystem(
   private fun createClient(config: RedisExposedConfiguration): RedisClient =
     RedisClient.create(
       RedisURI.create(config.host, config.port).apply {
-        setCredentialsProvider { Mono.just(RedisCredentials.just(null, config.password)) }
+        setCredentialsProvider(RedisCredentialsProvider { Mono.just(RedisCredentials.just(null, config.password)) })
       }
     )
 
