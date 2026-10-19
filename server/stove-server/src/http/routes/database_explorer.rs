@@ -35,7 +35,8 @@ pub async fn get_database_schema(State(state): State<AppState>) -> Result<Json<D
   request_body = DatabaseQueryRequest,
   responses(
     (status = 200, description = "Database query result", body = DatabaseQueryResult),
-    (status = 400, description = "Invalid or rejected query")
+    (status = 400, description = "Invalid or rejected query"),
+    (status = 503, description = "Database connection unavailable")
   )
 )]
 pub async fn execute_database_query(
@@ -59,7 +60,13 @@ pub async fn execute_database_query(
     .repository
     .execute_database_query(sql, max_rows)
     .map(Json)
-    .map_err(|error| AppError::InvalidEvent(format!("database query failed: {error}")))
+    .map_err(|error| {
+      if error.is_database_unavailable() {
+        error
+      } else {
+        AppError::InvalidEvent(format!("database query failed: {error}"))
+      }
+    })
 }
 
 const fn default_max_rows() -> usize {

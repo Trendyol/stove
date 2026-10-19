@@ -45,10 +45,37 @@ pub enum AppError {
 
 pub type Result<T> = std::result::Result<T, AppError>;
 
+impl AppError {
+  /// Connection failures are transient service errors, not invalid client input.
+  #[must_use]
+  pub fn is_database_unavailable(&self) -> bool {
+    use diesel::result::{DatabaseErrorKind, Error};
+
+    match self {
+      Self::DieselConnection(_)
+      | Self::PostgresTls(_)
+      | Self::Diesel(Error::DatabaseError(
+        DatabaseErrorKind::UnableToSendCommand | DatabaseErrorKind::ClosedConnection,
+        _,
+      )) => true,
+      Self::Postgres(error) => {
+        error.is_closed()
+          || error.as_db_error().is_none()
+          || error.code().is_some_and(|code| {
+            code.code().starts_with("08")
+              || matches!(code.code(), "53300" | "57P01" | "57P02" | "57P03")
+          })
+      }
+      _ => false,
+    }
+  }
+}
+
 /// Convert `AppError` into an axum-compatible HTTP response.
 impl axum::response::IntoResponse for AppError {
   fn into_response(self) -> axum::response::Response {
     let status = match &self {
+      error if error.is_database_unavailable() => axum::http::StatusCode::SERVICE_UNAVAILABLE,
       AppError::NotFound(_) => axum::http::StatusCode::NOT_FOUND,
       AppError::GrpcTransport(_) => axum::http::StatusCode::BAD_GATEWAY,
       AppError::Serialization(_) | AppError::InvalidEvent(_) => axum::http::StatusCode::BAD_REQUEST,

@@ -28,8 +28,11 @@ impl PostgresBackend {
     let listener = std::thread::Builder::new()
       .name("stove-postgres-live-events".to_string())
       .spawn(move || {
-        if let Err(error) = listen_for_live_events(&database_url, &sender) {
-          tracing::warn!(%error, "PostgreSQL live-event listener stopped; polling remains active");
+        while !sender.is_closed() {
+          if let Err(error) = listen_for_live_events(&database_url, &sender) {
+            tracing::warn!(%error, "PostgreSQL live-event listener disconnected; reconnecting in one second, polling remains active");
+            std::thread::sleep(Duration::from_secs(1));
+          }
         }
       });
     if let Err(error) = listener {
@@ -44,7 +47,7 @@ impl PostgresBackend {
     event: &PreparedDashboardEvent,
   ) -> Result<CommitOutcome> {
     let sequence = sequence_to_i64(identity.sequence, "PostgreSQL")?;
-    self.lock_write().transaction(|conn| {
+    self.lock_write()?.transaction(|conn| {
       diesel::sql_query("SELECT pg_advisory_xact_lock(hashtextextended($1, 0))")
         .bind::<Text, _>(&event.live.run_id)
         .execute(conn)?;
@@ -104,7 +107,7 @@ impl PostgresBackend {
   }
 
   pub fn latest_live_event_id(&self) -> Result<u64> {
-    let mut conn = self.lock_read();
+    let mut conn = self.lock_read()?;
     let id = live_events::table
       .select(max(live_events::id))
       .first::<Option<i64>>(&mut *conn)?
@@ -115,7 +118,7 @@ impl PostgresBackend {
   pub fn live_events_after(&self, after_id: u64, limit: usize) -> Result<Vec<StoredLiveEvent>> {
     let after_id = i64::try_from(after_id).unwrap_or(i64::MAX);
     let limit = i64::try_from(limit).unwrap_or(i64::MAX);
-    let mut conn = self.lock_read();
+    let mut conn = self.lock_read()?;
     live_events::table
       .filter(live_events::id.gt(after_id))
       .order(live_events::id)

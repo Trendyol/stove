@@ -1,3 +1,5 @@
+mod recovery;
+
 use std::collections::BTreeMap;
 
 use postgres::Client;
@@ -22,7 +24,8 @@ impl TestSchema {
       .batch_execute(&format!("CREATE SCHEMA {name}"))
       .expect("create isolated test schema");
     let separator = if database_url.contains('?') { '&' } else { '?' };
-    let url = format!("{database_url}{separator}options=-csearch_path%3D{name}");
+    let url =
+      format!("{database_url}{separator}options=-csearch_path%3D{name}&application_name={name}");
     Some(Self { root, name, url })
   }
 

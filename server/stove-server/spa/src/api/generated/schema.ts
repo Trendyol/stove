@@ -983,6 +983,13 @@ export interface operations {
                 };
                 content?: never;
             };
+            /** @description Database connection unavailable */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
         };
     };
     get_database_schema: {
@@ -1174,6 +1181,13 @@ export interface operations {
             };
             /** @description Event could not be persisted */
             500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Database connection unavailable */
+            503: {
                 headers: {
                     [name: string]: unknown;
                 };

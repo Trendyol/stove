@@ -36,7 +36,8 @@ use crate::proto;
       content_type = "application/x-protobuf"
     ),
     (status = 400, description = "Malformed protobuf or invalid dashboard event"),
-    (status = 500, description = "Event could not be persisted")
+    (status = 500, description = "Event could not be persisted"),
+    (status = 503, description = "Database connection unavailable")
   )
 )]
 pub async fn post_event(State(state): State<AppState>, body: Bytes) -> Result<impl IntoResponse> {

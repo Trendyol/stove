@@ -80,7 +80,7 @@ async fn check_storage(state: &AppState) -> HealthCheck {
   let (healthy, message) = match tokio::time::timeout(Duration::from_secs(3), probe).await {
     Ok(Ok(Ok(()))) => (
       true,
-      "Dashboard and ingestion database connections are responding.",
+      "Dashboard, ingestion, and database explorer connections are responding.",
     ),
     Ok(Ok(Err(error))) => {
       tracing::warn!(%error, "Storage health check failed");

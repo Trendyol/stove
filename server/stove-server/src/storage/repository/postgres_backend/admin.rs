@@ -14,11 +14,11 @@ use crate::storage::schema::postgres::{
 
 impl PostgresBackend {
   pub fn retention_runs_per_app(&self) -> Result<usize> {
-    retention_on(&mut self.lock_read())
+    retention_on(&mut *self.lock_read()?)
   }
 
   pub fn storage_stats(&self) -> Result<StorageStats> {
-    let mut conn = self.lock_read();
+    let mut conn = self.lock_read()?;
     let retention = retention_on(&mut conn)?;
     Ok(StorageStats {
       backend: "postgresql".to_string(),
@@ -33,7 +33,7 @@ impl PostgresBackend {
   }
 
   pub fn update_retention(&self, retention: usize) -> Result<()> {
-    self.lock_write().transaction(|conn| {
+    self.lock_write()?.transaction(|conn| {
       diesel::insert_into(dashboard_settings::table)
         .values((
           dashboard_settings::setting_key.eq("retention_runs_per_app"),
@@ -66,7 +66,7 @@ impl PostgresBackend {
     include_running: bool,
     metadata: &BTreeMap<String, Vec<String>>,
   ) -> Result<PurgePreview> {
-    let mut conn = self.lock_read();
+    let mut conn = self.lock_read()?;
     let candidates = runs::table
       .order((runs::started_at, runs::id))
       .select((
@@ -92,7 +92,7 @@ impl PostgresBackend {
   }
 
   pub fn purge_runs(&self, run_ids: &[String], include_running: bool) -> Result<PurgeResult> {
-    self.lock_write().transaction(|conn| {
+    self.lock_write()?.transaction(|conn| {
       let selected = select_requested_runs(conn, run_ids, include_running)?;
       let evidence = evidence_counts(conn, &selected)?;
       diesel::delete(runs::table.filter(runs::id.eq_any(&selected))).execute(conn)?;

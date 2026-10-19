@@ -20,7 +20,7 @@ use crate::storage::schema::postgres::{
 
 impl PostgresBackend {
   pub fn get_test(&self, run_id: &str, test_id: &str) -> Result<Option<Test>> {
-    let mut conn = self.lock_read();
+    let mut conn = self.lock_read()?;
     tests::table
       .filter(tests::run_id.eq(run_id))
       .filter(tests::id.eq(test_id))
@@ -32,7 +32,7 @@ impl PostgresBackend {
   }
 
   pub fn get_entry(&self, run_id: &str, test_id: &str, id: i64) -> Result<Option<Entry>> {
-    let mut conn = self.lock_read();
+    let mut conn = self.lock_read()?;
     diesel::sql_query(&*ENTRY_BY_ID_SQL)
       .bind::<Text, _>(run_id)
       .bind::<Text, _>(test_id)
@@ -52,7 +52,7 @@ impl PostgresBackend {
     before: bool,
     limit: i64,
   ) -> Result<Vec<Entry>> {
-    let mut conn = self.lock_read();
+    let mut conn = self.lock_read()?;
     let sql = if before {
       &*ENTRIES_BEFORE_SQL
     } else {
@@ -71,7 +71,7 @@ impl PostgresBackend {
   }
 
   pub fn get_trace_span(&self, trace_id: &str, id: i64) -> Result<Option<Span>> {
-    let mut conn = self.lock_read();
+    let mut conn = self.lock_read()?;
     spans::table
       .filter(spans::trace_id.eq(trace_id))
       .filter(spans::id.eq(id))
@@ -83,7 +83,7 @@ impl PostgresBackend {
   }
 
   pub fn get_span(&self, run_id: &str, id: i64) -> Result<Option<Span>> {
-    let mut conn = self.lock_read();
+    let mut conn = self.lock_read()?;
     spans::table
       .filter(spans::run_id.eq(run_id))
       .filter(spans::id.eq(id))
@@ -95,7 +95,7 @@ impl PostgresBackend {
   }
 
   pub fn get_test_span(&self, run_id: &str, test_id: &str, id: i64) -> Result<Option<Span>> {
-    let mut conn = self.lock_read();
+    let mut conn = self.lock_read()?;
     diesel::sql_query(&*TEST_SPAN_BY_ID_SQL)
       .bind::<Text, _>(run_id)
       .bind::<Text, _>(test_id)
@@ -113,7 +113,7 @@ impl PostgresBackend {
     id: i64,
     depth: i64,
   ) -> Result<Vec<Span>> {
-    let mut conn = self.lock_read();
+    let mut conn = self.lock_read()?;
     diesel::sql_query(crate::storage::repository::evidence_sql::SPAN_ANCESTORS)
       .bind::<Text, _>(run_id)
       .bind::<Text, _>(trace_id)
@@ -126,7 +126,7 @@ impl PostgresBackend {
   }
 
   pub fn get_snapshot(&self, run_id: &str, test_id: &str, id: i64) -> Result<Option<Snapshot>> {
-    let mut conn = self.lock_read();
+    let mut conn = self.lock_read()?;
     Ok(
       snapshots::table
         .filter(snapshots::run_id.eq(run_id))
@@ -140,7 +140,7 @@ impl PostgresBackend {
   }
 
   pub fn get_mock_interaction(&self, run_id: &str, id: i64) -> Result<Option<MockInteraction>> {
-    let mut conn = self.lock_read();
+    let mut conn = self.lock_read()?;
     mock_interactions::table
       .filter(mock_interactions::run_id.eq(run_id))
       .filter(mock_interactions::id.eq(id))
@@ -152,7 +152,7 @@ impl PostgresBackend {
   }
 
   pub fn get_mock_warning(&self, run_id: &str, id: i64) -> Result<Option<MockWarning>> {
-    let mut conn = self.lock_read();
+    let mut conn = self.lock_read()?;
     Ok(
       mock_warnings::table
         .filter(mock_warnings::run_id.eq(run_id))
@@ -171,7 +171,7 @@ impl PostgresBackend {
     stub_id: &str,
     limit: i64,
   ) -> Result<Vec<MockInteraction>> {
-    let mut conn = self.lock_read();
+    let mut conn = self.lock_read()?;
     let mut query = mock_interactions::table
       .filter(mock_interactions::run_id.eq(run_id))
       .filter(mock_interactions::stub_id.eq(stub_id))
@@ -198,7 +198,7 @@ impl PostgresBackend {
     stub_id: &str,
     limit: i64,
   ) -> Result<Vec<MockWarning>> {
-    let mut conn = self.lock_read();
+    let mut conn = self.lock_read()?;
     let mut query = mock_warnings::table
       .filter(mock_warnings::run_id.eq(run_id))
       .filter(mock_warnings::stub_id.eq(stub_id))
@@ -226,7 +226,7 @@ impl PostgresBackend {
     test_id: &str,
     correlation_key: &str,
   ) -> Result<Option<OpenAssertion>> {
-    let mut conn = self.lock_read();
+    let mut conn = self.lock_read()?;
     let row = diesel::sql_query(
       "WITH latest AS (
          SELECT assertion_id, result FROM entries
@@ -248,7 +248,7 @@ impl PostgresBackend {
   }
 
   pub fn get_test_id_for_trace(&self, run_id: &str, trace_id: &str) -> Result<Option<String>> {
-    let mut conn = self.lock_read();
+    let mut conn = self.lock_read()?;
     Ok(
       entries::table
         .filter(entries::run_id.eq(run_id))
@@ -261,7 +261,7 @@ impl PostgresBackend {
   }
 
   pub fn get_apps(&self) -> Result<Vec<AppSummary>> {
-    let mut conn = self.lock_read();
+    let mut conn = self.lock_read()?;
     diesel::sql_query(
       "SELECT DISTINCT ON (app_name) app_name, id AS latest_run_id,
               started_at AS latest_run_started_at, status AS latest_status,
@@ -279,7 +279,7 @@ impl PostgresBackend {
     app_name: Option<&str>,
     metadata: &BTreeMap<String, String>,
   ) -> Result<Vec<Run>> {
-    let mut conn = self.lock_read();
+    let mut conn = self.lock_read()?;
     let mut query = runs::table.into_boxed::<diesel::pg::Pg>();
     if let Some(app_name) = app_name {
       query = query.filter(runs::app_name.eq(app_name));
@@ -297,7 +297,7 @@ impl PostgresBackend {
   }
 
   pub fn get_run(&self, run_id: &str) -> Result<Option<Run>> {
-    let mut conn = self.lock_read();
+    let mut conn = self.lock_read()?;
     runs::table
       .find(run_id)
       .select(runs::all_columns)
@@ -308,7 +308,7 @@ impl PostgresBackend {
   }
 
   pub fn get_tests_for_run(&self, run_id: &str) -> Result<Vec<Test>> {
-    let mut conn = self.lock_read();
+    let mut conn = self.lock_read()?;
     tests::table
       .filter(tests::run_id.eq(run_id))
       .order(tests::started_at)
@@ -325,7 +325,7 @@ impl PostgresBackend {
     } else {
       COLLAPSED_ENTRIES_SQL
     };
-    let mut conn = self.lock_read();
+    let mut conn = self.lock_read()?;
     diesel::sql_query(sql)
       .bind::<Text, _>(run_id)
       .bind::<Text, _>(test_id)
@@ -336,7 +336,7 @@ impl PostgresBackend {
   }
 
   pub fn get_spans_for_test(&self, run_id: &str, test_id: &str) -> Result<Vec<Span>> {
-    let mut conn = self.lock_read();
+    let mut conn = self.lock_read()?;
     diesel::sql_query(&*SPANS_FOR_TEST_SQL)
       .bind::<Text, _>(run_id)
       .bind::<Text, _>(test_id)
@@ -347,7 +347,7 @@ impl PostgresBackend {
   }
 
   pub fn get_trace(&self, trace_id: &str) -> Result<Vec<Span>> {
-    let mut conn = self.lock_read();
+    let mut conn = self.lock_read()?;
     spans::table
       .filter(spans::trace_id.eq(trace_id))
       .order(spans::start_time_nanos)
@@ -359,7 +359,7 @@ impl PostgresBackend {
   }
 
   pub fn get_snapshots(&self, run_id: &str, test_id: &str) -> Result<Vec<Snapshot>> {
-    let mut conn = self.lock_read();
+    let mut conn = self.lock_read()?;
     Ok(
       snapshots::table
         .filter(snapshots::run_id.eq(run_id))
@@ -378,7 +378,7 @@ impl PostgresBackend {
     run_id: &str,
     scope: EvidenceScope<'_>,
   ) -> Result<Vec<MockInteraction>> {
-    let mut conn = self.lock_read();
+    let mut conn = self.lock_read()?;
     let mut query = mock_interactions::table
       .filter(mock_interactions::run_id.eq(run_id))
       .into_boxed::<diesel::pg::Pg>();
@@ -405,7 +405,7 @@ impl PostgresBackend {
     run_id: &str,
     scope: EvidenceScope<'_>,
   ) -> Result<Vec<MockWarning>> {
-    let mut conn = self.lock_read();
+    let mut conn = self.lock_read()?;
     let mut query = mock_warnings::table
       .filter(mock_warnings::run_id.eq(run_id))
       .into_boxed::<diesel::pg::Pg>();

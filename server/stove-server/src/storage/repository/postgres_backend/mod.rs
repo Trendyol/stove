@@ -1,5 +1,6 @@
 use std::sync::{Mutex, MutexGuard};
 
+use diesel::connection::SimpleConnection;
 use diesel::prelude::*;
 
 use crate::error::Result;
@@ -20,12 +21,14 @@ pub(super) struct PostgresBackend {
 
 impl PostgresBackend {
   pub(super) fn check_health(&self) -> Result<()> {
-    use diesel::connection::SimpleConnection;
     self
-      .lock_read()
+      .lock_read()?
       .batch_execute("SELECT id FROM runs LIMIT 1")?;
     self
-      .lock_write()
+      .lock_write()?
+      .batch_execute("SELECT id FROM runs LIMIT 1")?;
+    self
+      .lock_explorer()?
       .batch_execute("SELECT id FROM runs LIMIT 1")?;
     Ok(())
   }
@@ -44,19 +47,45 @@ impl PostgresBackend {
     &self.database_url
   }
 
-  fn lock_write(&self) -> MutexGuard<'_, PgConnection> {
-    self.write.lock().expect("PostgreSQL write lock poisoned")
+  fn lock_write(&self) -> Result<MutexGuard<'_, PgConnection>> {
+    self.lock_connection(&self.write, "write")
   }
 
-  fn lock_read(&self) -> MutexGuard<'_, PgConnection> {
-    self.read.lock().expect("PostgreSQL read lock poisoned")
+  fn lock_read(&self) -> Result<MutexGuard<'_, PgConnection>> {
+    self.lock_connection(&self.read, "read")
   }
 
-  fn lock_explorer(&self) -> MutexGuard<'_, postgres::Client> {
-    self
+  // Validate before starting work so an idle timeout or database restart does not
+  // permanently poison a lane. Never replay the operation itself: a failed write
+  // or COMMIT can have an ambiguous outcome.
+  fn lock_connection<'a>(
+    &self,
+    connection: &'a Mutex<PgConnection>,
+    lane: &str,
+  ) -> Result<MutexGuard<'a, PgConnection>> {
+    let mut connection = connection
+      .lock()
+      .expect("PostgreSQL connection lock poisoned");
+    if connection.batch_execute("SELECT 1").is_err() {
+      tracing::warn!(
+        lane,
+        "Reconnecting PostgreSQL connection after failed health probe"
+      );
+      *connection = PgConnection::establish(&self.database_url)?;
+    }
+    Ok(connection)
+  }
+
+  fn lock_explorer(&self) -> Result<MutexGuard<'_, postgres::Client>> {
+    let mut connection = self
       .explorer
       .lock()
-      .expect("PostgreSQL explorer lock poisoned")
+      .expect("PostgreSQL explorer lock poisoned");
+    if connection.batch_execute("SELECT 1").is_err() {
+      tracing::warn!("Reconnecting PostgreSQL explorer after failed health probe");
+      *connection = database::connect_driver(&self.database_url)?;
+    }
+    Ok(connection)
   }
 }
 

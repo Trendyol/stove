@@ -6,7 +6,7 @@ use crate::storage::models::{DatabaseColumn, DatabaseQueryResult, DatabaseSchema
 
 impl PostgresBackend {
   pub(in crate::storage::repository) fn database_schema(&self) -> Result<DatabaseSchema> {
-    let mut connection = self.lock_explorer();
+    let mut connection = self.lock_explorer()?;
     let rows = connection.query(
       "SELECT
          columns.table_name,
@@ -65,7 +65,7 @@ impl PostgresBackend {
     sql: &str,
     max_rows: usize,
   ) -> Result<DatabaseQueryResult> {
-    let mut connection = self.lock_explorer();
+    let mut connection = self.lock_explorer()?;
     let mut transaction = connection.transaction()?;
     transaction.batch_execute("SET LOCAL statement_timeout = '10s'")?;
     let statement = transaction.prepare(sql)?;
