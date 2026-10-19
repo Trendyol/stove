@@ -10,7 +10,6 @@ import com.trendyol.stove.system.annotations.StoveDsl
 import io.lettuce.core.*
 import kotlinx.coroutines.runBlocking
 import org.slf4j.*
-import reactor.core.publisher.Mono
 
 /**
  * Redis cache/data store system for testing caching operations.
@@ -208,7 +207,7 @@ class RedisSystem(
   private fun createClient(config: RedisExposedConfiguration): RedisClient =
     RedisClient.create(
       RedisURI.create(config.host, config.port).apply {
-        setCredentialsProvider(RedisCredentialsProvider { Mono.just(RedisCredentials.just(null, config.password)) })
+        setCredentialsProvider(CredentialsProvider.from { RedisCredentials.just(null, config.password) })
       }
     )
 
