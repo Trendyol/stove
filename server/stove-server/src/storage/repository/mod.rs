@@ -37,6 +37,14 @@ pub struct Repository {
 }
 
 impl Repository {
+  /// Probe both dashboard and ingestion connections without modifying stored data.
+  pub fn check_health(&self) -> Result<()> {
+    self.with_backend(|backend| match backend {
+      Backend::Sqlite(sqlite) => sqlite.check_health(),
+      Backend::Postgres(postgres) => postgres.check_health(),
+    })
+  }
+
   pub fn connect_sqlite(database_path: &str, retention_runs_per_app: usize) -> Result<Self> {
     Ok(Self {
       backend: Backend::Sqlite(sqlite_backend::SqliteBackend::connect(database_path)?),

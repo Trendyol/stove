@@ -15,6 +15,7 @@ pub struct AppState {
   pub repository: Arc<Repository>,
   pub sse_manager: Arc<SseManager>,
   pub(crate) ingestor: EventIngestor,
+  pub(crate) health_probe: Arc<tokio::sync::Semaphore>,
 }
 
 /// Create the axum router with all API routes, SSE, and embedded SPA.
@@ -38,6 +39,7 @@ pub fn create_router_with_public_url(
     repository,
     sse_manager,
     ingestor,
+    health_probe: Arc::new(tokio::sync::Semaphore::new(1)),
   };
 
   let router = Router::new()
@@ -63,6 +65,7 @@ pub fn create_router_with_public_url(
 fn run_routes() -> Router<AppState> {
   Router::new()
     .route("/meta", get(super::routes::get_meta))
+    .route("/health", get(super::routes::get_health))
     .route("/apps", get(super::routes::get_apps))
     .route("/events", post(super::routes::post_event))
     .route("/runs", get(super::routes::get_runs))

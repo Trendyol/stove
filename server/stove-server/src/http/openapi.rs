@@ -9,6 +9,7 @@ use utoipa_swagger_ui::{Config, SwaggerUi};
 #[openapi(
   paths(
     super::routes::get_meta,
+    super::routes::get_health,
     super::routes::get_apps,
     super::routes::post_event,
     super::routes::get_runs,

@@ -167,6 +167,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/health": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["get_health"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/meta": {
         parameters: {
             query?: never;
@@ -565,6 +581,18 @@ export interface components {
             spans: components["schemas"]["Span"][];
             target: components["schemas"]["EvidenceTarget"];
             warnings: components["schemas"]["MockWarning"][];
+        };
+        HealthCheck: {
+            healthy: boolean;
+            message: string;
+            name: string;
+        };
+        HealthResponse: {
+            backend: string;
+            checked_at: string;
+            checks: components["schemas"]["HealthCheck"][];
+            healthy: boolean;
+            stove_server_version: string;
         };
         LiveDashboardEvent: components["schemas"]["LiveDashboardPayload"] & {
             run_id: string;
@@ -1172,6 +1200,35 @@ export interface operations {
                 };
                 content: {
                     "text/event-stream": unknown;
+                };
+            };
+        };
+    };
+    get_health: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Server and storage are responding */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HealthResponse"];
+                };
+            };
+            /** @description A health check failed or timed out */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HealthResponse"];
                 };
             };
         };

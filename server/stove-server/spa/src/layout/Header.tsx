@@ -1,5 +1,6 @@
 import type { MouseEventHandler } from "react";
 import stoveMarkUrl from "../assets/stove-mark.svg";
+import { ServerHealth } from "../components/ServerHealth";
 import { VersionMismatchWarning } from "../components/VersionMismatchWarning";
 import { useTheme } from "../hooks/useTheme";
 import { isDemo } from "../utils/demo-mode";
@@ -39,19 +40,7 @@ export function Header({
         {versionMismatchSummary ? (
           <VersionMismatchWarning summary={versionMismatchSummary} />
         ) : null}
-        <span
-          className={`stove-stream-status ${liveConnected ? "is-live" : "is-polling"}`}
-          title={
-            isDemo
-              ? "Sample data with a replayable test run"
-              : liveConnected
-                ? "Live SSE stream connected"
-                : "SSE disconnected; polling APIs"
-          }
-        >
-          <span />
-          {isDemo ? "Demo data" : liveConnected ? "Connected" : "Reconnecting"}
-        </span>
+        <ServerHealth liveConnected={liveConnected} />
         <a
           aria-current={activeRoute === "admin" ? "page" : undefined}
           className={`stove-topbar-link stove-focus-ring ${activeRoute === "admin" ? "is-active" : ""}`}

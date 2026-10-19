@@ -57,6 +57,16 @@ async function readResponse<T>(
 }
 
 export const api = {
+  getHealth: async (signal?: AbortSignal) => {
+    const timeout = AbortSignal.timeout(5000);
+    const res = await request(appPath(`${BASE}/health`), {
+      signal: signal ? AbortSignal.any([signal, timeout]) : timeout,
+      cache: "no-store",
+    });
+    if (!res.ok && res.status !== 503)
+      throw new ApiError(res.status, `${res.status} ${res.statusText}`);
+    return readResponse(res, "/health", schema.isHealthResponse);
+  },
   getRun: async (runId: string, signal?: AbortSignal) => {
     const run = await get(`/runs/${encodePath(runId)}`, nullable(schema.isRun), signal);
     if (run === null) throw new ApiError(404, "Run unavailable");

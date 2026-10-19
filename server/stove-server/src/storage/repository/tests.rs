@@ -28,6 +28,18 @@ fn test_repo() -> Repository {
   Repository::connect_sqlite(":memory:", 1).unwrap()
 }
 
+#[test]
+fn health_detects_unusable_storage() {
+  let repository = test_repo();
+  repository.check_health().unwrap();
+  repository
+    .lock_write_db()
+    .conn()
+    .batch_execute("DROP TABLE runs")
+    .unwrap();
+  assert!(repository.check_health().is_err());
+}
+
 fn test_repo_with_retention(retention_runs_per_app: usize) -> Repository {
   Repository::connect_sqlite(":memory:", retention_runs_per_app).unwrap()
 }

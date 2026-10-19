@@ -10,6 +10,8 @@ import type {
   EvidenceCounts,
   EvidenceTarget,
   FocusedEvidence,
+  HealthCheck,
+  HealthResponse,
   McpMeta,
   MetaResponse,
   MockInteraction,
@@ -55,6 +57,20 @@ const isMcpMeta = object<McpMeta>({
 export const isMetaResponse = object<MetaResponse>({
   stove_server_version: isString,
   mcp: isMcpMeta,
+});
+
+const isHealthCheck = object<HealthCheck>({
+  name: isString,
+  healthy: isBoolean,
+  message: isString,
+});
+
+export const isHealthResponse = object<HealthResponse>({
+  healthy: isBoolean,
+  stove_server_version: isString,
+  backend: isString,
+  checked_at: isString,
+  checks: arrayOf(isHealthCheck),
 });
 
 export const isRun = object<Run>({

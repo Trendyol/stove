@@ -19,6 +19,17 @@ pub(super) struct PostgresBackend {
 }
 
 impl PostgresBackend {
+  pub(super) fn check_health(&self) -> Result<()> {
+    use diesel::connection::SimpleConnection;
+    self
+      .lock_read()
+      .batch_execute("SELECT id FROM runs LIMIT 1")?;
+    self
+      .lock_write()
+      .batch_execute("SELECT id FROM runs LIMIT 1")?;
+    Ok(())
+  }
+
   pub(super) fn connect(database_url: &str, default_retention: usize) -> Result<Self> {
     let connections = database::open(database_url, default_retention)?;
     Ok(Self {

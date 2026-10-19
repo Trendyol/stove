@@ -20,6 +20,19 @@ pub(super) struct SqliteBackend {
 }
 
 impl SqliteBackend {
+  pub(super) fn check_health(&self) -> Result<()> {
+    use diesel::connection::SimpleConnection;
+    self
+      .lock_read()
+      .conn()
+      .batch_execute("SELECT id FROM runs LIMIT 1")?;
+    self
+      .lock_write()
+      .conn()
+      .batch_execute("SELECT id FROM runs LIMIT 1")?;
+    Ok(())
+  }
+
   pub(super) fn connect(path: &str) -> Result<Self> {
     Self::new(SqliteDatabase::open(path)?)
   }

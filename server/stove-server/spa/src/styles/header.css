@@ -374,6 +374,84 @@
   color: var(--stove-amber);
 }
 
+button.stove-stream-status {
+  cursor: pointer;
+  font: inherit;
+}
+
+.stove-health-popover {
+  position: fixed;
+  inset: 64px 12px auto auto;
+  width: min(360px, calc(100vw - 24px));
+  max-height: calc(100dvh - 80px);
+  overflow-y: auto;
+  margin: 0;
+  border: 1px solid var(--stove-border);
+  border-radius: 12px;
+  padding: 16px;
+  background: var(--stove-panel-strong);
+  box-shadow: var(--stove-shadow);
+  color: var(--stove-text);
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.stove-health-heading,
+.stove-health-checks dt {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  color: var(--stove-text-heading);
+}
+
+.stove-health-heading strong {
+  font-size: 14px;
+}
+
+.stove-health-summary {
+  margin: 8px 0 14px;
+}
+
+.stove-health-checks {
+  display: grid;
+  gap: 12px;
+  margin: 0;
+}
+
+.stove-health-checks > div {
+  border-top: 1px solid var(--stove-border);
+  padding-top: 10px;
+}
+
+.stove-health-checks dd {
+  margin: 4px 0 0;
+  color: var(--stove-text-secondary);
+}
+
+.stove-health-checks .is-healthy {
+  color: var(--stove-green);
+}
+
+.stove-health-checks .is-unhealthy {
+  color: var(--stove-amber);
+}
+
+.stove-health-meta {
+  margin: 14px 0 6px;
+  color: var(--stove-text-muted);
+  font-size: 11px;
+}
+
+.stove-health-popover button {
+  cursor: pointer;
+}
+
+.stove-health-popover button:disabled {
+  cursor: wait;
+  opacity: 0.6;
+}
+
 .stove-endpoint {
   color: var(--stove-text-muted);
   font-family: var(--font-mono);
