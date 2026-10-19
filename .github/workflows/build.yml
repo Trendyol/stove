@@ -71,7 +71,7 @@ jobs:
 
       - uses: jdx/mise-action@v5
         with:
-          version: '2026.10.8'
+          version: '2026.10.14'
           install: false
           env: false
 
@@ -80,7 +80,7 @@ jobs:
 
       - uses: extractions/setup-just@v4
         with:
-          just-version: '1.58.0'
+          just-version: '1.59.0'
 
       - name: Install Lefthook
         run: npm install --global lefthook@2.1.12

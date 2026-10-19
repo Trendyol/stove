@@ -1,5 +1,5 @@
 [versions]
-nav-oidc = "6.0.5"
+nav-oidc = "6.1.2"
 keycloak-testcontainers = "4.4.0"
 keycloak-admin = "26.0.12"
 nimbus-jose = "10.10"
@@ -14,7 +14,7 @@ spring-dependency-management = "1.1.7"
 spring-kafka = "2.9.13"
 spring-kafka-3x = "3.3.16"
 spring-kafka-4x = "4.1.1"
-couchbase = "3.12.3"
+couchbase = "3.13.0"
 jackson = "2.22.4"
 jackson-annotations = "2.22"
 jackson3 = "3.2.4"
@@ -24,7 +24,7 @@ io-reactor-extensions = "1.3.2"
 slf4j = "2.0.20"
 kafka = "4.3.1"
 kafka-kotlin = "0.4.1"
-kafka-embedded = "4.3.1"
+kafka-embedded = "4.4.0"
 kafka-streams-registry = "8.3.2"
 kover = "0.9.11"
 ktor = "3.6.0"
@@ -35,7 +35,7 @@ elastic = "9.5.5"
 mongodb = "5.13.0"
 wiremock = "3.13.2"
 testcontainers = "2.0.5"
-cassandra-driver = "4.19.3"
+cassandra-driver = "4.19.4"
 mysql = "26.7.0"
 spotless = "8.10.4"
 detekt = "1.23.8"
@@ -43,9 +43,9 @@ wire = "7.1.0"
 io-grpc = "1.85.0"
 io-grpc-kotlin = "1.5.0"
 google-protobuf = "4.36.2"
-hoplite = "3.0.3"
+hoplite = "3.0.4"
 junit-jupiter = "6.1.3"
-kotest = "6.2.5"
+kotest = "6.2.6"
 mockito = "6.4.0"
 kotlinx-serialization = "1.11.0"
 kotlinBinaryCompatibilityValidator = "0.18.2"
@@ -57,7 +57,7 @@ ktlint = "1.8.0"
 opentelemetry = "1.67.0"
 opentelemetry-semconv = "1.44.0"
 opentelemetry-instrumentation = "2.32.0"
-bytebuddy = "1.18.14"
+bytebuddy = "1.18.15-jdk5"
 mordant = "3.1.0"
 
 # Recipes
@@ -66,7 +66,7 @@ scala2x = "2.13.18"
 kotlinLogging = "8.0.4"
 kediatr = "4.4.0"
 db-scheduler = "16.12.0"
-flyway = "13.10.0"
+flyway = "13.10.3"
 lombok = "1.18.48"
 
 [libraries]
@@ -187,9 +187,9 @@ elastic-rest-client = { module = "org.elasticsearch.client:elasticsearch-rest-cl
 mongodb-kotlin-coroutine = { module = "org.mongodb:mongodb-driver-kotlin-coroutine", version.ref = "mongodb" }
 
 # misc
-lettuce-core = { module = "io.lettuce:lettuce-core", version = "7.8.0.RELEASE" }
+lettuce-core = { module = "io.lettuce:lettuce-core", version = "7.9.0.RELEASE" }
 logback-classic = { module = "ch.qos.logback:logback-classic", version = "1.6.5" }
-microsoft-sqlserver-jdbc = { module = "com.microsoft.sqlserver:mssql-jdbc", version = "13.6.0.jre11" }
+microsoft-sqlserver-jdbc = { module = "com.microsoft.sqlserver:mssql-jdbc", version = "13.6.1.jre11" }
 
 ### Testing
 wiremock-standalone = { module = "org.wiremock:wiremock-standalone", version.ref = "wiremock" }
@@ -251,7 +251,7 @@ google-protobuf-util = { module = "com.google.protobuf:protobuf-java-util", vers
 protoc = { module = "com.google.protobuf:protoc", version.ref = "google-protobuf" }
 hoplite-yaml = { module = "com.sksamuel.hoplite:hoplite-yaml", version.ref = "hoplite" }
 google-gson = { module = "com.google.code.gson:gson", version = "2.14.0" }
-caffeine = { module = "com.github.ben-manes.caffeine:caffeine", version = "3.3.0" }
+caffeine = { module = "com.github.ben-manes.caffeine:caffeine", version = "3.3.1" }
 pprint = { module = "io.exoquery:pprint-kotlin", version = "3.0.0" }
 ktlint-cli = { module = "com.pinterest.ktlint:ktlint-cli", version.ref = "ktlint" }
 mordant = { module = "com.github.ajalt.mordant:mordant", version.ref = "mordant" }
