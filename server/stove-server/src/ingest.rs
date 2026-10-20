@@ -35,8 +35,13 @@ impl EventIngestor {
     }
   }
 
+  pub(crate) fn metrics(&self) -> &Arc<crate::metrics::AppMetrics> {
+    &self.repository.metrics.app
+  }
+
   /// Commit an event transactionally before acknowledging it to the producer.
   pub(crate) fn ingest(&self, event: &proto::DashboardEvent) -> AppResult<proto::EventAck> {
+    let measurement = self.metrics().ingest();
     let prepared = self.prepare_event(event)?;
     let identity = EventIdentity {
       event_id: if event.event_id.is_empty() {
@@ -52,6 +57,7 @@ impl EventIngestor {
     if !outcome.duplicate {
       self.sse_manager.notify_commit();
     }
+    measurement.finish(outcome.duplicate);
     Ok(proto::EventAck {
       event_id: event.event_id.clone(),
       sequence: event.sequence,

@@ -25,17 +25,26 @@ impl PostgresBackend {
   pub fn subscribe_live_event_notifications(&self) -> mpsc::UnboundedReceiver<()> {
     let (sender, receiver) = mpsc::unbounded_channel();
     let database_url = self.database_url().to_string();
+    let metrics = self.metrics.app.clone();
     let listener = std::thread::Builder::new()
       .name("stove-postgres-live-events".to_string())
       .spawn(move || {
         while !sender.is_closed() {
-          if let Err(error) = listen_for_live_events(&database_url, &sender) {
+          let attempt = metrics.worker("postgres_notifications");
+          let result = listen_for_live_events(&database_url, &sender, &attempt);
+          attempt.finish(result.is_ok());
+          if let Err(error) = result {
             tracing::warn!(%error, "PostgreSQL live-event listener disconnected; reconnecting in one second, polling remains active");
             std::thread::sleep(Duration::from_secs(1));
           }
         }
       });
     if let Err(error) = listener {
+      self
+        .metrics
+        .app
+        .worker("postgres_notifications")
+        .finish(false);
       tracing::warn!(%error, "Could not spawn PostgreSQL live-event listener; polling remains active");
     }
     receiver
@@ -142,11 +151,16 @@ impl PostgresBackend {
   }
 }
 
-fn listen_for_live_events(database_url: &str, sender: &mpsc::UnboundedSender<()>) -> Result<()> {
+fn listen_for_live_events(
+  database_url: &str,
+  sender: &mpsc::UnboundedSender<()>,
+  attempt: &crate::metrics::WorkerGuard,
+) -> Result<()> {
   let mut client = super::database::connect_driver(database_url)?;
   client.batch_execute("LISTEN stove_live_events")?;
   let mut notifications = client.notifications();
   while !sender.is_closed() {
+    attempt.heartbeat();
     if notifications
       .timeout_iter(Duration::from_secs(1))
       .next()?

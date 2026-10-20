@@ -15,6 +15,7 @@ pub mod grpc;
 pub mod http;
 pub mod ingest;
 pub(crate) mod mcp;
+pub(crate) mod metrics;
 pub(crate) mod navigation;
 pub mod skills;
 pub mod sse;

@@ -10,9 +10,29 @@ curl -fsS http://localhost:4040/metrics
 
 **Scrape each server/pod directly**, using static targets or your Prometheus service discovery. A load-balanced target alternates unrelated process counters. `stove_instance` identifies the configured `STOVE_INSTANCE_ID` (or `HOSTNAME`, falling back to `stove`), PID, and a unique process generation. `backend` is `sqlite` or `postgresql`. Prometheus additionally supplies its usual `job` and `instance` labels. A process restart resets its counters; Prometheus retains history.
 
-Operations and acquisition waits update counters/histograms as they happen. Capacity is sampled every **10 seconds**; role probes and diagnostics run every **30 seconds**. Scraping reads memory only, including when the database is unavailable. Failed diagnostics retain their previous values and expose `diagnostics_up=0`; always pair diagnostic values with their age. There is one diagnostic worker per repository, and a stalled probe cannot spawn an accumulating queue of SQL workers.
+Operations and acquisition waits update counters/histograms as they happen. Capacity is sampled every **10 seconds**; role probes and diagnostics run every **30 seconds**. Database scraping reads cached values, including when the database is unavailable. On Linux, the application process collector also reads local `/proc` statistics; no scrape executes SQL. Failed diagnostics retain their previous values and expose `diagnostics_up=0`; always pair diagnostic values with their age. There is one diagnostic worker per repository, and a stalled probe cannot spawn an accumulating queue of SQL workers.
 
-## Metrics
+## Application metrics
+
+Application metrics share the database registry and its `stove_instance` / `backend` labels. The `prometheus` crate supplies instruments, timers, encoding and Linux process collection. Names below have the `stove_app_` prefix.
+
+| Metric | Meaning |
+| --- | --- |
+| `http_requests_total` | Responses by route template, bounded method and status, including `cancelled`. Unknown routes share `unmatched`; request data never becomes a label. Scrapes are excluded. |
+| `http_request_duration_seconds`, `http_requests_in_flight` | Handler latency and active handlers through response headers, including body extraction but excluding streaming body lifetime. |
+| `process_*` | Built-in **Linux-only** process metrics, including CPU seconds, resident/virtual memory, file descriptors and threads. CPU rate measures cores used; container limits and throttling require infrastructure metrics. |
+| `ingestion_in_flight`, `ingestion_oldest_pending_age_seconds` | Unfinished decoded events and oldest attempt age, including database waits. Age is zero when idle. Ingestion commits inline; there is no separate app queue. Producer/network buffers are excluded. |
+| `ingestion_duration_seconds`, `ingestion_events_total` | Preparation-to-commit latency and attempts by `accepted`, `duplicate` or `error`. Errors include validation, persistence failures and panics. Malformed HTTP protobuf appears as HTTP 4xx before ingestion. |
+| `streams_active`, `stream_errors_total` | SSE/gRPC streams and receive/cursor/replay errors by transport. Ingestion failures are counted in ingestion outcomes. |
+| `sse_lagged_events_total` | Broadcast events missed by slow SSE receivers, triggering durable replay; does not imply permanent loss. |
+| `worker_runs_total`, `worker_last_success_timestamp_seconds` | Success/error attempts and last success or listener heartbeat. Covers capacity/diagnostics, relay, startup cursor, PostgreSQL notifications and runtime heartbeat. Errors include panics/cancellation. Zero timestamp means no success yet; growing age reveals stalled work. Startup cursor is excluded from freshness panels. |
+| `runtime_scheduling_delay_seconds` | Delay beyond a one-second Tokio heartbeat. Pair with worker freshness: a complete stall produces no new observations. |
+
+HTTP and gRPC share the existing synchronous ingestion path. Drop guards release active counts on cancellation or unwinding. PostgreSQL notification failures fall back to relay polling.
+
+Compare request and ingestion latency with database acquisition time, CPU and runtime delay to locate pressure. High acquisition time suggests pool/lock contention; high CPU or runtime delay suggests app execution pressure. These signals help diagnosis, but cannot automatically identify every root cause. Unreachable processes require your infrastructure's scrape-target alerts.
+
+## Database metrics
 
 All names below have the `stove_db_` prefix. Durations are in seconds; capacities and counters are counts; storage sizes are bytes. Histograms include standard `_bucket`, `_count`, and `_sum` series.
 
@@ -51,7 +71,7 @@ Stove does not grant itself permissions. PostgreSQL filesystem capacity comes fr
 
 The **Job** selector discovers scrape jobs from Stove metrics and defaults to **All**. The scrape job is assigned by Prometheus and may differ from the application name (for example, Kubernetes discovery may use `kubernetes-pods`). If every section is empty, query `stove_db_process_start_timestamp_seconds` in Explore using the same data source, then select its `job` label. Existing dashboard URLs can retain an old `var-job` value after reimporting; clear that parameter or select the correct job. Only sections for deployed backends have data.
 
-Import [grafana-dashboard.json](grafana-dashboard.json) using **Grafana → Dashboards → New → Import → Upload dashboard JSON file**. After importing, select your Prometheus data source, job, and instance at the top. The **App** section shows ingestion and retention. Expand **SQLite** or **PostgreSQL** for backend-specific database health, growth, performance, and diagnostics. The database sections start collapsed so panels for an unused backend do not load. It uses built-in Grafana panels and requires no extra plugins.
+Import [grafana-dashboard.json](grafana-dashboard.json) using **Grafana → Dashboards → New → Import → Upload dashboard JSON file**. After importing, select your Prometheus data source, job, and instance at the top. The **App** section shows HTTP traffic, CPU/memory, pending ingestion and latency, streams, worker health, runtime scheduling delay, and retention. Expand **SQLite** or **PostgreSQL** for backend-specific database health, growth, performance, and diagnostics. The database sections start collapsed so panels for an unused backend do not load. It uses built-in Grafana panels and requires no extra plugins.
 
 The dashboard covers health, collector freshness, database growth, latency, contention, ingestion, retention, and backend-specific diagnostics. The **Growth window** selector controls trend calculations. SQLite's estimated days until disk full extrapolates the decline in filesystem free space, including other applications on the same filesystem; it shows no value when space is flat/increasing or diagnostics are stale/unavailable. This estimate is not a guarantee. PostgreSQL disk capacity still requires host/cloud metrics. Unsupported or unavailable diagnostics show **No data**, rather than zero. The JSON does not install alert rules; configure [alerts.yml](alerts.yml) separately in Prometheus.
 

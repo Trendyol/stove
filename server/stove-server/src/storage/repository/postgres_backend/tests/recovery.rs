@@ -202,6 +202,21 @@ fn live_event_listener_reconnects_after_termination() {
   let first_pid = wait_for_listener(&mut database, None);
   terminate(&mut database, first_pid);
   wait_for_listener(&mut database, Some(first_pid));
+  let metrics = backend.metrics.prometheus();
+  assert!(
+    metrics
+      .lines()
+      .any(|line| line.starts_with("stove_app_worker_runs_total{")
+        && line.contains("worker=\"postgres_notifications\"")
+        && line.contains("outcome=\"error\"")
+        && !line.ends_with(" 0"))
+  );
+  assert!(metrics.lines().any(|line| {
+    line.starts_with("stove_app_worker_last_success_timestamp_seconds{")
+      && line.contains("worker=\"postgres_notifications\"")
+      && !line.ends_with(" 0")
+  }));
+
   database
     .root
     .batch_execute("NOTIFY stove_live_events")

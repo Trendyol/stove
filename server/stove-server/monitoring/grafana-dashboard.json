@@ -1,8 +1,8 @@
 {
   "id": null,
   "uid": "stove-database-health",
-  "title": "Stove \u2014 Database Health",
-  "description": "Database health, growth, capacity, latency, contention, ingestion and retention for stove-server. Uses the built-in /metrics exporter.",
+  "title": "Stove — Database Health",
+  "description": "Application and database health, HTTP latency, process resources, pending ingestion, streams, workers, database growth and contention for stove-server.",
   "tags": [
     "stove",
     "database",
@@ -10,7 +10,7 @@
   ],
   "timezone": "browser",
   "schemaVersion": 39,
-  "version": 4,
+  "version": 5,
   "editable": true,
   "graphTooltip": 1,
   "refresh": "30s",
@@ -132,7 +132,7 @@
       "title": "Reading this dashboard",
       "options": {
         "mode": "markdown",
-        "content": "**Choose your Prometheus data source, job, and server instance above.** The **App** section shows ingestion and retention. Expand **SQLite** or **PostgreSQL** for database health, growth, performance, and diagnostics; each section filters its own backend. Database sizes are shown per instance; PostgreSQL replicas can report the same database, so do not add their sizes together. Check collector freshness before interpreting diagnostics. Unsupported or unavailable metrics show **No data**. Quiet ingestion is normal. Growth is a trend, not a capacity guarantee; retention can free reusable pages without shrinking files."
+        "content": "**Choose your Prometheus data source, job, and server instance above.** The **App** section shows HTTP traffic, process resources, pending ingestion, streams, worker health, and retention. Process resource panels require Linux. Expand **SQLite** or **PostgreSQL** for database health, growth, performance, and diagnostics; each section filters its own backend. Database sizes are shown per instance; PostgreSQL replicas can report the same database, so do not add their sizes together. Check collector freshness before interpreting diagnostics. Unsupported or unavailable metrics show **No data**. Quiet ingestion is normal. Growth is a trend, not a capacity guarantee; retention can free reusable pages without shrinking files."
       },
       "id": 1,
       "gridPos": {
@@ -157,16 +157,94 @@
     },
     {
       "type": "timeseries",
-      "title": "Ingestion / second",
-      "description": "Counted after successful transaction completion. Duplicate retries are separate from new events.",
+      "title": "HTTP requests / second",
+      "description": "Responses by route and status. Metrics scrapes are excluded; unmatched paths share one label.",
       "datasource": {
         "type": "prometheus",
         "uid": "${DS_PROMETHEUS}"
       },
       "targets": [
         {
-          "expr": "rate(stove_db_events_committed_total{job=~\"${job:regex}\",instance=~\"${instance:regex}\"}[$__rate_interval])",
-          "legendFormat": "{{instance}} / committed",
+          "expr": "rate(stove_app_http_requests_total{job=~\"${job:regex}\",instance=~\"${instance:regex}\"}[$__rate_interval])",
+          "legendFormat": "{{instance}} {{method}} {{route}} {{status}}",
+          "refId": "A",
+          "range": true,
+          "editorMode": "code",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          }
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "reqps",
+          "color": {
+            "mode": "palette-classic"
+          },
+          "mappings": [],
+          "noValue": "No data",
+          "custom": {
+            "drawStyle": "line",
+            "lineInterpolation": "linear",
+            "lineWidth": 2,
+            "fillOpacity": 8,
+            "showPoints": "never",
+            "spanNulls": false,
+            "axisPlacement": "auto",
+            "axisLabel": "",
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            }
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom",
+          "calcs": []
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "id": 200,
+      "gridPos": {
+        "x": 0,
+        "y": 4,
+        "w": 12,
+        "h": 8
+      }
+    },
+    {
+      "type": "timeseries",
+      "title": "HTTP latency p95 / p99",
+      "description": "Time until response headers, including request-body extraction. SSE body lifetime is measured separately by active streams.",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${DS_PROMETHEUS}"
+      },
+      "targets": [
+        {
+          "expr": "histogram_quantile(0.95, sum by (le, instance, stove_instance, route, method) (rate(stove_app_http_request_duration_seconds_bucket{job=~\"${job:regex}\",instance=~\"${instance:regex}\"}[$__rate_interval])))",
+          "legendFormat": "{{instance}} {{method}} {{route}} p95",
           "refId": "A",
           "range": true,
           "editorMode": "code",
@@ -176,8 +254,810 @@
           }
         },
         {
-          "expr": "rate(stove_db_events_duplicate_total{job=~\"${job:regex}\",instance=~\"${instance:regex}\"}[$__rate_interval])",
-          "legendFormat": "{{instance}} / duplicates",
+          "expr": "histogram_quantile(0.99, sum by (le, instance, stove_instance, route, method) (rate(stove_app_http_request_duration_seconds_bucket{job=~\"${job:regex}\",instance=~\"${instance:regex}\"}[$__rate_interval])))",
+          "legendFormat": "{{instance}} {{method}} {{route}} p99",
+          "refId": "B",
+          "range": true,
+          "editorMode": "code",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          }
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "s",
+          "color": {
+            "mode": "palette-classic"
+          },
+          "mappings": [],
+          "noValue": "No data",
+          "custom": {
+            "drawStyle": "line",
+            "lineInterpolation": "linear",
+            "lineWidth": 2,
+            "fillOpacity": 8,
+            "showPoints": "never",
+            "spanNulls": false,
+            "axisPlacement": "auto",
+            "axisLabel": "",
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            }
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom",
+          "calcs": []
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "id": 201,
+      "gridPos": {
+        "x": 12,
+        "y": 4,
+        "w": 12,
+        "h": 8
+      }
+    },
+    {
+      "type": "timeseries",
+      "title": "HTTP errors and cancellations / second",
+      "description": "HTTP 4xx, 5xx and handlers cancelled before response headers, grouped by route and status. Malformed protobuf bodies appear as 4xx.",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${DS_PROMETHEUS}"
+      },
+      "targets": [
+        {
+          "expr": "rate(stove_app_http_requests_total{job=~\"${job:regex}\",instance=~\"${instance:regex}\",status=~\"4..|5..|cancelled\"}[$__rate_interval])",
+          "legendFormat": "{{instance}} {{route}} {{status}}",
+          "refId": "A",
+          "range": true,
+          "editorMode": "code",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          }
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "reqps",
+          "color": {
+            "mode": "palette-classic"
+          },
+          "mappings": [],
+          "noValue": "No data",
+          "custom": {
+            "drawStyle": "line",
+            "lineInterpolation": "linear",
+            "lineWidth": 2,
+            "fillOpacity": 8,
+            "showPoints": "never",
+            "spanNulls": false,
+            "axisPlacement": "auto",
+            "axisLabel": "",
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            }
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom",
+          "calcs": []
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "id": 202,
+      "gridPos": {
+        "x": 0,
+        "y": 12,
+        "w": 12,
+        "h": 8
+      }
+    },
+    {
+      "type": "timeseries",
+      "title": "HTTP requests in flight",
+      "description": "Handlers awaiting response headers, excluding scrapes. Persistent SSE streams appear in Active streams.",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${DS_PROMETHEUS}"
+      },
+      "targets": [
+        {
+          "expr": "stove_app_http_requests_in_flight{job=~\"${job:regex}\",instance=~\"${instance:regex}\"}",
+          "legendFormat": "{{instance}} {{method}} {{route}}",
+          "refId": "A",
+          "range": true,
+          "editorMode": "code",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          }
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "color": {
+            "mode": "palette-classic"
+          },
+          "mappings": [],
+          "noValue": "No data",
+          "custom": {
+            "drawStyle": "line",
+            "lineInterpolation": "linear",
+            "lineWidth": 2,
+            "fillOpacity": 8,
+            "showPoints": "never",
+            "spanNulls": false,
+            "axisPlacement": "auto",
+            "axisLabel": "",
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            }
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom",
+          "calcs": []
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "id": 203,
+      "gridPos": {
+        "x": 12,
+        "y": 12,
+        "w": 12,
+        "h": 8
+      }
+    },
+    {
+      "type": "timeseries",
+      "title": "Process CPU usage",
+      "description": "Linux Prometheus process collector. CPU seconds/second equals utilized CPU cores; 1.0 means one core. Container CPU limits require infrastructure metrics.",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${DS_PROMETHEUS}"
+      },
+      "targets": [
+        {
+          "expr": "rate(stove_app_process_cpu_seconds_total{job=~\"${job:regex}\",instance=~\"${instance:regex}\"}[$__rate_interval])",
+          "legendFormat": "{{instance}} cores",
+          "refId": "A",
+          "range": true,
+          "editorMode": "code",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          }
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "color": {
+            "mode": "palette-classic"
+          },
+          "mappings": [],
+          "noValue": "No data",
+          "custom": {
+            "drawStyle": "line",
+            "lineInterpolation": "linear",
+            "lineWidth": 2,
+            "fillOpacity": 8,
+            "showPoints": "never",
+            "spanNulls": false,
+            "axisPlacement": "auto",
+            "axisLabel": "",
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            }
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom",
+          "calcs": []
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "id": 204,
+      "gridPos": {
+        "x": 0,
+        "y": 20,
+        "w": 12,
+        "h": 8
+      }
+    },
+    {
+      "type": "timeseries",
+      "title": "Process resident memory",
+      "description": "Linux process resident memory. Compare with pod/container limits in infrastructure monitoring.",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${DS_PROMETHEUS}"
+      },
+      "targets": [
+        {
+          "expr": "stove_app_process_resident_memory_bytes{job=~\"${job:regex}\",instance=~\"${instance:regex}\"}",
+          "legendFormat": "{{instance}}",
+          "refId": "A",
+          "range": true,
+          "editorMode": "code",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          }
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "bytes",
+          "color": {
+            "mode": "palette-classic"
+          },
+          "mappings": [],
+          "noValue": "No data",
+          "custom": {
+            "drawStyle": "line",
+            "lineInterpolation": "linear",
+            "lineWidth": 2,
+            "fillOpacity": 8,
+            "showPoints": "never",
+            "spanNulls": false,
+            "axisPlacement": "auto",
+            "axisLabel": "",
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            }
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom",
+          "calcs": []
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "id": 205,
+      "gridPos": {
+        "x": 12,
+        "y": 20,
+        "w": 12,
+        "h": 8
+      }
+    },
+    {
+      "type": "timeseries",
+      "title": "Ingestion in flight",
+      "description": "Unfinished decoded event attempts, including preparation and database waits. Stove commits inline with no separate ingestion queue; producer and network buffers are not measured.",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${DS_PROMETHEUS}"
+      },
+      "targets": [
+        {
+          "expr": "stove_app_ingestion_in_flight{job=~\"${job:regex}\",instance=~\"${instance:regex}\"}",
+          "legendFormat": "{{instance}}",
+          "refId": "A",
+          "range": true,
+          "editorMode": "code",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          }
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "color": {
+            "mode": "palette-classic"
+          },
+          "mappings": [],
+          "noValue": "No data",
+          "custom": {
+            "drawStyle": "line",
+            "lineInterpolation": "linear",
+            "lineWidth": 2,
+            "fillOpacity": 8,
+            "showPoints": "never",
+            "spanNulls": false,
+            "axisPlacement": "auto",
+            "axisLabel": "",
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            }
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom",
+          "calcs": []
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "id": 208,
+      "gridPos": {
+        "x": 0,
+        "y": 28,
+        "w": 12,
+        "h": 8
+      }
+    },
+    {
+      "type": "timeseries",
+      "title": "Oldest pending ingestion event",
+      "description": "Age of the oldest unfinished ingestion attempt. Rising age with DB acquisition latency reveals a blocked write; zero means idle.",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${DS_PROMETHEUS}"
+      },
+      "targets": [
+        {
+          "expr": "stove_app_ingestion_oldest_pending_age_seconds{job=~\"${job:regex}\",instance=~\"${instance:regex}\"}",
+          "legendFormat": "{{instance}}",
+          "refId": "A",
+          "range": true,
+          "editorMode": "code",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          }
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "s",
+          "color": {
+            "mode": "palette-classic"
+          },
+          "mappings": [],
+          "noValue": "No data",
+          "custom": {
+            "drawStyle": "line",
+            "lineInterpolation": "linear",
+            "lineWidth": 2,
+            "fillOpacity": 8,
+            "showPoints": "never",
+            "spanNulls": false,
+            "axisPlacement": "auto",
+            "axisLabel": "",
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            }
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom",
+          "calcs": []
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "id": 209,
+      "gridPos": {
+        "x": 12,
+        "y": 28,
+        "w": 12,
+        "h": 8
+      }
+    },
+    {
+      "type": "timeseries",
+      "title": "Ingestion processing latency p95 / p99",
+      "description": "Event preparation through commit for HTTP and gRPC, including validation and database waits.",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${DS_PROMETHEUS}"
+      },
+      "targets": [
+        {
+          "expr": "histogram_quantile(0.95, sum by (le, instance, stove_instance) (rate(stove_app_ingestion_duration_seconds_bucket{job=~\"${job:regex}\",instance=~\"${instance:regex}\"}[$__rate_interval])))",
+          "legendFormat": "{{instance}} p95",
+          "refId": "A",
+          "range": true,
+          "editorMode": "code",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          }
+        },
+        {
+          "expr": "histogram_quantile(0.99, sum by (le, instance, stove_instance) (rate(stove_app_ingestion_duration_seconds_bucket{job=~\"${job:regex}\",instance=~\"${instance:regex}\"}[$__rate_interval])))",
+          "legendFormat": "{{instance}} p99",
+          "refId": "B",
+          "range": true,
+          "editorMode": "code",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          }
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "s",
+          "color": {
+            "mode": "palette-classic"
+          },
+          "mappings": [],
+          "noValue": "No data",
+          "custom": {
+            "drawStyle": "line",
+            "lineInterpolation": "linear",
+            "lineWidth": 2,
+            "fillOpacity": 8,
+            "showPoints": "never",
+            "spanNulls": false,
+            "axisPlacement": "auto",
+            "axisLabel": "",
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            }
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom",
+          "calcs": []
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "id": 210,
+      "gridPos": {
+        "x": 0,
+        "y": 36,
+        "w": 12,
+        "h": 8
+      }
+    },
+    {
+      "type": "timeseries",
+      "title": "Ingestion outcomes / second",
+      "description": "Accepted, duplicate, and failed decoded-event attempts. Malformed HTTP protobuf bodies are counted as HTTP 4xx before ingestion.",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${DS_PROMETHEUS}"
+      },
+      "targets": [
+        {
+          "expr": "rate(stove_app_ingestion_events_total{job=~\"${job:regex}\",instance=~\"${instance:regex}\"}[$__rate_interval])",
+          "legendFormat": "{{instance}} {{outcome}}",
+          "refId": "A",
+          "range": true,
+          "editorMode": "code",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          }
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "ops",
+          "color": {
+            "mode": "palette-classic"
+          },
+          "mappings": [],
+          "noValue": "No data",
+          "custom": {
+            "drawStyle": "line",
+            "lineInterpolation": "linear",
+            "lineWidth": 2,
+            "fillOpacity": 8,
+            "showPoints": "never",
+            "spanNulls": false,
+            "axisPlacement": "auto",
+            "axisLabel": "",
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            }
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom",
+          "calcs": []
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "id": 212,
+      "gridPos": {
+        "x": 12,
+        "y": 36,
+        "w": 12,
+        "h": 8
+      }
+    },
+    {
+      "type": "timeseries",
+      "title": "Active streams",
+      "description": "Live SSE response bodies and gRPC ingestion streams. These are application streams, not underlying TCP connections.",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${DS_PROMETHEUS}"
+      },
+      "targets": [
+        {
+          "expr": "stove_app_streams_active{job=~\"${job:regex}\",instance=~\"${instance:regex}\"}",
+          "legendFormat": "{{instance}} {{transport}}",
+          "refId": "A",
+          "range": true,
+          "editorMode": "code",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          }
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "color": {
+            "mode": "palette-classic"
+          },
+          "mappings": [],
+          "noValue": "No data",
+          "custom": {
+            "drawStyle": "line",
+            "lineInterpolation": "linear",
+            "lineWidth": 2,
+            "fillOpacity": 8,
+            "showPoints": "never",
+            "spanNulls": false,
+            "axisPlacement": "auto",
+            "axisLabel": "",
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            }
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom",
+          "calcs": []
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "id": 214,
+      "gridPos": {
+        "x": 0,
+        "y": 44,
+        "w": 12,
+        "h": 8
+      }
+    },
+    {
+      "type": "timeseries",
+      "title": "Stream failures and lag / second",
+      "description": "SSE cursor/replay failures and gRPC receive errors. Lag counts missed broadcast events that trigger durable replay, not necessarily lost events.",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${DS_PROMETHEUS}"
+      },
+      "targets": [
+        {
+          "expr": "rate(stove_app_stream_errors_total{job=~\"${job:regex}\",instance=~\"${instance:regex}\"}[$__rate_interval])",
+          "legendFormat": "{{instance}} {{transport}} errors",
+          "refId": "A",
+          "range": true,
+          "editorMode": "code",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          }
+        },
+        {
+          "expr": "rate(stove_app_sse_lagged_events_total{job=~\"${job:regex}\",instance=~\"${instance:regex}\"}[$__rate_interval])",
+          "legendFormat": "{{instance}} SSE lagged events",
           "refId": "B",
           "range": true,
           "editorMode": "code",
@@ -236,10 +1116,255 @@
           "sort": "desc"
         }
       },
-      "id": 27,
+      "id": 215,
+      "gridPos": {
+        "x": 12,
+        "y": 44,
+        "w": 12,
+        "h": 8
+      }
+    },
+    {
+      "type": "timeseries",
+      "title": "Background worker failures / second",
+      "description": "Failed collector attempts, relay polls, or notification connections, including panics/cancellation. PostgreSQL listener failures fall back to polling.",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${DS_PROMETHEUS}"
+      },
+      "targets": [
+        {
+          "expr": "rate(stove_app_worker_runs_total{job=~\"${job:regex}\",instance=~\"${instance:regex}\",outcome=\"error\"}[$__rate_interval])",
+          "legendFormat": "{{instance}} {{worker}}",
+          "refId": "A",
+          "range": true,
+          "editorMode": "code",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          }
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "ops",
+          "color": {
+            "mode": "palette-classic"
+          },
+          "mappings": [],
+          "noValue": "No data",
+          "custom": {
+            "drawStyle": "line",
+            "lineInterpolation": "linear",
+            "lineWidth": 2,
+            "fillOpacity": 8,
+            "showPoints": "never",
+            "spanNulls": false,
+            "axisPlacement": "auto",
+            "axisLabel": "",
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            }
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom",
+          "calcs": []
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "id": 216,
       "gridPos": {
         "x": 0,
-        "y": 4,
+        "y": 52,
+        "w": 12,
+        "h": 8
+      }
+    },
+    {
+      "type": "timeseries",
+      "title": "Background worker freshness",
+      "description": "Time since successful work or listener heartbeat. Zero timestamps mean the worker has never succeeded. The startup-only cursor task is excluded. Normal collector interval is 30 seconds.",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${DS_PROMETHEUS}"
+      },
+      "targets": [
+        {
+          "expr": "time() - stove_app_worker_last_success_timestamp_seconds{job=~\"${job:regex}\",instance=~\"${instance:regex}\",worker!=\"live_event_cursor\"}",
+          "legendFormat": "{{instance}} {{worker}}",
+          "refId": "A",
+          "range": true,
+          "editorMode": "code",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          }
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "s",
+          "color": {
+            "mode": "palette-classic"
+          },
+          "mappings": [],
+          "noValue": "No data",
+          "custom": {
+            "drawStyle": "line",
+            "lineInterpolation": "linear",
+            "lineWidth": 2,
+            "fillOpacity": 8,
+            "showPoints": "never",
+            "spanNulls": false,
+            "axisPlacement": "auto",
+            "axisLabel": "",
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            }
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom",
+          "calcs": []
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "id": 217,
+      "gridPos": {
+        "x": 12,
+        "y": 52,
+        "w": 12,
+        "h": 8
+      }
+    },
+    {
+      "type": "timeseries",
+      "title": "Runtime scheduling delay p95 / p99",
+      "description": "Delay of a one-second Tokio heartbeat. High delay indicates runtime scheduling pressure. Pair with heartbeat freshness to detect stalls with no new observations.",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${DS_PROMETHEUS}"
+      },
+      "targets": [
+        {
+          "expr": "histogram_quantile(0.95, sum by (le, instance, stove_instance) (rate(stove_app_runtime_scheduling_delay_seconds_bucket{job=~\"${job:regex}\",instance=~\"${instance:regex}\"}[$__rate_interval])))",
+          "legendFormat": "{{instance}} p95",
+          "refId": "A",
+          "range": true,
+          "editorMode": "code",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          }
+        },
+        {
+          "expr": "histogram_quantile(0.99, sum by (le, instance, stove_instance) (rate(stove_app_runtime_scheduling_delay_seconds_bucket{job=~\"${job:regex}\",instance=~\"${instance:regex}\"}[$__rate_interval])))",
+          "legendFormat": "{{instance}} p99",
+          "refId": "B",
+          "range": true,
+          "editorMode": "code",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          }
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "s",
+          "color": {
+            "mode": "palette-classic"
+          },
+          "mappings": [],
+          "noValue": "No data",
+          "custom": {
+            "drawStyle": "line",
+            "lineInterpolation": "linear",
+            "lineWidth": 2,
+            "fillOpacity": 8,
+            "showPoints": "never",
+            "spanNulls": false,
+            "axisPlacement": "auto",
+            "axisLabel": "",
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            }
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom",
+          "calcs": []
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "id": 219,
+      "gridPos": {
+        "x": 0,
+        "y": 60,
         "w": 12,
         "h": 8
       }
@@ -315,7 +1440,7 @@
       "id": 28,
       "gridPos": {
         "x": 12,
-        "y": 4,
+        "y": 60,
         "w": 12,
         "h": 8
       }
@@ -393,7 +1518,7 @@
       "id": 29,
       "gridPos": {
         "x": 0,
-        "y": 12,
+        "y": 68,
         "w": 12,
         "h": 8
       }
@@ -471,7 +1596,7 @@
       "id": 30,
       "gridPos": {
         "x": 12,
-        "y": 12,
+        "y": 68,
         "w": 12,
         "h": 8
       }
@@ -558,7 +1683,7 @@
           "id": 104,
           "gridPos": {
             "x": 0,
-            "y": 21,
+            "y": 77,
             "w": 8,
             "h": 5
           }
@@ -640,7 +1765,7 @@
           "id": 105,
           "gridPos": {
             "x": 8,
-            "y": 21,
+            "y": 77,
             "w": 8,
             "h": 5
           }
@@ -704,7 +1829,7 @@
           "id": 106,
           "gridPos": {
             "x": 16,
-            "y": 21,
+            "y": 77,
             "w": 8,
             "h": 5
           }
@@ -782,7 +1907,7 @@
           "id": 108,
           "gridPos": {
             "x": 0,
-            "y": 26,
+            "y": 82,
             "w": 12,
             "h": 8
           }
@@ -860,7 +1985,7 @@
           "id": 109,
           "gridPos": {
             "x": 12,
-            "y": 26,
+            "y": 82,
             "w": 12,
             "h": 8
           }
@@ -938,7 +2063,7 @@
           "id": 36,
           "gridPos": {
             "x": 0,
-            "y": 34,
+            "y": 90,
             "w": 6,
             "h": 8
           }
@@ -1016,7 +2141,7 @@
           "id": 37,
           "gridPos": {
             "x": 6,
-            "y": 34,
+            "y": 90,
             "w": 6,
             "h": 8
           }
@@ -1094,7 +2219,7 @@
           "id": 38,
           "gridPos": {
             "x": 12,
-            "y": 34,
+            "y": 90,
             "w": 6,
             "h": 8
           }
@@ -1172,7 +2297,7 @@
           "id": 39,
           "gridPos": {
             "x": 18,
-            "y": 34,
+            "y": 90,
             "w": 6,
             "h": 8
           }
@@ -1250,7 +2375,7 @@
           "id": 40,
           "gridPos": {
             "x": 0,
-            "y": 42,
+            "y": 98,
             "w": 12,
             "h": 8
           }
@@ -1332,7 +2457,7 @@
           "id": 41,
           "gridPos": {
             "x": 12,
-            "y": 42,
+            "y": 98,
             "w": 12,
             "h": 8
           }
@@ -1410,7 +2535,7 @@
           "id": 114,
           "gridPos": {
             "x": 0,
-            "y": 50,
+            "y": 106,
             "w": 12,
             "h": 8
           }
@@ -1488,7 +2613,7 @@
           "id": 115,
           "gridPos": {
             "x": 12,
-            "y": 50,
+            "y": 106,
             "w": 12,
             "h": 8
           }
@@ -1566,7 +2691,7 @@
           "id": 116,
           "gridPos": {
             "x": 0,
-            "y": 58,
+            "y": 114,
             "w": 12,
             "h": 8
           }
@@ -1644,7 +2769,7 @@
           "id": 117,
           "gridPos": {
             "x": 12,
-            "y": 58,
+            "y": 114,
             "w": 12,
             "h": 8
           }
@@ -1722,7 +2847,7 @@
           "id": 118,
           "gridPos": {
             "x": 0,
-            "y": 66,
+            "y": 122,
             "w": 12,
             "h": 8
           }
@@ -1800,7 +2925,7 @@
           "id": 119,
           "gridPos": {
             "x": 12,
-            "y": 66,
+            "y": 122,
             "w": 12,
             "h": 8
           }
@@ -1878,7 +3003,7 @@
           "id": 121,
           "gridPos": {
             "x": 0,
-            "y": 74,
+            "y": 130,
             "w": 8,
             "h": 8
           }
@@ -1956,7 +3081,7 @@
           "id": 122,
           "gridPos": {
             "x": 8,
-            "y": 74,
+            "y": 130,
             "w": 8,
             "h": 8
           }
@@ -2034,7 +3159,7 @@
           "id": 123,
           "gridPos": {
             "x": 16,
-            "y": 74,
+            "y": 130,
             "w": 8,
             "h": 8
           }
@@ -2123,7 +3248,7 @@
           "id": 124,
           "gridPos": {
             "x": 0,
-            "y": 82,
+            "y": 138,
             "w": 12,
             "h": 8
           }
@@ -2201,7 +3326,7 @@
           "id": 125,
           "gridPos": {
             "x": 12,
-            "y": 82,
+            "y": 138,
             "w": 12,
             "h": 8
           }
@@ -2210,7 +3335,7 @@
       "id": 35,
       "gridPos": {
         "x": 0,
-        "y": 20,
+        "y": 76,
         "w": 24,
         "h": 1
       }
@@ -2297,7 +3422,7 @@
           "id": 4,
           "gridPos": {
             "x": 0,
-            "y": 22,
+            "y": 78,
             "w": 8,
             "h": 5
           }
@@ -2379,7 +3504,7 @@
           "id": 5,
           "gridPos": {
             "x": 8,
-            "y": 22,
+            "y": 78,
             "w": 8,
             "h": 5
           }
@@ -2443,7 +3568,7 @@
           "id": 6,
           "gridPos": {
             "x": 16,
-            "y": 22,
+            "y": 78,
             "w": 8,
             "h": 5
           }
@@ -2521,7 +3646,7 @@
           "id": 8,
           "gridPos": {
             "x": 0,
-            "y": 27,
+            "y": 83,
             "w": 12,
             "h": 8
           }
@@ -2599,7 +3724,7 @@
           "id": 9,
           "gridPos": {
             "x": 12,
-            "y": 27,
+            "y": 83,
             "w": 12,
             "h": 8
           }
@@ -2677,7 +3802,7 @@
           "id": 10,
           "gridPos": {
             "x": 0,
-            "y": 35,
+            "y": 91,
             "w": 8,
             "h": 8
           }
@@ -2755,7 +3880,7 @@
           "id": 11,
           "gridPos": {
             "x": 8,
-            "y": 35,
+            "y": 91,
             "w": 8,
             "h": 8
           }
@@ -2827,7 +3952,7 @@
           "id": 12,
           "gridPos": {
             "x": 16,
-            "y": 35,
+            "y": 91,
             "w": 8,
             "h": 8
           }
@@ -2905,7 +4030,7 @@
           "id": 32,
           "gridPos": {
             "x": 0,
-            "y": 43,
+            "y": 99,
             "w": 8,
             "h": 8
           }
@@ -2983,7 +4108,7 @@
           "id": 33,
           "gridPos": {
             "x": 8,
-            "y": 43,
+            "y": 99,
             "w": 8,
             "h": 8
           }
@@ -3065,7 +4190,7 @@
           "id": 34,
           "gridPos": {
             "x": 16,
-            "y": 43,
+            "y": 99,
             "w": 8,
             "h": 8
           }
@@ -3143,7 +4268,7 @@
           "id": 14,
           "gridPos": {
             "x": 0,
-            "y": 51,
+            "y": 107,
             "w": 12,
             "h": 8
           }
@@ -3221,7 +4346,7 @@
           "id": 15,
           "gridPos": {
             "x": 12,
-            "y": 51,
+            "y": 107,
             "w": 12,
             "h": 8
           }
@@ -3299,7 +4424,7 @@
           "id": 16,
           "gridPos": {
             "x": 0,
-            "y": 59,
+            "y": 115,
             "w": 12,
             "h": 8
           }
@@ -3377,7 +4502,7 @@
           "id": 17,
           "gridPos": {
             "x": 12,
-            "y": 59,
+            "y": 115,
             "w": 12,
             "h": 8
           }
@@ -3455,7 +4580,7 @@
           "id": 18,
           "gridPos": {
             "x": 0,
-            "y": 67,
+            "y": 123,
             "w": 12,
             "h": 8
           }
@@ -3544,7 +4669,7 @@
           "id": 19,
           "gridPos": {
             "x": 12,
-            "y": 67,
+            "y": 123,
             "w": 12,
             "h": 8
           }
@@ -3622,7 +4747,7 @@
           "id": 21,
           "gridPos": {
             "x": 0,
-            "y": 75,
+            "y": 131,
             "w": 8,
             "h": 8
           }
@@ -3700,7 +4825,7 @@
           "id": 22,
           "gridPos": {
             "x": 8,
-            "y": 75,
+            "y": 131,
             "w": 8,
             "h": 8
           }
@@ -3778,7 +4903,7 @@
           "id": 23,
           "gridPos": {
             "x": 16,
-            "y": 75,
+            "y": 131,
             "w": 8,
             "h": 8
           }
@@ -3867,7 +4992,7 @@
           "id": 24,
           "gridPos": {
             "x": 0,
-            "y": 83,
+            "y": 139,
             "w": 12,
             "h": 8
           }
@@ -3945,7 +5070,7 @@
           "id": 25,
           "gridPos": {
             "x": 12,
-            "y": 83,
+            "y": 139,
             "w": 12,
             "h": 8
           }
@@ -3954,7 +5079,7 @@
       "id": 31,
       "gridPos": {
         "x": 0,
-        "y": 21,
+        "y": 77,
         "w": 24,
         "h": 1
       }

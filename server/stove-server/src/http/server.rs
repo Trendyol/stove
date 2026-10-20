@@ -56,6 +56,10 @@ pub fn create_router_with_public_url(
     .merge(super::openapi::router())
     .fallback(super::routes::static_handler)
     .layer(CorsLayer::permissive())
+    .layer(axum::middleware::from_fn_with_state(
+      state.repository.metrics.app.clone(),
+      crate::metrics::observe_http,
+    ))
     .with_state(state);
   if prefix.is_empty() {
     router

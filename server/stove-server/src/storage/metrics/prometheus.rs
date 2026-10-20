@@ -2,15 +2,18 @@
 //! the prometheus crate. Each repository has an isolated registry (no globals).
 use super::{DatabaseMetrics, Outcome};
 mod gauges;
+use crate::metrics::{AppMetrics, counter_vec, gauge_vec, int_gauge_vec, register};
 use gauges::{GAUGES, age};
 use prometheus::{
-  Encoder, GaugeVec, HistogramOpts, HistogramVec, IntCounter, IntCounterVec, IntGaugeVec, Opts,
-  Registry, TextEncoder, core::Collector,
+  Encoder, GaugeVec, HistogramOpts, HistogramVec, IntCounter, IntCounterVec, IntGaugeVec, Registry,
+  TextEncoder,
 };
 use std::collections::{BTreeMap, HashMap};
+use std::sync::Arc;
 
 pub(super) struct Instruments {
   registry: Registry,
+  pub app: Arc<AppMetrics>,
   pub durations: HistogramVec,
   pub errors: IntCounterVec,
   timeouts: IntCounterVec,
@@ -34,6 +37,7 @@ impl Instruments {
       ])),
     )
     .expect("constant registry labels");
+    let app = AppMetrics::new(&registry);
     let labels = &["kind", "operation", "role"];
     let durations = register(
       &registry,
@@ -103,6 +107,7 @@ impl Instruments {
     );
     Self {
       registry,
+      app,
       durations,
       errors,
       timeouts,
@@ -160,6 +165,7 @@ impl Instruments {
   }
   pub fn encode(&self, snapshot: &DatabaseMetrics) -> String {
     self.refresh_gauges(snapshot);
+    self.app.refresh();
     // Mirror PostgreSQL's external counter, including statistics resets. All
     // refresh/gather calls are serialized by StorageMetrics::exposition.
     if let Some(value) = snapshot
@@ -222,31 +228,6 @@ impl Instruments {
     }
   }
 }
-fn register<T: Collector + Clone + 'static>(registry: &Registry, metric: T) -> T {
-  registry
-    .register(Box::new(metric.clone()))
-    .expect("unique metric names");
-  metric
-}
-fn gauge_vec(registry: &Registry, name: &str, help: &str, labels: &[&str]) -> GaugeVec {
-  register(
-    registry,
-    GaugeVec::new(Opts::new(name, help), labels).expect("constant gauge labels"),
-  )
-}
-fn int_gauge_vec(registry: &Registry, name: &str, help: &str, labels: &[&str]) -> IntGaugeVec {
-  register(
-    registry,
-    IntGaugeVec::new(Opts::new(name, help), labels).expect("constant gauge labels"),
-  )
-}
-fn counter_vec(registry: &Registry, name: &str, help: &str, labels: &[&str]) -> IntCounterVec {
-  register(
-    registry,
-    IntCounterVec::new(Opts::new(name, help), labels).expect("constant counter labels"),
-  )
-}
-
 fn capacity_metrics(registry: &Registry) -> BTreeMap<&'static str, IntGaugeVec> {
   ["maximum", "connections", "idle", "busy", "waiters"]
     .into_iter()

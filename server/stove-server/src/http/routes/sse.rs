@@ -9,6 +9,7 @@ use tokio::sync::broadcast::Receiver;
 use tokio::sync::broadcast::error::RecvError;
 use tokio::sync::mpsc;
 use tokio::sync::mpsc::Sender;
+use tokio_stream::StreamExt;
 use tokio_stream::wrappers::ReceiverStream;
 
 use crate::http::server::AppState;
@@ -41,6 +42,13 @@ pub async fn sse_handler(
       .repository
       .latest_live_event_id()
       .unwrap_or_else(|error| {
+        state
+          .repository
+          .metrics
+          .app
+          .stream_errors
+          .with_label_values(&["sse"])
+          .inc();
         tracing::warn!(%error, "Failed to establish the SSE cursor");
         state.sse_manager.last_broadcast_id()
       })
@@ -50,7 +58,12 @@ pub async fn sse_handler(
   let (sender, receiver) = mpsc::channel(CLIENT_BUFFER_SIZE);
   tokio::spawn(forward_events(repository, live, cursor, sender));
 
-  Sse::new(ReceiverStream::new(receiver)).keep_alive(
+  let active = state.repository.metrics.app.stream("sse");
+  let stream = ReceiverStream::new(receiver).map(move |event| {
+    let _ = &active;
+    event
+  });
+  Sse::new(stream).keep_alive(
     KeepAlive::new()
       .interval(Duration::from_secs(15))
       .text("keep-alive"),
@@ -75,7 +88,11 @@ async fn forward_events(
   }
 
   loop {
-    match live.recv().await {
+    let event = tokio::select! {
+      () = sender.closed() => return,
+      event = live.recv() => event,
+    };
+    match event {
       Ok(event) if event.id > cursor => {
         cursor = event.id;
         if sender.send(Ok(to_sse_event(event))).await.is_err() {
@@ -83,7 +100,8 @@ async fn forward_events(
         }
       }
       Ok(_) => {}
-      Err(RecvError::Lagged(_)) => {
+      Err(RecvError::Lagged(count)) => {
+        repository.metrics.app.sse_lagged.inc_by(count);
         if !replay_available(repository.as_ref(), &sender, &mut cursor).await {
           return;
         }
@@ -102,6 +120,12 @@ async fn replay_available(
     let events = match repository.live_events_after(*cursor, REPLAY_PAGE_SIZE) {
       Ok(events) => events,
       Err(error) => {
+        repository
+          .metrics
+          .app
+          .stream_errors
+          .with_label_values(&["sse"])
+          .inc();
         tracing::warn!(%error, "Failed to replay durable dashboard live events");
         return true;
       }

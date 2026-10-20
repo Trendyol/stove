@@ -1,8 +1,9 @@
 use crate::http::server::AppState;
 use axum::{extract::State, http::header};
 
-/// Cached Prometheus exposition; deliberately performs no database calls.
-#[utoipa::path(get, path = "/metrics", tag = "system", responses((status = 200, description = "Prometheus database metrics", content_type = "text/plain", body = String)))]
+/// Prometheus exposition; cached application/database values plus Linux process statistics.
+/// Deliberately performs no database calls.
+#[utoipa::path(get, path = "/metrics", tag = "system", responses((status = 200, description = "Prometheus application and database metrics", content_type = "text/plain", body = String)))]
 pub async fn get_metrics(
   State(state): State<AppState>,
 ) -> ([(header::HeaderName, &'static str); 2], String) {

@@ -84,6 +84,7 @@ struct State {
   sampled: Option<Instant>,
 }
 pub struct StorageMetrics {
+  pub(crate) app: std::sync::Arc<crate::metrics::AppMetrics>,
   backend: &'static str,
   started_at: chrono::DateTime<chrono::Utc>,
   monitoring: AtomicBool,
@@ -105,6 +106,7 @@ impl StorageMetrics {
   fn with_instance(backend: &'static str, instance_id: &str) -> Self {
     let instruments = Instruments::new(instance_id, backend);
     Self {
+      app: instruments.app.clone(),
       backend,
       started_at: chrono::Utc::now(),
       monitoring: AtomicBool::new(false),

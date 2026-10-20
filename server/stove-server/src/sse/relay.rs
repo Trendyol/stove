@@ -17,7 +17,10 @@ pub fn spawn(repository: Arc<Repository>, manager: Arc<SseManager>) -> JoinHandl
   // Capture the durable cursor before the task can be delayed by scheduling.
   // Starting at the current tail avoids replaying the retained log after a
   // process restart; reconnecting clients replay from their own cursor.
-  let cursor = repository.latest_live_event_id().unwrap_or_else(|error| {
+  let startup = repository.metrics.app.worker("live_event_cursor");
+  let cursor_result = repository.latest_live_event_id();
+  startup.finish(cursor_result.is_ok());
+  let cursor = cursor_result.unwrap_or_else(|error| {
     warn!(%error, "Failed to establish durable live-event relay cursor; replaying from zero");
     0
   });
@@ -40,7 +43,10 @@ pub fn spawn(repository: Arc<Repository>, manager: Arc<SseManager>) -> JoinHandl
         }
       }
 
-      if let Err(error) = broadcast_available(&repository, &manager, &mut cursor) {
+      let attempt = repository.metrics.app.worker("live_event_relay");
+      let result = broadcast_available(&repository, &manager, &mut cursor);
+      attempt.finish(result.is_ok());
+      if let Err(error) = result {
         warn!(%error, "Failed to read durable dashboard live events");
       }
     }

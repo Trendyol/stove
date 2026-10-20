@@ -32,8 +32,16 @@ impl proto::dashboard_event_service_server::DashboardEventService for DashboardE
     &self,
     request: Request<Streaming<proto::DashboardEvent>>,
   ) -> std::result::Result<Response<proto::EventAck>, Status> {
+    let _active = self.ingestor.metrics().stream("grpc");
     let mut stream = request.into_inner();
-    while let Some(event) = stream.message().await? {
+    while let Some(event) = stream.message().await.inspect_err(|_| {
+      self
+        .ingestor
+        .metrics()
+        .stream_errors
+        .with_label_values(&["grpc"])
+        .inc();
+    })? {
       self.ingestor.ingest(&event).map_err(to_status)?;
     }
     Ok(Response::new(EventIngestor::accepted_ack()))
