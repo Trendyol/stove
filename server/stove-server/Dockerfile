@@ -1,12 +1,13 @@
 # syntax=docker/dockerfile:1.28
 
 ARG STOVE_VERSION=dev
+ARG BINARY_SOURCE=rust-builder
 
 FROM node:24-bookworm-slim AS node-toolchain
 
 FROM rust:1-bookworm AS rust-builder
 
-# Type generation needs both Rust and Node before the SPA can be bundled.
+# Source builds bundle the checked-in API types; CI verifies their freshness.
 COPY --from=node-toolchain /usr/local/ /usr/local/
 
 ARG STOVE_VERSION
@@ -40,9 +41,16 @@ RUN --mount=type=cache,target=/usr/local/cargo/registry \
     --mount=type=cache,target=/usr/local/cargo/git \
     --mount=type=cache,target=/source/server/stove-server/target \
     --mount=type=cache,target=/root/.npm \
-    cd spa && STOVE_VERSION="${STOVE_VERSION}" npm run build \
-    && cd .. && STOVE_VERSION="${STOVE_VERSION}" SKIP_SPA_BUILD=1 cargo build --locked --release \
+    cd spa && STOVE_VERSION="${STOVE_VERSION}" npm run build:assets \
+    && cd .. && STOVE_VERSION="${STOVE_VERSION}" SKIP_SPA_BUILD=1 cargo build --locked --release --bin stove \
     && cp target/release/stove /usr/local/bin/stove
+
+# CI supplies only the already-built Linux binary as its build context.
+# Default local/Compose builds continue to select rust-builder above.
+FROM scratch AS prebuilt-binary
+COPY stove /usr/local/bin/stove
+
+FROM ${BINARY_SOURCE} AS selected-binary
 
 FROM debian:bookworm-slim AS runtime
 
@@ -54,7 +62,7 @@ RUN apt-get update \
     && mkdir /data \
     && chown stove:stove /data
 
-COPY --from=rust-builder /usr/local/bin/stove /usr/local/bin/stove
+COPY --from=selected-binary /usr/local/bin/stove /usr/local/bin/stove
 
 USER stove
 WORKDIR /home/stove

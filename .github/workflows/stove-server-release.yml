@@ -50,83 +50,9 @@ jobs:
 
   build:
     needs: resolve-version
-    strategy:
-      matrix:
-        include:
-          - target: aarch64-apple-darwin
-            runner: macos-14
-            label: darwin-arm64
-          - target: x86_64-apple-darwin
-            runner: macos-14
-            label: darwin-amd64
-          - target: x86_64-unknown-linux-gnu
-            runner: ubuntu-latest
-            label: linux-amd64
-    runs-on: ${{ matrix.runner }}
-    defaults:
-      run:
-        working-directory: server/stove-server
-
-    steps:
-      - uses: actions/checkout@v7
-
-      - uses: actions/setup-node@v7
-        with:
-          node-version: 24
-          cache: 'npm'
-          cache-dependency-path: server/stove-server/spa/package-lock.json
-
-      - uses: dtolnay/rust-toolchain@stable
-        with:
-          targets: ${{ matrix.target }}
-
-      - name: Install protoc (Linux)
-        if: runner.os == 'Linux'
-        run: sudo apt-get update && sudo apt-get install -y protobuf-compiler libpq-dev libssl-dev pkg-config
-
-      - name: Install protoc (macOS)
-        if: runner.os == 'macOS'
-        run: |
-          brew install protobuf libpq
-          echo "$(brew --prefix libpq)/bin" >> "$GITHUB_PATH"
-
-      - uses: actions/cache@v6
-        with:
-          path: |
-            ~/.cargo/registry
-            ~/.cargo/git
-            server/stove-server/target
-          key: cargo-release-${{ matrix.target }}-${{ hashFiles('server/stove-server/Cargo.lock') }}
-          restore-keys: cargo-release-${{ matrix.target }}-
-
-      - name: Build SPA
-        run: cd spa && npm ci && npm run build
-
-      - name: Build release binary
-        run: cargo build --release --locked --features vendored-postgres --target ${{ matrix.target }}
-        env:
-          SKIP_SPA_BUILD: "1"
-
-      - name: Verify standalone release binary
-        run: ./scripts/verify-release-linkage.sh "target/${{ matrix.target }}/release/stove"
-
-      - name: Package tarball
-        env:
-          VERSION: ${{ needs.resolve-version.outputs.version }}
-        run: |
-          ARCHIVE="stove-${VERSION}-${{ matrix.label }}.tar.gz"
-          mkdir -p staging
-          cp "target/${{ matrix.target }}/release/stove" staging/
-          cp "${GITHUB_WORKSPACE}/LICENSE" staging/
-          tar czf "${ARCHIVE}" -C staging .
-          shasum -a 256 "${ARCHIVE}" > "${ARCHIVE}.sha256"
-
-      - uses: actions/upload-artifact@v7
-        with:
-          name: binaries-${{ matrix.label }}
-          path: |
-            server/stove-server/stove-*.tar.gz
-            server/stove-server/stove-*.sha256
+    uses: ./.github/workflows/stove-server-binaries.yml
+    with:
+      version: ${{ needs.resolve-version.outputs.version }}
 
   release:
     needs: [resolve-version, build]
@@ -186,42 +112,11 @@ jobs:
         run: |
           BASE_URL="https://github.com/Trendyol/stove/releases/download/v${VERSION}"
 
-          SHA_DARWIN_ARM64=$(curl -fsSL "${BASE_URL}/stove-${VERSION}-darwin-arm64.tar.gz.sha256" | awk '{print $1}')
-          SHA_DARWIN_AMD64=$(curl -fsSL "${BASE_URL}/stove-${VERSION}-darwin-amd64.tar.gz.sha256" | awk '{print $1}')
-          SHA_LINUX_AMD64=$(curl -fsSL "${BASE_URL}/stove-${VERSION}-linux-amd64.tar.gz.sha256" | awk '{print $1}')
-
-          cp server/stove-server/Formula/stove.rb stove.rb
-          sed -i "s/__VERSION__/${VERSION}/" stove.rb
-          sed -i "s/__SHA256_DARWIN_ARM64__/${SHA_DARWIN_ARM64}/" stove.rb
-          sed -i "s/__SHA256_DARWIN_AMD64__/${SHA_DARWIN_AMD64}/" stove.rb
-          sed -i "s/__SHA256_LINUX_AMD64__/${SHA_LINUX_AMD64}/" stove.rb
-
-          # Retried with a fresh clone: the stove-server-next workflow pushes to
-          # the same tap, and a concurrent push would reject this one as
-          # non-fast-forward. An empty staged diff means the formula is
-          # already current (idempotent rerun, or a push that landed despite
-          # a reported network error) — success, not failure.
-          attempt_push() {
-            WORKDIR="$(mktemp -d)" &&
-              git clone --depth 1 "https://x-access-token:${TAP_TOKEN}@github.com/Trendyol/homebrew-trendyol-tap.git" "${WORKDIR}" &&
-              cp stove.rb "${WORKDIR}/stove.rb" &&
-              git -C "${WORKDIR}" add stove.rb &&
-              if git -C "${WORKDIR}" diff --cached --quiet; then
-                echo "Formula already up to date in tap — nothing to push"
-              else
-                git -C "${WORKDIR}" config user.name "github-actions[bot]" &&
-                  git -C "${WORKDIR}" config user.email "github-actions[bot]@users.noreply.github.com" &&
-                  git -C "${WORKDIR}" commit -m "stove ${VERSION}" &&
-                  git -C "${WORKDIR}" push
-              fi
-          }
-
-          for attempt in 1 2 3; do
-            if attempt_push; then
-              exit 0
-            fi
-            echo "Tap push failed (attempt ${attempt}/3) — retrying with a fresh clone"
-            sleep 5
+          CHECKSUM_DIR="$(mktemp -d)"
+          trap 'rm -rf "$CHECKSUM_DIR"' EXIT
+          for platform in darwin-arm64 darwin-amd64 linux-amd64; do
+            archive="stove-${VERSION}-${platform}.tar.gz.sha256"
+            curl -fsSL "${BASE_URL}/${archive}" -o "${CHECKSUM_DIR}/${archive}"
           done
-          echo "Failed to push stove formula after 3 attempts" >&2
-          exit 1
+
+          server/stove-server/scripts/publish-homebrew-formula.sh stove "$VERSION" "$CHECKSUM_DIR"

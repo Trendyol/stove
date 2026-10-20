@@ -1,0 +1,79 @@
+name: Build Stove Server Binaries
+
+on:
+  workflow_call:
+    inputs:
+      version:
+        description: Version embedded in the SPA, binary, and archive names
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: Build ${{ matrix.label }}
+    env:
+      STOVE_VERSION: ${{ inputs.version }}
+    strategy:
+      matrix:
+        include:
+          - target: aarch64-apple-darwin
+            runner: macos-14
+            label: darwin-arm64
+          - target: x86_64-apple-darwin
+            runner: macos-14
+            label: darwin-amd64
+          - target: x86_64-unknown-linux-gnu
+            runner: ubuntu-latest
+            label: linux-amd64
+    runs-on: ${{ matrix.runner }}
+    defaults:
+      run:
+        working-directory: server/stove-server
+
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: ./.github/actions/setup-stove-server
+        with:
+          targets: ${{ matrix.target }}
+
+      - uses: actions/cache@v6
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            server/stove-server/target
+          key: cargo-release-${{ matrix.target }}-${{ hashFiles('server/stove-server/Cargo.lock') }}
+          restore-keys: cargo-release-${{ matrix.target }}-
+
+      - name: Build SPA
+        run: cd spa && npm run build
+
+      - name: Build release binary
+        run: cargo build --release --locked --features vendored-postgres --target ${{ matrix.target }}
+        env:
+          SKIP_SPA_BUILD: "1"
+
+      - name: Verify standalone release binary
+        run: ./scripts/verify-release-linkage.sh "target/${{ matrix.target }}/release/stove"
+
+      - name: Package tarball
+        env:
+          VERSION: ${{ inputs.version }}
+        run: |
+          ARCHIVE="stove-${VERSION}-${{ matrix.label }}.tar.gz"
+          mkdir -p staging
+          cp "target/${{ matrix.target }}/release/stove" staging/
+          cp "${GITHUB_WORKSPACE}/LICENSE" staging/
+          tar czf "${ARCHIVE}" -C staging .
+          shasum -a 256 "${ARCHIVE}" > "${ARCHIVE}.sha256"
+
+      - uses: actions/upload-artifact@v7
+        with:
+          name: binaries-${{ matrix.label }}
+          path: |
+            server/stove-server/stove-*.tar.gz
+            server/stove-server/stove-*.sha256

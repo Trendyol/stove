@@ -149,6 +149,19 @@ docker run -d \
   ghcr.io/trendyol/stove-server:0.26.0
 ```
 
+### Build the image
+
+Build from source at the repository root:
+
+```bash
+docker build -f server/stove-server/Dockerfile --build-arg STOVE_VERSION=dev -t stove-server:dev .
+server/stove-server/scripts/verify-image.sh stove-server:dev dev
+```
+
+Image builds bundle the checked-in REST types; server CI verifies that they match the Rust API. After changing the API locally, run `npm run generate:api` in `server/stove-server/spa` before building the image.
+
+The image publishing workflow builds the SPA and release binary on the runner with npm and Rust dependency caches, then packages only the binary using `BINARY_SOURCE=prebuilt-binary`. That build context must contain an executable named `stove` compiled for the target Linux architecture. Compilation uses Ubuntu 22.04 to keep its glibc requirement compatible with the Debian Bookworm runtime. The workflow checks health, version, embedded SPA, and Prometheus metrics in the resulting image before publishing tags.
+
 ### Local PostgreSQL stack
 
 To run the current source against PostgreSQL without preparing a database manually:

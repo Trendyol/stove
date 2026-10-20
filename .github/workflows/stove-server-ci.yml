@@ -8,6 +8,7 @@ on:
       - 'lib/stove-dashboard-api/src/main/proto/**'
       - 'gradle.properties'
       - '.github/workflows/stove-server-ci.yml'
+      - '.github/actions/setup-stove-server/**'
   pull_request:
     branches: [main]
     paths:
@@ -15,6 +16,7 @@ on:
       - 'lib/stove-dashboard-api/src/main/proto/**'
       - 'gradle.properties'
       - '.github/workflows/stove-server-ci.yml'
+      - '.github/actions/setup-stove-server/**'
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -38,21 +40,9 @@ jobs:
     steps:
       - uses: actions/checkout@v7
 
-      - uses: actions/setup-node@v7
-        with:
-          node-version: 24
-          cache: 'npm'
-          cache-dependency-path: server/stove-server/spa/package-lock.json
-
-      - name: Install SPA dependencies
-        run: cd spa && npm ci
-
-      - uses: dtolnay/rust-toolchain@stable
+      - uses: ./.github/actions/setup-stove-server
         with:
           components: clippy, rustfmt
-
-      - name: Install protoc
-        run: sudo apt-get update && sudo apt-get install -y protobuf-compiler libpq-dev libssl-dev pkg-config
 
       # Key dependency artifacts by the Rust toolchain and Cargo inputs.
       - uses: Swatinem/rust-cache@v2
@@ -70,7 +60,7 @@ jobs:
         run: cd spa && npm test
 
       - name: Build SPA
-        run: cd spa && npm run build
+        run: cd spa && npm run build:assets
 
       - name: Check formatting
         run: cargo fmt --all -- --check
