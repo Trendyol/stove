@@ -478,7 +478,10 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Cached Prometheus exposition; deliberately performs no database calls. */
+        /**
+         * Prometheus exposition; cached application/database values plus Linux process statistics.
+         *     Deliberately performs no database calls.
+         */
         get: operations["get_metrics"];
         put?: never;
         post?: never;
@@ -1730,7 +1733,7 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description Prometheus database metrics */
+            /** @description Prometheus application and database metrics */
             200: {
                 headers: {
                     [name: string]: unknown;
