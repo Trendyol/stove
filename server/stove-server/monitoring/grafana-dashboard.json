@@ -10,7 +10,7 @@
   ],
   "timezone": "browser",
   "schemaVersion": 39,
-  "version": 2,
+  "version": 3,
   "editable": true,
   "graphTooltip": 1,
   "refresh": "30s",
@@ -49,14 +49,15 @@
         "refresh": 1,
         "sort": 1,
         "multi": false,
-        "includeAll": false,
+        "includeAll": true,
         "options": [],
         "hide": 0,
         "current": {
-          "selected": false,
-          "text": "stove-server",
-          "value": "stove-server"
-        }
+          "selected": true,
+          "text": "All",
+          "value": "$__all"
+        },
+        "allValue": ".*"
       },
       {
         "name": "instance",
