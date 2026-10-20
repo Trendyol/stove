@@ -10,7 +10,7 @@
   ],
   "timezone": "browser",
   "schemaVersion": 39,
-  "version": 3,
+  "version": 4,
   "editable": true,
   "graphTooltip": 1,
   "refresh": "30s",
@@ -478,1750 +478,6 @@
     },
     {
       "type": "row",
-      "title": "SQLite",
-      "collapsed": true,
-      "panels": [
-        {
-          "type": "stat",
-          "title": "Database access by role",
-          "description": "A read through each connection role. Check probe age below; this does not perform a synthetic write.",
-          "datasource": {
-            "type": "prometheus",
-            "uid": "${DS_PROMETHEUS}"
-          },
-          "targets": [
-            {
-              "expr": "min by (instance, role) (stove_db_health{job=~\"${job:regex}\",instance=~\"${instance:regex}\",backend=\"sqlite\"})",
-              "legendFormat": "{{instance}} / {{role}}",
-              "refId": "A",
-              "range": false,
-              "editorMode": "code",
-              "datasource": {
-                "type": "prometheus",
-                "uid": "${DS_PROMETHEUS}"
-              },
-              "instant": true
-            }
-          ],
-          "fieldConfig": {
-            "defaults": {
-              "unit": "short",
-              "color": {
-                "mode": "thresholds"
-              },
-              "mappings": [
-                {
-                  "type": "value",
-                  "options": {
-                    "0": {
-                      "text": "DOWN",
-                      "color": "red"
-                    },
-                    "1": {
-                      "text": "UP",
-                      "color": "green"
-                    }
-                  }
-                }
-              ],
-              "noValue": "No data",
-              "thresholds": {
-                "mode": "absolute",
-                "steps": [
-                  {
-                    "color": "red",
-                    "value": null
-                  },
-                  {
-                    "color": "green",
-                    "value": 1
-                  }
-                ]
-              }
-            },
-            "overrides": []
-          },
-          "options": {
-            "reduceOptions": {
-              "calcs": [
-                "lastNotNull"
-              ],
-              "fields": "",
-              "values": false
-            },
-            "orientation": "auto",
-            "textMode": "auto",
-            "colorMode": "value",
-            "graphMode": "none",
-            "justifyMode": "auto"
-          },
-          "id": 4,
-          "gridPos": {
-            "x": 0,
-            "y": 21,
-            "w": 8,
-            "h": 5
-          }
-        },
-        {
-          "type": "stat",
-          "title": "Diagnostics collection",
-          "description": "Whether the latest diagnostic attempt succeeded. Check freshness below to detect stalled workers.",
-          "datasource": {
-            "type": "prometheus",
-            "uid": "${DS_PROMETHEUS}"
-          },
-          "targets": [
-            {
-              "expr": "max by (instance) (stove_db_diagnostics_up{job=~\"${job:regex}\",instance=~\"${instance:regex}\",backend=\"sqlite\"})",
-              "legendFormat": "{{instance}}",
-              "refId": "A",
-              "range": false,
-              "editorMode": "code",
-              "datasource": {
-                "type": "prometheus",
-                "uid": "${DS_PROMETHEUS}"
-              },
-              "instant": true
-            }
-          ],
-          "fieldConfig": {
-            "defaults": {
-              "unit": "short",
-              "color": {
-                "mode": "thresholds"
-              },
-              "mappings": [
-                {
-                  "type": "value",
-                  "options": {
-                    "0": {
-                      "text": "DOWN",
-                      "color": "red"
-                    },
-                    "1": {
-                      "text": "UP",
-                      "color": "green"
-                    }
-                  }
-                }
-              ],
-              "noValue": "No data",
-              "thresholds": {
-                "mode": "absolute",
-                "steps": [
-                  {
-                    "color": "red",
-                    "value": null
-                  },
-                  {
-                    "color": "green",
-                    "value": 1
-                  }
-                ]
-              }
-            },
-            "overrides": []
-          },
-          "options": {
-            "reduceOptions": {
-              "calcs": [
-                "lastNotNull"
-              ],
-              "fields": "",
-              "values": false
-            },
-            "orientation": "auto",
-            "textMode": "auto",
-            "colorMode": "value",
-            "graphMode": "none",
-            "justifyMode": "auto"
-          },
-          "id": 5,
-          "gridPos": {
-            "x": 8,
-            "y": 21,
-            "w": 8,
-            "h": 5
-          }
-        },
-        {
-          "type": "stat",
-          "title": "Current database size",
-          "description": "SQLite database pages excluding WAL. Cached diagnostics may be stale.",
-          "datasource": {
-            "type": "prometheus",
-            "uid": "${DS_PROMETHEUS}"
-          },
-          "targets": [
-            {
-              "expr": "max by (instance) (stove_db_database_bytes{job=~\"${job:regex}\",instance=~\"${instance:regex}\",backend=\"sqlite\"})",
-              "legendFormat": "{{instance}}",
-              "refId": "A",
-              "range": false,
-              "editorMode": "code",
-              "datasource": {
-                "type": "prometheus",
-                "uid": "${DS_PROMETHEUS}"
-              },
-              "instant": true
-            }
-          ],
-          "fieldConfig": {
-            "defaults": {
-              "unit": "bytes",
-              "color": {
-                "mode": "thresholds"
-              },
-              "mappings": [],
-              "noValue": "No data",
-              "thresholds": {
-                "mode": "absolute",
-                "steps": [
-                  {
-                    "color": "green",
-                    "value": null
-                  }
-                ]
-              }
-            },
-            "overrides": []
-          },
-          "options": {
-            "reduceOptions": {
-              "calcs": [
-                "lastNotNull"
-              ],
-              "fields": "",
-              "values": false
-            },
-            "orientation": "auto",
-            "textMode": "auto",
-            "colorMode": "value",
-            "graphMode": "none",
-            "justifyMode": "auto"
-          },
-          "id": 6,
-          "gridPos": {
-            "x": 16,
-            "y": 21,
-            "w": 8,
-            "h": 5
-          }
-        },
-        {
-          "type": "timeseries",
-          "title": "Database size",
-          "description": "",
-          "datasource": {
-            "type": "prometheus",
-            "uid": "${DS_PROMETHEUS}"
-          },
-          "targets": [
-            {
-              "expr": "max by (instance) (stove_db_database_bytes{job=~\"${job:regex}\",instance=~\"${instance:regex}\",backend=\"sqlite\"})",
-              "legendFormat": "{{instance}}",
-              "refId": "A",
-              "range": true,
-              "editorMode": "code",
-              "datasource": {
-                "type": "prometheus",
-                "uid": "${DS_PROMETHEUS}"
-              }
-            }
-          ],
-          "fieldConfig": {
-            "defaults": {
-              "unit": "bytes",
-              "color": {
-                "mode": "palette-classic"
-              },
-              "mappings": [],
-              "noValue": "No data",
-              "custom": {
-                "drawStyle": "line",
-                "lineInterpolation": "linear",
-                "lineWidth": 2,
-                "fillOpacity": 8,
-                "showPoints": "never",
-                "spanNulls": false,
-                "axisPlacement": "auto",
-                "axisLabel": "",
-                "scaleDistribution": {
-                  "type": "linear"
-                },
-                "hideFrom": {
-                  "legend": false,
-                  "tooltip": false,
-                  "viz": false
-                }
-              },
-              "thresholds": {
-                "mode": "absolute",
-                "steps": [
-                  {
-                    "color": "green",
-                    "value": null
-                  }
-                ]
-              }
-            },
-            "overrides": []
-          },
-          "options": {
-            "legend": {
-              "displayMode": "list",
-              "placement": "bottom",
-              "calcs": []
-            },
-            "tooltip": {
-              "mode": "multi",
-              "sort": "desc"
-            }
-          },
-          "id": 8,
-          "gridPos": {
-            "x": 0,
-            "y": 26,
-            "w": 12,
-            "h": 8
-          }
-        },
-        {
-          "type": "timeseries",
-          "title": "Database growth rate",
-          "description": "Linear size trend over the selected growth window. Positive means allocated size is growing; reusable pages and retention must also be considered.",
-          "datasource": {
-            "type": "prometheus",
-            "uid": "${DS_PROMETHEUS}"
-          },
-          "targets": [
-            {
-              "expr": "deriv(stove_db_database_bytes{job=~\"${job:regex}\",instance=~\"${instance:regex}\",backend=\"sqlite\"}[$growth_window])",
-              "legendFormat": "{{instance}}",
-              "refId": "A",
-              "range": true,
-              "editorMode": "code",
-              "datasource": {
-                "type": "prometheus",
-                "uid": "${DS_PROMETHEUS}"
-              }
-            }
-          ],
-          "fieldConfig": {
-            "defaults": {
-              "unit": "Bps",
-              "color": {
-                "mode": "palette-classic"
-              },
-              "mappings": [],
-              "noValue": "No data",
-              "custom": {
-                "drawStyle": "line",
-                "lineInterpolation": "linear",
-                "lineWidth": 2,
-                "fillOpacity": 8,
-                "showPoints": "never",
-                "spanNulls": false,
-                "axisPlacement": "auto",
-                "axisLabel": "",
-                "scaleDistribution": {
-                  "type": "linear"
-                },
-                "hideFrom": {
-                  "legend": false,
-                  "tooltip": false,
-                  "viz": false
-                }
-              },
-              "thresholds": {
-                "mode": "absolute",
-                "steps": [
-                  {
-                    "color": "green",
-                    "value": null
-                  }
-                ]
-              }
-            },
-            "overrides": []
-          },
-          "options": {
-            "legend": {
-              "displayMode": "list",
-              "placement": "bottom",
-              "calcs": []
-            },
-            "tooltip": {
-              "mode": "multi",
-              "sort": "desc"
-            }
-          },
-          "id": 9,
-          "gridPos": {
-            "x": 12,
-            "y": 26,
-            "w": 12,
-            "h": 8
-          }
-        },
-        {
-          "type": "timeseries",
-          "title": "SQLite filesystem available",
-          "description": "Space available to Stove on the database filesystem. PostgreSQL capacity requires host/cloud metrics.",
-          "datasource": {
-            "type": "prometheus",
-            "uid": "${DS_PROMETHEUS}"
-          },
-          "targets": [
-            {
-              "expr": "max by (instance) (stove_db_disk_available_bytes{job=~\"${job:regex}\",instance=~\"${instance:regex}\",backend=\"sqlite\"})",
-              "legendFormat": "{{instance}}",
-              "refId": "A",
-              "range": true,
-              "editorMode": "code",
-              "datasource": {
-                "type": "prometheus",
-                "uid": "${DS_PROMETHEUS}"
-              }
-            }
-          ],
-          "fieldConfig": {
-            "defaults": {
-              "unit": "bytes",
-              "color": {
-                "mode": "palette-classic"
-              },
-              "mappings": [],
-              "noValue": "No data",
-              "custom": {
-                "drawStyle": "line",
-                "lineInterpolation": "linear",
-                "lineWidth": 2,
-                "fillOpacity": 8,
-                "showPoints": "never",
-                "spanNulls": false,
-                "axisPlacement": "auto",
-                "axisLabel": "",
-                "scaleDistribution": {
-                  "type": "linear"
-                },
-                "hideFrom": {
-                  "legend": false,
-                  "tooltip": false,
-                  "viz": false
-                }
-              },
-              "thresholds": {
-                "mode": "absolute",
-                "steps": [
-                  {
-                    "color": "green",
-                    "value": null
-                  }
-                ]
-              }
-            },
-            "overrides": []
-          },
-          "options": {
-            "legend": {
-              "displayMode": "list",
-              "placement": "bottom",
-              "calcs": []
-            },
-            "tooltip": {
-              "mode": "multi",
-              "sort": "desc"
-            }
-          },
-          "id": 10,
-          "gridPos": {
-            "x": 0,
-            "y": 34,
-            "w": 8,
-            "h": 8
-          }
-        },
-        {
-          "type": "timeseries",
-          "title": "SQLite WAL size",
-          "description": "WAL files can remain large after checkpointing because SQLite reuses them.",
-          "datasource": {
-            "type": "prometheus",
-            "uid": "${DS_PROMETHEUS}"
-          },
-          "targets": [
-            {
-              "expr": "max by (instance) (stove_db_wal_bytes{job=~\"${job:regex}\",instance=~\"${instance:regex}\",backend=\"sqlite\"})",
-              "legendFormat": "{{instance}}",
-              "refId": "A",
-              "range": true,
-              "editorMode": "code",
-              "datasource": {
-                "type": "prometheus",
-                "uid": "${DS_PROMETHEUS}"
-              }
-            }
-          ],
-          "fieldConfig": {
-            "defaults": {
-              "unit": "bytes",
-              "color": {
-                "mode": "palette-classic"
-              },
-              "mappings": [],
-              "noValue": "No data",
-              "custom": {
-                "drawStyle": "line",
-                "lineInterpolation": "linear",
-                "lineWidth": 2,
-                "fillOpacity": 8,
-                "showPoints": "never",
-                "spanNulls": false,
-                "axisPlacement": "auto",
-                "axisLabel": "",
-                "scaleDistribution": {
-                  "type": "linear"
-                },
-                "hideFrom": {
-                  "legend": false,
-                  "tooltip": false,
-                  "viz": false
-                }
-              },
-              "thresholds": {
-                "mode": "absolute",
-                "steps": [
-                  {
-                    "color": "green",
-                    "value": null
-                  }
-                ]
-              }
-            },
-            "overrides": []
-          },
-          "options": {
-            "legend": {
-              "displayMode": "list",
-              "placement": "bottom",
-              "calcs": []
-            },
-            "tooltip": {
-              "mode": "multi",
-              "sort": "desc"
-            }
-          },
-          "id": 11,
-          "gridPos": {
-            "x": 8,
-            "y": 34,
-            "w": 8,
-            "h": 8
-          }
-        },
-        {
-          "type": "stat",
-          "title": "SQLite estimated days until disk full",
-          "description": "Available space divided by its decline over the growth window. Includes all users of this filesystem, not just Stove. No data when space is flat/increasing or diagnostics are unavailable/stale. Extrapolation only; use host/cloud monitoring for PostgreSQL.",
-          "datasource": {
-            "type": "prometheus",
-            "uid": "${DS_PROMETHEUS}"
-          },
-          "targets": [
-            {
-              "expr": "((stove_db_disk_available_bytes{job=~\"${job:regex}\",instance=~\"${instance:regex}\",backend=\"sqlite\"} / (-deriv(stove_db_disk_available_bytes{job=~\"${job:regex}\",instance=~\"${instance:regex}\",backend=\"sqlite\"}[$growth_window]) > 0)) / 86400) and ((stove_db_diagnostics_up{job=~\"${job:regex}\",instance=~\"${instance:regex}\",backend=\"sqlite\"} == 1) and (stove_db_diagnostics_age_seconds{job=~\"${job:regex}\",instance=~\"${instance:regex}\",backend=\"sqlite\"} < 90))",
-              "legendFormat": "{{instance}}",
-              "refId": "A",
-              "range": false,
-              "editorMode": "code",
-              "datasource": {
-                "type": "prometheus",
-                "uid": "${DS_PROMETHEUS}"
-              },
-              "instant": true
-            }
-          ],
-          "fieldConfig": {
-            "defaults": {
-              "unit": "d",
-              "color": {
-                "mode": "thresholds"
-              },
-              "mappings": [],
-              "noValue": "No data",
-              "thresholds": {
-                "mode": "absolute",
-                "steps": [
-                  {
-                    "color": "red",
-                    "value": null
-                  },
-                  {
-                    "color": "orange",
-                    "value": 3
-                  },
-                  {
-                    "color": "green",
-                    "value": 7
-                  }
-                ]
-              }
-            },
-            "overrides": []
-          },
-          "options": {
-            "reduceOptions": {
-              "calcs": [
-                "lastNotNull"
-              ],
-              "fields": "",
-              "values": false
-            },
-            "orientation": "auto",
-            "textMode": "auto",
-            "colorMode": "value",
-            "graphMode": "none",
-            "justifyMode": "auto"
-          },
-          "id": 12,
-          "gridPos": {
-            "x": 16,
-            "y": 34,
-            "w": 8,
-            "h": 8
-          }
-        },
-        {
-          "type": "timeseries",
-          "title": "Reusable database pages",
-          "description": "Space reusable within the database file; deletion does not necessarily shrink the file.",
-          "datasource": {
-            "type": "prometheus",
-            "uid": "${DS_PROMETHEUS}"
-          },
-          "targets": [
-            {
-              "expr": "max by (instance) (stove_db_free_page_bytes{job=~\"${job:regex}\",instance=~\"${instance:regex}\",backend=\"sqlite\"})",
-              "legendFormat": "{{instance}}",
-              "refId": "A",
-              "range": true,
-              "editorMode": "code",
-              "datasource": {
-                "type": "prometheus",
-                "uid": "${DS_PROMETHEUS}"
-              }
-            }
-          ],
-          "fieldConfig": {
-            "defaults": {
-              "unit": "bytes",
-              "color": {
-                "mode": "palette-classic"
-              },
-              "mappings": [],
-              "noValue": "No data",
-              "custom": {
-                "drawStyle": "line",
-                "lineInterpolation": "linear",
-                "lineWidth": 2,
-                "fillOpacity": 8,
-                "showPoints": "never",
-                "spanNulls": false,
-                "axisPlacement": "auto",
-                "axisLabel": "",
-                "scaleDistribution": {
-                  "type": "linear"
-                },
-                "hideFrom": {
-                  "legend": false,
-                  "tooltip": false,
-                  "viz": false
-                }
-              },
-              "thresholds": {
-                "mode": "absolute",
-                "steps": [
-                  {
-                    "color": "green",
-                    "value": null
-                  }
-                ]
-              }
-            },
-            "overrides": []
-          },
-          "options": {
-            "legend": {
-              "displayMode": "list",
-              "placement": "bottom",
-              "calcs": []
-            },
-            "tooltip": {
-              "mode": "multi",
-              "sort": "desc"
-            }
-          },
-          "id": 32,
-          "gridPos": {
-            "x": 0,
-            "y": 42,
-            "w": 8,
-            "h": 8
-          }
-        },
-        {
-          "type": "timeseries",
-          "title": "WAL frames awaiting checkpoint",
-          "description": "Current WAL frames minus checkpointed frames. These counts can reset when WAL is recycled. The NOOP probe does not checkpoint pages.",
-          "datasource": {
-            "type": "prometheus",
-            "uid": "${DS_PROMETHEUS}"
-          },
-          "targets": [
-            {
-              "expr": "clamp_min(stove_db_wal_frames{job=~\"${job:regex}\",instance=~\"${instance:regex}\",backend=\"sqlite\"} - stove_db_checkpointed_frames{job=~\"${job:regex}\",instance=~\"${instance:regex}\",backend=\"sqlite\"}, 0)",
-              "legendFormat": "{{instance}}",
-              "refId": "A",
-              "range": true,
-              "editorMode": "code",
-              "datasource": {
-                "type": "prometheus",
-                "uid": "${DS_PROMETHEUS}"
-              }
-            }
-          ],
-          "fieldConfig": {
-            "defaults": {
-              "unit": "short",
-              "color": {
-                "mode": "palette-classic"
-              },
-              "mappings": [],
-              "noValue": "No data",
-              "custom": {
-                "drawStyle": "line",
-                "lineInterpolation": "linear",
-                "lineWidth": 2,
-                "fillOpacity": 8,
-                "showPoints": "never",
-                "spanNulls": false,
-                "axisPlacement": "auto",
-                "axisLabel": "",
-                "scaleDistribution": {
-                  "type": "linear"
-                },
-                "hideFrom": {
-                  "legend": false,
-                  "tooltip": false,
-                  "viz": false
-                }
-              },
-              "thresholds": {
-                "mode": "absolute",
-                "steps": [
-                  {
-                    "color": "green",
-                    "value": null
-                  }
-                ]
-              }
-            },
-            "overrides": []
-          },
-          "options": {
-            "legend": {
-              "displayMode": "list",
-              "placement": "bottom",
-              "calcs": []
-            },
-            "tooltip": {
-              "mode": "multi",
-              "sort": "desc"
-            }
-          },
-          "id": 33,
-          "gridPos": {
-            "x": 8,
-            "y": 42,
-            "w": 8,
-            "h": 8
-          }
-        },
-        {
-          "type": "stat",
-          "title": "Checkpoint counter probe",
-          "description": "Availability of SQLite WAL checkpoint statistics. Does not trigger checkpointing.",
-          "datasource": {
-            "type": "prometheus",
-            "uid": "${DS_PROMETHEUS}"
-          },
-          "targets": [
-            {
-              "expr": "max by (instance) (stove_db_checkpoint_probe_up{job=~\"${job:regex}\",instance=~\"${instance:regex}\",backend=\"sqlite\"})",
-              "legendFormat": "{{instance}}",
-              "refId": "A",
-              "range": false,
-              "editorMode": "code",
-              "datasource": {
-                "type": "prometheus",
-                "uid": "${DS_PROMETHEUS}"
-              },
-              "instant": true
-            }
-          ],
-          "fieldConfig": {
-            "defaults": {
-              "unit": "short",
-              "color": {
-                "mode": "thresholds"
-              },
-              "mappings": [
-                {
-                  "type": "value",
-                  "options": {
-                    "0": {
-                      "text": "DOWN",
-                      "color": "red"
-                    },
-                    "1": {
-                      "text": "UP",
-                      "color": "green"
-                    }
-                  }
-                }
-              ],
-              "noValue": "No data",
-              "thresholds": {
-                "mode": "absolute",
-                "steps": [
-                  {
-                    "color": "red",
-                    "value": null
-                  },
-                  {
-                    "color": "green",
-                    "value": 1
-                  }
-                ]
-              }
-            },
-            "overrides": []
-          },
-          "options": {
-            "reduceOptions": {
-              "calcs": [
-                "lastNotNull"
-              ],
-              "fields": "",
-              "values": false
-            },
-            "orientation": "auto",
-            "textMode": "auto",
-            "colorMode": "value",
-            "graphMode": "none",
-            "justifyMode": "auto"
-          },
-          "id": 34,
-          "gridPos": {
-            "x": 16,
-            "y": 42,
-            "w": 8,
-            "h": 8
-          }
-        },
-        {
-          "type": "timeseries",
-          "title": "Operation latency p95",
-          "description": "Includes connection and instrumented advisory-lock acquisition waits.",
-          "datasource": {
-            "type": "prometheus",
-            "uid": "${DS_PROMETHEUS}"
-          },
-          "targets": [
-            {
-              "expr": "histogram_quantile(0.95, sum by (le, instance, role) (rate(stove_db_duration_seconds_bucket{job=~\"${job:regex}\",instance=~\"${instance:regex}\",backend=\"sqlite\",kind=\"operation\"}[$__rate_interval])))",
-              "legendFormat": "{{instance}} / {{role}}",
-              "refId": "A",
-              "range": true,
-              "editorMode": "code",
-              "datasource": {
-                "type": "prometheus",
-                "uid": "${DS_PROMETHEUS}"
-              }
-            }
-          ],
-          "fieldConfig": {
-            "defaults": {
-              "unit": "s",
-              "color": {
-                "mode": "palette-classic"
-              },
-              "mappings": [],
-              "noValue": "No data",
-              "custom": {
-                "drawStyle": "line",
-                "lineInterpolation": "linear",
-                "lineWidth": 2,
-                "fillOpacity": 8,
-                "showPoints": "never",
-                "spanNulls": false,
-                "axisPlacement": "auto",
-                "axisLabel": "",
-                "scaleDistribution": {
-                  "type": "linear"
-                },
-                "hideFrom": {
-                  "legend": false,
-                  "tooltip": false,
-                  "viz": false
-                }
-              },
-              "thresholds": {
-                "mode": "absolute",
-                "steps": [
-                  {
-                    "color": "green",
-                    "value": null
-                  }
-                ]
-              }
-            },
-            "overrides": []
-          },
-          "options": {
-            "legend": {
-              "displayMode": "list",
-              "placement": "bottom",
-              "calcs": []
-            },
-            "tooltip": {
-              "mode": "multi",
-              "sort": "desc"
-            }
-          },
-          "id": 14,
-          "gridPos": {
-            "x": 0,
-            "y": 50,
-            "w": 12,
-            "h": 8
-          }
-        },
-        {
-          "type": "timeseries",
-          "title": "Execution latency p95",
-          "description": "Subtracts instrumented acquisition waits. Includes SQL execution, other database lock waits, and commit.",
-          "datasource": {
-            "type": "prometheus",
-            "uid": "${DS_PROMETHEUS}"
-          },
-          "targets": [
-            {
-              "expr": "histogram_quantile(0.95, sum by (le, instance, role) (rate(stove_db_duration_seconds_bucket{job=~\"${job:regex}\",instance=~\"${instance:regex}\",backend=\"sqlite\",kind=\"execution\"}[$__rate_interval])))",
-              "legendFormat": "{{instance}} / {{role}}",
-              "refId": "A",
-              "range": true,
-              "editorMode": "code",
-              "datasource": {
-                "type": "prometheus",
-                "uid": "${DS_PROMETHEUS}"
-              }
-            }
-          ],
-          "fieldConfig": {
-            "defaults": {
-              "unit": "s",
-              "color": {
-                "mode": "palette-classic"
-              },
-              "mappings": [],
-              "noValue": "No data",
-              "custom": {
-                "drawStyle": "line",
-                "lineInterpolation": "linear",
-                "lineWidth": 2,
-                "fillOpacity": 8,
-                "showPoints": "never",
-                "spanNulls": false,
-                "axisPlacement": "auto",
-                "axisLabel": "",
-                "scaleDistribution": {
-                  "type": "linear"
-                },
-                "hideFrom": {
-                  "legend": false,
-                  "tooltip": false,
-                  "viz": false
-                }
-              },
-              "thresholds": {
-                "mode": "absolute",
-                "steps": [
-                  {
-                    "color": "green",
-                    "value": null
-                  }
-                ]
-              }
-            },
-            "overrides": []
-          },
-          "options": {
-            "legend": {
-              "displayMode": "list",
-              "placement": "bottom",
-              "calcs": []
-            },
-            "tooltip": {
-              "mode": "multi",
-              "sort": "desc"
-            }
-          },
-          "id": 15,
-          "gridPos": {
-            "x": 12,
-            "y": 50,
-            "w": 12,
-            "h": 8
-          }
-        },
-        {
-          "type": "timeseries",
-          "title": "Acquisition latency p95",
-          "description": "",
-          "datasource": {
-            "type": "prometheus",
-            "uid": "${DS_PROMETHEUS}"
-          },
-          "targets": [
-            {
-              "expr": "histogram_quantile(0.95, sum by (le, instance, role, operation) (rate(stove_db_duration_seconds_bucket{job=~\"${job:regex}\",instance=~\"${instance:regex}\",backend=\"sqlite\",kind=\"wait\"}[$__rate_interval])))",
-              "legendFormat": "{{instance}} / {{role}} / {{operation}}",
-              "refId": "A",
-              "range": true,
-              "editorMode": "code",
-              "datasource": {
-                "type": "prometheus",
-                "uid": "${DS_PROMETHEUS}"
-              }
-            }
-          ],
-          "fieldConfig": {
-            "defaults": {
-              "unit": "s",
-              "color": {
-                "mode": "palette-classic"
-              },
-              "mappings": [],
-              "noValue": "No data",
-              "custom": {
-                "drawStyle": "line",
-                "lineInterpolation": "linear",
-                "lineWidth": 2,
-                "fillOpacity": 8,
-                "showPoints": "never",
-                "spanNulls": false,
-                "axisPlacement": "auto",
-                "axisLabel": "",
-                "scaleDistribution": {
-                  "type": "linear"
-                },
-                "hideFrom": {
-                  "legend": false,
-                  "tooltip": false,
-                  "viz": false
-                }
-              },
-              "thresholds": {
-                "mode": "absolute",
-                "steps": [
-                  {
-                    "color": "green",
-                    "value": null
-                  }
-                ]
-              }
-            },
-            "overrides": []
-          },
-          "options": {
-            "legend": {
-              "displayMode": "list",
-              "placement": "bottom",
-              "calcs": []
-            },
-            "tooltip": {
-              "mode": "multi",
-              "sort": "desc"
-            }
-          },
-          "id": 16,
-          "gridPos": {
-            "x": 0,
-            "y": 58,
-            "w": 12,
-            "h": 8
-          }
-        },
-        {
-          "type": "timeseries",
-          "title": "Storage operations / second",
-          "description": "",
-          "datasource": {
-            "type": "prometheus",
-            "uid": "${DS_PROMETHEUS}"
-          },
-          "targets": [
-            {
-              "expr": "sum by (instance, role) (rate(stove_db_duration_seconds_count{job=~\"${job:regex}\",instance=~\"${instance:regex}\",backend=\"sqlite\",kind=\"operation\"}[$__rate_interval]))",
-              "legendFormat": "{{instance}} / {{role}}",
-              "refId": "A",
-              "range": true,
-              "editorMode": "code",
-              "datasource": {
-                "type": "prometheus",
-                "uid": "${DS_PROMETHEUS}"
-              }
-            }
-          ],
-          "fieldConfig": {
-            "defaults": {
-              "unit": "ops",
-              "color": {
-                "mode": "palette-classic"
-              },
-              "mappings": [],
-              "noValue": "No data",
-              "custom": {
-                "drawStyle": "line",
-                "lineInterpolation": "linear",
-                "lineWidth": 2,
-                "fillOpacity": 8,
-                "showPoints": "never",
-                "spanNulls": false,
-                "axisPlacement": "auto",
-                "axisLabel": "",
-                "scaleDistribution": {
-                  "type": "linear"
-                },
-                "hideFrom": {
-                  "legend": false,
-                  "tooltip": false,
-                  "viz": false
-                }
-              },
-              "thresholds": {
-                "mode": "absolute",
-                "steps": [
-                  {
-                    "color": "green",
-                    "value": null
-                  }
-                ]
-              }
-            },
-            "overrides": []
-          },
-          "options": {
-            "legend": {
-              "displayMode": "list",
-              "placement": "bottom",
-              "calcs": []
-            },
-            "tooltip": {
-              "mode": "multi",
-              "sort": "desc"
-            }
-          },
-          "id": 17,
-          "gridPos": {
-            "x": 12,
-            "y": 58,
-            "w": 12,
-            "h": 8
-          }
-        },
-        {
-          "type": "timeseries",
-          "title": "Operation failure ratio",
-          "description": "No value when there are no operations. Explorer SQL errors also count as operation failures.",
-          "datasource": {
-            "type": "prometheus",
-            "uid": "${DS_PROMETHEUS}"
-          },
-          "targets": [
-            {
-              "expr": "sum by (instance, role) (rate(stove_db_errors_total{job=~\"${job:regex}\",instance=~\"${instance:regex}\",backend=\"sqlite\",kind=\"operation\"}[$__rate_interval])) / sum by (instance, role) (rate(stove_db_duration_seconds_count{job=~\"${job:regex}\",instance=~\"${instance:regex}\",backend=\"sqlite\",kind=\"operation\"}[$__rate_interval]))",
-              "legendFormat": "{{instance}} / {{role}}",
-              "refId": "A",
-              "range": true,
-              "editorMode": "code",
-              "datasource": {
-                "type": "prometheus",
-                "uid": "${DS_PROMETHEUS}"
-              }
-            }
-          ],
-          "fieldConfig": {
-            "defaults": {
-              "unit": "percentunit",
-              "color": {
-                "mode": "palette-classic"
-              },
-              "mappings": [],
-              "noValue": "No data",
-              "custom": {
-                "drawStyle": "line",
-                "lineInterpolation": "linear",
-                "lineWidth": 2,
-                "fillOpacity": 8,
-                "showPoints": "never",
-                "spanNulls": false,
-                "axisPlacement": "auto",
-                "axisLabel": "",
-                "scaleDistribution": {
-                  "type": "linear"
-                },
-                "hideFrom": {
-                  "legend": false,
-                  "tooltip": false,
-                  "viz": false
-                }
-              },
-              "thresholds": {
-                "mode": "absolute",
-                "steps": [
-                  {
-                    "color": "green",
-                    "value": null
-                  }
-                ]
-              }
-            },
-            "overrides": []
-          },
-          "options": {
-            "legend": {
-              "displayMode": "list",
-              "placement": "bottom",
-              "calcs": []
-            },
-            "tooltip": {
-              "mode": "multi",
-              "sort": "desc"
-            }
-          },
-          "id": 18,
-          "gridPos": {
-            "x": 0,
-            "y": 66,
-            "w": 12,
-            "h": 8
-          }
-        },
-        {
-          "type": "timeseries",
-          "title": "Timeouts and SQLite busy errors / second",
-          "description": "Uses operation-level failures to avoid double-counting waits and execution measurements.",
-          "datasource": {
-            "type": "prometheus",
-            "uid": "${DS_PROMETHEUS}"
-          },
-          "targets": [
-            {
-              "expr": "sum by (instance, role) (rate(stove_db_timeouts_total{job=~\"${job:regex}\",instance=~\"${instance:regex}\",backend=\"sqlite\",kind=\"operation\"}[$__rate_interval]))",
-              "legendFormat": "{{instance}} / {{role}} / timeout",
-              "refId": "A",
-              "range": true,
-              "editorMode": "code",
-              "datasource": {
-                "type": "prometheus",
-                "uid": "${DS_PROMETHEUS}"
-              }
-            },
-            {
-              "expr": "sum by (instance, role) (rate(stove_db_busy_errors_total{job=~\"${job:regex}\",instance=~\"${instance:regex}\",backend=\"sqlite\",kind=\"operation\"}[$__rate_interval]))",
-              "legendFormat": "{{instance}} / {{role}} / busy",
-              "refId": "B",
-              "range": true,
-              "editorMode": "code",
-              "datasource": {
-                "type": "prometheus",
-                "uid": "${DS_PROMETHEUS}"
-              }
-            }
-          ],
-          "fieldConfig": {
-            "defaults": {
-              "unit": "ops",
-              "color": {
-                "mode": "palette-classic"
-              },
-              "mappings": [],
-              "noValue": "No data",
-              "custom": {
-                "drawStyle": "line",
-                "lineInterpolation": "linear",
-                "lineWidth": 2,
-                "fillOpacity": 8,
-                "showPoints": "never",
-                "spanNulls": false,
-                "axisPlacement": "auto",
-                "axisLabel": "",
-                "scaleDistribution": {
-                  "type": "linear"
-                },
-                "hideFrom": {
-                  "legend": false,
-                  "tooltip": false,
-                  "viz": false
-                }
-              },
-              "thresholds": {
-                "mode": "absolute",
-                "steps": [
-                  {
-                    "color": "green",
-                    "value": null
-                  }
-                ]
-              }
-            },
-            "overrides": []
-          },
-          "options": {
-            "legend": {
-              "displayMode": "list",
-              "placement": "bottom",
-              "calcs": []
-            },
-            "tooltip": {
-              "mode": "multi",
-              "sort": "desc"
-            }
-          },
-          "id": 19,
-          "gridPos": {
-            "x": 12,
-            "y": 66,
-            "w": 12,
-            "h": 8
-          }
-        },
-        {
-          "type": "timeseries",
-          "title": "Connection occupancy",
-          "description": "One mutex-protected SQLite connection per role.",
-          "datasource": {
-            "type": "prometheus",
-            "uid": "${DS_PROMETHEUS}"
-          },
-          "targets": [
-            {
-              "expr": "stove_db_capacity_busy{job=~\"${job:regex}\",instance=~\"${instance:regex}\",backend=\"sqlite\"} / stove_db_capacity_maximum{job=~\"${job:regex}\",instance=~\"${instance:regex}\",backend=\"sqlite\"}",
-              "legendFormat": "{{instance}} / {{role}}",
-              "refId": "A",
-              "range": true,
-              "editorMode": "code",
-              "datasource": {
-                "type": "prometheus",
-                "uid": "${DS_PROMETHEUS}"
-              }
-            }
-          ],
-          "fieldConfig": {
-            "defaults": {
-              "unit": "percentunit",
-              "color": {
-                "mode": "palette-classic"
-              },
-              "mappings": [],
-              "noValue": "No data",
-              "custom": {
-                "drawStyle": "line",
-                "lineInterpolation": "linear",
-                "lineWidth": 2,
-                "fillOpacity": 8,
-                "showPoints": "never",
-                "spanNulls": false,
-                "axisPlacement": "auto",
-                "axisLabel": "",
-                "scaleDistribution": {
-                  "type": "linear"
-                },
-                "hideFrom": {
-                  "legend": false,
-                  "tooltip": false,
-                  "viz": false
-                }
-              },
-              "thresholds": {
-                "mode": "absolute",
-                "steps": [
-                  {
-                    "color": "green",
-                    "value": null
-                  }
-                ]
-              }
-            },
-            "overrides": []
-          },
-          "options": {
-            "legend": {
-              "displayMode": "list",
-              "placement": "bottom",
-              "calcs": []
-            },
-            "tooltip": {
-              "mode": "multi",
-              "sort": "desc"
-            }
-          },
-          "id": 21,
-          "gridPos": {
-            "x": 0,
-            "y": 74,
-            "w": 8,
-            "h": 8
-          }
-        },
-        {
-          "type": "timeseries",
-          "title": "Waiting acquisitions",
-          "description": "Live count of waiting connection/mutex/advisory-lock acquisitions.",
-          "datasource": {
-            "type": "prometheus",
-            "uid": "${DS_PROMETHEUS}"
-          },
-          "targets": [
-            {
-              "expr": "stove_db_capacity_waiters{job=~\"${job:regex}\",instance=~\"${instance:regex}\",backend=\"sqlite\"}",
-              "legendFormat": "{{instance}} / {{role}}",
-              "refId": "A",
-              "range": true,
-              "editorMode": "code",
-              "datasource": {
-                "type": "prometheus",
-                "uid": "${DS_PROMETHEUS}"
-              }
-            }
-          ],
-          "fieldConfig": {
-            "defaults": {
-              "unit": "short",
-              "color": {
-                "mode": "palette-classic"
-              },
-              "mappings": [],
-              "noValue": "No data",
-              "custom": {
-                "drawStyle": "line",
-                "lineInterpolation": "linear",
-                "lineWidth": 2,
-                "fillOpacity": 8,
-                "showPoints": "never",
-                "spanNulls": false,
-                "axisPlacement": "auto",
-                "axisLabel": "",
-                "scaleDistribution": {
-                  "type": "linear"
-                },
-                "hideFrom": {
-                  "legend": false,
-                  "tooltip": false,
-                  "viz": false
-                }
-              },
-              "thresholds": {
-                "mode": "absolute",
-                "steps": [
-                  {
-                    "color": "green",
-                    "value": null
-                  }
-                ]
-              }
-            },
-            "overrides": []
-          },
-          "options": {
-            "legend": {
-              "displayMode": "list",
-              "placement": "bottom",
-              "calcs": []
-            },
-            "tooltip": {
-              "mode": "multi",
-              "sort": "desc"
-            }
-          },
-          "id": 22,
-          "gridPos": {
-            "x": 8,
-            "y": 74,
-            "w": 8,
-            "h": 8
-          }
-        },
-        {
-          "type": "timeseries",
-          "title": "Availability probe duration",
-          "description": "",
-          "datasource": {
-            "type": "prometheus",
-            "uid": "${DS_PROMETHEUS}"
-          },
-          "targets": [
-            {
-              "expr": "stove_db_health_duration_seconds{job=~\"${job:regex}\",instance=~\"${instance:regex}\",backend=\"sqlite\"}",
-              "legendFormat": "{{instance}} / {{role}}",
-              "refId": "A",
-              "range": true,
-              "editorMode": "code",
-              "datasource": {
-                "type": "prometheus",
-                "uid": "${DS_PROMETHEUS}"
-              }
-            }
-          ],
-          "fieldConfig": {
-            "defaults": {
-              "unit": "s",
-              "color": {
-                "mode": "palette-classic"
-              },
-              "mappings": [],
-              "noValue": "No data",
-              "custom": {
-                "drawStyle": "line",
-                "lineInterpolation": "linear",
-                "lineWidth": 2,
-                "fillOpacity": 8,
-                "showPoints": "never",
-                "spanNulls": false,
-                "axisPlacement": "auto",
-                "axisLabel": "",
-                "scaleDistribution": {
-                  "type": "linear"
-                },
-                "hideFrom": {
-                  "legend": false,
-                  "tooltip": false,
-                  "viz": false
-                }
-              },
-              "thresholds": {
-                "mode": "absolute",
-                "steps": [
-                  {
-                    "color": "green",
-                    "value": null
-                  }
-                ]
-              }
-            },
-            "overrides": []
-          },
-          "options": {
-            "legend": {
-              "displayMode": "list",
-              "placement": "bottom",
-              "calcs": []
-            },
-            "tooltip": {
-              "mode": "multi",
-              "sort": "desc"
-            }
-          },
-          "id": 23,
-          "gridPos": {
-            "x": 16,
-            "y": 74,
-            "w": 8,
-            "h": 8
-          }
-        },
-        {
-          "type": "timeseries",
-          "title": "Collector sample age",
-          "description": "Capacity samples every 10 seconds; diagnostics every 30 seconds. Ages over 45 and 90 seconds respectively indicate stale collection.",
-          "datasource": {
-            "type": "prometheus",
-            "uid": "${DS_PROMETHEUS}"
-          },
-          "targets": [
-            {
-              "expr": "stove_db_sample_age_seconds{job=~\"${job:regex}\",instance=~\"${instance:regex}\",backend=\"sqlite\"}",
-              "legendFormat": "{{instance}} / capacity",
-              "refId": "A",
-              "range": true,
-              "editorMode": "code",
-              "datasource": {
-                "type": "prometheus",
-                "uid": "${DS_PROMETHEUS}"
-              }
-            },
-            {
-              "expr": "stove_db_diagnostics_age_seconds{job=~\"${job:regex}\",instance=~\"${instance:regex}\",backend=\"sqlite\"}",
-              "legendFormat": "{{instance}} / diagnostics",
-              "refId": "B",
-              "range": true,
-              "editorMode": "code",
-              "datasource": {
-                "type": "prometheus",
-                "uid": "${DS_PROMETHEUS}"
-              }
-            }
-          ],
-          "fieldConfig": {
-            "defaults": {
-              "unit": "s",
-              "color": {
-                "mode": "palette-classic"
-              },
-              "mappings": [],
-              "noValue": "No data",
-              "custom": {
-                "drawStyle": "line",
-                "lineInterpolation": "linear",
-                "lineWidth": 2,
-                "fillOpacity": 8,
-                "showPoints": "never",
-                "spanNulls": false,
-                "axisPlacement": "auto",
-                "axisLabel": "",
-                "scaleDistribution": {
-                  "type": "linear"
-                },
-                "hideFrom": {
-                  "legend": false,
-                  "tooltip": false,
-                  "viz": false
-                }
-              },
-              "thresholds": {
-                "mode": "absolute",
-                "steps": [
-                  {
-                    "color": "green",
-                    "value": null
-                  }
-                ]
-              }
-            },
-            "overrides": []
-          },
-          "options": {
-            "legend": {
-              "displayMode": "list",
-              "placement": "bottom",
-              "calcs": []
-            },
-            "tooltip": {
-              "mode": "multi",
-              "sort": "desc"
-            }
-          },
-          "id": 24,
-          "gridPos": {
-            "x": 0,
-            "y": 82,
-            "w": 12,
-            "h": 8
-          }
-        },
-        {
-          "type": "timeseries",
-          "title": "Availability probe age",
-          "description": "Probes run every 30 seconds; age over 90 seconds indicates stale results.",
-          "datasource": {
-            "type": "prometheus",
-            "uid": "${DS_PROMETHEUS}"
-          },
-          "targets": [
-            {
-              "expr": "stove_db_health_age_seconds{job=~\"${job:regex}\",instance=~\"${instance:regex}\",backend=\"sqlite\"}",
-              "legendFormat": "{{instance}} / {{role}}",
-              "refId": "A",
-              "range": true,
-              "editorMode": "code",
-              "datasource": {
-                "type": "prometheus",
-                "uid": "${DS_PROMETHEUS}"
-              }
-            }
-          ],
-          "fieldConfig": {
-            "defaults": {
-              "unit": "s",
-              "color": {
-                "mode": "palette-classic"
-              },
-              "mappings": [],
-              "noValue": "No data",
-              "custom": {
-                "drawStyle": "line",
-                "lineInterpolation": "linear",
-                "lineWidth": 2,
-                "fillOpacity": 8,
-                "showPoints": "never",
-                "spanNulls": false,
-                "axisPlacement": "auto",
-                "axisLabel": "",
-                "scaleDistribution": {
-                  "type": "linear"
-                },
-                "hideFrom": {
-                  "legend": false,
-                  "tooltip": false,
-                  "viz": false
-                }
-              },
-              "thresholds": {
-                "mode": "absolute",
-                "steps": [
-                  {
-                    "color": "green",
-                    "value": null
-                  }
-                ]
-              }
-            },
-            "overrides": []
-          },
-          "options": {
-            "legend": {
-              "displayMode": "list",
-              "placement": "bottom",
-              "calcs": []
-            },
-            "tooltip": {
-              "mode": "multi",
-              "sort": "desc"
-            }
-          },
-          "id": 25,
-          "gridPos": {
-            "x": 12,
-            "y": 82,
-            "w": 12,
-            "h": 8
-          }
-        }
-      ],
-      "id": 31,
-      "gridPos": {
-        "x": 0,
-        "y": 20,
-        "w": 24,
-        "h": 1
-      }
-    },
-    {
-      "type": "row",
       "title": "PostgreSQL",
       "collapsed": true,
       "panels": [
@@ -2302,7 +558,7 @@
           "id": 104,
           "gridPos": {
             "x": 0,
-            "y": 22,
+            "y": 21,
             "w": 8,
             "h": 5
           }
@@ -2384,7 +640,7 @@
           "id": 105,
           "gridPos": {
             "x": 8,
-            "y": 22,
+            "y": 21,
             "w": 8,
             "h": 5
           }
@@ -2448,7 +704,7 @@
           "id": 106,
           "gridPos": {
             "x": 16,
-            "y": 22,
+            "y": 21,
             "w": 8,
             "h": 5
           }
@@ -2526,7 +782,7 @@
           "id": 108,
           "gridPos": {
             "x": 0,
-            "y": 27,
+            "y": 26,
             "w": 12,
             "h": 8
           }
@@ -2604,7 +860,7 @@
           "id": 109,
           "gridPos": {
             "x": 12,
-            "y": 27,
+            "y": 26,
             "w": 12,
             "h": 8
           }
@@ -2682,7 +938,7 @@
           "id": 36,
           "gridPos": {
             "x": 0,
-            "y": 35,
+            "y": 34,
             "w": 6,
             "h": 8
           }
@@ -2760,7 +1016,7 @@
           "id": 37,
           "gridPos": {
             "x": 6,
-            "y": 35,
+            "y": 34,
             "w": 6,
             "h": 8
           }
@@ -2838,7 +1094,7 @@
           "id": 38,
           "gridPos": {
             "x": 12,
-            "y": 35,
+            "y": 34,
             "w": 6,
             "h": 8
           }
@@ -2916,7 +1172,7 @@
           "id": 39,
           "gridPos": {
             "x": 18,
-            "y": 35,
+            "y": 34,
             "w": 6,
             "h": 8
           }
@@ -2994,7 +1250,7 @@
           "id": 40,
           "gridPos": {
             "x": 0,
-            "y": 43,
+            "y": 42,
             "w": 12,
             "h": 8
           }
@@ -3076,7 +1332,7 @@
           "id": 41,
           "gridPos": {
             "x": 12,
-            "y": 43,
+            "y": 42,
             "w": 12,
             "h": 8
           }
@@ -3154,7 +1410,7 @@
           "id": 114,
           "gridPos": {
             "x": 0,
-            "y": 51,
+            "y": 50,
             "w": 12,
             "h": 8
           }
@@ -3232,7 +1488,7 @@
           "id": 115,
           "gridPos": {
             "x": 12,
-            "y": 51,
+            "y": 50,
             "w": 12,
             "h": 8
           }
@@ -3310,7 +1566,7 @@
           "id": 116,
           "gridPos": {
             "x": 0,
-            "y": 59,
+            "y": 58,
             "w": 12,
             "h": 8
           }
@@ -3388,7 +1644,7 @@
           "id": 117,
           "gridPos": {
             "x": 12,
-            "y": 59,
+            "y": 58,
             "w": 12,
             "h": 8
           }
@@ -3466,7 +1722,7 @@
           "id": 118,
           "gridPos": {
             "x": 0,
-            "y": 67,
+            "y": 66,
             "w": 12,
             "h": 8
           }
@@ -3544,7 +1800,7 @@
           "id": 119,
           "gridPos": {
             "x": 12,
-            "y": 67,
+            "y": 66,
             "w": 12,
             "h": 8
           }
@@ -3622,7 +1878,7 @@
           "id": 121,
           "gridPos": {
             "x": 0,
-            "y": 75,
+            "y": 74,
             "w": 8,
             "h": 8
           }
@@ -3700,7 +1956,7 @@
           "id": 122,
           "gridPos": {
             "x": 8,
-            "y": 75,
+            "y": 74,
             "w": 8,
             "h": 8
           }
@@ -3778,7 +2034,7 @@
           "id": 123,
           "gridPos": {
             "x": 16,
-            "y": 75,
+            "y": 74,
             "w": 8,
             "h": 8
           }
@@ -3867,7 +2123,7 @@
           "id": 124,
           "gridPos": {
             "x": 0,
-            "y": 83,
+            "y": 82,
             "w": 12,
             "h": 8
           }
@@ -3945,13 +2201,1757 @@
           "id": 125,
           "gridPos": {
             "x": 12,
-            "y": 83,
+            "y": 82,
             "w": 12,
             "h": 8
           }
         }
       ],
       "id": 35,
+      "gridPos": {
+        "x": 0,
+        "y": 20,
+        "w": 24,
+        "h": 1
+      }
+    },
+    {
+      "type": "row",
+      "title": "SQLite",
+      "collapsed": true,
+      "panels": [
+        {
+          "type": "stat",
+          "title": "Database access by role",
+          "description": "A read through each connection role. Check probe age below; this does not perform a synthetic write.",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "targets": [
+            {
+              "expr": "min by (instance, role) (stove_db_health{job=~\"${job:regex}\",instance=~\"${instance:regex}\",backend=\"sqlite\"})",
+              "legendFormat": "{{instance}} / {{role}}",
+              "refId": "A",
+              "range": false,
+              "editorMode": "code",
+              "datasource": {
+                "type": "prometheus",
+                "uid": "${DS_PROMETHEUS}"
+              },
+              "instant": true
+            }
+          ],
+          "fieldConfig": {
+            "defaults": {
+              "unit": "short",
+              "color": {
+                "mode": "thresholds"
+              },
+              "mappings": [
+                {
+                  "type": "value",
+                  "options": {
+                    "0": {
+                      "text": "DOWN",
+                      "color": "red"
+                    },
+                    "1": {
+                      "text": "UP",
+                      "color": "green"
+                    }
+                  }
+                }
+              ],
+              "noValue": "No data",
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "red",
+                    "value": null
+                  },
+                  {
+                    "color": "green",
+                    "value": 1
+                  }
+                ]
+              }
+            },
+            "overrides": []
+          },
+          "options": {
+            "reduceOptions": {
+              "calcs": [
+                "lastNotNull"
+              ],
+              "fields": "",
+              "values": false
+            },
+            "orientation": "auto",
+            "textMode": "auto",
+            "colorMode": "value",
+            "graphMode": "none",
+            "justifyMode": "auto"
+          },
+          "id": 4,
+          "gridPos": {
+            "x": 0,
+            "y": 22,
+            "w": 8,
+            "h": 5
+          }
+        },
+        {
+          "type": "stat",
+          "title": "Diagnostics collection",
+          "description": "Whether the latest diagnostic attempt succeeded. Check freshness below to detect stalled workers.",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "targets": [
+            {
+              "expr": "max by (instance) (stove_db_diagnostics_up{job=~\"${job:regex}\",instance=~\"${instance:regex}\",backend=\"sqlite\"})",
+              "legendFormat": "{{instance}}",
+              "refId": "A",
+              "range": false,
+              "editorMode": "code",
+              "datasource": {
+                "type": "prometheus",
+                "uid": "${DS_PROMETHEUS}"
+              },
+              "instant": true
+            }
+          ],
+          "fieldConfig": {
+            "defaults": {
+              "unit": "short",
+              "color": {
+                "mode": "thresholds"
+              },
+              "mappings": [
+                {
+                  "type": "value",
+                  "options": {
+                    "0": {
+                      "text": "DOWN",
+                      "color": "red"
+                    },
+                    "1": {
+                      "text": "UP",
+                      "color": "green"
+                    }
+                  }
+                }
+              ],
+              "noValue": "No data",
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "red",
+                    "value": null
+                  },
+                  {
+                    "color": "green",
+                    "value": 1
+                  }
+                ]
+              }
+            },
+            "overrides": []
+          },
+          "options": {
+            "reduceOptions": {
+              "calcs": [
+                "lastNotNull"
+              ],
+              "fields": "",
+              "values": false
+            },
+            "orientation": "auto",
+            "textMode": "auto",
+            "colorMode": "value",
+            "graphMode": "none",
+            "justifyMode": "auto"
+          },
+          "id": 5,
+          "gridPos": {
+            "x": 8,
+            "y": 22,
+            "w": 8,
+            "h": 5
+          }
+        },
+        {
+          "type": "stat",
+          "title": "Current database size",
+          "description": "SQLite database pages excluding WAL. Cached diagnostics may be stale.",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "targets": [
+            {
+              "expr": "max by (instance) (stove_db_database_bytes{job=~\"${job:regex}\",instance=~\"${instance:regex}\",backend=\"sqlite\"})",
+              "legendFormat": "{{instance}}",
+              "refId": "A",
+              "range": false,
+              "editorMode": "code",
+              "datasource": {
+                "type": "prometheus",
+                "uid": "${DS_PROMETHEUS}"
+              },
+              "instant": true
+            }
+          ],
+          "fieldConfig": {
+            "defaults": {
+              "unit": "bytes",
+              "color": {
+                "mode": "thresholds"
+              },
+              "mappings": [],
+              "noValue": "No data",
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": null
+                  }
+                ]
+              }
+            },
+            "overrides": []
+          },
+          "options": {
+            "reduceOptions": {
+              "calcs": [
+                "lastNotNull"
+              ],
+              "fields": "",
+              "values": false
+            },
+            "orientation": "auto",
+            "textMode": "auto",
+            "colorMode": "value",
+            "graphMode": "none",
+            "justifyMode": "auto"
+          },
+          "id": 6,
+          "gridPos": {
+            "x": 16,
+            "y": 22,
+            "w": 8,
+            "h": 5
+          }
+        },
+        {
+          "type": "timeseries",
+          "title": "Database size",
+          "description": "",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "targets": [
+            {
+              "expr": "max by (instance) (stove_db_database_bytes{job=~\"${job:regex}\",instance=~\"${instance:regex}\",backend=\"sqlite\"})",
+              "legendFormat": "{{instance}}",
+              "refId": "A",
+              "range": true,
+              "editorMode": "code",
+              "datasource": {
+                "type": "prometheus",
+                "uid": "${DS_PROMETHEUS}"
+              }
+            }
+          ],
+          "fieldConfig": {
+            "defaults": {
+              "unit": "bytes",
+              "color": {
+                "mode": "palette-classic"
+              },
+              "mappings": [],
+              "noValue": "No data",
+              "custom": {
+                "drawStyle": "line",
+                "lineInterpolation": "linear",
+                "lineWidth": 2,
+                "fillOpacity": 8,
+                "showPoints": "never",
+                "spanNulls": false,
+                "axisPlacement": "auto",
+                "axisLabel": "",
+                "scaleDistribution": {
+                  "type": "linear"
+                },
+                "hideFrom": {
+                  "legend": false,
+                  "tooltip": false,
+                  "viz": false
+                }
+              },
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": null
+                  }
+                ]
+              }
+            },
+            "overrides": []
+          },
+          "options": {
+            "legend": {
+              "displayMode": "list",
+              "placement": "bottom",
+              "calcs": []
+            },
+            "tooltip": {
+              "mode": "multi",
+              "sort": "desc"
+            }
+          },
+          "id": 8,
+          "gridPos": {
+            "x": 0,
+            "y": 27,
+            "w": 12,
+            "h": 8
+          }
+        },
+        {
+          "type": "timeseries",
+          "title": "Database growth rate",
+          "description": "Linear size trend over the selected growth window. Positive means allocated size is growing; reusable pages and retention must also be considered.",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "targets": [
+            {
+              "expr": "deriv(stove_db_database_bytes{job=~\"${job:regex}\",instance=~\"${instance:regex}\",backend=\"sqlite\"}[$growth_window])",
+              "legendFormat": "{{instance}}",
+              "refId": "A",
+              "range": true,
+              "editorMode": "code",
+              "datasource": {
+                "type": "prometheus",
+                "uid": "${DS_PROMETHEUS}"
+              }
+            }
+          ],
+          "fieldConfig": {
+            "defaults": {
+              "unit": "Bps",
+              "color": {
+                "mode": "palette-classic"
+              },
+              "mappings": [],
+              "noValue": "No data",
+              "custom": {
+                "drawStyle": "line",
+                "lineInterpolation": "linear",
+                "lineWidth": 2,
+                "fillOpacity": 8,
+                "showPoints": "never",
+                "spanNulls": false,
+                "axisPlacement": "auto",
+                "axisLabel": "",
+                "scaleDistribution": {
+                  "type": "linear"
+                },
+                "hideFrom": {
+                  "legend": false,
+                  "tooltip": false,
+                  "viz": false
+                }
+              },
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": null
+                  }
+                ]
+              }
+            },
+            "overrides": []
+          },
+          "options": {
+            "legend": {
+              "displayMode": "list",
+              "placement": "bottom",
+              "calcs": []
+            },
+            "tooltip": {
+              "mode": "multi",
+              "sort": "desc"
+            }
+          },
+          "id": 9,
+          "gridPos": {
+            "x": 12,
+            "y": 27,
+            "w": 12,
+            "h": 8
+          }
+        },
+        {
+          "type": "timeseries",
+          "title": "SQLite filesystem available",
+          "description": "Space available to Stove on the database filesystem. PostgreSQL capacity requires host/cloud metrics.",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "targets": [
+            {
+              "expr": "max by (instance) (stove_db_disk_available_bytes{job=~\"${job:regex}\",instance=~\"${instance:regex}\",backend=\"sqlite\"})",
+              "legendFormat": "{{instance}}",
+              "refId": "A",
+              "range": true,
+              "editorMode": "code",
+              "datasource": {
+                "type": "prometheus",
+                "uid": "${DS_PROMETHEUS}"
+              }
+            }
+          ],
+          "fieldConfig": {
+            "defaults": {
+              "unit": "bytes",
+              "color": {
+                "mode": "palette-classic"
+              },
+              "mappings": [],
+              "noValue": "No data",
+              "custom": {
+                "drawStyle": "line",
+                "lineInterpolation": "linear",
+                "lineWidth": 2,
+                "fillOpacity": 8,
+                "showPoints": "never",
+                "spanNulls": false,
+                "axisPlacement": "auto",
+                "axisLabel": "",
+                "scaleDistribution": {
+                  "type": "linear"
+                },
+                "hideFrom": {
+                  "legend": false,
+                  "tooltip": false,
+                  "viz": false
+                }
+              },
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": null
+                  }
+                ]
+              }
+            },
+            "overrides": []
+          },
+          "options": {
+            "legend": {
+              "displayMode": "list",
+              "placement": "bottom",
+              "calcs": []
+            },
+            "tooltip": {
+              "mode": "multi",
+              "sort": "desc"
+            }
+          },
+          "id": 10,
+          "gridPos": {
+            "x": 0,
+            "y": 35,
+            "w": 8,
+            "h": 8
+          }
+        },
+        {
+          "type": "timeseries",
+          "title": "SQLite WAL size",
+          "description": "WAL files can remain large after checkpointing because SQLite reuses them.",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "targets": [
+            {
+              "expr": "max by (instance) (stove_db_wal_bytes{job=~\"${job:regex}\",instance=~\"${instance:regex}\",backend=\"sqlite\"})",
+              "legendFormat": "{{instance}}",
+              "refId": "A",
+              "range": true,
+              "editorMode": "code",
+              "datasource": {
+                "type": "prometheus",
+                "uid": "${DS_PROMETHEUS}"
+              }
+            }
+          ],
+          "fieldConfig": {
+            "defaults": {
+              "unit": "bytes",
+              "color": {
+                "mode": "palette-classic"
+              },
+              "mappings": [],
+              "noValue": "No data",
+              "custom": {
+                "drawStyle": "line",
+                "lineInterpolation": "linear",
+                "lineWidth": 2,
+                "fillOpacity": 8,
+                "showPoints": "never",
+                "spanNulls": false,
+                "axisPlacement": "auto",
+                "axisLabel": "",
+                "scaleDistribution": {
+                  "type": "linear"
+                },
+                "hideFrom": {
+                  "legend": false,
+                  "tooltip": false,
+                  "viz": false
+                }
+              },
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": null
+                  }
+                ]
+              }
+            },
+            "overrides": []
+          },
+          "options": {
+            "legend": {
+              "displayMode": "list",
+              "placement": "bottom",
+              "calcs": []
+            },
+            "tooltip": {
+              "mode": "multi",
+              "sort": "desc"
+            }
+          },
+          "id": 11,
+          "gridPos": {
+            "x": 8,
+            "y": 35,
+            "w": 8,
+            "h": 8
+          }
+        },
+        {
+          "type": "stat",
+          "title": "SQLite estimated days until disk full",
+          "description": "Available space divided by its decline over the growth window. Includes all users of this filesystem, not just Stove. No data when space is flat/increasing or diagnostics are unavailable/stale. Extrapolation only; use host/cloud monitoring for PostgreSQL.",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "targets": [
+            {
+              "expr": "((stove_db_disk_available_bytes{job=~\"${job:regex}\",instance=~\"${instance:regex}\",backend=\"sqlite\"} / (-deriv(stove_db_disk_available_bytes{job=~\"${job:regex}\",instance=~\"${instance:regex}\",backend=\"sqlite\"}[$growth_window]) > 0)) / 86400) and ((stove_db_diagnostics_up{job=~\"${job:regex}\",instance=~\"${instance:regex}\",backend=\"sqlite\"} == 1) and (stove_db_diagnostics_age_seconds{job=~\"${job:regex}\",instance=~\"${instance:regex}\",backend=\"sqlite\"} < 90))",
+              "legendFormat": "{{instance}}",
+              "refId": "A",
+              "range": false,
+              "editorMode": "code",
+              "datasource": {
+                "type": "prometheus",
+                "uid": "${DS_PROMETHEUS}"
+              },
+              "instant": true
+            }
+          ],
+          "fieldConfig": {
+            "defaults": {
+              "unit": "d",
+              "color": {
+                "mode": "thresholds"
+              },
+              "mappings": [],
+              "noValue": "No data",
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "red",
+                    "value": null
+                  },
+                  {
+                    "color": "orange",
+                    "value": 3
+                  },
+                  {
+                    "color": "green",
+                    "value": 7
+                  }
+                ]
+              }
+            },
+            "overrides": []
+          },
+          "options": {
+            "reduceOptions": {
+              "calcs": [
+                "lastNotNull"
+              ],
+              "fields": "",
+              "values": false
+            },
+            "orientation": "auto",
+            "textMode": "auto",
+            "colorMode": "value",
+            "graphMode": "none",
+            "justifyMode": "auto"
+          },
+          "id": 12,
+          "gridPos": {
+            "x": 16,
+            "y": 35,
+            "w": 8,
+            "h": 8
+          }
+        },
+        {
+          "type": "timeseries",
+          "title": "Reusable database pages",
+          "description": "Space reusable within the database file; deletion does not necessarily shrink the file.",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "targets": [
+            {
+              "expr": "max by (instance) (stove_db_free_page_bytes{job=~\"${job:regex}\",instance=~\"${instance:regex}\",backend=\"sqlite\"})",
+              "legendFormat": "{{instance}}",
+              "refId": "A",
+              "range": true,
+              "editorMode": "code",
+              "datasource": {
+                "type": "prometheus",
+                "uid": "${DS_PROMETHEUS}"
+              }
+            }
+          ],
+          "fieldConfig": {
+            "defaults": {
+              "unit": "bytes",
+              "color": {
+                "mode": "palette-classic"
+              },
+              "mappings": [],
+              "noValue": "No data",
+              "custom": {
+                "drawStyle": "line",
+                "lineInterpolation": "linear",
+                "lineWidth": 2,
+                "fillOpacity": 8,
+                "showPoints": "never",
+                "spanNulls": false,
+                "axisPlacement": "auto",
+                "axisLabel": "",
+                "scaleDistribution": {
+                  "type": "linear"
+                },
+                "hideFrom": {
+                  "legend": false,
+                  "tooltip": false,
+                  "viz": false
+                }
+              },
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": null
+                  }
+                ]
+              }
+            },
+            "overrides": []
+          },
+          "options": {
+            "legend": {
+              "displayMode": "list",
+              "placement": "bottom",
+              "calcs": []
+            },
+            "tooltip": {
+              "mode": "multi",
+              "sort": "desc"
+            }
+          },
+          "id": 32,
+          "gridPos": {
+            "x": 0,
+            "y": 43,
+            "w": 8,
+            "h": 8
+          }
+        },
+        {
+          "type": "timeseries",
+          "title": "WAL frames awaiting checkpoint",
+          "description": "Current WAL frames minus checkpointed frames. These counts can reset when WAL is recycled. The NOOP probe does not checkpoint pages.",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "targets": [
+            {
+              "expr": "clamp_min(stove_db_wal_frames{job=~\"${job:regex}\",instance=~\"${instance:regex}\",backend=\"sqlite\"} - stove_db_checkpointed_frames{job=~\"${job:regex}\",instance=~\"${instance:regex}\",backend=\"sqlite\"}, 0)",
+              "legendFormat": "{{instance}}",
+              "refId": "A",
+              "range": true,
+              "editorMode": "code",
+              "datasource": {
+                "type": "prometheus",
+                "uid": "${DS_PROMETHEUS}"
+              }
+            }
+          ],
+          "fieldConfig": {
+            "defaults": {
+              "unit": "short",
+              "color": {
+                "mode": "palette-classic"
+              },
+              "mappings": [],
+              "noValue": "No data",
+              "custom": {
+                "drawStyle": "line",
+                "lineInterpolation": "linear",
+                "lineWidth": 2,
+                "fillOpacity": 8,
+                "showPoints": "never",
+                "spanNulls": false,
+                "axisPlacement": "auto",
+                "axisLabel": "",
+                "scaleDistribution": {
+                  "type": "linear"
+                },
+                "hideFrom": {
+                  "legend": false,
+                  "tooltip": false,
+                  "viz": false
+                }
+              },
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": null
+                  }
+                ]
+              }
+            },
+            "overrides": []
+          },
+          "options": {
+            "legend": {
+              "displayMode": "list",
+              "placement": "bottom",
+              "calcs": []
+            },
+            "tooltip": {
+              "mode": "multi",
+              "sort": "desc"
+            }
+          },
+          "id": 33,
+          "gridPos": {
+            "x": 8,
+            "y": 43,
+            "w": 8,
+            "h": 8
+          }
+        },
+        {
+          "type": "stat",
+          "title": "Checkpoint counter probe",
+          "description": "Availability of SQLite WAL checkpoint statistics. Does not trigger checkpointing.",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "targets": [
+            {
+              "expr": "max by (instance) (stove_db_checkpoint_probe_up{job=~\"${job:regex}\",instance=~\"${instance:regex}\",backend=\"sqlite\"})",
+              "legendFormat": "{{instance}}",
+              "refId": "A",
+              "range": false,
+              "editorMode": "code",
+              "datasource": {
+                "type": "prometheus",
+                "uid": "${DS_PROMETHEUS}"
+              },
+              "instant": true
+            }
+          ],
+          "fieldConfig": {
+            "defaults": {
+              "unit": "short",
+              "color": {
+                "mode": "thresholds"
+              },
+              "mappings": [
+                {
+                  "type": "value",
+                  "options": {
+                    "0": {
+                      "text": "DOWN",
+                      "color": "red"
+                    },
+                    "1": {
+                      "text": "UP",
+                      "color": "green"
+                    }
+                  }
+                }
+              ],
+              "noValue": "No data",
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "red",
+                    "value": null
+                  },
+                  {
+                    "color": "green",
+                    "value": 1
+                  }
+                ]
+              }
+            },
+            "overrides": []
+          },
+          "options": {
+            "reduceOptions": {
+              "calcs": [
+                "lastNotNull"
+              ],
+              "fields": "",
+              "values": false
+            },
+            "orientation": "auto",
+            "textMode": "auto",
+            "colorMode": "value",
+            "graphMode": "none",
+            "justifyMode": "auto"
+          },
+          "id": 34,
+          "gridPos": {
+            "x": 16,
+            "y": 43,
+            "w": 8,
+            "h": 8
+          }
+        },
+        {
+          "type": "timeseries",
+          "title": "Operation latency p95",
+          "description": "Includes connection and instrumented advisory-lock acquisition waits.",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "targets": [
+            {
+              "expr": "histogram_quantile(0.95, sum by (le, instance, role) (rate(stove_db_duration_seconds_bucket{job=~\"${job:regex}\",instance=~\"${instance:regex}\",backend=\"sqlite\",kind=\"operation\"}[$__rate_interval])))",
+              "legendFormat": "{{instance}} / {{role}}",
+              "refId": "A",
+              "range": true,
+              "editorMode": "code",
+              "datasource": {
+                "type": "prometheus",
+                "uid": "${DS_PROMETHEUS}"
+              }
+            }
+          ],
+          "fieldConfig": {
+            "defaults": {
+              "unit": "s",
+              "color": {
+                "mode": "palette-classic"
+              },
+              "mappings": [],
+              "noValue": "No data",
+              "custom": {
+                "drawStyle": "line",
+                "lineInterpolation": "linear",
+                "lineWidth": 2,
+                "fillOpacity": 8,
+                "showPoints": "never",
+                "spanNulls": false,
+                "axisPlacement": "auto",
+                "axisLabel": "",
+                "scaleDistribution": {
+                  "type": "linear"
+                },
+                "hideFrom": {
+                  "legend": false,
+                  "tooltip": false,
+                  "viz": false
+                }
+              },
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": null
+                  }
+                ]
+              }
+            },
+            "overrides": []
+          },
+          "options": {
+            "legend": {
+              "displayMode": "list",
+              "placement": "bottom",
+              "calcs": []
+            },
+            "tooltip": {
+              "mode": "multi",
+              "sort": "desc"
+            }
+          },
+          "id": 14,
+          "gridPos": {
+            "x": 0,
+            "y": 51,
+            "w": 12,
+            "h": 8
+          }
+        },
+        {
+          "type": "timeseries",
+          "title": "Execution latency p95",
+          "description": "Subtracts instrumented acquisition waits. Includes SQL execution, other database lock waits, and commit.",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "targets": [
+            {
+              "expr": "histogram_quantile(0.95, sum by (le, instance, role) (rate(stove_db_duration_seconds_bucket{job=~\"${job:regex}\",instance=~\"${instance:regex}\",backend=\"sqlite\",kind=\"execution\"}[$__rate_interval])))",
+              "legendFormat": "{{instance}} / {{role}}",
+              "refId": "A",
+              "range": true,
+              "editorMode": "code",
+              "datasource": {
+                "type": "prometheus",
+                "uid": "${DS_PROMETHEUS}"
+              }
+            }
+          ],
+          "fieldConfig": {
+            "defaults": {
+              "unit": "s",
+              "color": {
+                "mode": "palette-classic"
+              },
+              "mappings": [],
+              "noValue": "No data",
+              "custom": {
+                "drawStyle": "line",
+                "lineInterpolation": "linear",
+                "lineWidth": 2,
+                "fillOpacity": 8,
+                "showPoints": "never",
+                "spanNulls": false,
+                "axisPlacement": "auto",
+                "axisLabel": "",
+                "scaleDistribution": {
+                  "type": "linear"
+                },
+                "hideFrom": {
+                  "legend": false,
+                  "tooltip": false,
+                  "viz": false
+                }
+              },
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": null
+                  }
+                ]
+              }
+            },
+            "overrides": []
+          },
+          "options": {
+            "legend": {
+              "displayMode": "list",
+              "placement": "bottom",
+              "calcs": []
+            },
+            "tooltip": {
+              "mode": "multi",
+              "sort": "desc"
+            }
+          },
+          "id": 15,
+          "gridPos": {
+            "x": 12,
+            "y": 51,
+            "w": 12,
+            "h": 8
+          }
+        },
+        {
+          "type": "timeseries",
+          "title": "Acquisition latency p95",
+          "description": "",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "targets": [
+            {
+              "expr": "histogram_quantile(0.95, sum by (le, instance, role, operation) (rate(stove_db_duration_seconds_bucket{job=~\"${job:regex}\",instance=~\"${instance:regex}\",backend=\"sqlite\",kind=\"wait\"}[$__rate_interval])))",
+              "legendFormat": "{{instance}} / {{role}} / {{operation}}",
+              "refId": "A",
+              "range": true,
+              "editorMode": "code",
+              "datasource": {
+                "type": "prometheus",
+                "uid": "${DS_PROMETHEUS}"
+              }
+            }
+          ],
+          "fieldConfig": {
+            "defaults": {
+              "unit": "s",
+              "color": {
+                "mode": "palette-classic"
+              },
+              "mappings": [],
+              "noValue": "No data",
+              "custom": {
+                "drawStyle": "line",
+                "lineInterpolation": "linear",
+                "lineWidth": 2,
+                "fillOpacity": 8,
+                "showPoints": "never",
+                "spanNulls": false,
+                "axisPlacement": "auto",
+                "axisLabel": "",
+                "scaleDistribution": {
+                  "type": "linear"
+                },
+                "hideFrom": {
+                  "legend": false,
+                  "tooltip": false,
+                  "viz": false
+                }
+              },
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": null
+                  }
+                ]
+              }
+            },
+            "overrides": []
+          },
+          "options": {
+            "legend": {
+              "displayMode": "list",
+              "placement": "bottom",
+              "calcs": []
+            },
+            "tooltip": {
+              "mode": "multi",
+              "sort": "desc"
+            }
+          },
+          "id": 16,
+          "gridPos": {
+            "x": 0,
+            "y": 59,
+            "w": 12,
+            "h": 8
+          }
+        },
+        {
+          "type": "timeseries",
+          "title": "Storage operations / second",
+          "description": "",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "targets": [
+            {
+              "expr": "sum by (instance, role) (rate(stove_db_duration_seconds_count{job=~\"${job:regex}\",instance=~\"${instance:regex}\",backend=\"sqlite\",kind=\"operation\"}[$__rate_interval]))",
+              "legendFormat": "{{instance}} / {{role}}",
+              "refId": "A",
+              "range": true,
+              "editorMode": "code",
+              "datasource": {
+                "type": "prometheus",
+                "uid": "${DS_PROMETHEUS}"
+              }
+            }
+          ],
+          "fieldConfig": {
+            "defaults": {
+              "unit": "ops",
+              "color": {
+                "mode": "palette-classic"
+              },
+              "mappings": [],
+              "noValue": "No data",
+              "custom": {
+                "drawStyle": "line",
+                "lineInterpolation": "linear",
+                "lineWidth": 2,
+                "fillOpacity": 8,
+                "showPoints": "never",
+                "spanNulls": false,
+                "axisPlacement": "auto",
+                "axisLabel": "",
+                "scaleDistribution": {
+                  "type": "linear"
+                },
+                "hideFrom": {
+                  "legend": false,
+                  "tooltip": false,
+                  "viz": false
+                }
+              },
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": null
+                  }
+                ]
+              }
+            },
+            "overrides": []
+          },
+          "options": {
+            "legend": {
+              "displayMode": "list",
+              "placement": "bottom",
+              "calcs": []
+            },
+            "tooltip": {
+              "mode": "multi",
+              "sort": "desc"
+            }
+          },
+          "id": 17,
+          "gridPos": {
+            "x": 12,
+            "y": 59,
+            "w": 12,
+            "h": 8
+          }
+        },
+        {
+          "type": "timeseries",
+          "title": "Operation failure ratio",
+          "description": "No value when there are no operations. Explorer SQL errors also count as operation failures.",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "targets": [
+            {
+              "expr": "sum by (instance, role) (rate(stove_db_errors_total{job=~\"${job:regex}\",instance=~\"${instance:regex}\",backend=\"sqlite\",kind=\"operation\"}[$__rate_interval])) / sum by (instance, role) (rate(stove_db_duration_seconds_count{job=~\"${job:regex}\",instance=~\"${instance:regex}\",backend=\"sqlite\",kind=\"operation\"}[$__rate_interval]))",
+              "legendFormat": "{{instance}} / {{role}}",
+              "refId": "A",
+              "range": true,
+              "editorMode": "code",
+              "datasource": {
+                "type": "prometheus",
+                "uid": "${DS_PROMETHEUS}"
+              }
+            }
+          ],
+          "fieldConfig": {
+            "defaults": {
+              "unit": "percentunit",
+              "color": {
+                "mode": "palette-classic"
+              },
+              "mappings": [],
+              "noValue": "No data",
+              "custom": {
+                "drawStyle": "line",
+                "lineInterpolation": "linear",
+                "lineWidth": 2,
+                "fillOpacity": 8,
+                "showPoints": "never",
+                "spanNulls": false,
+                "axisPlacement": "auto",
+                "axisLabel": "",
+                "scaleDistribution": {
+                  "type": "linear"
+                },
+                "hideFrom": {
+                  "legend": false,
+                  "tooltip": false,
+                  "viz": false
+                }
+              },
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": null
+                  }
+                ]
+              }
+            },
+            "overrides": []
+          },
+          "options": {
+            "legend": {
+              "displayMode": "list",
+              "placement": "bottom",
+              "calcs": []
+            },
+            "tooltip": {
+              "mode": "multi",
+              "sort": "desc"
+            }
+          },
+          "id": 18,
+          "gridPos": {
+            "x": 0,
+            "y": 67,
+            "w": 12,
+            "h": 8
+          }
+        },
+        {
+          "type": "timeseries",
+          "title": "Timeouts and SQLite busy errors / second",
+          "description": "Uses operation-level failures to avoid double-counting waits and execution measurements.",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "targets": [
+            {
+              "expr": "sum by (instance, role) (rate(stove_db_timeouts_total{job=~\"${job:regex}\",instance=~\"${instance:regex}\",backend=\"sqlite\",kind=\"operation\"}[$__rate_interval]))",
+              "legendFormat": "{{instance}} / {{role}} / timeout",
+              "refId": "A",
+              "range": true,
+              "editorMode": "code",
+              "datasource": {
+                "type": "prometheus",
+                "uid": "${DS_PROMETHEUS}"
+              }
+            },
+            {
+              "expr": "sum by (instance, role) (rate(stove_db_busy_errors_total{job=~\"${job:regex}\",instance=~\"${instance:regex}\",backend=\"sqlite\",kind=\"operation\"}[$__rate_interval]))",
+              "legendFormat": "{{instance}} / {{role}} / busy",
+              "refId": "B",
+              "range": true,
+              "editorMode": "code",
+              "datasource": {
+                "type": "prometheus",
+                "uid": "${DS_PROMETHEUS}"
+              }
+            }
+          ],
+          "fieldConfig": {
+            "defaults": {
+              "unit": "ops",
+              "color": {
+                "mode": "palette-classic"
+              },
+              "mappings": [],
+              "noValue": "No data",
+              "custom": {
+                "drawStyle": "line",
+                "lineInterpolation": "linear",
+                "lineWidth": 2,
+                "fillOpacity": 8,
+                "showPoints": "never",
+                "spanNulls": false,
+                "axisPlacement": "auto",
+                "axisLabel": "",
+                "scaleDistribution": {
+                  "type": "linear"
+                },
+                "hideFrom": {
+                  "legend": false,
+                  "tooltip": false,
+                  "viz": false
+                }
+              },
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": null
+                  }
+                ]
+              }
+            },
+            "overrides": []
+          },
+          "options": {
+            "legend": {
+              "displayMode": "list",
+              "placement": "bottom",
+              "calcs": []
+            },
+            "tooltip": {
+              "mode": "multi",
+              "sort": "desc"
+            }
+          },
+          "id": 19,
+          "gridPos": {
+            "x": 12,
+            "y": 67,
+            "w": 12,
+            "h": 8
+          }
+        },
+        {
+          "type": "timeseries",
+          "title": "Connection occupancy",
+          "description": "One mutex-protected SQLite connection per role.",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "targets": [
+            {
+              "expr": "stove_db_capacity_busy{job=~\"${job:regex}\",instance=~\"${instance:regex}\",backend=\"sqlite\"} / stove_db_capacity_maximum{job=~\"${job:regex}\",instance=~\"${instance:regex}\",backend=\"sqlite\"}",
+              "legendFormat": "{{instance}} / {{role}}",
+              "refId": "A",
+              "range": true,
+              "editorMode": "code",
+              "datasource": {
+                "type": "prometheus",
+                "uid": "${DS_PROMETHEUS}"
+              }
+            }
+          ],
+          "fieldConfig": {
+            "defaults": {
+              "unit": "percentunit",
+              "color": {
+                "mode": "palette-classic"
+              },
+              "mappings": [],
+              "noValue": "No data",
+              "custom": {
+                "drawStyle": "line",
+                "lineInterpolation": "linear",
+                "lineWidth": 2,
+                "fillOpacity": 8,
+                "showPoints": "never",
+                "spanNulls": false,
+                "axisPlacement": "auto",
+                "axisLabel": "",
+                "scaleDistribution": {
+                  "type": "linear"
+                },
+                "hideFrom": {
+                  "legend": false,
+                  "tooltip": false,
+                  "viz": false
+                }
+              },
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": null
+                  }
+                ]
+              }
+            },
+            "overrides": []
+          },
+          "options": {
+            "legend": {
+              "displayMode": "list",
+              "placement": "bottom",
+              "calcs": []
+            },
+            "tooltip": {
+              "mode": "multi",
+              "sort": "desc"
+            }
+          },
+          "id": 21,
+          "gridPos": {
+            "x": 0,
+            "y": 75,
+            "w": 8,
+            "h": 8
+          }
+        },
+        {
+          "type": "timeseries",
+          "title": "Waiting acquisitions",
+          "description": "Live count of waiting connection/mutex/advisory-lock acquisitions.",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "targets": [
+            {
+              "expr": "stove_db_capacity_waiters{job=~\"${job:regex}\",instance=~\"${instance:regex}\",backend=\"sqlite\"}",
+              "legendFormat": "{{instance}} / {{role}}",
+              "refId": "A",
+              "range": true,
+              "editorMode": "code",
+              "datasource": {
+                "type": "prometheus",
+                "uid": "${DS_PROMETHEUS}"
+              }
+            }
+          ],
+          "fieldConfig": {
+            "defaults": {
+              "unit": "short",
+              "color": {
+                "mode": "palette-classic"
+              },
+              "mappings": [],
+              "noValue": "No data",
+              "custom": {
+                "drawStyle": "line",
+                "lineInterpolation": "linear",
+                "lineWidth": 2,
+                "fillOpacity": 8,
+                "showPoints": "never",
+                "spanNulls": false,
+                "axisPlacement": "auto",
+                "axisLabel": "",
+                "scaleDistribution": {
+                  "type": "linear"
+                },
+                "hideFrom": {
+                  "legend": false,
+                  "tooltip": false,
+                  "viz": false
+                }
+              },
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": null
+                  }
+                ]
+              }
+            },
+            "overrides": []
+          },
+          "options": {
+            "legend": {
+              "displayMode": "list",
+              "placement": "bottom",
+              "calcs": []
+            },
+            "tooltip": {
+              "mode": "multi",
+              "sort": "desc"
+            }
+          },
+          "id": 22,
+          "gridPos": {
+            "x": 8,
+            "y": 75,
+            "w": 8,
+            "h": 8
+          }
+        },
+        {
+          "type": "timeseries",
+          "title": "Availability probe duration",
+          "description": "",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "targets": [
+            {
+              "expr": "stove_db_health_duration_seconds{job=~\"${job:regex}\",instance=~\"${instance:regex}\",backend=\"sqlite\"}",
+              "legendFormat": "{{instance}} / {{role}}",
+              "refId": "A",
+              "range": true,
+              "editorMode": "code",
+              "datasource": {
+                "type": "prometheus",
+                "uid": "${DS_PROMETHEUS}"
+              }
+            }
+          ],
+          "fieldConfig": {
+            "defaults": {
+              "unit": "s",
+              "color": {
+                "mode": "palette-classic"
+              },
+              "mappings": [],
+              "noValue": "No data",
+              "custom": {
+                "drawStyle": "line",
+                "lineInterpolation": "linear",
+                "lineWidth": 2,
+                "fillOpacity": 8,
+                "showPoints": "never",
+                "spanNulls": false,
+                "axisPlacement": "auto",
+                "axisLabel": "",
+                "scaleDistribution": {
+                  "type": "linear"
+                },
+                "hideFrom": {
+                  "legend": false,
+                  "tooltip": false,
+                  "viz": false
+                }
+              },
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": null
+                  }
+                ]
+              }
+            },
+            "overrides": []
+          },
+          "options": {
+            "legend": {
+              "displayMode": "list",
+              "placement": "bottom",
+              "calcs": []
+            },
+            "tooltip": {
+              "mode": "multi",
+              "sort": "desc"
+            }
+          },
+          "id": 23,
+          "gridPos": {
+            "x": 16,
+            "y": 75,
+            "w": 8,
+            "h": 8
+          }
+        },
+        {
+          "type": "timeseries",
+          "title": "Collector sample age",
+          "description": "Capacity samples every 10 seconds; diagnostics every 30 seconds. Ages over 45 and 90 seconds respectively indicate stale collection.",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "targets": [
+            {
+              "expr": "stove_db_sample_age_seconds{job=~\"${job:regex}\",instance=~\"${instance:regex}\",backend=\"sqlite\"}",
+              "legendFormat": "{{instance}} / capacity",
+              "refId": "A",
+              "range": true,
+              "editorMode": "code",
+              "datasource": {
+                "type": "prometheus",
+                "uid": "${DS_PROMETHEUS}"
+              }
+            },
+            {
+              "expr": "stove_db_diagnostics_age_seconds{job=~\"${job:regex}\",instance=~\"${instance:regex}\",backend=\"sqlite\"}",
+              "legendFormat": "{{instance}} / diagnostics",
+              "refId": "B",
+              "range": true,
+              "editorMode": "code",
+              "datasource": {
+                "type": "prometheus",
+                "uid": "${DS_PROMETHEUS}"
+              }
+            }
+          ],
+          "fieldConfig": {
+            "defaults": {
+              "unit": "s",
+              "color": {
+                "mode": "palette-classic"
+              },
+              "mappings": [],
+              "noValue": "No data",
+              "custom": {
+                "drawStyle": "line",
+                "lineInterpolation": "linear",
+                "lineWidth": 2,
+                "fillOpacity": 8,
+                "showPoints": "never",
+                "spanNulls": false,
+                "axisPlacement": "auto",
+                "axisLabel": "",
+                "scaleDistribution": {
+                  "type": "linear"
+                },
+                "hideFrom": {
+                  "legend": false,
+                  "tooltip": false,
+                  "viz": false
+                }
+              },
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": null
+                  }
+                ]
+              }
+            },
+            "overrides": []
+          },
+          "options": {
+            "legend": {
+              "displayMode": "list",
+              "placement": "bottom",
+              "calcs": []
+            },
+            "tooltip": {
+              "mode": "multi",
+              "sort": "desc"
+            }
+          },
+          "id": 24,
+          "gridPos": {
+            "x": 0,
+            "y": 83,
+            "w": 12,
+            "h": 8
+          }
+        },
+        {
+          "type": "timeseries",
+          "title": "Availability probe age",
+          "description": "Probes run every 30 seconds; age over 90 seconds indicates stale results.",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "targets": [
+            {
+              "expr": "stove_db_health_age_seconds{job=~\"${job:regex}\",instance=~\"${instance:regex}\",backend=\"sqlite\"}",
+              "legendFormat": "{{instance}} / {{role}}",
+              "refId": "A",
+              "range": true,
+              "editorMode": "code",
+              "datasource": {
+                "type": "prometheus",
+                "uid": "${DS_PROMETHEUS}"
+              }
+            }
+          ],
+          "fieldConfig": {
+            "defaults": {
+              "unit": "s",
+              "color": {
+                "mode": "palette-classic"
+              },
+              "mappings": [],
+              "noValue": "No data",
+              "custom": {
+                "drawStyle": "line",
+                "lineInterpolation": "linear",
+                "lineWidth": 2,
+                "fillOpacity": 8,
+                "showPoints": "never",
+                "spanNulls": false,
+                "axisPlacement": "auto",
+                "axisLabel": "",
+                "scaleDistribution": {
+                  "type": "linear"
+                },
+                "hideFrom": {
+                  "legend": false,
+                  "tooltip": false,
+                  "viz": false
+                }
+              },
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": null
+                  }
+                ]
+              }
+            },
+            "overrides": []
+          },
+          "options": {
+            "legend": {
+              "displayMode": "list",
+              "placement": "bottom",
+              "calcs": []
+            },
+            "tooltip": {
+              "mode": "multi",
+              "sort": "desc"
+            }
+          },
+          "id": 25,
+          "gridPos": {
+            "x": 12,
+            "y": 83,
+            "w": 12,
+            "h": 8
+          }
+        }
+      ],
+      "id": 31,
       "gridPos": {
         "x": 0,
         "y": 21,
