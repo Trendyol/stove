@@ -7,10 +7,12 @@ mod admin;
 mod database;
 mod distributed;
 mod explorer;
+mod monitoring;
 mod reads;
 mod writes;
 
 pub(super) struct PostgresBackend {
+  pub(super) metrics: std::sync::Arc<crate::storage::metrics::StorageMetrics>,
   write: DieselPool,
   read: DieselPool,
   explorer: ExplorerPool,
@@ -34,6 +36,7 @@ impl PostgresBackend {
   pub(super) fn connect(database_url: &str, default_retention: usize) -> Result<Self> {
     let connections = database::open(database_url, default_retention)?;
     Ok(Self {
+      metrics: std::sync::Arc::new(crate::storage::metrics::StorageMetrics::new("postgresql")),
       write: connections.write,
       read: connections.read,
       explorer: connections.explorer,
@@ -48,15 +51,21 @@ impl PostgresBackend {
   // The pool validates and replaces connections before checkout. Operations are
   // never replayed: a failed write or COMMIT can have an ambiguous outcome.
   fn checkout_write(&self) -> Result<DieselConnection> {
-    Ok(self.write.get()?)
+    self
+      .metrics
+      .wait("checkout", "write", || Ok(self.write.get()?))
   }
 
   fn checkout_read(&self) -> Result<DieselConnection> {
-    Ok(self.read.get()?)
+    self
+      .metrics
+      .wait("checkout", "read", || Ok(self.read.get()?))
   }
 
   fn checkout_explorer(&self) -> Result<ExplorerConnection> {
-    Ok(self.explorer.get()?)
+    self
+      .metrics
+      .wait("checkout", "explorer", || Ok(self.explorer.get()?))
   }
 }
 

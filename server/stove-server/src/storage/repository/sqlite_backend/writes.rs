@@ -148,18 +148,21 @@ pub(super) fn prune_completed_runs_for_app_on(
   if retention_runs_per_app == 0 {
     return Ok(());
   }
-  let offset = i64::try_from(retention_runs_per_app).unwrap_or(i64::MAX);
-  let expired = diesel::sql_query(
-    "SELECT id FROM runs WHERE app_name = ? AND status <> 'RUNNING' \
+  crate::storage::metrics::retention(|| {
+    let offset = i64::try_from(retention_runs_per_app).unwrap_or(i64::MAX);
+    let expired = diesel::sql_query(
+      "SELECT id FROM runs WHERE app_name = ? AND status <> 'RUNNING' \
      ORDER BY started_at DESC, ended_at DESC, rowid DESC LIMIT -1 OFFSET ?",
-  )
-  .bind::<Text, _>(app_name)
-  .bind::<diesel::sql_types::BigInt, _>(offset)
-  .load::<RunId>(conn)?
-  .into_iter()
-  .map(|row| row.id)
-  .collect::<Vec<_>>();
-  delete_runs_on(conn, &expired)
+    )
+    .bind::<Text, _>(app_name)
+    .bind::<diesel::sql_types::BigInt, _>(offset)
+    .load::<RunId>(conn)?
+    .into_iter()
+    .map(|row| row.id)
+    .collect::<Vec<_>>();
+    delete_runs_on(conn, &expired)?;
+    Ok(expired.len() as u64)
+  })
 }
 
 pub(super) fn delete_runs_on(conn: &mut SqliteConnection, run_ids: &[String]) -> Result<()> {

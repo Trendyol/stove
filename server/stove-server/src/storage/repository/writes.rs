@@ -51,10 +51,14 @@ impl Repository {
       systems,
       metadata,
     );
-    self.with_backend(|backend| match backend {
-      Backend::Sqlite(sqlite) => sqlite.save_run_start(&run),
-      Backend::Postgres(postgres) => postgres.save_run_start(&run),
-    })
+    self.with_backend(
+      "save_run_start_with_metadata",
+      "write",
+      |backend| match backend {
+        Backend::Sqlite(sqlite) => sqlite.save_run_start(&run),
+        Backend::Postgres(postgres) => postgres.save_run_start(&run),
+      },
+    )
   }
 
   pub fn save_run_end(
@@ -67,7 +71,7 @@ impl Repository {
     duration_ms: i64,
   ) -> Result<()> {
     let run = RunEnd::new(run_id, ended_at, total_tests, passed, failed, duration_ms);
-    self.with_backend(|backend| match backend {
+    self.with_backend("save_run_end", "write", |backend| match backend {
       Backend::Sqlite(sqlite) => sqlite.save_run_end(&run, self.retention_runs_per_app()),
       Backend::Postgres(postgres) => postgres.save_run_end(&run),
     })
@@ -83,7 +87,7 @@ impl Repository {
     started_at: &str,
   ) -> Result<()> {
     let test = TestStart::new(run_id, test_id, test_name, spec_name, test_path, started_at);
-    self.with_backend(|backend| match backend {
+    self.with_backend("save_test_start", "write", |backend| match backend {
       Backend::Sqlite(sqlite) => sqlite.save_test_start(&test),
       Backend::Postgres(postgres) => postgres.save_test_start(&test),
     })
@@ -99,21 +103,21 @@ impl Repository {
     ended_at: &str,
   ) -> Result<()> {
     let test = TestEnd::new(run_id, test_id, status, duration_ms, error, ended_at);
-    self.with_backend(|backend| match backend {
+    self.with_backend("save_test_end", "write", |backend| match backend {
       Backend::Sqlite(sqlite) => sqlite.save_test_end(&test),
       Backend::Postgres(postgres) => postgres.save_test_end(&test),
     })
   }
 
   pub fn save_entry(&self, entry: &NewEntry) -> Result<()> {
-    self.with_backend(|backend| match backend {
+    self.with_backend("save_entry", "write", |backend| match backend {
       Backend::Sqlite(sqlite) => sqlite.save_entry(entry),
       Backend::Postgres(postgres) => postgres.save_entry(entry),
     })
   }
 
   pub fn save_span(&self, span: &NewSpan) -> Result<()> {
-    self.with_backend(|backend| match backend {
+    self.with_backend("save_span", "write", |backend| match backend {
       Backend::Sqlite(sqlite) => sqlite.save_span(span),
       Backend::Postgres(postgres) => postgres.save_span(span),
     })
@@ -128,28 +132,28 @@ impl Repository {
     summary: &str,
   ) -> Result<()> {
     let snapshot = SnapshotWrite::new(run_id, test_id, system, state_json, summary, "", "TEST_END");
-    self.with_backend(|backend| match backend {
+    self.with_backend("save_snapshot", "write", |backend| match backend {
       Backend::Sqlite(sqlite) => sqlite.save_snapshot(&snapshot),
       Backend::Postgres(postgres) => postgres.save_snapshot(&snapshot),
     })
   }
 
   pub fn save_mock_interaction(&self, interaction: &NewMockInteraction) -> Result<()> {
-    self.with_backend(|backend| match backend {
+    self.with_backend("save_mock_interaction", "write", |backend| match backend {
       Backend::Sqlite(sqlite) => sqlite.save_mock_interaction(interaction),
       Backend::Postgres(postgres) => postgres.save_mock_interaction(interaction),
     })
   }
 
   pub fn save_mock_warning(&self, warning: &NewMockWarning) -> Result<()> {
-    self.with_backend(|backend| match backend {
+    self.with_backend("save_mock_warning", "write", |backend| match backend {
       Backend::Sqlite(sqlite) => sqlite.save_mock_warning(warning),
       Backend::Postgres(postgres) => postgres.save_mock_warning(warning),
     })
   }
 
   pub fn clear_all(&self) -> Result<()> {
-    self.with_backend(|backend| match backend {
+    self.with_backend("clear_all", "write", |backend| match backend {
       Backend::Sqlite(sqlite) => sqlite.clear_all(),
       Backend::Postgres(postgres) => postgres.clear_all(),
     })

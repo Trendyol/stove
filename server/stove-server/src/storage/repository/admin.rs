@@ -80,14 +80,14 @@ pub(super) fn select_requested_run_ids(
 
 impl Repository {
   pub fn storage_stats(&self) -> Result<StorageStats> {
-    self.with_backend(|backend| match backend {
+    self.with_backend("storage_stats", "read", |backend| match backend {
       Backend::Sqlite(sqlite) => sqlite.storage_stats(self.retention_runs_per_app()),
       Backend::Postgres(postgres) => postgres.storage_stats(),
     })
   }
 
   pub fn update_retention(&self, runs_per_app: usize) -> Result<()> {
-    self.with_backend(|backend| match backend {
+    self.with_backend("update_retention", "write", |backend| match backend {
       Backend::Sqlite(sqlite) => sqlite.update_retention(runs_per_app),
       Backend::Postgres(postgres) => postgres.update_retention(runs_per_app),
     })?;
@@ -112,7 +112,7 @@ impl Repository {
         "Select at least one value for each metadata field".into(),
       ));
     }
-    self.with_backend(|backend| match backend {
+    self.with_backend("preview_purge", "read", |backend| match backend {
       Backend::Sqlite(sqlite) => {
         sqlite.preview_purge(app_name, older_than, include_running, metadata)
       }
@@ -123,9 +123,13 @@ impl Repository {
   }
 
   pub fn purge_runs(&self, run_ids: &[String], include_running: bool) -> Result<PurgeResult> {
-    self.with_backend(|backend| match backend {
+    let result = self.with_backend("purge_runs", "write", |backend| match backend {
       Backend::Sqlite(sqlite) => sqlite.purge_runs(run_ids, include_running),
       Backend::Postgres(postgres) => postgres.purge_runs(run_ids, include_running),
-    })
+    })?;
+    self
+      .metrics
+      .increment("purge_runs_deleted", result.purged_runs as u64);
+    Ok(result)
   }
 }

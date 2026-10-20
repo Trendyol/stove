@@ -1,0 +1,15 @@
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+
+rule_files:
+  - alerts.yml
+
+scrape_configs:
+  - job_name: stove-server
+    metrics_path: /metrics
+    scrape_timeout: 5s
+    static_configs:
+      # Replace with individual Stove server/pod addresses on the HTTP port.
+      # For a preserved public_url prefix, use /observe/metrics above.
+      - targets: ["stove:4040"]

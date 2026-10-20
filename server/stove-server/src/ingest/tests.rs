@@ -545,3 +545,28 @@ async fn invalid_statuses_never_commit_domain_or_live_events() {
     0
   );
 }
+
+#[test]
+fn metrics_count_committed_events_and_duplicates_separately() {
+  let svc = test_service();
+  let event = proto::DashboardEvent {
+    run_id: "metrics-run".into(),
+    event_id: "metrics-event".into(),
+    sequence: 1,
+    event: Some(proto::dashboard_event::Event::RunStarted(
+      proto::RunStartedEvent {
+        timestamp: Some(ts(1_704_067_200)),
+        app_name: "metrics-app".into(),
+        ..Default::default()
+      },
+    )),
+  };
+  assert!(!svc.ingest(&event).unwrap().duplicate);
+  assert!(svc.ingest(&event).unwrap().duplicate);
+  let mut invalid = event.clone();
+  invalid.run_id = "conflicting-run".into();
+  assert!(svc.ingest(&invalid).is_err());
+  let counters = svc.repository.metrics.snapshot().counters;
+  assert_eq!(counters["events_committed"], 1);
+  assert_eq!(counters["events_duplicate"], 1);
+}

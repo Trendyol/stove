@@ -41,6 +41,10 @@ impl SqliteDatabase {
     &mut self.connection
   }
 
+  pub(super) fn disk_path(&self) -> Option<String> {
+    (!self.use_uri).then(|| self.path.clone())
+  }
+
   /// Open another connection to the same database for independent reads.
   pub(super) fn open_peer(&self) -> Result<Self> {
     let mut connection = SqliteConnection::establish(&self.path)?;

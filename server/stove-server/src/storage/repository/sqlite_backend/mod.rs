@@ -10,13 +10,17 @@ use database::SqliteDatabase;
 pub(super) mod admin;
 pub(super) mod distributed;
 pub(super) mod explorer;
+mod monitoring;
 pub(super) mod reads;
 pub(super) mod writes;
 
 pub(super) struct SqliteBackend {
+  pub(super) metrics: std::sync::Arc<crate::storage::metrics::StorageMetrics>,
   write: Arc<Mutex<SqliteDatabase>>,
   read: Arc<Mutex<SqliteDatabase>>,
   explorer: Mutex<Connection>,
+  monitor: Mutex<Connection>,
+  path: Option<String>,
 }
 
 impl SqliteBackend {
@@ -40,25 +44,45 @@ impl SqliteBackend {
   fn new(database: SqliteDatabase) -> Result<Self> {
     let explorer = database.open_driver_peer()?;
     let read = database.open_peer()?;
+    let monitor = database.open_driver_peer()?;
+    monitor.busy_timeout(std::time::Duration::from_millis(100))?;
+    let path = database.disk_path();
     Ok(Self {
+      metrics: std::sync::Arc::new(crate::storage::metrics::StorageMetrics::new("sqlite")),
       write: Arc::new(Mutex::new(database)),
       read: Arc::new(Mutex::new(read)),
       explorer: Mutex::new(explorer),
+      monitor: Mutex::new(monitor),
+      path,
     })
   }
 
   pub(super) fn lock_write(&self) -> MutexGuard<'_, SqliteDatabase> {
-    self.write.lock().expect("write database lock poisoned")
+    self.lock_connection("write", &self.write)
   }
 
   pub(super) fn lock_read(&self) -> MutexGuard<'_, SqliteDatabase> {
-    self.read.lock().expect("read database lock poisoned")
+    self.lock_connection("read", &self.read)
   }
 
   fn lock_explorer(&self) -> MutexGuard<'_, Connection> {
+    self.lock_connection("explorer", &self.explorer)
+  }
+
+  fn lock_connection<'a, T>(
+    &self,
+    role: &'static str,
+    connection: &'a Mutex<T>,
+  ) -> MutexGuard<'a, T> {
     self
-      .explorer
-      .lock()
-      .expect("explorer database lock poisoned")
+      .metrics
+      .wait("mutex", role, || {
+        Ok(
+          connection
+            .lock()
+            .unwrap_or_else(|_| panic!("{role} database lock poisoned")),
+        )
+      })
+      .unwrap()
   }
 }

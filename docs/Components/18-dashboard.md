@@ -27,6 +27,12 @@ A cited retry stays on that exact attempt even if a later attempt passed. Snapsh
 
 Set `public_url = "https://stove.example/observe"` in the server configuration to publish links for readers. Stove serves UI assets, REST, SSE, and MCP under that prefix as well as its usual root paths, so gateways can preserve or strip the prefix. The URL accepts HTTP(S), with no credentials, query, or fragment. This configures addresses only; existing deployment access controls still apply.
 
+## Monitor deployed storage
+
+Stove exports Prometheus metrics at `/metrics` on its HTTP port, including database operation latency, connection/lock contention, ingestion and retention counters, and SQLite/PostgreSQL diagnostics. A configured public URL prefix also applies to this endpoint. Scrape each deployed server instance directly and use Grafana for charts.
+
+See the [monitoring guide, scrape configuration, alert rules, and PromQL examples](https://github.com/Trendyol/stove/tree/main/server/stove-server/monitoring). Metrics collection is automatic; scrapes remain available when the database is busy or unavailable.
+
 ## Install the server
 
 === "Homebrew"

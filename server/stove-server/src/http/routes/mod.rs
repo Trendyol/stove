@@ -26,3 +26,6 @@ pub use traces::*;
 
 mod focus;
 pub use focus::*;
+
+mod metrics;
+pub use metrics::*;

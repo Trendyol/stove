@@ -15,14 +15,14 @@ pub(super) enum EvidenceScope<'a> {
 
 impl Repository {
   pub fn get_test(&self, run_id: &str, test_id: &str) -> Result<Option<Test>> {
-    self.with_backend(|backend| match backend {
+    self.with_backend("get_test", "read", |backend| match backend {
       Backend::Sqlite(sqlite) => sqlite.get_test(run_id, test_id),
       Backend::Postgres(postgres) => postgres.get_test(run_id, test_id),
     })
   }
 
   pub fn get_entry(&self, run_id: &str, test_id: &str, id: i64) -> Result<Option<Entry>> {
-    self.with_backend(|backend| match backend {
+    self.with_backend("get_entry", "read", |backend| match backend {
       Backend::Sqlite(sqlite) => sqlite.get_entry(run_id, test_id, id),
       Backend::Postgres(postgres) => postgres.get_entry(run_id, test_id, id),
     })
@@ -37,7 +37,7 @@ impl Repository {
     before: bool,
     limit: i64,
   ) -> Result<Vec<Entry>> {
-    self.with_backend(|backend| match backend {
+    self.with_backend("entry_context", "read", |backend| match backend {
       Backend::Sqlite(sqlite) => {
         sqlite.entry_context(run_id, test_id, timestamp, id, before, limit)
       }
@@ -48,21 +48,21 @@ impl Repository {
   }
 
   pub fn get_trace_span(&self, trace_id: &str, id: i64) -> Result<Option<Span>> {
-    self.with_backend(|backend| match backend {
+    self.with_backend("get_trace_span", "read", |backend| match backend {
       Backend::Sqlite(sqlite) => sqlite.get_trace_span(trace_id, id),
       Backend::Postgres(postgres) => postgres.get_trace_span(trace_id, id),
     })
   }
 
   pub fn get_span(&self, run_id: &str, id: i64) -> Result<Option<Span>> {
-    self.with_backend(|backend| match backend {
+    self.with_backend("get_span", "read", |backend| match backend {
       Backend::Sqlite(sqlite) => sqlite.get_span(run_id, id),
       Backend::Postgres(postgres) => postgres.get_span(run_id, id),
     })
   }
 
   pub fn get_test_span(&self, run_id: &str, test_id: &str, id: i64) -> Result<Option<Span>> {
-    self.with_backend(|backend| match backend {
+    self.with_backend("get_test_span", "read", |backend| match backend {
       Backend::Sqlite(sqlite) => sqlite.get_test_span(run_id, test_id, id),
       Backend::Postgres(postgres) => postgres.get_test_span(run_id, test_id, id),
     })
@@ -76,28 +76,28 @@ impl Repository {
     limit: usize,
   ) -> Result<Vec<Span>> {
     let depth = i64::try_from(limit.min(101)).unwrap();
-    self.with_backend(|backend| match backend {
+    self.with_backend("get_span_ancestors", "read", |backend| match backend {
       Backend::Sqlite(sqlite) => sqlite.get_span_ancestors(run_id, trace_id, id, depth),
       Backend::Postgres(postgres) => postgres.get_span_ancestors(run_id, trace_id, id, depth),
     })
   }
 
   pub fn get_snapshot(&self, run_id: &str, test_id: &str, id: i64) -> Result<Option<Snapshot>> {
-    self.with_backend(|backend| match backend {
+    self.with_backend("get_snapshot", "read", |backend| match backend {
       Backend::Sqlite(sqlite) => sqlite.get_snapshot(run_id, test_id, id),
       Backend::Postgres(postgres) => postgres.get_snapshot(run_id, test_id, id),
     })
   }
 
   pub fn get_mock_interaction(&self, run_id: &str, id: i64) -> Result<Option<MockInteraction>> {
-    self.with_backend(|backend| match backend {
+    self.with_backend("get_mock_interaction", "read", |backend| match backend {
       Backend::Sqlite(sqlite) => sqlite.get_mock_interaction(run_id, id),
       Backend::Postgres(postgres) => postgres.get_mock_interaction(run_id, id),
     })
   }
 
   pub fn get_mock_warning(&self, run_id: &str, id: i64) -> Result<Option<MockWarning>> {
-    self.with_backend(|backend| match backend {
+    self.with_backend("get_mock_warning", "read", |backend| match backend {
       Backend::Sqlite(sqlite) => sqlite.get_mock_warning(run_id, id),
       Backend::Postgres(postgres) => postgres.get_mock_warning(run_id, id),
     })
@@ -110,7 +110,7 @@ impl Repository {
     stub_id: &str,
     limit: i64,
   ) -> Result<Vec<MockInteraction>> {
-    self.with_backend(|backend| match backend {
+    self.with_backend("related_interactions", "read", |backend| match backend {
       Backend::Sqlite(sqlite) => sqlite.related_interactions(run_id, test_id, stub_id, limit),
       Backend::Postgres(postgres) => postgres.related_interactions(run_id, test_id, stub_id, limit),
     })
@@ -123,7 +123,7 @@ impl Repository {
     stub_id: &str,
     limit: i64,
   ) -> Result<Vec<MockWarning>> {
-    self.with_backend(|backend| match backend {
+    self.with_backend("related_warnings", "read", |backend| match backend {
       Backend::Sqlite(sqlite) => sqlite.related_warnings(run_id, test_id, stub_id, limit),
       Backend::Postgres(postgres) => postgres.related_warnings(run_id, test_id, stub_id, limit),
     })
@@ -135,7 +135,7 @@ impl Repository {
     test_id: &str,
     correlation_key: &str,
   ) -> Result<Option<OpenAssertion>> {
-    self.with_backend(|backend| match backend {
+    self.with_backend("get_open_assertion", "read", |backend| match backend {
       Backend::Sqlite(sqlite) => sqlite.get_open_assertion(run_id, test_id, correlation_key),
       Backend::Postgres(postgres) => postgres.get_open_assertion(run_id, test_id, correlation_key),
     })
@@ -146,14 +146,14 @@ impl Repository {
     run_id: &str,
     trace_id: &str,
   ) -> Result<Option<String>> {
-    self.with_backend(|backend| match backend {
+    self.with_backend("get_test_id_for_trace", "read", |backend| match backend {
       Backend::Sqlite(sqlite) => sqlite.get_test_id_for_trace(run_id, trace_id),
       Backend::Postgres(postgres) => postgres.get_test_id_for_trace(run_id, trace_id),
     })
   }
 
   pub fn get_apps(&self) -> Result<Vec<AppSummary>> {
-    self.with_backend(|backend| match backend {
+    self.with_backend("get_apps", "read", |backend| match backend {
       Backend::Sqlite(sqlite) => sqlite.get_apps(),
       Backend::Postgres(postgres) => postgres.get_apps(),
     })
@@ -168,21 +168,21 @@ impl Repository {
     app_name: Option<&str>,
     metadata: &BTreeMap<String, String>,
   ) -> Result<Vec<Run>> {
-    self.with_backend(|backend| match backend {
+    self.with_backend("get_runs_filtered", "read", |backend| match backend {
       Backend::Sqlite(sqlite) => sqlite.get_runs_filtered(app_name, metadata),
       Backend::Postgres(postgres) => postgres.get_runs_filtered(app_name, metadata),
     })
   }
 
   pub fn get_run(&self, run_id: &str) -> Result<Option<Run>> {
-    self.with_backend(|backend| match backend {
+    self.with_backend("get_run", "read", |backend| match backend {
       Backend::Sqlite(sqlite) => sqlite.get_run(run_id),
       Backend::Postgres(postgres) => postgres.get_run(run_id),
     })
   }
 
   pub fn get_tests_for_run(&self, run_id: &str) -> Result<Vec<Test>> {
-    self.with_backend(|backend| match backend {
+    self.with_backend("get_tests_for_run", "read", |backend| match backend {
       Backend::Sqlite(sqlite) => sqlite.get_tests_for_run(run_id),
       Backend::Postgres(postgres) => postgres.get_tests_for_run(run_id),
     })
@@ -197,28 +197,28 @@ impl Repository {
   }
 
   fn entries(&self, run_id: &str, test_id: &str, raw: bool) -> Result<Vec<Entry>> {
-    self.with_backend(|backend| match backend {
+    self.with_backend("entries", "read", |backend| match backend {
       Backend::Sqlite(sqlite) => sqlite.get_entries(run_id, test_id, raw),
       Backend::Postgres(postgres) => postgres.get_entries(run_id, test_id, raw),
     })
   }
 
   pub fn get_spans_for_test(&self, run_id: &str, test_id: &str) -> Result<Vec<Span>> {
-    self.with_backend(|backend| match backend {
+    self.with_backend("get_spans_for_test", "read", |backend| match backend {
       Backend::Sqlite(sqlite) => sqlite.get_spans_for_test(run_id, test_id),
       Backend::Postgres(postgres) => postgres.get_spans_for_test(run_id, test_id),
     })
   }
 
   pub fn get_trace(&self, trace_id: &str) -> Result<Vec<Span>> {
-    self.with_backend(|backend| match backend {
+    self.with_backend("get_trace", "read", |backend| match backend {
       Backend::Sqlite(sqlite) => sqlite.get_trace(trace_id),
       Backend::Postgres(postgres) => postgres.get_trace(trace_id),
     })
   }
 
   pub fn get_snapshots(&self, run_id: &str, test_id: &str) -> Result<Vec<Snapshot>> {
-    self.with_backend(|backend| match backend {
+    self.with_backend("get_snapshots", "read", |backend| match backend {
       Backend::Sqlite(sqlite) => sqlite.get_snapshots(run_id, test_id),
       Backend::Postgres(postgres) => postgres.get_snapshots(run_id, test_id),
     })
@@ -248,7 +248,7 @@ impl Repository {
     run_id: &str,
     scope: EvidenceScope<'_>,
   ) -> Result<Vec<MockInteraction>> {
-    self.with_backend(|backend| match backend {
+    self.with_backend("mock_interactions", "read", |backend| match backend {
       Backend::Sqlite(sqlite) => sqlite.get_mock_interactions(run_id, scope),
       Backend::Postgres(postgres) => postgres.get_mock_interactions(run_id, scope),
     })
@@ -271,7 +271,7 @@ impl Repository {
   }
 
   fn mock_warnings(&self, run_id: &str, scope: EvidenceScope<'_>) -> Result<Vec<MockWarning>> {
-    self.with_backend(|backend| match backend {
+    self.with_backend("mock_warnings", "read", |backend| match backend {
       Backend::Sqlite(sqlite) => sqlite.get_mock_warnings(run_id, scope),
       Backend::Postgres(postgres) => postgres.get_mock_warnings(run_id, scope),
     })

@@ -717,6 +717,10 @@ fn configurable_retention_keeps_the_latest_completed_runs() {
     runs.iter().map(|run| run.id.as_str()).collect::<Vec<_>>(),
     vec!["run-3", "run-2"]
   );
+  assert_eq!(
+    repo.metrics.snapshot().counters["retention_runs_deleted"],
+    1
+  );
 }
 
 #[test]

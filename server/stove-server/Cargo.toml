@@ -82,6 +82,11 @@ anyhow = "1"
 tracing = "0.1"
 tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 
+prometheus = { version = "0.14", default-features = false }
+
+# Filesystem capacity for SQLite deployments
+fs2 = "0.4"
+
 # Utilities
 chrono = { version = "0.4", features = ["serde"] }
 uuid = { version = "1", features = ["v4"] }

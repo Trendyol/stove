@@ -1,0 +1,59 @@
+groups:
+  - name: stove-storage
+    rules:
+      - alert: StoveMetricsUnavailable
+        expr: up{job="stove-server"} == 0
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Cannot scrape Stove at {{ $labels.instance }}"
+      - alert: StoveDatabaseProbeFailed
+        expr: stove_db_health == 0 and stove_db_health_age_seconds < 90
+        for: 2m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Stove {{ $labels.role }} database access is unavailable on {{ $labels.instance }}"
+      - alert: StoveDatabaseCollectionFailed
+        expr: stove_db_diagnostics_up == 0 or stove_db_diagnostics_age_seconds > 90 or stove_db_health_age_seconds > 90 or stove_db_sample_age_seconds > 45
+        for: 2m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Database monitoring is failing or stale on {{ $labels.instance }}"
+      - alert: StoveDatabaseOperationsFailing
+        expr: sum by (job, instance, stove_instance, backend) (rate(stove_db_errors_total{kind="operation",role=~"read|write|explorer"}[5m])) / sum by (job, instance, stove_instance, backend) (rate(stove_db_duration_seconds_count{kind="operation",role=~"read|write|explorer"}[5m])) > 0.01
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "More than 1% of Stove storage operations are failing on {{ $labels.instance }}"
+      - alert: StoveDatabaseCheckoutTimeouts
+        expr: sum by (job, instance, stove_instance, role) (increase(stove_db_timeouts_total{kind="wait",operation="checkout"}[5m])) > 0
+        for: 2m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Stove {{ $labels.role }} connection pool is timing out on {{ $labels.instance }}"
+      - alert: StoveDatabaseWriteContention
+        expr: histogram_quantile(0.95, sum by (job, instance, stove_instance, operation, le) (rate(stove_db_duration_seconds_bucket{kind="wait",role="write"}[5m]))) > 0.25
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Stove write acquisition p95 exceeds 250 ms on {{ $labels.instance }} ({{ $labels.operation }})"
+      - alert: StoveSqliteDiskLow
+        expr: stove_db_disk_available_bytes{backend="sqlite"} < 1073741824 and on (job, instance, stove_instance, backend) stove_db_diagnostics_age_seconds < 90
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Less than 1 GiB free on the Stove database filesystem at {{ $labels.instance }}"
+      - alert: StoveSqliteCheckpointProbeFailed
+        expr: stove_db_checkpoint_probe_up == 0
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Stove SQLite checkpoint statistics are unavailable on {{ $labels.instance }}"

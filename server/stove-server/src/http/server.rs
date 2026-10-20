@@ -33,6 +33,7 @@ pub fn create_router_with_public_url(
   ingestor: EventIngestor,
   public_url: Option<String>,
 ) -> Router {
+  repository.start_monitoring();
   let prefix = crate::navigation::base_path(public_url.as_deref());
   let state = AppState {
     public_url,
@@ -43,6 +44,7 @@ pub fn create_router_with_public_url(
   };
 
   let router = Router::new()
+    .route("/metrics", get(super::routes::get_metrics))
     .route(
       "/mcp",
       get(crate::mcp::handle_get).post(crate::mcp::handle_post),

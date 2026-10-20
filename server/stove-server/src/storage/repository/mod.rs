@@ -14,6 +14,7 @@ mod distributed;
 mod evidence_sql;
 mod explorer;
 mod mapping;
+mod monitoring;
 mod postgres_backend;
 mod reads;
 mod sqlite_backend;
@@ -27,36 +28,43 @@ use std::sync::atomic::Ordering;
 
 use crate::error::Result;
 enum Backend {
-  Sqlite(sqlite_backend::SqliteBackend),
+  Sqlite(Box<sqlite_backend::SqliteBackend>),
   Postgres(Box<postgres_backend::PostgresBackend>),
 }
 
 pub struct Repository {
   backend: Backend,
+  pub metrics: std::sync::Arc<crate::storage::metrics::StorageMetrics>,
   retention_runs_per_app: AtomicUsize,
 }
 
 impl Repository {
   /// Probe both dashboard and ingestion connections without modifying stored data.
   pub fn check_health(&self) -> Result<()> {
-    self.with_backend(|backend| match backend {
+    self.with_backend("check_health", "probe", |backend| match backend {
       Backend::Sqlite(sqlite) => sqlite.check_health(),
       Backend::Postgres(postgres) => postgres.check_health(),
     })
   }
 
   pub fn connect_sqlite(database_path: &str, retention_runs_per_app: usize) -> Result<Self> {
+    let backend = sqlite_backend::SqliteBackend::connect(database_path)?;
+    let metrics = backend.metrics.clone();
     Ok(Self {
-      backend: Backend::Sqlite(sqlite_backend::SqliteBackend::connect(database_path)?),
+      metrics,
+      backend: Backend::Sqlite(Box::new(backend)),
       retention_runs_per_app: AtomicUsize::new(retention_runs_per_app),
     })
   }
 
   pub fn connect_postgres(database_url: &str, retention_runs_per_app: usize) -> Result<Self> {
+    let backend = run_blocking(|| {
+      postgres_backend::PostgresBackend::connect(database_url, retention_runs_per_app)
+    })?;
+    let metrics = backend.metrics.clone();
     Ok(Self {
-      backend: Backend::Postgres(Box::new(run_blocking(|| {
-        postgres_backend::PostgresBackend::connect(database_url, retention_runs_per_app)
-      })?)),
+      metrics,
+      backend: Backend::Postgres(Box::new(backend)),
       retention_runs_per_app: AtomicUsize::new(retention_runs_per_app),
     })
   }
@@ -85,12 +93,16 @@ impl Repository {
   }
 
   /// Execute one synchronous backend operation without occupying a Tokio core worker.
-  fn with_backend<T, F>(&self, operation: F) -> T
+  fn with_backend<T, F>(&self, name: &'static str, role: &'static str, operation: F) -> Result<T>
   where
     T: Send,
-    F: FnOnce(&Backend) -> T + Send,
+    F: FnOnce(&Backend) -> Result<T> + Send,
   {
-    run_blocking(|| operation(&self.backend))
+    run_blocking(|| {
+      self
+        .metrics
+        .measure(name, role, || operation(&self.backend))
+    })
   }
 
   #[cfg(test)]

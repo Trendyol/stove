@@ -296,20 +296,22 @@ pub(in crate::storage::repository) fn prune_app(
   if retention == 0 {
     return Ok(());
   }
-  let offset = i64::try_from(retention).unwrap_or(i64::MAX);
-  let expired = runs::table
-    .filter(runs::app_name.eq(app_name))
-    .filter(runs::status.ne("RUNNING"))
-    .order((
-      runs::started_at.desc(),
-      runs::ended_at.desc(),
-      runs::id.desc(),
-    ))
-    .offset(offset)
-    .select(runs::id)
-    .load::<String>(conn)?;
-  diesel::delete(runs::table.filter(runs::id.eq_any(expired))).execute(conn)?;
-  Ok(())
+  crate::storage::metrics::retention(|| {
+    let offset = i64::try_from(retention).unwrap_or(i64::MAX);
+    let expired = runs::table
+      .filter(runs::app_name.eq(app_name))
+      .filter(runs::status.ne("RUNNING"))
+      .order((
+        runs::started_at.desc(),
+        runs::ended_at.desc(),
+        runs::id.desc(),
+      ))
+      .offset(offset)
+      .select(runs::id)
+      .load::<String>(conn)?;
+    let deleted = diesel::delete(runs::table.filter(runs::id.eq_any(expired))).execute(conn)?;
+    Ok(deleted as u64)
+  })
 }
 
 pub(in crate::storage::repository) fn retention_on(conn: &mut PgConnection) -> Result<usize> {

@@ -63,7 +63,7 @@ pub(super) fn connect_driver(database_url: &str) -> Result<Client> {
   Ok(Client::connect(database_url, tls_connector()?)?)
 }
 
-fn tls_connector() -> Result<MakeTlsConnector> {
+pub(super) fn tls_connector() -> Result<MakeTlsConnector> {
   Ok(MakeTlsConnector::new(TlsConnector::builder().build()?))
 }
 

@@ -54,23 +54,32 @@ impl Repository {
     identity: &EventIdentity,
     event: &PreparedDashboardEvent,
   ) -> Result<CommitOutcome> {
-    self.with_backend(|backend| match backend {
+    let result = self.with_backend("commit_dashboard_event", "write", |backend| match backend {
       Backend::Sqlite(sqlite) => {
         sqlite.commit_dashboard_event(identity, event, self.retention_runs_per_app())
       }
       Backend::Postgres(postgres) => postgres.commit_dashboard_event(identity, event),
-    })
+    })?;
+    self.metrics.increment(
+      if result.duplicate {
+        "events_duplicate"
+      } else {
+        "events_committed"
+      },
+      1,
+    );
+    Ok(result)
   }
 
   pub fn latest_live_event_id(&self) -> Result<u64> {
-    self.with_backend(|backend| match backend {
+    self.with_backend("latest_live_event_id", "read", |backend| match backend {
       Backend::Sqlite(sqlite) => sqlite.latest_live_event_id(),
       Backend::Postgres(postgres) => postgres.latest_live_event_id(),
     })
   }
 
   pub fn live_events_after(&self, after_id: u64, limit: usize) -> Result<Vec<StoredLiveEvent>> {
-    self.with_backend(|backend| match backend {
+    self.with_backend("live_events_after", "read", |backend| match backend {
       Backend::Sqlite(sqlite) => sqlite.live_events_after(after_id, limit),
       Backend::Postgres(postgres) => postgres.live_events_after(after_id, limit),
     })

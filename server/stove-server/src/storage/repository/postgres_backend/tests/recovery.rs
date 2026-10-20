@@ -252,3 +252,81 @@ fn wait_for_listener(database: &mut TestSchema, previous: Option<i32>) -> i32 {
     std::thread::sleep(Duration::from_millis(20));
   }
 }
+
+#[test]
+fn metrics_report_pool_pressure_timeouts_and_privileged_diagnostics() {
+  let Some(database) = TestSchema::from_env() else {
+    return;
+  };
+  let repo = database.repository();
+  let Backend::Postgres(backend) = &repo.backend else {
+    unreachable!()
+  };
+  let diagnostics = backend.diagnostics().unwrap();
+  assert!(diagnostics.database_bytes.unwrap() > 0);
+  assert!(diagnostics.blocked_sessions.is_some());
+  assert!(diagnostics.dead_tuples.is_some());
+  assert!(backend.probe_roles().iter().all(|check| check.healthy));
+  let held: Vec<_> = (0..backend.read.max_size())
+    .map(|_| backend.read.get().unwrap())
+    .collect();
+  backend.metrics.sample(backend.capacity());
+  assert!(repo.get_runs(None).is_err());
+  let text = repo.metrics.prometheus();
+  assert!(
+    text
+      .lines()
+      .any(|line| line.starts_with("stove_db_capacity_busy{")
+        && line.contains("role=\"read\"")
+        && line.ends_with(" 4"))
+  );
+  assert!(
+    text
+      .lines()
+      .any(|line| line.starts_with("stove_db_timeouts_total{")
+        && line.contains("kind=\"wait\"")
+        && line.ends_with(" 1"))
+  );
+  // Dedicated monitoring session works even with every read connection held.
+  assert!(backend.diagnostics().is_ok());
+  drop(held);
+  assert!(repo.get_runs(None).is_ok());
+}
+
+#[test]
+fn restricted_postgres_role_omits_session_statistics_instead_of_claiming_zero() {
+  let Some(mut database) = TestSchema::from_env() else {
+    return;
+  };
+  let mut backend = PostgresBackend::connect(&database.url, 2).unwrap();
+  let role = format!("metrics_{}", uuid::Uuid::new_v4().simple());
+  database
+    .root
+    .batch_execute(&format!(
+      "CREATE ROLE {role} LOGIN PASSWORD 'metrics-test'; GRANT USAGE ON SCHEMA {} TO {role}",
+      database.name
+    ))
+    .unwrap();
+  let mut url = reqwest::Url::parse(&database.url).unwrap();
+  url.set_username(&role).unwrap();
+  url.set_password(Some("metrics-test")).unwrap();
+  backend.database_url = url.to_string();
+  let diagnostics = backend.diagnostics().unwrap();
+  assert!(diagnostics.database_bytes.is_some());
+  assert_eq!(diagnostics.blocked_sessions, None);
+  assert_eq!(diagnostics.oldest_transaction_seconds, None);
+  assert!(
+    diagnostics
+      .notes
+      .iter()
+      .any(|note| note.contains("pg_read_all_stats"))
+  );
+  drop(backend);
+  database
+    .root
+    .batch_execute(&format!(
+      "REVOKE USAGE ON SCHEMA {} FROM {role}; DROP ROLE {role}",
+      database.name
+    ))
+    .unwrap();
+}

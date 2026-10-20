@@ -231,8 +231,9 @@ mod tests {
       "binary"
     );
     assert_eq!(document["servers"][0]["url"], "..");
-    assert_eq!(document["paths"].as_object().unwrap().len(), 29);
+    assert_eq!(document["paths"].as_object().unwrap().len(), 30);
     assert!(document["paths"]["/api/v1/health"].is_object());
+    assert!(document["paths"]["/metrics"]["get"].is_object());
     assert!(document["paths"]["/api/v1/runs"].is_object());
     assert!(document["paths"]["/api/v1/admin/status"].is_object());
     assert!(document["paths"]["/api/v1/events/stream"].is_object());

@@ -48,9 +48,13 @@ impl PostgresBackend {
   ) -> Result<CommitOutcome> {
     let sequence = sequence_to_i64(identity.sequence, "PostgreSQL")?;
     self.checkout_write()?.transaction(|conn| {
-      diesel::sql_query("SELECT pg_advisory_xact_lock(hashtextextended($1, 0))")
-        .bind::<Text, _>(&event.live.run_id)
-        .execute(conn)?;
+      self.metrics.wait("advisory_run", "write", || {
+        Ok(
+          diesel::sql_query("SELECT pg_advisory_xact_lock(hashtextextended($1, 0))")
+            .bind::<Text, _>(&event.live.run_id)
+            .execute(conn)?,
+        )
+      })?;
 
       let stored = dashboard_event_inbox::table
         .find(&identity.event_id)
@@ -69,7 +73,9 @@ impl PostgresBackend {
       let retention = retention_on(conn)?;
       apply_event(conn, &event.persisted, retention)?;
 
-      diesel::sql_query(LIVE_EVENT_ORDER_LOCK).execute(conn)?;
+      self.metrics.wait("advisory_live_event", "write", || {
+        Ok(diesel::sql_query(LIVE_EVENT_ORDER_LOCK).execute(conn)?)
+      })?;
       let live_event_id = diesel::insert_into(live_events::table)
         .values((
           live_events::event_id.eq(&identity.event_id),
