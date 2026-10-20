@@ -49,7 +49,7 @@ Stove does not grant itself permissions. PostgreSQL filesystem capacity comes fr
 
 ## Grafana / PromQL
 
-Import [grafana-dashboard.json](grafana-dashboard.json) using **Grafana → Dashboards → New → Import → Upload dashboard JSON file**. After importing, select your Prometheus data source and job at the top, then filter by backend and instance. It uses built-in Grafana panels and requires no extra plugins.
+Import [grafana-dashboard.json](grafana-dashboard.json) using **Grafana → Dashboards → New → Import → Upload dashboard JSON file**. After importing, select your Prometheus data source, job, and instance at the top. The **App** section shows ingestion and retention. Expand **SQLite** or **PostgreSQL** for backend-specific database health, growth, performance, and diagnostics. The database sections start collapsed so panels for an unused backend do not load. It uses built-in Grafana panels and requires no extra plugins.
 
 The dashboard covers health, collector freshness, database growth, latency, contention, ingestion, retention, and backend-specific diagnostics. The **Growth window** selector controls trend calculations. SQLite's estimated days until disk full extrapolates the decline in filesystem free space, including other applications on the same filesystem; it shows no value when space is flat/increasing or diagnostics are stale/unavailable. This estimate is not a guarantee. PostgreSQL disk capacity still requires host/cloud metrics. Unsupported or unavailable diagnostics show **No data**, rather than zero. The JSON does not install alert rules; configure [alerts.yml](alerts.yml) separately in Prometheus.
 
