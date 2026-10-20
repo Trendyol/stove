@@ -2252,6 +2252,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#monitor-deployed-storage" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Monitor deployed storage
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#install-the-server" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -3553,6 +3564,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#monitor-deployed-storage" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Monitor deployed storage
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#install-the-server" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -4052,6 +4074,9 @@ Install <code>stove-server</code>, run <code>stove</code>, add <code>dashboard {
 <p>Agent reports can link directly to a run, test, or specific record. Opening a citation selects the right tab, highlights the record, and opens its inspector. You can copy that link from the dashboard, expand the surrounding context, or choose <strong>Show full test</strong>. Browser back and forward restore earlier selections.</p>
 <p>A cited retry stays on that exact attempt even if a later attempt passed. Snapshot links can open one JSON value and let you return to the complete snapshot. Evidence with no test attribution opens at run scope. If a record was removed by retention or a link points to the wrong scope, the dashboard shows it as unavailable.</p>
 <p>Set <code>public_url = "https://stove.example/observe"</code> in the server configuration to publish links for readers. Stove serves UI assets, REST, SSE, and MCP under that prefix as well as its usual root paths, so gateways can preserve or strip the prefix. The URL accepts HTTP(S), with no credentials, query, or fragment. This configures addresses only; existing deployment access controls still apply.</p>
+<h2 id="monitor-deployed-storage">Monitor deployed storage<a class="headerlink" href="#monitor-deployed-storage" title="Permanent link">&para;</a></h2>
+<p>Stove exports Prometheus metrics at <code>/metrics</code> on its HTTP port, including database operation latency, connection/lock contention, ingestion and retention counters, and SQLite/PostgreSQL diagnostics. A configured public URL prefix also applies to this endpoint. Scrape each deployed server instance directly and use Grafana for charts.</p>
+<p>See the <a href="https://github.com/Trendyol/stove/tree/main/server/stove-server/monitoring">monitoring guide, scrape configuration, alert rules, and PromQL examples</a>. Metrics collection is automatic; scrapes remain available when the database is busy or unavailable.</p>
 <h2 id="install-the-server">Install the server<a class="headerlink" href="#install-the-server" title="Permanent link">&para;</a></h2>
 <div class="tabbed-set tabbed-alternate" data-tabs="1:4"><input checked="checked" id="homebrew" name="__tabbed_1" type="radio" /><input id="curl" name="__tabbed_1" type="radio" /><input id="manual" name="__tabbed_1" type="radio" /><input id="docker" name="__tabbed_1" type="radio" /><div class="tabbed-labels"><label for="homebrew">Homebrew</label><label for="curl">curl</label><label for="manual">Manual</label><label for="docker">Docker</label></div>
 <div class="tabbed-content">
