@@ -26,7 +26,7 @@ jobs:
             runner: macos-14
             label: darwin-amd64
           - target: x86_64-unknown-linux-gnu
-            runner: ubuntu-latest
+            runner: ubuntu-24.04
             label: linux-amd64
     runs-on: ${{ matrix.runner }}
     defaults:
@@ -46,8 +46,8 @@ jobs:
             ~/.cargo/registry
             ~/.cargo/git
             server/stove-server/target
-          key: cargo-release-${{ matrix.target }}-${{ hashFiles('server/stove-server/Cargo.lock') }}
-          restore-keys: cargo-release-${{ matrix.target }}-
+          key: cargo-release-${{ matrix.runner }}-${{ matrix.target }}-${{ hashFiles('server/stove-server/Cargo.lock') }}
+          restore-keys: cargo-release-${{ matrix.runner }}-${{ matrix.target }}-
 
       - name: Build SPA
         run: cd spa && npm run build

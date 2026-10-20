@@ -30,7 +30,7 @@ permissions:
 
 jobs:
   resolve-version:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     if: github.repository == 'Trendyol/stove'
     outputs:
       version: ${{ steps.resolve.outputs.version }}
@@ -80,7 +80,7 @@ jobs:
   # stale assets — a failure at any point leaves a working channel.
   publish-next:
     needs: [resolve-version, build]
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     concurrency:
       group: stove-server-next-publish
       queue: max

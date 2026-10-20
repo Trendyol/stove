@@ -42,7 +42,7 @@ env:
 jobs:
   prepare:
     name: Resolve image version and aliases
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     outputs:
       version: ${{ steps.version.outputs.version }}
       metadata: ${{ steps.metadata.outputs.json }}
@@ -219,7 +219,7 @@ jobs:
   merge:
     name: Merge manifests and push tags
     needs: [prepare, build]
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - name: Download digests
         uses: actions/download-artifact@v8
