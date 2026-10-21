@@ -93,6 +93,7 @@ export function useAdminController() {
     preview,
     busy: command.isPending || previewMutation.isPending || statusQuery.isPending,
     error: (command.error ?? previewMutation.error ?? statusQuery.error)?.message ?? null,
+    retry: statusQuery.error ? () => void statusQuery.refetch() : undefined,
     updateRetention: () =>
       command.mutate({ kind: "retention", runsPerApp: normalizeRetention(retention) }),
     previewPurge: () => {

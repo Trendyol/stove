@@ -14,18 +14,9 @@ export function ServerHealth({ liveConnected }: { liveConnected: boolean }) {
   });
   // A failed refresh must not leave a previously healthy report on screen.
   const report = health.isError ? undefined : health.data;
-  const label = isDemo
-    ? "Demo data"
-    : health.isError
-      ? "Health unavailable"
-      : report && !report.healthy
-        ? "Needs attention"
-        : !liveConnected
-          ? "Reconnecting"
-          : !report
-            ? "Checking health"
-            : "Connected";
-  const healthy = !isDemo && report?.healthy && liveConnected;
+  const healthy = !isDemo && report?.healthy === true && liveConnected;
+  const label = healthLabel(health.isError, report?.healthy, liveConnected);
+  const summary = healthSummary(health.isError, Boolean(report), healthy);
 
   return (
     <>
@@ -67,13 +58,7 @@ export function ServerHealth({ liveConnected }: { liveConnected: boolean }) {
         ) : (
           <>
             <p className="stove-health-summary" role="status">
-              {health.isError
-                ? "Unable to check server health. Check your connection and try again."
-                : !report
-                  ? "Checking server health…"
-                  : healthy
-                    ? "All checks passed."
-                    : "Some checks need attention."}
+              {summary}
             </p>
             <dl className="stove-health-checks">
               {report?.checks.map((check) => (
@@ -136,4 +121,24 @@ function HealthRow({
       <dd>{message}</dd>
     </div>
   );
+}
+
+function healthLabel(
+  failed: boolean,
+  reportHealthy: boolean | undefined,
+  connected: boolean,
+): string {
+  if (isDemo) return "Demo data";
+  if (failed) return "Health unavailable";
+  if (reportHealthy === false) return "Needs attention";
+  if (!connected) return "Reconnecting";
+  if (reportHealthy === undefined) return "Checking health";
+  return "Connected";
+}
+
+function healthSummary(failed: boolean, hasReport: boolean, healthy: boolean): string {
+  if (failed) return "Unable to check server health. Check your connection and try again.";
+  if (!hasReport) return "Checking server health…";
+  if (healthy) return "All checks passed.";
+  return "Some checks need attention.";
 }

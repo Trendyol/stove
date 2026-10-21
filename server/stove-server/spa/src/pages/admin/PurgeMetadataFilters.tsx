@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react";
 import type { Run } from "../../api/types";
+import { ErrorNotice } from "../../components/ErrorNotice";
 import {
   isMetadataValueSelected,
   type MetadataFilter,
@@ -41,59 +42,15 @@ export function PurgeMetadataFilters({
           </button>
         )}
       </div>
-      {loading ? (
-        <p role="status">Loading metadata…</p>
-      ) : error ? (
-        <div role="alert">
-          <p>Could not load metadata for this application.</p>
-          <button type="button" onClick={onRetry}>
-            Try again
-          </button>
-        </div>
-      ) : (
-        <>
-          <p>
-            {options.length === 0
-              ? "This application has no recorded run metadata."
-              : "Choose any value within a field. Each selected field must match."}
-          </p>
-          <div className="stove-purge-metadata-fields">
-            {options.map((option) => (
-              <fieldset key={option.key}>
-                <legend>{option.key}</legend>
-                {option.values.length > 5 ? (
-                  <MetadataDropdown
-                    key={appName}
-                    field={option.key}
-                    options={option.values}
-                    selected={value[option.key] ?? []}
-                    onToggle={(metadataValue) =>
-                      onChange(toggleMetadataValue(value, option.key, metadataValue))
-                    }
-                  />
-                ) : (
-                  <div className="stove-purge-metadata-values">
-                    {option.values.map(({ value: metadataValue, count }) => (
-                      <button
-                        type="button"
-                        key={metadataValue}
-                        aria-label={`${option.key}: ${metadataValue}`}
-                        aria-pressed={isMetadataValueSelected(value, option.key, metadataValue)}
-                        onClick={() =>
-                          onChange(toggleMetadataValue(value, option.key, metadataValue))
-                        }
-                      >
-                        <span>{metadataValue || "(empty value)"}</span>
-                        <small>{count}</small>
-                      </button>
-                    ))}
-                  </div>
-                )}
-              </fieldset>
-            ))}
-          </div>
-        </>
-      )}
+      <PurgeMetadataOptions
+        appName={appName}
+        options={options}
+        value={value}
+        loading={loading}
+        error={error}
+        onChange={onChange}
+        onRetry={onRetry}
+      />
     </section>
   );
 }
@@ -110,12 +67,9 @@ function MetadataDropdown({ field, options, selected, onToggle }: MetadataDropdo
   const matches = options.filter(({ value }) =>
     value.toLocaleLowerCase().includes(search.trim().toLocaleLowerCase()),
   );
-  const selectionLabel =
-    selected.length === 0
-      ? "Any value"
-      : selected.length === 1
-        ? selected[0] || "(empty value)"
-        : `${selected.length} values selected`;
+  let selectionLabel = `${selected.length} values selected`;
+  if (selected.length === 0) selectionLabel = "Any value";
+  else if (selected.length === 1) selectionLabel = selected[0] || "(empty value)";
 
   return (
     <details className="stove-purge-metadata-dropdown">
@@ -147,5 +101,67 @@ function MetadataDropdown({ field, options, selected, onToggle }: MetadataDropdo
         </div>
       </div>
     </details>
+  );
+}
+
+function PurgeMetadataOptions({
+  appName,
+  options,
+  value,
+  loading,
+  error,
+  onChange,
+  onRetry,
+}: Omit<PurgeMetadataFiltersProps, "runs"> & {
+  options: ReturnType<typeof metadataOptionsForRuns>;
+}) {
+  if (loading) return <p role="status">Loading metadata…</p>;
+  if (error)
+    return (
+      <ErrorNotice onRetry={onRetry}>
+        Could not load metadata for this application: {error}
+      </ErrorNotice>
+    );
+  return (
+    <>
+      <p>
+        {options.length === 0
+          ? "This application has no recorded run metadata."
+          : "Choose any value within a field. Each selected field must match."}
+      </p>
+      <div className="stove-purge-metadata-fields">
+        {options.map((option) => (
+          <fieldset key={option.key}>
+            <legend>{option.key}</legend>
+            {option.values.length > 5 ? (
+              <MetadataDropdown
+                key={appName}
+                field={option.key}
+                options={option.values}
+                selected={value[option.key] ?? []}
+                onToggle={(metadataValue) =>
+                  onChange(toggleMetadataValue(value, option.key, metadataValue))
+                }
+              />
+            ) : (
+              <div className="stove-purge-metadata-values">
+                {option.values.map(({ value: metadataValue, count }) => (
+                  <button
+                    type="button"
+                    key={metadataValue}
+                    aria-label={`${option.key}: ${metadataValue}`}
+                    aria-pressed={isMetadataValueSelected(value, option.key, metadataValue)}
+                    onClick={() => onChange(toggleMetadataValue(value, option.key, metadataValue))}
+                  >
+                    <span>{metadataValue || "(empty value)"}</span>
+                    <small>{count}</small>
+                  </button>
+                ))}
+              </div>
+            )}
+          </fieldset>
+        ))}
+      </div>
+    </>
   );
 }

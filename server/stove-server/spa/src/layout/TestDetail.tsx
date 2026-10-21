@@ -39,7 +39,15 @@ function TestDetailContent({ runId, test, liveConnected }: TestDetailProps) {
   const [localTab, setLocalTab] = useState<Tab>("timeline");
   const [localTraceId, setLocalTraceId] = useState<string>();
   const [localErrorOpen, setLocalErrorOpen] = useState(false);
-  const tab = navigation?.tab ?? (isPhone && phone ? (phone.tab ?? "timeline") : localTab);
+  let tab = localTab;
+  let traceId = localTraceId;
+  if (navigation) {
+    tab = navigation.tab;
+    traceId = navigation.traceId;
+  } else if (isPhone && phone) {
+    tab = phone.tab ?? "timeline";
+    traceId = phone.traceId;
+  }
   const setTab = (next: Tab) => {
     if (navigation) navigation.selectTab(next);
     else if (isPhone && phone)
@@ -72,6 +80,16 @@ function TestDetailContent({ runId, test, liveConnected }: TestDetailProps) {
       setLocalTab("trace");
     }
   };
+  function clearTrace() {
+    if (navigation) {
+      navigation.clear();
+    } else if (isPhone && phone) {
+      phone.go({ level: "test", tab: "trace", testId: test.id, backLabel: phone.backLabel }, true);
+    } else {
+      setLocalTraceId(undefined);
+    }
+  }
+
   const errorOpen = navigation?.errorOpen ?? localErrorOpen;
   const openError = navigation?.openError ?? (() => setLocalErrorOpen(true));
   const closeError = navigation?.clear ?? (() => setLocalErrorOpen(false));
@@ -152,19 +170,9 @@ function TestDetailContent({ runId, test, liveConnected }: TestDetailProps) {
           testId={test.id}
           testRunning={isRunning(test.status)}
           liveConnected={liveConnected}
-          onClearTrace={() => {
-            if (navigation) navigation.clear();
-            else if (isPhone && phone)
-              phone.go(
-                { level: "test", tab: "trace", testId: test.id, backLabel: phone.backLabel },
-                true,
-              );
-            else setLocalTraceId(undefined);
-          }}
+          onClearTrace={clearTrace}
           onOpenTrace={openTrace}
-          traceId={
-            navigation ? navigation.traceId : isPhone && phone ? phone.traceId : localTraceId
-          }
+          traceId={traceId}
           onSelectTab={setTab}
           onSummary={updateSummary}
         />

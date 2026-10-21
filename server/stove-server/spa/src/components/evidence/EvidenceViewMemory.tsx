@@ -16,13 +16,11 @@ export function useEvidenceViewMemory() {
 
 export function useRememberedState<T>(key: string, initial: T | (() => T)) {
   const memory = useEvidenceViewMemory();
-  const state = useState<T>(() =>
-    memory?.has(key)
-      ? (memory.get(key) as T)
-      : typeof initial === "function"
-        ? (initial as () => T)()
-        : initial,
-  );
+  const state = useState<T>(() => {
+    if (memory?.has(key)) return memory.get(key) as T;
+    if (typeof initial === "function") return (initial as () => T)();
+    return initial;
+  });
   const [value] = state;
   useEffect(() => {
     memory?.set(key, value);

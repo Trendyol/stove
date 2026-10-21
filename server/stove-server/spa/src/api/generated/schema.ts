@@ -97,6 +97,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/admin/top-filter": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put: operations["update_top_filter"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/apps": {
         parameters: {
             query?: never;
@@ -447,6 +463,22 @@ export interface paths {
             cookie?: never;
         };
         get: operations["get_test_spans"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/top-filter": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["get_top_filter"];
         put?: never;
         post?: never;
         delete?: never;
@@ -965,6 +997,20 @@ export interface components {
          * @enum {string}
          */
         TestStatus: "RUNNING" | "PASSED" | "FAILED" | "ERROR";
+        TopFilterCatalog: {
+            available_keys: string[];
+            settings: components["schemas"]["TopFilterSettings"];
+            values: components["schemas"]["TopFilterValue"][];
+        };
+        /** @description Shared dashboard filtering configuration. */
+        TopFilterSettings: {
+            metadata_key: string | null;
+        };
+        TopFilterValue: {
+            /** @description Applications summarized from their latest run matching this value. */
+            apps: components["schemas"]["AppSummary"][];
+            value: string;
+        };
     };
     responses: never;
     parameters: never;
@@ -1128,6 +1174,37 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["StorageStats"];
                 };
+            };
+        };
+    };
+    update_top_filter: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TopFilterSettings"];
+            };
+        };
+        responses: {
+            /** @description Saved dashboard top filter */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TopFilterSettings"];
+                };
+            };
+            /** @description Invalid metadata key */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
         };
     };
@@ -1697,6 +1774,26 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["Span"][];
+                };
+            };
+        };
+    };
+    get_top_filter: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Configured top filter and recorded metadata values */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TopFilterCatalog"];
                 };
             };
         };

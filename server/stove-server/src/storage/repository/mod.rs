@@ -18,6 +18,7 @@ mod monitoring;
 mod postgres_backend;
 mod reads;
 mod sqlite_backend;
+mod top_filter;
 mod write_models;
 mod writes;
 

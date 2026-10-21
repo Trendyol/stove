@@ -47,6 +47,7 @@ function Router() { const location = useLocation();
   return location.kind === "evidence" ? h(LinkedWorkspace, { location: location.value }) : null; }
 
 function dashboardApi(t) {
+  t.mock.method(api, "getTopFilter", async () => ({ settings: { metadata_key: null }, available_keys: [], values: [] }));
   const tests = [testRecord, {...testRecord, id: "test-2", test_name: "updates a product",
     test_path: ["updates a product"], status: "FAILED", error: "update failed"}];
   t.mock.method(api, "getApps", async () => [app]);
@@ -352,6 +353,11 @@ test("tabs have one keyboard stop, directional navigation, and associated panels
   assert.equal(document.activeElement.id, "tab-flow");
   fireEvent.keyDown(document.activeElement, {key: "Home"});
   assert.ok(document.activeElement === timeline);
+  fireEvent.keyDown(timeline, {key: "End"});
+  assert.equal(document.activeElement.id, "tab-flow");
+  fireEvent.keyDown(document.activeElement, {key: "ArrowRight"});
+  assert.ok(document.activeElement === timeline);
+  assert.equal(fireEvent.keyDown(timeline, {key: "Escape"}), true);
   assert.equal(view.getAllByRole("tab").filter(tab => tab.tabIndex === 0).length, 1);
   assert.equal(timeline.getAttribute("aria-controls"), view.getByRole("tabpanel").id);
   const separator = view.getByRole("separator", {name: "Test navigator width"});
@@ -362,6 +368,16 @@ test("tabs have one keyboard stop, directional navigation, and associated panels
   assert.equal(separator.getAttribute("aria-valuenow"), "256");
   fireEvent.keyDown(separator, {key: "Enter"});
   assert.equal(separator.getAttribute("aria-valuenow"), "280");
+  fireEvent.keyDown(separator, {key: "End"});
+  fireEvent.keyDown(separator, {key: "ArrowRight"});
+  assert.equal(separator.getAttribute("aria-valuenow"), "600");
+  fireEvent.keyDown(separator, {key: "Home"});
+  fireEvent.keyDown(separator, {key: "ArrowLeft"});
+  assert.equal(separator.getAttribute("aria-valuenow"), "240");
+  assert.equal(fireEvent.keyDown(separator, {key: "Escape"}), true);
+  assert.equal(separator.getAttribute("aria-valuenow"), "240");
+  assert.equal(localStorage.getItem("stove-sidebar-width"), "240");
+  fireEvent.keyDown(separator, {key: "Enter"});
 });
 
 test("phone history drills into an event, restores its row on Back, and preserves desktop URL", async (t) => {

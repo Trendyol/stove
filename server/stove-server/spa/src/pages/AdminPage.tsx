@@ -1,8 +1,10 @@
 import type { MouseEventHandler } from "react";
 import type { AppSummary } from "../api/types";
+import { ErrorNotice } from "../components/ErrorNotice";
 import { appPath } from "../utils/location";
 import { ClearAllCard, PurgeCard, RetentionCard, StorageCard } from "./admin/AdminSections";
 import { DatabaseExplorer } from "./admin/DatabaseExplorer";
+import { TopFilterCard } from "./admin/TopFilterCard";
 import { useAdminController } from "./admin/useAdminController";
 
 interface AdminPageProps {
@@ -30,7 +32,7 @@ export function AdminPage({ apps, onNavigateDashboard }: AdminPageProps) {
           </a>
         </header>
 
-        {admin.error ? <div className="stove-admin-error">{admin.error}</div> : null}
+        {admin.error && <ErrorNotice onRetry={admin.retry}>{admin.error}</ErrorNotice>}
         <div className="stove-admin-grid">
           <StorageCard status={admin.status} />
           <RetentionCard
@@ -40,6 +42,7 @@ export function AdminPage({ apps, onNavigateDashboard }: AdminPageProps) {
             onApply={admin.updateRetention}
           />
         </div>
+        <TopFilterCard />
         <PurgeCard
           apps={apps}
           appName={admin.appName}

@@ -1,4 +1,5 @@
 import { ApiError } from "../api/client";
+import type { FocusedEvidence } from "../api/types";
 import { useEvidenceNavigation } from "../hooks/useEvidenceNavigation";
 import type { useFocusedEvidence } from "../hooks/useFocusedEvidence";
 import { appPath, evidencePath } from "../utils/location";
@@ -38,8 +39,7 @@ export function FocusedEvidenceView({
         Loading cited evidence…
       </div>
     );
-  const { target, entries, spans, interactions, warnings, has_more_before, has_more_after } =
-    query.data;
+  const { target, has_more_before, has_more_after } = query.data;
   const openTrace = (traceId: string) => navigation?.openTrace(traceId);
   return (
     <>
@@ -51,21 +51,35 @@ export function FocusedEvidenceView({
           : "All available context is shown."}
         {!testId && " Run evidence; no test attribution is implied."}
       </div>
-      {target.kind === "entry" ? (
-        <EvidenceWorkbench entries={entries} onOpenTrace={openTrace} />
-      ) : target.kind === "span" ? (
-        <SpanTree spans={spans} />
-      ) : target.kind === "snapshot" ? (
-        <SnapshotCards snapshots={[target.value]} />
-      ) : (
-        <MockJournal
-          interactions={interactions}
-          warnings={warnings}
-          ambientInteractions={[]}
-          ambientWarnings={[]}
-          onOpenTrace={openTrace}
-        />
-      )}
+      <FocusedEvidenceContent evidence={query.data} onOpenTrace={openTrace} />
     </>
   );
+}
+
+function FocusedEvidenceContent({
+  evidence,
+  onOpenTrace,
+}: {
+  evidence: FocusedEvidence;
+  onOpenTrace: (traceId: string) => void;
+}) {
+  switch (evidence.target.kind) {
+    case "entry":
+      return <EvidenceWorkbench entries={evidence.entries} onOpenTrace={onOpenTrace} />;
+    case "span":
+      return <SpanTree spans={evidence.spans} />;
+    case "snapshot":
+      return <SnapshotCards snapshots={[evidence.target.value]} />;
+    case "interaction":
+    case "warning":
+      return (
+        <MockJournal
+          interactions={evidence.interactions}
+          warnings={evidence.warnings}
+          ambientInteractions={[]}
+          ambientWarnings={[]}
+          onOpenTrace={onOpenTrace}
+        />
+      );
+  }
 }

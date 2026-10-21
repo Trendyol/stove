@@ -1,6 +1,7 @@
 import { lazy, Suspense, useEffect, useMemo } from "react";
 import { dashboardQueries } from "../../api/dashboard-queries";
 import type { Entry, MockInteraction, MockWarning, Snapshot, Span } from "../../api/types";
+import { ErrorNotice } from "../../components/ErrorNotice";
 import { EvidenceWorkbench } from "../../components/EvidenceWorkbench";
 import { FocusedEvidenceView } from "../../components/FocusedEvidenceView";
 import { MockJournal } from "../../components/MockJournal";
@@ -164,7 +165,7 @@ function MocksTab({
     return <LoadingMessage>Loading mock journal…</LoadingMessage>;
   }
   const error = firstQueryError(queries);
-  if (error) return <QueryErrorMessage error={error} fallback="Failed to load mock journal" />;
+  if (error) return <QueryErrorMessage query={error} fallback="Failed to load mock journal" />;
 
   return (
     <MockJournal
@@ -260,7 +261,7 @@ function FlowView({
   if (queries.some((query) => query.kind === "loading")) {
     return <LoadingMessage>Assembling flow…</LoadingMessage>;
   }
-  if (error) return <QueryErrorMessage error={error} fallback="Failed to assemble flow" />;
+  if (error) return <QueryErrorMessage query={error} fallback="Failed to assemble flow" />;
 
   return (
     <Suspense fallback={<LoadingMessage>Assembling flow…</LoadingMessage>}>
@@ -324,24 +325,37 @@ function ListQueryView<T>({
     case "loading":
       return <LoadingMessage>{loading}</LoadingMessage>;
     case "error":
-      return <QueryErrorMessage error={query.error} fallback={failure} />;
+      return <QueryErrorMessage query={query} fallback={failure} />;
     case "ready":
       return children(query.data);
   }
 }
 
-function firstQueryError(queries: readonly DashboardListQuery<unknown>[]): Error | undefined {
-  return queries.find((query) => query.kind === "error")?.error;
+function firstQueryError(queries: readonly DashboardListQuery<unknown>[]) {
+  return queries.find((query) => query.kind === "error");
 }
 
 function LoadingMessage({ children }: { children: React.ReactNode }) {
-  return <div className="stove-empty-state m-4">{children}</div>;
+  return (
+    <div role="status" className="stove-empty-state m-4">
+      {children}
+    </div>
+  );
 }
 
-function QueryErrorMessage({ error, fallback }: { error: Error; fallback: string }) {
+function QueryErrorMessage({
+  query,
+  fallback,
+}: {
+  query: Extract<DashboardListQuery<unknown>, { kind: "error" }>;
+  fallback: string;
+}) {
   return (
-    <div className="m-4 rounded-xl border border-red-500/30 bg-red-500/10 p-4 text-sm text-[var(--stove-red)]">
-      {error.message || fallback}
-    </div>
+    <ErrorNotice
+      className="m-4 rounded-xl border border-red-500/30 bg-red-500/10 p-4 text-sm text-[var(--stove-red)]"
+      onRetry={query.retry}
+    >
+      {query.error.message || fallback}
+    </ErrorNotice>
   );
 }

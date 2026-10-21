@@ -14,12 +14,14 @@ import { filterRunsByMetadata } from "../utils/metadata-filter";
 import { isRunning } from "../utils/status";
 import { summarizeVersionMismatches } from "../utils/version-mismatch";
 import { useDashboardSelection } from "./useDashboardSelection";
+import { useTopFilter } from "./useTopFilter";
 
 const EMPTY_LIST: never[] = [];
 
 export function useAppData() {
   const queryClient = useQueryClient();
   const selection = useDashboardSelection();
+  const topFilter = useTopFilter();
   const { selectedApp, selectedRunId, selectedTestId, metadataFilter } = selection;
 
   const handleLiveEvents = useCallback(
@@ -42,23 +44,42 @@ export function useAppData() {
     staleTime: liveConnected ? Number.POSITIVE_INFINITY : 0,
   });
 
-  const apps = appsQuery.data ?? EMPTY_LIST;
+  const allApps = appsQuery.data ?? EMPTY_LIST;
+  let apps = allApps;
+  if (!topFilter.query.data) {
+    apps = EMPTY_LIST;
+  } else if (topFilter.value !== null) {
+    const selectedValue = topFilter.values.find((option) => option.value === topFilter.value);
+    apps = selectedValue?.apps ?? EMPTY_LIST;
+  }
   const metaQuery = useQuery({
     queryKey: dashboardKeys.meta,
     queryFn: ({ signal }) => api.getMeta(signal),
     staleTime: Number.POSITIVE_INFINITY,
   });
 
-  const activeApp = selectedApp ?? apps[0]?.app_name;
+  const appInScope = topFilter.value === null || apps.some((app) => app.app_name === selectedApp);
+  const activeApp = (appInScope ? selectedApp : undefined) ?? apps[0]?.app_name;
   const serverVersion = metaQuery.data?.stove_server_version ?? null;
   const runsQuery = useRunsQuery(queryClient, activeApp, liveConnected);
-  const allRuns = runsQuery.data ?? EMPTY_LIST;
+  const unscopedRuns = runsQuery.data ?? EMPTY_LIST;
+  const allRuns = useMemo(
+    () =>
+      topFilter.key !== null && topFilter.value !== null
+        ? filterRunsByMetadata(unscopedRuns, { [topFilter.key]: [topFilter.value] })
+        : unscopedRuns,
+    [unscopedRuns, topFilter.key, topFilter.value],
+  );
   const runs = useMemo(
     () => filterRunsByMetadata(allRuns, metadataFilter),
     [allRuns, metadataFilter],
   );
 
-  const appsSettled = appsQuery.isSuccess && !appsQuery.isFetching;
+  useEffect(() => {
+    selection.clearApp();
+  }, [topFilter.key, selection.clearApp]);
+
+  const appsSettled = topFilter.query.isSuccess && appsQuery.isSuccess && !appsQuery.isFetching;
   const runsSettled = appsSettled && runsQuery.isSuccess && !runsQuery.isFetching;
   const latestRun =
     runs.find((run) => run.id === selectedRunId) ??
@@ -110,17 +131,34 @@ export function useAppData() {
   const mismatchedApps = versionMismatchSummary?.affectedAppNames ?? [];
 
   return {
-    error: appsQuery.error ?? runsQuery.error ?? testsQuery.error ?? metaQuery.error,
+    error:
+      topFilter.query.error ??
+      appsQuery.error ??
+      runsQuery.error ??
+      testsQuery.error ??
+      metaQuery.error,
     loading:
+      topFilter.query.isPending ||
       appsQuery.isPending ||
       (Boolean(activeApp) && runsQuery.isPending) ||
       (Boolean(latestRun) && testsQuery.isPending),
     retry: () =>
       queryClient.refetchQueries({
-        predicate: (query) => ["apps", "runs", "tests", "meta"].includes(String(query.queryKey[0])),
+        predicate: (query) =>
+          ["apps", "runs", "tests", "meta", "top-filter"].includes(String(query.queryKey[0])),
         type: "active",
       }),
     apps,
+    allApps,
+    topFilter: {
+      metadataKey: topFilter.key,
+      value: topFilter.value,
+      values: topFilter.values,
+      onChange: (value: string | null) => {
+        topFilter.select(value);
+        selection.clearApp();
+      },
+    },
     activeApp,
     serverVersion,
     latestRun,

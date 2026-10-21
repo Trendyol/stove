@@ -223,3 +223,63 @@ fn assert_migrations_are_idempotent_and_indexed(database: &TestSchema) {
     .get(0);
   assert!(index_definition.contains("USING gin"));
 }
+
+#[test]
+fn postgres_top_filter_is_shared_and_uses_the_latest_matching_run() {
+  use crate::storage::models::TopFilterSettings;
+
+  let Some(database) = TestSchema::from_env() else {
+    return;
+  };
+  let repo = database.repository();
+  let second_replica = database.repository();
+  for (id, team, day) in [
+    ("old", "checkout", "01"),
+    ("match", "checkout", "02"),
+    ("new", "payments", "03"),
+  ] {
+    repo
+      .save_run_start_with_metadata(
+        id,
+        "shared-api",
+        &format!("2024-01-{day}T00:00:00Z"),
+        None,
+        &[],
+        &BTreeMap::from([("gitlab.team".into(), team.into())]),
+      )
+      .unwrap();
+  }
+  repo
+    .update_top_filter(&TopFilterSettings {
+      metadata_key: Some("gitlab.team".into()),
+    })
+    .unwrap();
+  let catalog = second_replica.top_filter_catalog().unwrap();
+  assert_eq!(catalog.available_keys, vec!["gitlab.team"]);
+  assert_eq!(catalog.values.len(), 2);
+  assert_eq!(catalog.values[0].value, "checkout");
+  assert_eq!(catalog.values[0].apps[0].latest_run_id, "match");
+  assert_eq!(catalog.values[1].apps[0].latest_run_id, "new");
+  drop(repo);
+  assert_eq!(
+    database
+      .repository()
+      .top_filter_catalog()
+      .unwrap()
+      .settings
+      .metadata_key
+      .as_deref(),
+    Some("gitlab.team")
+  );
+  second_replica
+    .update_top_filter(&TopFilterSettings { metadata_key: None })
+    .unwrap();
+  assert!(
+    database
+      .repository()
+      .top_filter_catalog()
+      .unwrap()
+      .values
+      .is_empty()
+  );
+}

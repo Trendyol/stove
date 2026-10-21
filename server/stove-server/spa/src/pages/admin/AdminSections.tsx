@@ -1,4 +1,5 @@
 import type { AdminStatus, AppSummary, PurgePreview, Run } from "../../api/types";
+import { SelectField } from "../../components/SelectField";
 import type { MetadataFilter } from "../../utils/metadata-filter";
 import { PurgeMetadataFilters } from "./PurgeMetadataFilters";
 
@@ -80,20 +81,16 @@ export function PurgeCard(props: PurgeCardProps) {
       <h3>Purge runs</h3>
       <p>Choose which runs to remove, then review before deleting.</p>
       <div className="stove-admin-controls">
-        <label className="stove-admin-field">
-          <span>Application</span>
-          <select
-            value={props.appName}
-            onChange={(event) => props.onAppNameChange(event.target.value)}
-          >
-            <option value="">All applications</option>
-            {props.apps.map((app) => (
-              <option key={app.app_name} value={app.app_name}>
-                {app.app_name}
-              </option>
-            ))}
-          </select>
-        </label>
+        <SelectField
+          label="Application"
+          wrapperClassName="stove-admin-field"
+          value={props.appName}
+          onChange={props.onAppNameChange}
+          options={[
+            { value: "", label: "All applications" },
+            ...props.apps.map((app) => ({ value: app.app_name, label: app.app_name })),
+          ]}
+        />
         <label className="stove-admin-field">
           <span>Started before</span>
           <input

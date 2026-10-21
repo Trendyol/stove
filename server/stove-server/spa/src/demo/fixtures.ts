@@ -19,9 +19,19 @@ const orderTests = [
   "updates the order cache",
 ];
 const applications = [
-  { name: "checkout-api", spec: "CheckoutFlowTest", tests: orderTests },
-  { name: "mobile-checkout-api", spec: "MobileOrderTest", tests: orderTests },
-  { name: "partner-orders-api", spec: "PartnerOrderTest", tests: orderTests },
+  { name: "checkout-api", endpoint: "/orders", spec: "CheckoutFlowTest", tests: orderTests },
+  {
+    name: "mobile-checkout-api",
+    endpoint: "/mobile/orders",
+    spec: "MobileOrderTest",
+    tests: orderTests,
+  },
+  {
+    name: "partner-orders-api",
+    endpoint: "/partners/orders",
+    spec: "PartnerOrderTest",
+    tests: orderTests,
+  },
 ];
 
 /** Fictional, deterministic evidence. Each run is a complete, internally linked test suite. */
@@ -85,8 +95,7 @@ export function createDemoData(version: string, now = Date.now()): DemoData {
           duration_ms: 2400,
           error,
         });
-        const endpoint =
-          appIndex === 0 ? "/orders" : appIndex === 1 ? "/mobile/orders" : "/partners/orders";
+        const endpoint = app.endpoint;
         const actions = [
           {
             system: "PostgreSQL",
@@ -251,6 +260,9 @@ export function createDemoData(version: string, now = Date.now()): DemoData {
         const spanIds = spans.map(() => (id++).toString(16).padStart(16, "0"));
         for (const [index, span] of spans.entries()) {
           const exception = failed && index === 4;
+          let status: Span["status"] = "OK";
+          if (exception) status = "ERROR";
+          else if (index === 2) status = "UNSET";
           data.spans.push({
             id: id++,
             run_id: runId,
@@ -261,7 +273,7 @@ export function createDemoData(version: string, now = Date.now()): DemoData {
             service_name: span.service,
             start_time_nanos: (start + testIndex * 3000 + span.offset) * 1_000_000,
             end_time_nanos: (start + testIndex * 3000 + span.offset + span.duration) * 1_000_000,
-            status: exception ? "ERROR" : index === 2 ? "UNSET" : "OK",
+            status,
             attributes: JSON.stringify({ ...span.attrs, "stove.test.id": testId }),
             exception_type: exception ? "PaymentTimeoutException" : null,
             exception_message: exception ? "Payment provider exceeded 800ms deadline" : null,
@@ -336,6 +348,13 @@ export function createDemoData(version: string, now = Date.now()): DemoData {
           });
         for (let index = 0; index < 3; index++) {
           const unmatched = failed && index === 2;
+          let target = "/notifications/order";
+          if (index === 0) target = "/oauth/token";
+          else if (index === 1) target = "/payments/charge";
+          let stubId: string | null = "payment-charge";
+          if (unmatched) stubId = null;
+          else if (index === 0) stubId = "oidc-client-credentials";
+          const latency = failed && index === 1 ? 1200 : 32;
           data.mock_interactions.push({
             id: id++,
             run_id: runId,
@@ -344,14 +363,9 @@ export function createDemoData(version: string, now = Date.now()): DemoData {
             system: index === 0 ? "OIDC" : "WireMock",
             protocol: "HTTP",
             method: "POST",
-            target:
-              index === 0
-                ? "/oauth/token"
-                : index === 1
-                  ? "/payments/charge"
-                  : "/notifications/order",
+            target,
             matched: !unmatched,
-            stub_id: unmatched ? null : index === 0 ? "oidc-client-credentials" : "payment-charge",
+            stub_id: stubId,
             attribution: "PROVEN_HEADER",
             request_body: JSON.stringify(
               index === 0
@@ -364,7 +378,7 @@ export function createDemoData(version: string, now = Date.now()): DemoData {
             ),
             response_body_truncated: false,
             status: unmatched ? "404" : "200",
-            latency_ms: failed && index === 1 ? 1200 : 32,
+            latency_ms: latency,
             near_misses: unmatched
               ? ["Expected POST /notifications/orders, received /notifications/order"]
               : [],
@@ -372,7 +386,7 @@ export function createDemoData(version: string, now = Date.now()): DemoData {
             scenario_name: index === 1 ? "Payment retry" : null,
             scenario_state: index === 1 ? "Started" : null,
             next_scenario_state: index === 1 ? "Charged" : null,
-            configured_delay_ms: index === 1 ? (failed ? 1200 : 32) : null,
+            configured_delay_ms: index === 1 ? latency : null,
             fault: null,
             client_deadline_ms: index === 1 ? 800 : null,
           });

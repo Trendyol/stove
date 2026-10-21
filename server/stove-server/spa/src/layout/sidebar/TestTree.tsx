@@ -175,11 +175,8 @@ function appendRows(
 }
 
 function StatusDot({ status }: { status: Status }) {
-  const tone =
-    status === "FAILED" || status === "ERROR"
-      ? "failed"
-      : status === "PASSED"
-        ? "passed"
-        : "running";
+  let tone = "running";
+  if (status === "FAILED" || status === "ERROR") tone = "failed";
+  else if (status === "PASSED") tone = "passed";
   return <span className={`stove-tree-dot is-${tone}`} />;
 }

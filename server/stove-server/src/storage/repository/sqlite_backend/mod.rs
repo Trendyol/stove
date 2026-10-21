@@ -12,6 +12,7 @@ pub(super) mod distributed;
 pub(super) mod explorer;
 mod monitoring;
 pub(super) mod reads;
+mod top_filter;
 pub(super) mod writes;
 
 pub(super) struct SqliteBackend {

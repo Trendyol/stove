@@ -10,6 +10,11 @@ interface TestHeaderProps {
 
 export function TestHeader({ test, liveConnected }: TestHeaderProps) {
   const path = test.test_path.filter((segment) => segment !== test.test_name);
+  const running = isRunning(test.status);
+  let progressLabel = "Test complete";
+  if (running) {
+    progressLabel = liveConnected ? "Receiving evidence" : "Checking for updates";
+  }
 
   return (
     <div className="test-dossier">
@@ -28,13 +33,9 @@ export function TestHeader({ test, liveConnected }: TestHeaderProps) {
           <span>
             <strong>{formatDuration(test.duration_ms)}</strong> elapsed
           </span>
-          <span className={isRunning(test.status) ? "is-live" : ""}>
-            {isRunning(test.status) && <i />}
-            {isRunning(test.status)
-              ? liveConnected
-                ? "Receiving evidence"
-                : "Checking for updates"
-              : "Test complete"}
+          <span className={running ? "is-live" : ""}>
+            {running && <i />}
+            {progressLabel}
           </span>
           <code title={test.id}>{test.id}</code>
         </div>

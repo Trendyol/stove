@@ -12,6 +12,8 @@ use utoipa_swagger_ui::{Config, SwaggerUi};
     super::routes::get_health,
     super::routes::get_metrics,
     super::routes::get_apps,
+    super::routes::get_top_filter,
+    super::routes::update_top_filter,
     super::routes::post_event,
     super::routes::get_runs,
     super::routes::get_run,

@@ -82,10 +82,13 @@ export function EvidenceNavigationProvider({
       tab: view?.tab ?? "timeline",
       full: view?.full ?? false,
       errorOpen: view?.errorOpen ?? false,
-      select: (kind, id, owner) =>
-        navigateTo(
-          `${evidencePath(runId, owner === null ? undefined : (owner ?? testId))}?tab=${focusTab(kind)}&focus=${kind}:${id}${view?.full ? "&full=1" : ""}`,
-        ),
+      select: (kind, id, owner) => {
+        const ownerTestId = owner === null ? undefined : (owner ?? testId);
+        const evidence = evidencePath(runId, ownerTestId);
+        const tab = focusTab(kind);
+        const full = view?.full ? "&full=1" : "";
+        navigateTo(`${evidence}?tab=${tab}&focus=${kind}:${id}${full}`);
+      },
       clear: () => update(view?.tab ?? "timeline"),
       selectTab: (tab) => navigateTo(destinations.current.get(tab) ?? `${path}?tab=${tab}`),
       showFull: () => {

@@ -2,7 +2,7 @@ use std::collections::BTreeMap;
 use std::fmt;
 use std::str::FromStr;
 
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 use utoipa::ToSchema;
 
 /// Status of a test run.
@@ -109,6 +109,27 @@ pub struct AppSummary {
   #[schema(required = true)]
   pub stove_version: Option<String>,
   pub metadata: BTreeMap<String, String>,
+}
+
+/// Shared dashboard filtering configuration.
+#[derive(Debug, Clone, Serialize, Deserialize, ToSchema, PartialEq, Eq)]
+pub struct TopFilterSettings {
+  #[schema(required = true)]
+  pub metadata_key: Option<String>,
+}
+
+#[derive(Debug, Clone, Serialize, ToSchema)]
+pub struct TopFilterValue {
+  pub value: String,
+  /// Applications summarized from their latest run matching this value.
+  pub apps: Vec<AppSummary>,
+}
+
+#[derive(Debug, Clone, Serialize, ToSchema)]
+pub struct TopFilterCatalog {
+  pub settings: TopFilterSettings,
+  pub available_keys: Vec<String>,
+  pub values: Vec<TopFilterValue>,
 }
 
 /// A single test run (one execution of a test suite).

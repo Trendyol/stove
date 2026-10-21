@@ -1,5 +1,6 @@
 import { useLayoutEffect, useRef } from "react";
 import type { AppSummary, Run, Test } from "../api/types";
+import type { TopFilterPickerProps } from "../components/TopFilterPicker";
 import {
   PhoneNavigationProvider,
   useIsPhone,
@@ -10,6 +11,7 @@ import { Sidebar } from "./Sidebar";
 import { TestDetail } from "./TestDetail";
 
 interface DashboardWorkspaceProps {
+  topFilter: TopFilterPickerProps;
   apps: AppSummary[];
   activeApp: string | undefined;
   mismatchedApps: string[];
@@ -27,10 +29,6 @@ interface DashboardWorkspaceProps {
   onSelectTest: (testId: string) => void;
 }
 
-type WorkspaceContent =
-  | { kind: "test"; run: Run; test: Test }
-  | { kind: "empty"; waitingForFirstRun: boolean };
-
 export function DashboardWorkspace(props: DashboardWorkspaceProps) {
   return (
     <PhoneNavigationProvider scope={props.selectedRunId ?? "empty"}>
@@ -39,6 +37,7 @@ export function DashboardWorkspace(props: DashboardWorkspaceProps) {
   );
 }
 function DashboardWorkspaceContent({
+  topFilter,
   apps,
   activeApp,
   mismatchedApps,
@@ -72,11 +71,10 @@ function DashboardWorkspaceContent({
     }
     lastLevel.current = phone?.level;
   }, [isPhone, phone?.level, phone?.testId, selectedTest?.id, onSelectTest]);
-  const content = resolveWorkspaceContent(apps, latestRun, selectedTest);
-
   return (
     <div ref={workspaceRef} className="stove-workspace" data-phone-screen={phone?.level}>
       <Sidebar
+        topFilter={topFilter}
         apps={apps}
         mismatchedApps={mismatchedApps}
         selectedApp={activeApp}
@@ -95,26 +93,30 @@ function DashboardWorkspaceContent({
           if (isPhone) phone?.go({ level: "test", testId });
         }}
       />
-      {content.kind === "test" ? (
-        <TestDetail runId={content.run.id} test={content.test} liveConnected={liveConnected} />
+      {latestRun && selectedTest ? (
+        <TestDetail runId={latestRun.id} test={selectedTest} liveConnected={liveConnected} />
       ) : (
-        <WorkspaceEmpty waitingForFirstRun={content.waitingForFirstRun} />
+        <WorkspaceEmpty
+          waitingForFirstRun={apps.length === 0}
+          filtered={topFilter.value !== null}
+        />
       )}
     </div>
   );
 }
 
-function resolveWorkspaceContent(
-  apps: readonly AppSummary[],
-  run: Run | undefined,
-  test: Test | undefined,
-): WorkspaceContent {
-  return run && test
-    ? { kind: "test", run, test }
-    : { kind: "empty", waitingForFirstRun: apps.length === 0 };
-}
+function WorkspaceEmpty({
+  waitingForFirstRun,
+  filtered,
+}: {
+  waitingForFirstRun: boolean;
+  filtered: boolean;
+}) {
+  const { title, description } = workspaceEmptyMessage(waitingForFirstRun, filtered);
+  let label = "Evidence workspace";
+  if (filtered) label = "Filtered workspace";
+  else if (waitingForFirstRun) label = "Listening for a run";
 
-function WorkspaceEmpty({ waitingForFirstRun }: { waitingForFirstRun: boolean }) {
   return (
     <div className="workspace-empty">
       <div className="workspace-empty-mark">
@@ -122,15 +124,29 @@ function WorkspaceEmpty({ waitingForFirstRun }: { waitingForFirstRun: boolean })
         <span />
         <span />
       </div>
-      <div className="stove-kicker">
-        {waitingForFirstRun ? "Listening for a run" : "Evidence workspace"}
-      </div>
-      <h1>{waitingForFirstRun ? "Waiting for the first signal" : "Choose a test to inspect"}</h1>
-      <p>
-        {waitingForFirstRun
-          ? "The dashboard will assemble the run as test, trace, state and mock events arrive."
-          : "Select a test from the run navigator to open its evidence dossier."}
-      </p>
+      <div className="stove-kicker">{label}</div>
+      <h1>{title}</h1>
+      <p>{description}</p>
     </div>
   );
+}
+
+function workspaceEmptyMessage(waitingForFirstRun: boolean, filtered: boolean) {
+  if (!waitingForFirstRun) {
+    return {
+      title: "Choose a test to inspect",
+      description: "Select a test from the run navigator to open its evidence dossier.",
+    };
+  }
+  if (filtered) {
+    return {
+      title: "No applications match this value",
+      description: "Choose another value or All values to explore other applications.",
+    };
+  }
+  return {
+    title: "Waiting for the first signal",
+    description:
+      "The dashboard will assemble the run as test, trace, state and mock events arrive.",
+  };
 }

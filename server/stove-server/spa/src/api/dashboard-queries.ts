@@ -12,6 +12,11 @@ import {
 } from "./live-cache/reconciliation";
 import { dashboardKeys } from "./query-keys";
 
+export const topFilterQueryOptions = queryOptions({
+  queryKey: dashboardKeys.topFilter,
+  queryFn: ({ signal }) => api.getTopFilter(signal),
+});
+
 /** A key, REST loader, and reconciliation policy always describe the same records. */
 export interface DashboardQuery<T> {
   readonly queryKey: DataTag<QueryKey, T[], Error>;

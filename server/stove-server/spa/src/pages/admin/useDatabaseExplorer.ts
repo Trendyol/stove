@@ -60,6 +60,8 @@ export function useDatabaseExplorer(onDatabaseChange: () => Promise<void>) {
 
   return {
     schema: schemaQuery.data ?? null,
+    loading: schemaQuery.isPending,
+    retry: schemaQuery.error ? () => void schemaQuery.refetch() : undefined,
     selectedTable,
     selectTable,
     sql,

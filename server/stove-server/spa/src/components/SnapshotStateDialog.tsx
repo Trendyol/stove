@@ -31,14 +31,10 @@ export function SnapshotStateDialog({ snapshot, onClose }: SnapshotStateDialogPr
   const selected = explorer.kind === "loading" ? undefined : explorer.selection;
   const focused = !showAll && selected?.found;
   const detailed = explorer.kind !== "loading" && explorer.detailed;
-  const detailDescription =
-    explorer.kind === "loading"
-      ? "loading state"
-      : explorer.kind === "structured"
-        ? explorer.description
-        : explorer.detailed
-          ? "raw text"
-          : "no details";
+  const detailDescription = describeState(explorer);
+  let detailLabel = "Summary only";
+  if (explorer.kind === "loading") detailLabel = "Loading";
+  else if (detailed) detailLabel = "Detailed state";
 
   return (
     <div
@@ -80,11 +76,7 @@ export function SnapshotStateDialog({ snapshot, onClose }: SnapshotStateDialogPr
                       }
                 }
               >
-                {explorer.kind === "loading"
-                  ? "Loading"
-                  : detailed
-                    ? "Detailed state"
-                    : "Summary only"}
+                {detailLabel}
               </span>
             </div>
           </div>
@@ -181,6 +173,13 @@ function StructuredState({
   normalizedSearchQuery: string;
   onSearchChange: (query: string) => void;
 }) {
+  let searchHint = "Type to narrow the state by any property name or value";
+  if (explorer.filtering) {
+    searchHint = "Searching…";
+  } else if (normalizedSearchQuery) {
+    searchHint = `${explorer.matchCount} match${explorer.matchCount === 1 ? "" : "es"}`;
+  }
+
   return (
     <>
       <div className="rounded-lg border border-stove-border bg-stove-base p-3">
@@ -202,13 +201,7 @@ function StructuredState({
             </button>
           )}
         </div>
-        <div className="mt-2 text-[11px] text-[var(--stove-text-secondary)]">
-          {explorer.filtering
-            ? "Searching…"
-            : normalizedSearchQuery
-              ? `${explorer.matchCount} match${explorer.matchCount === 1 ? "" : "es"}`
-              : "Type to narrow the state by any property name or value"}
-        </div>
+        <div className="mt-2 text-[11px] text-[var(--stove-text-secondary)]">{searchHint}</div>
       </div>
 
       {explorer.filteredValue !== null ? (
@@ -231,4 +224,15 @@ function StateMessage({ children }: { children: React.ReactNode }) {
       {children}
     </div>
   );
+}
+
+function describeState(explorer: ReturnType<typeof useSnapshotExplorer>): string {
+  switch (explorer.kind) {
+    case "loading":
+      return "loading state";
+    case "structured":
+      return explorer.description;
+    case "raw":
+      return explorer.detailed ? "raw text" : "no details";
+  }
 }

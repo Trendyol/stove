@@ -21,11 +21,13 @@ export function useEvidenceWorkbench(entries: Entry[]) {
       return first ? { kind: "entry", entryId: first.id } : { kind: "none" };
     },
   );
-  const selection: EvidenceSelection = navigation
-    ? navigation.focus?.kind === "entry"
-      ? { kind: "entry", entryId: navigation.focus.id }
-      : { kind: "none" }
-    : localSelection;
+  let selection = localSelection;
+  if (navigation) {
+    selection =
+      navigation.focus?.kind === "entry"
+        ? { kind: "entry", entryId: navigation.focus.id }
+        : { kind: "none" };
+  }
   const setSelection = useCallback(
     (next: EvidenceSelection) => {
       if (!navigation) setLocalSelection(next);

@@ -1,4 +1,4 @@
-import { useMemo, useSyncExternalStore } from "react";
+import { type MouseEvent, useMemo, useSyncExternalStore } from "react";
 import type { Tab } from "../layout/detail/TabBar";
 import { isDemo } from "./demo-mode";
 
@@ -23,12 +23,11 @@ export type Location =
   | { kind: "admin" }
   | { kind: "invalid" }
   | { kind: "evidence"; value: EvidenceLocation };
-export const basePath = () =>
-  typeof document === "undefined"
-    ? ""
-    : isDemo
-      ? window.location.pathname.replace(/\/(?:index\.html)?$/, "")
-      : (document.querySelector('meta[name="stove-base"]')?.getAttribute("content") ?? "");
+export function basePath(): string {
+  if (typeof document === "undefined") return "";
+  if (isDemo) return window.location.pathname.replace(/\/(?:index\.html)?$/, "");
+  return document.querySelector('meta[name="stove-base"]')?.getAttribute("content") ?? "";
+}
 export const appPath = (path: string) =>
   `${basePath()}${isDemo && !path.startsWith("/api/") ? "/#" : ""}${path}`;
 export const encodeComponent = (value: string) =>
@@ -130,12 +129,12 @@ export function useLocation(): Location {
     const index = location.indexOf("?");
     const pathname = index < 0 ? location : location.slice(0, index);
     const search = index < 0 ? "" : location.slice(index);
-    const relative =
-      prefix && pathname.startsWith(`${prefix}/`)
-        ? pathname.slice(prefix.length)
-        : pathname === prefix
-          ? "/"
-          : pathname;
+    let relative = pathname;
+    if (prefix && pathname.startsWith(`${prefix}/`)) {
+      relative = pathname.slice(prefix.length);
+    } else if (pathname === prefix) {
+      relative = "/";
+    }
     return parseLocation(relative, search);
   }, [location, prefix]);
 }
@@ -144,4 +143,12 @@ export function navigateTo(path: string, replace = false) {
   if ((isDemo ? path : destination) === snapshot()) return;
   window.history[replace ? "replaceState" : "pushState"](null, "", destination);
   window.dispatchEvent(new PopStateEvent("popstate"));
+}
+
+/** Leave modified clicks to the browser so links can still open in a new tab. */
+export function navigateLink(event: MouseEvent<HTMLAnchorElement>, path: string) {
+  if (event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey)
+    return;
+  event.preventDefault();
+  navigateTo(path);
 }

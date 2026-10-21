@@ -73,6 +73,8 @@ fn run_routes() -> Router<AppState> {
     .route("/meta", get(super::routes::get_meta))
     .route("/health", get(super::routes::get_health))
     .route("/apps", get(super::routes::get_apps))
+    .route("/top-filter", get(super::routes::get_top_filter))
+    .route("/admin/top-filter", put(super::routes::update_top_filter))
     .route("/events", post(super::routes::post_event))
     .route("/runs", get(super::routes::get_runs))
     .route("/runs/{run_id}", get(super::routes::get_run))

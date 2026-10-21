@@ -16,7 +16,9 @@ export function InteractionRow({ interaction, sequence, selected, onSelect }: In
   const system = getSystemInfo(interaction.system);
   const issue = hasInteractionIssue(interaction);
   const ambient = interaction.test_id === null;
-  const tone = !interaction.matched ? "unmatched" : issue ? "issue" : "matched";
+  let tone = "matched";
+  if (!interaction.matched) tone = "unmatched";
+  else if (issue) tone = "issue";
 
   return (
     <button

@@ -12,7 +12,7 @@ export function AppPicker({ apps, mismatchedApps, selectedApp, onSelectApp }: Ap
 
   return (
     <div className="stove-app-picker">
-      <label htmlFor="stove-app-picker">Workspace</label>
+      <label htmlFor="stove-app-picker">Application</label>
       <div className="stove-app-select-wrap">
         <span className="stove-app-glyph">{selectedApp?.slice(0, 1).toUpperCase() || "—"}</span>
         <select

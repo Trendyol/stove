@@ -9,6 +9,7 @@ mod distributed;
 mod explorer;
 mod monitoring;
 mod reads;
+mod top_filter;
 mod writes;
 
 pub(super) struct PostgresBackend {

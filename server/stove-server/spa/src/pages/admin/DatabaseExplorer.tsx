@@ -1,5 +1,6 @@
 import { Fragment } from "react";
 import type { DatabaseQueryResult } from "../../api/types";
+import { ErrorNotice } from "../../components/ErrorNotice";
 import { type QueryTemplate, useDatabaseExplorer } from "./useDatabaseExplorer";
 
 const TEMPLATES: Array<{ kind: QueryTemplate; label: string }> = [
@@ -22,7 +23,7 @@ export function DatabaseExplorer({ onDatabaseChange }: { onDatabaseChange: () =>
             writes can bypass Stove’s safeguards.
           </p>
         </div>
-        <span>{explorer.schema?.backend ?? "Loading…"}</span>
+        <span>{explorer.schema?.backend ?? (explorer.loading ? "Loading…" : "Unavailable")}</span>
       </div>
       <div className="stove-database-layout">
         <aside className="stove-database-schema" aria-label="Database tables">
@@ -91,7 +92,7 @@ export function DatabaseExplorer({ onDatabaseChange }: { onDatabaseChange: () =>
               {explorer.busy ? "Running…" : "Run statement"}
             </button>
           </div>
-          {explorer.error ? <div className="stove-admin-error">{explorer.error}</div> : null}
+          {explorer.error && <ErrorNotice onRetry={explorer.retry}>{explorer.error}</ErrorNotice>}
           {explorer.result ? <QueryResult result={explorer.result} /> : null}
         </div>
       </div>

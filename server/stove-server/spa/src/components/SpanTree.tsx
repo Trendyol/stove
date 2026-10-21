@@ -36,11 +36,14 @@ export function SpanTree({ spans, traceId }: SpanTreeProps) {
     () => spans.filter((span) => getResultTone(span.status) === "neutral").length,
     [spans],
   );
-  const selectedSpan = navigation
-    ? spans.find((span) => navigation.focus?.kind === "span" && span.id === navigation.focus.id)
-    : selection.kind === "span"
-      ? spans.find((span) => spanKey(span) === selection.spanId)
-      : undefined;
+  let selectedSpan: Span | undefined;
+  if (navigation) {
+    selectedSpan = spans.find(
+      (span) => navigation.focus?.kind === "span" && span.id === navigation.focus.id,
+    );
+  } else if (selection.kind === "span") {
+    selectedSpan = spans.find((span) => spanKey(span) === selection.spanId);
+  }
 
   useEffect(() => {
     if (selection.kind === "span" && !selectedSpan) setSelection({ kind: "none" });
@@ -54,10 +57,15 @@ export function SpanTree({ spans, traceId }: SpanTreeProps) {
       return next;
     });
   }, []);
-  const closeInspector = useCallback(
-    () => (navigation ? navigation.clear() : setSelection({ kind: "none" })),
-    [navigation],
-  );
+  const closeInspector = useCallback(() => {
+    if (navigation) navigation.clear();
+    else setSelection({ kind: "none" });
+  }, [navigation]);
+
+  function inspectSpan(span: Span) {
+    if (navigation) navigation.select("span", span.id);
+    else setSelection({ kind: "span", spanId: spanKey(span) });
+  }
 
   if (spans.length === 0) {
     return (
@@ -82,11 +90,7 @@ export function SpanTree({ spans, traceId }: SpanTreeProps) {
             row={row}
             selected={row.span.id === selectedSpan?.id}
             onToggle={() => toggleSpan(spanKey(row.span))}
-            onInspect={() =>
-              navigation
-                ? navigation.select("span", row.span.id)
-                : setSelection({ kind: "span", spanId: spanKey(row.span) })
-            }
+            onInspect={() => inspectSpan(row.span)}
           />
         )}
       />

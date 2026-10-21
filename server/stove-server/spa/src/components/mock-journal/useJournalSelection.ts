@@ -110,12 +110,12 @@ export function useJournalSelection({
   const selectInteraction = (interactionId: MockInteraction["id"]) =>
     setSelection({ kind: "interaction", interactionId });
   const closeInspector = () => setSelection({ kind: "none" });
-  const selectedInteractionId =
-    selection.kind === "interaction"
-      ? selection.interactionId
-      : selection.kind === "warning" && selection.related.kind === "interaction"
-        ? selection.related.interactionId
-        : undefined;
+  let selectedInteractionId: MockInteraction["id"] | undefined;
+  if (selection.kind === "interaction") {
+    selectedInteractionId = selection.interactionId;
+  } else if (selection.kind === "warning" && selection.related.kind === "interaction") {
+    selectedInteractionId = selection.related.interactionId;
+  }
   return {
     inspectorState,
     selectWarning,

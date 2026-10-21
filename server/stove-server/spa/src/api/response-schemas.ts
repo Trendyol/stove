@@ -22,6 +22,9 @@ import type {
   Snapshot,
   Span,
   Test,
+  TopFilterCatalog,
+  TopFilterSettings,
+  TopFilterValue,
 } from "./types";
 import {
   arrayOf,
@@ -45,6 +48,13 @@ export const isAppSummary = object<AppSummary>({
   latest_status: isRunStatus,
   stove_version: isNullableString,
   metadata: isStringRecord,
+});
+
+export const isTopFilterSettings = object<TopFilterSettings>({ metadata_key: isNullableString });
+export const isTopFilterCatalog = object<TopFilterCatalog>({
+  settings: isTopFilterSettings,
+  available_keys: isStringArray,
+  values: arrayOf(object<TopFilterValue>({ value: isString, apps: arrayOf(isAppSummary) })),
 });
 
 const isMcpMeta = object<McpMeta>({

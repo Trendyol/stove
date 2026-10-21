@@ -70,7 +70,7 @@ jobs:
         run: cargo clippy --all-targets --locked -- -D warnings
 
       - name: Run tests
-        run: cargo test --locked --lib --test api_e2e --test mcp_e2e
+        run: cargo test --locked --lib --test api_e2e --test mcp_e2e --test top_filter
 
       - name: Run server acceptance tests
         run: cargo test --locked --test acceptance

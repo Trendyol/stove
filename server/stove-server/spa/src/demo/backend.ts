@@ -39,10 +39,22 @@ const numericFields = new Set([
 ]);
 const quote = (value: string) => `"${value.replace(/"/g, '""')}"`;
 
+function appSummary(run: Run, stoveVersion = run.stove_version): AppSummary {
+  return {
+    app_name: run.app_name,
+    latest_run_id: run.id,
+    latest_run_started_at: run.started_at,
+    latest_status: run.status,
+    stove_version: stoveVersion,
+    metadata: run.metadata,
+  };
+}
+
 /** A private, in-memory SQLite database; this adapter never contacts a server. */
 export function createDemoBackend(SQL: SqlJsStatic, version: string) {
   let db: Database;
   let retention = 0;
+  let topFilterKey: string | null = null;
   let seq = 0;
   let replayTimer: ReturnType<typeof setTimeout> | undefined;
   let replaying = false;
@@ -52,16 +64,12 @@ export function createDemoBackend(SQL: SqlJsStatic, version: string) {
 
   function insert(table: Table, row: object) {
     const fields = Object.keys(row);
-    const values = Object.values(row).map(
-      (value): SqlValue =>
-        value === null
-          ? null
-          : typeof value === "object"
-            ? JSON.stringify(value)
-            : typeof value === "boolean"
-              ? Number(value)
-              : value,
-    );
+    const values = Object.values(row).map((value): SqlValue => {
+      if (value === null) return null;
+      if (typeof value === "object") return JSON.stringify(value);
+      if (typeof value === "boolean") return Number(value);
+      return value;
+    });
     db.run(
       `INSERT INTO ${quote(table)} (${fields.map(quote).join(",")}) VALUES (${fields.map(() => "?").join(",")})`,
       values,
@@ -80,6 +88,7 @@ export function createDemoBackend(SQL: SqlJsStatic, version: string) {
     db?.close();
     db = new SQL.Database();
     retention = 0;
+    topFilterKey = null;
     const fixtures = createDemoData(version);
     for (const table of tables) {
       const first = fixtures[table][0];
@@ -309,18 +318,32 @@ export function createDemoBackend(SQL: SqlJsStatic, version: string) {
             stove_server_version: version,
             mcp: { enabled: false, endpoint: "", scope: "demo", transport: "none" },
           });
+        if (path === "/top-filter") {
+          const keys = new Set<string>();
+          const groups = new Map<string, Map<string, AppSummary>>();
+          for (const run of runs()) {
+            for (const key of Object.keys(run.metadata)) keys.add(key);
+            const value = topFilterKey === null ? undefined : run.metadata[topFilterKey];
+            if (value === undefined) continue;
+            const apps = groups.get(value) ?? new Map<string, AppSummary>();
+            groups.set(value, apps);
+            if (!apps.has(run.app_name)) apps.set(run.app_name, appSummary(run));
+          }
+          return ok({
+            settings: { metadata_key: topFilterKey },
+            available_keys: [...keys].sort(),
+            values: [...groups]
+              .sort(([a], [b]) => a.localeCompare(b))
+              .map(([value, apps]) => ({
+                value,
+                apps: [...apps.values()].sort((a, b) => a.app_name.localeCompare(b.app_name)),
+              })),
+          });
+        }
         if (path === "/apps") {
           const apps = new Map<string, AppSummary>();
           for (const run of runs())
-            if (!apps.has(run.app_name))
-              apps.set(run.app_name, {
-                app_name: run.app_name,
-                latest_run_id: run.id,
-                latest_run_started_at: run.started_at,
-                latest_status: run.status,
-                stove_version: version,
-                metadata: run.metadata,
-              });
+            if (!apps.has(run.app_name)) apps.set(run.app_name, appSummary(run, version));
           return ok([...apps.values()]);
         }
         if (path === "/runs")
@@ -352,21 +375,19 @@ export function createDemoBackend(SQL: SqlJsStatic, version: string) {
                 : runs().find((run) => run.id === runId),
             );
           }
-          const selected = <T extends Exclude<Table, "runs" | "tests">>(table: T): DemoData[T] =>
-            rows(table).filter(
-              (record) =>
-                record.run_id === runId &&
-                ("test_id" in record
-                  ? record.test_id === (testId ?? null)
-                  : testId
-                    ? rows("entries").some(
-                        (entry) =>
-                          entry.run_id === runId &&
-                          entry.test_id === testId &&
-                          entry.trace_id === record.trace_id,
-                      )
-                    : true),
-            ) as DemoData[T];
+          function selected<T extends Exclude<Table, "runs" | "tests">>(table: T): DemoData[T] {
+            return rows(table).filter((record) => {
+              if (record.run_id !== runId) return false;
+              if ("test_id" in record) return record.test_id === (testId ?? null);
+              if (!testId) return true;
+              return rows("entries").some(
+                (entry) =>
+                  entry.run_id === runId &&
+                  entry.test_id === testId &&
+                  entry.trace_id === record.trace_id,
+              );
+            }) as DemoData[T];
+          }
           const evidence = /^\/evidence\/(entry|span|snapshot|interaction|warning)\/(\d+)$/.exec(
             suffix,
           );
@@ -458,6 +479,15 @@ export function createDemoBackend(SQL: SqlJsStatic, version: string) {
       }
       if (method === "POST" && path === "/admin/database/query")
         return ok(execute(body.sql, body.max_rows));
+      if (method === "PUT" && path === "/admin/top-filter") {
+        if (
+          body.metadata_key !== null &&
+          (typeof body.metadata_key !== "string" || !body.metadata_key.trim())
+        )
+          return ok({ error: "Select a metadata key or disable the top filter" }, 400);
+        topFilterKey = body.metadata_key;
+        return ok({ metadata_key: topFilterKey });
+      }
       if (method === "PUT" && path === "/admin/retention") {
         if (!Number.isInteger(body.runs_per_app) || body.runs_per_app < 0)
           return ok({ error: "Retention must be a non-negative integer" }, 400);

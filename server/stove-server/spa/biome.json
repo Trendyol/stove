@@ -9,7 +9,8 @@
     "enabled": true,
     "rules": {
       "style": {
-        "noNonNullAssertion": "off"
+        "noNonNullAssertion": "off",
+        "noNestedTernary": "error"
       },
       "suspicious": {
         "noUnknownAtRules": "off"

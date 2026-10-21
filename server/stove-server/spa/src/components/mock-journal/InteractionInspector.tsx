@@ -28,12 +28,9 @@ export function InteractionInspector({
   const [tab, setTab] = useRememberedState<InspectorTab>("mocks.inspectorTab", "overview");
   const interaction = selectedInteraction(state);
   const warning = state.kind === "warning" ? state.warning : undefined;
-  const selectionKey =
-    state.kind === "empty"
-      ? "empty"
-      : state.kind === "interaction"
-        ? `interaction:${state.interaction.id}`
-        : `warning:${state.warning.id}`;
+  let selectionKey = "empty";
+  if (state.kind === "interaction") selectionKey = `interaction:${state.interaction.id}`;
+  if (state.kind === "warning") selectionKey = `warning:${state.warning.id}`;
 
   useRevealTarget(
     "mocks.inspectorTarget",

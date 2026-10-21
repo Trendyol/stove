@@ -6,29 +6,45 @@ import type {
   PurgePreviewRequest,
   PurgeRequest,
   RetentionRequest,
+  TopFilterSettings,
 } from "./types";
-import { arrayOf, nullable, type Validator } from "./validation";
+import { arrayOf, isRecord, nullable, type Validator } from "./validation";
 
 const BASE = "/api/v1";
 export class ApiError extends Error {
   constructor(
-    public status: number,
+    public readonly status: number,
     message: string,
   ) {
     super(message);
+    this.name = "ApiError";
   }
 }
 const encodePath = (value: string) => encodeURIComponent(value);
 
+async function checkResponse(response: Response): Promise<void> {
+  if (response.ok) return;
+  const text = (await response.text()).trim();
+  let message = response.statusText || "Request failed";
+  try {
+    const body: unknown = JSON.parse(text);
+    if (isRecord(body) && typeof body.error === "string" && body.error.trim()) message = body.error;
+  } catch {
+    // Proxies may return plain text or HTML instead of the server's JSON error.
+    if (text && !text.startsWith("<")) message = text;
+  }
+  throw new ApiError(response.status, `${response.status} ${message}`);
+}
+
 async function get<T>(url: string, validate: Validator<T>, signal?: AbortSignal): Promise<T> {
   const res = await request(appPath(`${BASE}${url}`), { signal });
-  if (!res.ok) throw new ApiError(res.status, `${res.status} ${res.statusText}`);
+  await checkResponse(res);
   return readResponse(res, url, validate);
 }
 
 async function del(url: string): Promise<void> {
   const res = await request(appPath(`${BASE}${url}`), { method: "DELETE" });
-  if (!res.ok) throw new ApiError(res.status, `${res.status} ${res.statusText}`);
+  await checkResponse(res);
 }
 
 async function send<T>(
@@ -42,7 +58,7 @@ async function send<T>(
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(body),
   });
-  if (!res.ok) throw new Error(`${res.status} ${await res.text()}`);
+  await checkResponse(res);
   return readResponse(res, url, validate);
 }
 
@@ -51,20 +67,26 @@ async function readResponse<T>(
   url: string,
   validate: Validator<T>,
 ): Promise<T> {
-  const value: unknown = await response.json();
-  if (!validate(value)) throw new Error(`Invalid response from ${BASE}${url}`);
-  return value;
+  try {
+    const value: unknown = await response.json();
+    if (validate(value)) return value;
+  } catch (error) {
+    if (!(error instanceof SyntaxError)) throw error;
+  }
+  throw new Error(`Invalid response from ${BASE}${url}`);
 }
 
 export const api = {
+  getTopFilter: (signal?: AbortSignal) => get("/top-filter", schema.isTopFilterCatalog, signal),
+  updateTopFilter: (settings: TopFilterSettings) =>
+    send("/admin/top-filter", "PUT", settings, schema.isTopFilterSettings),
   getHealth: async (signal?: AbortSignal) => {
     const timeout = AbortSignal.timeout(5000);
     const res = await request(appPath(`${BASE}/health`), {
       signal: signal ? AbortSignal.any([signal, timeout]) : timeout,
       cache: "no-store",
     });
-    if (!res.ok && res.status !== 503)
-      throw new ApiError(res.status, `${res.status} ${res.statusText}`);
+    if (res.status !== 503) await checkResponse(res);
     return readResponse(res, "/health", schema.isHealthResponse);
   },
   getRun: async (runId: string, signal?: AbortSignal) => {

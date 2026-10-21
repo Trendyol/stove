@@ -147,3 +147,19 @@ test("errors and aborted requests do not silently fall through to a real server"
   assert.equal(backend.replaying, false);
   assert.equal((await get("/admin/status", schema.isAdminStatus)).runs, 0);
 });
+
+test("demo top filter follows admin metadata selection and returns scoped app summaries", async (t) => {
+  const { get } = setup(t);
+  const initial = await get("/top-filter", schema.isTopFilterCatalog);
+  assert.equal(initial.settings.metadata_key, null);
+  const key = initial.available_keys[0];
+  assert.ok(key);
+  await get("/admin/top-filter", schema.isTopFilterSettings, "PUT", { metadata_key: key });
+  const catalog = await get("/top-filter", schema.isTopFilterCatalog);
+  assert.equal(catalog.settings.metadata_key, key);
+  assert.ok(catalog.values.length);
+  for (const group of catalog.values) {
+    assert.ok(group.apps.length);
+    assert.ok(group.apps.every(app => app.metadata[key] === group.value));
+  }
+});

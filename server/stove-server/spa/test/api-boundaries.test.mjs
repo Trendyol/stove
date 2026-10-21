@@ -13,12 +13,14 @@ import {
   counts,
 } from "./helpers/fixtures.mjs";
 const jiti = createJiti(import.meta.url);
-const { api } = await jiti.import("../src/api/client.ts");
+const { api, ApiError } = await jiti.import("../src/api/client.ts");
 const meta = {
   stove_server_version: "0.24.0",
   mcp: { enabled: true, endpoint: "/mcp", scope: "read", transport: "http" },
 };
 const cases = [
+  [() => api.getTopFilter(), { settings: { metadata_key: null }, available_keys: [], values: [] }],
+  [() => api.updateTopFilter({ metadata_key: "team" }), { metadata_key: "team" }],
   [() => api.getMeta(), meta],
   [() => api.getApps(), [app]],
   [() => api.getRuns(), [run]],
@@ -54,6 +56,33 @@ test("every JSON endpoint accepts its contract and rejects malformed responses",
     body = { unexpected: true };
     await assert.rejects(request(), /Invalid response from \/api\/v1\//);
   }
+});
+
+test("HTTP errors preserve status and server messages for reads, writes, deletes and health", async (t) => {
+  const requests = [api.getApps, () => api.updateTopFilter({ metadata_key: "team" }), api.clearAll, api.getHealth];
+  let response;
+  t.mock.method(globalThis, "fetch", async () => response());
+  for (const [body, message] of [
+    ['{"error":"Database unavailable"}', "Database unavailable"],
+    ["Upstream unavailable", "Upstream unavailable"],
+    ["<html>proxy failure</html>", "Bad Gateway"],
+    ["", "Bad Gateway"],
+  ]) {
+    response = () => new Response(body, { status: 502, statusText: "Bad Gateway" });
+    for (const request of requests) {
+      await assert.rejects(request(), (error) =>
+        error instanceof ApiError && error.status === 502 && error.message === `502 ${message}`,
+      );
+    }
+  }
+});
+
+test("invalid JSON reports the endpoint and aborted response bodies stay cancelled", async (t) => {
+  t.mock.method(globalThis, "fetch", async () => new Response("not json"));
+  await assert.rejects(api.getTopFilter(), /Invalid response from \/api\/v1\/top-filter/);
+  const aborted = new DOMException("Cancelled", "AbortError");
+  globalThis.fetch.mock.mockImplementation(async () => ({ ok: true, json: async () => { throw aborted; } }));
+  await assert.rejects(api.getApps(), error => error === aborted);
 });
 
 test("REST rejects bad nested data, missing nullable fields, and unknown statuses", async (t) => {

@@ -100,3 +100,33 @@ pub async fn purge_runs(
       .purge_runs(&request.run_ids, request.include_running)?,
   ))
 }
+
+#[utoipa::path(
+  get,
+  path = "/api/v1/top-filter",
+  tag = "runs",
+  responses((status = 200, description = "Configured top filter and recorded metadata values", body = crate::storage::models::TopFilterCatalog))
+)]
+pub async fn get_top_filter(
+  State(state): State<AppState>,
+) -> Result<Json<crate::storage::models::TopFilterCatalog>> {
+  Ok(Json(state.repository.top_filter_catalog()?))
+}
+
+#[utoipa::path(
+  put,
+  path = "/api/v1/admin/top-filter",
+  tag = "admin",
+  request_body = crate::storage::models::TopFilterSettings,
+  responses(
+    (status = 200, description = "Saved dashboard top filter", body = crate::storage::models::TopFilterSettings),
+    (status = 400, description = "Invalid metadata key")
+  )
+)]
+pub async fn update_top_filter(
+  State(state): State<AppState>,
+  Json(settings): Json<crate::storage::models::TopFilterSettings>,
+) -> Result<Json<crate::storage::models::TopFilterSettings>> {
+  state.repository.update_top_filter(&settings)?;
+  Ok(Json(settings))
+}

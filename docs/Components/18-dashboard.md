@@ -342,6 +342,10 @@ database
             └── snapshots (system state at failure)
 ```
 
+Admins can choose **Browse by** on `/admin` and select a recorded metadata field such as `gitlab.team`. The dashboard then shows a **Team** selector above **Application**; other fields use their own label, such as **Environment** or **Region**. The full metadata key is available in the label's tooltip.
+
+Choosing a value narrows the application list and its runs, tests, and evidence. An application appears if any retained run matches, and its summary reflects its latest matching run. The choice is remembered in that browser while switching applications and reloading. **All values** clears it. Existing run metadata filters further narrow the selected scope. Changing the admin field clears the previous scope, and open dashboards pick up the change within the five-second refresh interval. The admin setting persists across restarts on both SQLite and PostgreSQL.
+
 The sidebar can switch between retained runs and filter them by any number of metadata key/value pairs. Keys and values are selectable from those present in the application's retained runs, so users do not have to type CI identifiers manually. Every pair uses exact string matching and all supplied pairs must match.
 
 By default, Stove retains the newest completed run for each application, preserving the previous local behavior. Set `--retention-runs-per-app N` or `STOVE_RETENTION_RUNS_PER_APP=N` to keep more; `0` keeps unlimited history. Running runs are not removed by automatic retention. In PostgreSQL mode the value is shared and persisted; in SQLite mode it belongs to the current process.
@@ -377,6 +381,7 @@ The server exposes REST endpoints for integration:
 | Endpoint | Use |
 |---|---|
 | `GET /api/v1/meta` | discovery; version, capabilities, MCP availability |
+| `GET /api/v1/top-filter` | configured browsing field, recorded keys, values, and matching application summaries |
 | `GET /api/v1/apps` | list registered apps |
 | `POST /api/v1/events` | ingest a protobuf-encoded `DashboardEvent`; responds with a protobuf `EventAck` |
 | `GET /api/v1/runs?app=...&metadata=...` | list runs by app and/or an exact metadata subset |
@@ -421,6 +426,7 @@ Purge preview accepts an optional application and RFC 3339 `older_than` cutoff, 
 | `GET /api/v1/admin/status` | backend, retention, run, and evidence counts |
 | `GET /api/v1/admin/database/schema` | active backend, tables, columns, nullability, and primary keys |
 | `POST /api/v1/admin/database/query` | run one SQL statement with `sql` and optional `max_rows` |
+| `PUT /api/v1/admin/top-filter` | set the browsing field with `{"metadata_key": "gitlab.team"}`; use `null` to disable |
 | `PUT /api/v1/admin/retention` | set runtime retention with `{"runs_per_app": 50}` |
 | `POST /api/v1/admin/purge/preview` | preview with `app_name`, `older_than`, and `include_running` |
 | `POST /api/v1/admin/purge` | delete exact `run_ids`; active runs still require `include_running` |

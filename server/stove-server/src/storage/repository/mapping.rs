@@ -98,6 +98,12 @@ impl TryFrom<TestRow> for Test {
   }
 }
 
+#[derive(QueryableByName)]
+pub(super) struct TopFilterRow {
+  #[diesel(sql_type = Nullable<Text>)]
+  pub top_filter_key: Option<String>,
+}
+
 #[derive(Queryable, QueryableByName)]
 pub(super) struct SpanRow {
   #[diesel(sql_type = BigInt)]

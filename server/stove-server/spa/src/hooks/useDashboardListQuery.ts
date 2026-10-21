@@ -12,7 +12,7 @@ interface DashboardListQueryOptions<T> {
 
 export type DashboardListQuery<T> =
   | { kind: "loading"; data: T[] }
-  | { kind: "error"; data: T[]; error: Error }
+  | { kind: "error"; data: T[]; error: Error; retry: () => void }
   | { kind: "ready"; data: T[] };
 
 /** Shared loading, reconciliation, and fallback-polling policy for visible dashboard lists. */
@@ -31,6 +31,7 @@ export function useDashboardListQuery<T>({
 
   const data = query.data ?? EMPTY_LIST;
   if (query.isPending) return { kind: "loading", data };
-  if (query.isError) return { kind: "error", data, error: query.error };
+  if (query.isError)
+    return { kind: "error", data, error: query.error, retry: () => void query.refetch() };
   return { kind: "ready", data };
 }

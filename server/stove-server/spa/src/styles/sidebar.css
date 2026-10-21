@@ -14,6 +14,30 @@
   padding: 12px 14px 8px;
 }
 
+.stove-top-filter {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 12px 14px;
+  margin: 0;
+  border-bottom: 1px solid var(--stove-border);
+  font-size: 12px;
+  color: var(--stove-text-muted);
+}
+.stove-top-filter > span {
+  overflow-wrap: anywhere;
+}
+.stove-top-filter select {
+  width: 100%;
+  min-width: 0;
+  padding: 9px 10px;
+  border: 1px solid var(--stove-border);
+  border-radius: 8px;
+  background: var(--stove-surface);
+  color: var(--stove-text);
+  font: inherit;
+}
+
 .stove-app-picker > label,
 .stove-sidebar-section-label {
   display: flex;

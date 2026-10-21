@@ -18,7 +18,9 @@ export const SpanTreeRow = memo(function SpanTreeRow({
 }: SpanTreeRowProps) {
   const { span } = row;
   const tone = getResultTone(span.status);
-  const statusIcon = tone === "failed" ? "✕" : tone === "success" ? "✓" : "•";
+  let statusIcon = "•";
+  if (tone === "failed") statusIcon = "✕";
+  else if (tone === "success") statusIcon = "✓";
 
   return (
     <div

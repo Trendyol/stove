@@ -21,14 +21,23 @@ export function SnapshotCards({ snapshots, hiddenCount = 0 }: SnapshotCardsProps
     navigation?.focus?.kind === "snapshot"
       ? snapshots.find((item) => item.id === navigation.focus?.id)
       : undefined;
-  const selection: SnapshotSelection = navigation
-    ? focused
-      ? { kind: "snapshot", snapshot: focused }
-      : { kind: "none" }
-    : localSelection;
+  let selection = localSelection;
+  if (navigation) {
+    selection = focused ? { kind: "snapshot", snapshot: focused } : { kind: "none" };
+  }
   const visibleSnapshots = partitionSnapshotsByDetail(snapshots).detailedSnapshots;
   if (focused && !visibleSnapshots.some((item) => item.id === focused.id))
     visibleSnapshots.push(focused);
+
+  function openSnapshot(snapshot: Snapshot) {
+    if (navigation) navigation.select("snapshot", snapshot.id);
+    else setSelection({ kind: "snapshot", snapshot });
+  }
+
+  function closeSnapshot() {
+    if (navigation) navigation.clear();
+    else setSelection({ kind: "none" });
+  }
 
   if (visibleSnapshots.length === 0) {
     return (
@@ -48,25 +57,19 @@ export function SnapshotCards({ snapshots, hiddenCount = 0 }: SnapshotCardsProps
         className="grid gap-3"
         style={{ gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))" }}
       >
-        {visibleSnapshots.map((snap) => {
-          return (
-            <DetailedSnapshotCard
-              key={snap.id}
-              snapshot={snap}
-              onOpen={() =>
-                navigation
-                  ? navigation.select("snapshot", snap.id)
-                  : setSelection({ kind: "snapshot", snapshot: snap })
-              }
-            />
-          );
-        })}
+        {visibleSnapshots.map((snapshot) => (
+          <DetailedSnapshotCard
+            key={snapshot.id}
+            snapshot={snapshot}
+            onOpen={() => openSnapshot(snapshot)}
+          />
+        ))}
       </div>
       {selection.kind === "snapshot" && (
         <SnapshotStateDialog
           key={`${selection.snapshot.id}:${navigation?.pointer ?? ""}`}
           snapshot={selection.snapshot}
-          onClose={() => (navigation ? navigation.clear() : setSelection({ kind: "none" }))}
+          onClose={closeSnapshot}
         />
       )}
     </div>
