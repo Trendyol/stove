@@ -4331,6 +4331,8 @@ Install <code>stove-server</code>, run <code>stove</code>, add <code>dashboard {
 </span><span id="__span-16-6"><a id="__codelineno-16-6" name="__codelineno-16-6" href="#__codelineno-16-6"></a>            ├── spans    (OTel tree)
 </span><span id="__span-16-7"><a id="__codelineno-16-7" name="__codelineno-16-7" href="#__codelineno-16-7"></a>            └── snapshots (system state at failure)
 </span></code></pre></div>
+<p>Admins can choose <strong>Browse by</strong> on <code>/admin</code> and select a recorded metadata field such as <code>gitlab.team</code>. The dashboard then shows a <strong>Team</strong> selector above <strong>Application</strong>; other fields use their own label, such as <strong>Environment</strong> or <strong>Region</strong>. The full metadata key is available in the label's tooltip.</p>
+<p>Choosing a value narrows the application list and its runs, tests, and evidence. An application appears if any retained run matches, and its summary reflects its latest matching run. The choice is remembered in that browser while switching applications and reloading. <strong>All values</strong> clears it. Existing run metadata filters further narrow the selected scope. Changing the admin field clears the previous scope, and open dashboards pick up the change within the five-second refresh interval. The admin setting persists across restarts on both SQLite and PostgreSQL.</p>
 <p>The sidebar can switch between retained runs and filter them by any number of metadata key/value pairs. Keys and values are selectable from those present in the application's retained runs, so users do not have to type CI identifiers manually. Every pair uses exact string matching and all supplied pairs must match.</p>
 <p>By default, Stove retains the newest completed run for each application, preserving the previous local behavior. Set <code>--retention-runs-per-app N</code> or <code>STOVE_RETENTION_RUNS_PER_APP=N</code> to keep more; <code>0</code> keeps unlimited history. Running runs are not removed by automatic retention. In PostgreSQL mode the value is shared and persisted; in SQLite mode it belongs to the current process.</p>
 <h2 id="storage-backends">Storage backends<a class="headerlink" href="#storage-backends" title="Permanent link">&para;</a></h2>
@@ -4362,6 +4364,10 @@ Install <code>stove-server</code>, run <code>stove</code>, add <code>dashboard {
 <tr>
 <td><code>GET /api/v1/meta</code></td>
 <td>discovery; version, capabilities, MCP availability</td>
+</tr>
+<tr>
+<td><code>GET /api/v1/top-filter</code></td>
+<td>configured browsing field, recorded keys, values, and matching application summaries</td>
 </tr>
 <tr>
 <td><code>GET /api/v1/apps</code></td>
@@ -4442,6 +4448,10 @@ Install <code>stove-server</code>, run <code>stove</code>, add <code>dashboard {
 <tr>
 <td><code>POST /api/v1/admin/database/query</code></td>
 <td>run one SQL statement with <code>sql</code> and optional <code>max_rows</code></td>
+</tr>
+<tr>
+<td><code>PUT /api/v1/admin/top-filter</code></td>
+<td>set the browsing field with <code>{"metadata_key": "gitlab.team"}</code>; use <code>null</code> to disable</td>
 </tr>
 <tr>
 <td><code>PUT /api/v1/admin/retention</code></td>
