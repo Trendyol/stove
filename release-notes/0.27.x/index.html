@@ -2937,6 +2937,17 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
+  <a href="#unreleased" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Unreleased
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#release-map" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -3691,6 +3702,17 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
+  <a href="#unreleased" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Unreleased
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#release-map" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -4195,6 +4217,9 @@
 <p><strong>Comparison:</strong> These cumulative notes cover the 0.27 release line from <code>v0.26.0</code> through <code>v0.27.4</code>.</p>
 <p>The 0.27 line turns the local dashboard process into a production-ready <strong>Stove Server</strong> that can be shared by teams and CI jobs. It adds PostgreSQL persistence, multi-replica event delivery, run metadata, configurable retention, administration tools, HTTP(S) ingestion, and a much more resilient dashboard. Version <code>0.27.2</code> completes the <code>stove-cli</code> to <code>stove-server</code> rebrand. Version <code>0.27.3</code> adds scoped CI diagnosis, links to exact evidence, persistent dashboard browsing state, and metadata-based cleanup. Version <code>0.27.4</code> adds <a href="../../Components/23-oidc/"><code>stove-oidc</code></a> for testing authentication with NAV mock and Keycloak providers, a Ktor OIDC BFF example, and an interactive dashboard demo.</p>
 <hr />
+<h2 id="unreleased">Unreleased<a class="headerlink" href="#unreleased" title="Permanent link">&para;</a></h2>
+<p>Stove Server recovers runs stranded by cancelled CI jobs or failed runners. After one hour without new ingestion, runs and unfinished tests become <code>ABANDONED</code>, allowing ordinary purge and retention. Valid ingestion revives them while data remains. Configure the persistent timeout in Admin; <code>0</code> disables expiry. Initial CLI, environment, configuration-file, and dashboard defaults are all <code>3600</code> seconds.</p>
+<p>A background worker runs at startup and every minute. PostgreSQL advisory locks coordinate pods and serialize expiry with ingestion. REST, live dashboards, and MCP expose the lifecycle. Deploy compatible server versions together because older versions cannot read the new status.</p>
 <h2 id="release-map">Release map<a class="headerlink" href="#release-map" title="Permanent link">&para;</a></h2>
 <table>
 <thead>

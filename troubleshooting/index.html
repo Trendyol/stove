@@ -2806,6 +2806,17 @@
   
 </li>
       
+        <li class="md-nav__item">
+  <a href="#cancelled-ci-jobs-leave-dashboard-runs-running" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Cancelled CI jobs leave dashboard runs running
+      
+    </span>
+  </a>
+  
+</li>
+      
     </ul>
   
 </nav>
@@ -3756,6 +3767,17 @@
   
 </li>
       
+        <li class="md-nav__item">
+  <a href="#cancelled-ci-jobs-leave-dashboard-runs-running" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Cancelled CI jobs leave dashboard runs running
+      
+    </span>
+  </a>
+  
+</li>
+      
     </ul>
   
 </nav>
@@ -4404,6 +4426,9 @@ Mixed versions are a common cause of class-load errors and empty dashboard data.
 <li>Test extension registered (<code>StoveKotestExtension()</code> or <code>@ExtendWith(StoveJUnitExtension)</code>)</li>
 <li>For tracing: <code>stoveTracing</code> Gradle plugin applied + <code>tracing { enableSpanReceiver() }</code> in setup</li>
 </ul>
+<h2 id="cancelled-ci-jobs-leave-dashboard-runs-running">Cancelled CI jobs leave dashboard runs running<a class="headerlink" href="#cancelled-ci-jobs-leave-dashboard-runs-running" title="Permanent link">&para;</a></h2>
+<p>Stove Server marks runs <code>ABANDONED</code> after <strong>3600 seconds (1 hour)</strong> without newly committed ingestion, checked every 60 seconds. These runs qualify for ordinary purge and retention. Set the shared, persistent timeout in <strong>Admin → Abandoned runs</strong>; <code>0</code> disables expiry. Initial configuration uses <code>--run-idle-timeout-seconds</code>, <code>STOVE_RUN_IDLE_TIMEOUT_SECONDS</code>, or <code>run_idle_timeout_seconds</code> in the server configuration file.</p>
+<p>If a run stays running, check the stored Admin setting and <code>run_expiry</code> worker errors. Healthy tests with long silent periods need a longer timeout. New valid ingestion revives abandoned runs while their evidence still exists; duplicate retries do not. See <a href="../Components/18-dashboard/#abandoned-runs">run lifecycle details</a>.</p>
 
 
 
