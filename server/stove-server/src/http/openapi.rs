@@ -38,6 +38,7 @@ use utoipa_swagger_ui::{Config, SwaggerUi};
     super::routes::get_database_schema,
     super::routes::execute_database_query,
     super::routes::update_retention,
+    super::routes::update_idle_timeout,
     super::routes::preview_purge,
     super::routes::purge_runs
   ),

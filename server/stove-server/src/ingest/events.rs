@@ -114,7 +114,8 @@ impl LiveDashboardEvent {
       LiveDashboardPayload::Snapshot(payload) => payload.id = temp_id,
       LiveDashboardPayload::MockInteraction(payload) => payload.id = temp_id,
       LiveDashboardPayload::MockWarning(payload) => payload.id = temp_id,
-      LiveDashboardPayload::RunStarted(_)
+      LiveDashboardPayload::RunLifecycleChanged(_)
+      | LiveDashboardPayload::RunStarted(_)
       | LiveDashboardPayload::RunEnded(_)
       | LiveDashboardPayload::TestStarted(_)
       | LiveDashboardPayload::TestEnded(_) => {}
@@ -127,6 +128,7 @@ impl LiveDashboardEvent {
 #[serde(tag = "event_type", content = "payload", rename_all = "snake_case")]
 pub enum LiveDashboardPayload {
   RunStarted(LiveRunStartedPayload),
+  RunLifecycleChanged(LiveRunLifecyclePayload),
   RunEnded(LiveRunEndedPayload),
   TestStarted(LiveTestStartedPayload),
   TestEnded(LiveTestEndedPayload),
@@ -141,6 +143,7 @@ impl LiveDashboardPayload {
   const fn event_type(&self) -> &'static str {
     match self {
       Self::RunStarted(_) => "run_started",
+      Self::RunLifecycleChanged(_) => "run_lifecycle_changed",
       Self::RunEnded(_) => "run_ended",
       Self::TestStarted(_) => "test_started",
       Self::TestEnded(_) => "test_ended",
@@ -155,6 +158,7 @@ impl LiveDashboardPayload {
 
 #[derive(Clone, Debug, Serialize, ToSchema)]
 pub struct LiveRunStartedPayload {
+  pub last_activity_at: String,
   pub app_name: String,
   pub started_at: String,
   #[schema(required = true)]
@@ -314,4 +318,10 @@ pub struct LiveMockWarningPayload {
 fn live_record_id(seq: u64) -> i64 {
   let bounded = seq.min(i64::MAX as u64);
   -bounded.cast_signed()
+}
+
+#[derive(Clone, Debug, Serialize, ToSchema)]
+pub struct LiveRunLifecyclePayload {
+  pub run: crate::storage::models::Run,
+  pub tests: Vec<crate::storage::models::Test>,
 }

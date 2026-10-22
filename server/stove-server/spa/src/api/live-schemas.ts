@@ -1,5 +1,7 @@
+import { isRun, isTest } from "./run-schemas";
 import { EVENT_TYPE, type EventType, type LivePayloads } from "./types";
 import {
+  arrayOf,
   isBoolean,
   isNullableNumber,
   isNullableString,
@@ -14,7 +16,9 @@ import {
 } from "./validation";
 
 export const payloadSchemas = {
+  [EVENT_TYPE.RUN_LIFECYCLE_CHANGED]: { run: isRun, tests: arrayOf(isTest) },
   [EVENT_TYPE.RUN_STARTED]: {
+    last_activity_at: isString,
     app_name: isString,
     started_at: isString,
     stove_version: isNullableString,

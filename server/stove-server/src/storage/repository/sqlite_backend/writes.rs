@@ -34,7 +34,7 @@ impl SqliteBackend {
     let mut db = self.lock_write();
     db.conn().transaction(|conn| {
       save_run_end_on(conn, run)?;
-      prune_completed_runs_on(conn, run.run_id, retention_runs_per_app)
+      prune_completed_runs_on(conn, run.run_id, retention_runs_per_app, None)
     })
   }
 
@@ -84,7 +84,7 @@ pub(super) fn apply_persisted_event(
     WriteOperation::RunStarted(run) => save_run_start_on(conn, &run),
     WriteOperation::RunEnded(run) => {
       save_run_end_on(conn, &run)?;
-      prune_completed_runs_on(conn, run.run_id, retention_runs_per_app)
+      prune_completed_runs_on(conn, run.run_id, retention_runs_per_app, Some(run.run_id))
     }
     WriteOperation::TestStarted(test) => save_test_start_on(conn, &test),
     WriteOperation::TestEnded(test) => save_test_end_on(conn, &test),
@@ -102,6 +102,7 @@ fn save_run_start_on(conn: &mut SqliteConnection, run: &RunStart<'_>) -> Result<
   diesel::insert_into(runs::table)
     .values((
       runs::id.eq(run.run_id),
+      runs::last_activity_at.eq(super::lifecycle::database_now(conn)?),
       runs::app_name.eq(run.app_name),
       runs::started_at.eq(run.started_at),
       runs::stove_version.eq(run.stove_version),
@@ -125,6 +126,7 @@ fn prune_completed_runs_on(
   conn: &mut SqliteConnection,
   completed_run_id: &str,
   retention_runs_per_app: usize,
+  protected_run: Option<&str>,
 ) -> Result<()> {
   if retention_runs_per_app == 0 {
     return Ok(());
@@ -135,7 +137,7 @@ fn prune_completed_runs_on(
     .first::<String>(conn)
     .optional()?;
   if let Some(app_name) = app_name {
-    prune_completed_runs_for_app_on(conn, &app_name, retention_runs_per_app)?;
+    prune_completed_runs_for_app_on(conn, &app_name, retention_runs_per_app, protected_run)?;
   }
   Ok(())
 }
@@ -144,6 +146,7 @@ pub(super) fn prune_completed_runs_for_app_on(
   conn: &mut SqliteConnection,
   app_name: &str,
   retention_runs_per_app: usize,
+  protected_run: Option<&str>,
 ) -> Result<()> {
   if retention_runs_per_app == 0 {
     return Ok(());
@@ -159,6 +162,8 @@ pub(super) fn prune_completed_runs_for_app_on(
     .load::<RunId>(conn)?
     .into_iter()
     .map(|row| row.id)
+    // Retain the completing run until a later retention pass so its receipt and outbox can commit.
+    .filter(|id| Some(id.as_str()) != protected_run)
     .collect::<Vec<_>>();
     delete_runs_on(conn, &expired)?;
     Ok(expired.len() as u64)

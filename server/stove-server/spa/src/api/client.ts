@@ -172,6 +172,8 @@ export const api = {
       } satisfies DatabaseQueryRequest,
       schema.isDatabaseQueryResult,
     ),
+  updateIdleTimeout: (seconds: number) =>
+    send("/admin/idle-timeout", "PUT", { run_idle_timeout_seconds: seconds }, schema.isAdminStatus),
   updateRetention: (runsPerApp: number) =>
     send(
       "/admin/retention",

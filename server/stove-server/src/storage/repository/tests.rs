@@ -130,7 +130,11 @@ fn full_event_lifecycle() {
     .save_run_end("run-1", "2024-01-01T00:00:10Z", 1, 1, 0, 10000)
     .unwrap();
 
+  let receipt = repo.get_run("run-1").unwrap().unwrap().last_activity_at;
+  assert!(chrono::DateTime::parse_from_rfc3339(&receipt).is_ok());
   let expected_run = Run {
+    last_activity_at: receipt,
+    abandoned_at: None,
     id: "run-1".into(),
     app_name: "product-api".into(),
     started_at: "2024-01-01T00:00:00Z".into(),

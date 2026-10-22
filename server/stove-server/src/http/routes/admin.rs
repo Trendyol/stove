@@ -130,3 +130,29 @@ pub async fn update_top_filter(
   state.repository.update_top_filter(&settings)?;
   Ok(Json(settings))
 }
+
+#[derive(Debug, Deserialize, ToSchema)]
+pub struct IdleTimeoutRequest {
+  /// Seconds without committed ingestion before abandonment; 0 disables expiry. Default: 3600.
+  pub run_idle_timeout_seconds: u64,
+}
+
+#[utoipa::path(
+  put,
+  path = "/api/v1/admin/idle-timeout",
+  tag = "admin",
+  request_body = IdleTimeoutRequest,
+  responses(
+    (status = 200, description = "Persisted idle timeout, applied on the next sweep", body = StorageStats),
+    (status = 400, description = "Invalid idle timeout")
+  )
+)]
+pub async fn update_idle_timeout(
+  State(state): State<AppState>,
+  Json(request): Json<IdleTimeoutRequest>,
+) -> Result<Json<StorageStats>> {
+  state
+    .repository
+    .update_idle_timeout(request.run_idle_timeout_seconds)?;
+  Ok(Json(state.repository.storage_stats()?))
+}

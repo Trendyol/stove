@@ -446,3 +446,10 @@ Mixed versions are a common cause of class-load errors and empty dashboard data.
 - Ports free or `port = 0` for mocks
 - Test extension registered (`StoveKotestExtension()` or `@ExtendWith(StoveJUnitExtension)`)
 - For tracing: `stoveTracing` Gradle plugin applied + `tracing { enableSpanReceiver() }` in setup
+
+
+## Cancelled CI jobs leave dashboard runs running
+
+Stove Server marks runs `ABANDONED` after **3600 seconds (1 hour)** without newly committed ingestion, checked every 60 seconds. These runs qualify for ordinary purge and retention. Set the shared, persistent timeout in **Admin → Abandoned runs**; `0` disables expiry. Initial configuration uses `--run-idle-timeout-seconds`, `STOVE_RUN_IDLE_TIMEOUT_SECONDS`, or `run_idle_timeout_seconds` in the server configuration file.
+
+If a run stays running, check the stored Admin setting and `run_expiry` worker errors. Healthy tests with long silent periods need a longer timeout. New valid ingestion revives abandoned runs while their evidence still exists; duplicate retries do not. See [run lifecycle details](Components/18-dashboard.md#abandoned-runs).

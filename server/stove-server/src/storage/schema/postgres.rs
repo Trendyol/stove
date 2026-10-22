@@ -14,6 +14,8 @@ diesel::table! {
     systems -> Text,
     stove_version -> Nullable<Text>,
     metadata -> Jsonb,
+    last_activity_at -> Text,
+    abandoned_at -> Nullable<Text>,
   }
 }
 

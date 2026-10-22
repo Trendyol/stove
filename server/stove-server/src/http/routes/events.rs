@@ -231,9 +231,10 @@ mod tests {
       "binary"
     );
     assert_eq!(document["servers"][0]["url"], "..");
-    assert_eq!(document["paths"].as_object().unwrap().len(), 32);
+    assert_eq!(document["paths"].as_object().unwrap().len(), 33);
     assert!(document["paths"]["/api/v1/top-filter"]["get"].is_object());
     assert!(document["paths"]["/api/v1/admin/top-filter"]["put"].is_object());
+    assert!(document["paths"]["/api/v1/admin/idle-timeout"]["put"].is_object());
     assert!(document["paths"]["/api/v1/health"].is_object());
     assert!(document["paths"]["/metrics"]["get"].is_object());
     assert!(document["paths"]["/api/v1/runs"].is_object());

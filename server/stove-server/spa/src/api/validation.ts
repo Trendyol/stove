@@ -17,7 +17,11 @@ export const isStringArray = (value: unknown): value is string[] =>
 export const isStringRecord = (value: unknown): value is Record<string, string> =>
   isRecord(value) && Object.values(value).every(isString);
 export const isStatus = (value: unknown): value is Status =>
-  value === "RUNNING" || value === "PASSED" || value === "FAILED" || value === "ERROR";
+  value === "ABANDONED" ||
+  value === "RUNNING" ||
+  value === "PASSED" ||
+  value === "FAILED" ||
+  value === "ERROR";
 
 export const isSpanStatus = (value: unknown): value is SpanStatus =>
   value === "OK" || value === "ERROR" || value === "UNSET";
@@ -38,7 +42,7 @@ export function object<T>(schema: ObjectSchema<T>): Validator<T> {
 }
 
 export const isRunStatus = (value: unknown): value is RunStatus =>
-  value === "RUNNING" || value === "PASSED" || value === "FAILED";
+  value === "ABANDONED" || value === "RUNNING" || value === "PASSED" || value === "FAILED";
 
 export function nullable<T>(validate: Validator<T>): Validator<T | null> {
   return (value): value is T | null => value === null || validate(value);

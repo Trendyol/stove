@@ -34,7 +34,10 @@ pub(super) fn selected_runs(
   }
 
   let mut runs = repository.get_runs(app_name).map_err(display_error)?;
-  runs.retain(|run| run.status == RunStatus::Failed || run.status == RunStatus::Running);
+  runs.retain(|run| {
+    run.status == RunStatus::Failed
+      || matches!(run.status, RunStatus::Running | RunStatus::Abandoned)
+  });
   Ok(runs)
 }
 
@@ -134,7 +137,12 @@ fn compact_event(entry: &Entry, max_chars: usize) -> Value {
 
 pub(super) fn groups_have_running_runs(groups: &[Value]) -> bool {
   groups.iter().any(|group| {
-    group.get("run_status").and_then(Value::as_str) == Some(RunStatusValue::Running.as_str())
+    group
+      .get("run_status")
+      .and_then(Value::as_str)
+      .is_some_and(|status| {
+        status == RunStatusValue::Running.as_str() || status == RunStatusValue::Abandoned.as_str()
+      })
   })
 }
 

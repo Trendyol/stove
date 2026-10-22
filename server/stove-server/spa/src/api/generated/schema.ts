@@ -33,6 +33,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/admin/idle-timeout": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put: operations["update_idle_timeout"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/admin/purge": {
         parameters: {
             query?: never;
@@ -646,6 +662,13 @@ export interface components {
             healthy: boolean;
             stove_server_version: string;
         };
+        IdleTimeoutRequest: {
+            /**
+             * Format: int64
+             * @description Seconds without committed ingestion before abandonment; 0 disables expiry. Default: 3600.
+             */
+            run_idle_timeout_seconds: number;
+        };
         LiveDashboardEvent: components["schemas"]["LiveDashboardPayload"] & {
             run_id: string;
             /** Format: int64 */
@@ -655,6 +678,10 @@ export interface components {
             /** @enum {string} */
             event_type: "run_started";
             payload: components["schemas"]["LiveRunStartedPayload"];
+        } | {
+            /** @enum {string} */
+            event_type: "run_lifecycle_changed";
+            payload: components["schemas"]["LiveRunLifecyclePayload"];
         } | {
             /** @enum {string} */
             event_type: "run_ended";
@@ -762,8 +789,13 @@ export interface components {
             /** Format: int32 */
             total_tests: number;
         };
+        LiveRunLifecyclePayload: {
+            run: components["schemas"]["Run"];
+            tests: components["schemas"]["Test"][];
+        };
         LiveRunStartedPayload: {
             app_name: string;
+            last_activity_at: string;
             metadata: {
                 [key: string]: string;
             };
@@ -904,6 +936,7 @@ export interface components {
         };
         /** @description A single test run (one execution of a test suite). */
         Run: {
+            abandoned_at: string | null;
             app_name: string;
             /** Format: int64 */
             duration_ms: number | null;
@@ -911,6 +944,7 @@ export interface components {
             /** Format: int32 */
             failed: number;
             id: string;
+            last_activity_at: string;
             metadata: {
                 [key: string]: string;
             };
@@ -927,7 +961,7 @@ export interface components {
          * @description Status of a test run.
          * @enum {string}
          */
-        RunStatus: "RUNNING" | "PASSED" | "FAILED";
+        RunStatus: "RUNNING" | "ABANDONED" | "PASSED" | "FAILED";
         /** @description A system snapshot captured during a test. */
         Snapshot: {
             captured_at: string | null;
@@ -974,6 +1008,8 @@ export interface components {
             evidence: components["schemas"]["EvidenceCounts"];
             retention_runs_per_app: number;
             /** Format: int64 */
+            run_idle_timeout_seconds: number;
+            /** Format: int64 */
             running_runs: number;
             /** Format: int64 */
             runs: number;
@@ -996,7 +1032,7 @@ export interface components {
          * @description Status of an individual test or entry result.
          * @enum {string}
          */
-        TestStatus: "RUNNING" | "PASSED" | "FAILED" | "ERROR";
+        TestStatus: "RUNNING" | "ABANDONED" | "PASSED" | "FAILED" | "ERROR";
         TopFilterCatalog: {
             available_keys: string[];
             settings: components["schemas"]["TopFilterSettings"];
@@ -1075,6 +1111,37 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["DatabaseSchema"];
                 };
+            };
+        };
+    };
+    update_idle_timeout: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["IdleTimeoutRequest"];
+            };
+        };
+        responses: {
+            /** @description Persisted idle timeout, applied on the next sweep */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StorageStats"];
+                };
+            };
+            /** @description Invalid idle timeout */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
         };
     };

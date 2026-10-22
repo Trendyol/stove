@@ -25,6 +25,8 @@ pub(super) struct RunRow<M> {
   systems: String,
   stove_version: Option<String>,
   metadata: M,
+  last_activity_at: String,
+  abandoned_at: Option<String>,
 }
 
 impl TryFrom<RunRow<String>> for Run {
@@ -49,6 +51,8 @@ impl<M> RunRow<M> {
     convert_metadata: impl FnOnce(M) -> Result<BTreeMap<String, String>>,
   ) -> Result<Run> {
     Ok(Run {
+      last_activity_at: self.last_activity_at,
+      abandoned_at: self.abandoned_at,
       id: self.id,
       app_name: self.app_name,
       started_at: self.started_at,

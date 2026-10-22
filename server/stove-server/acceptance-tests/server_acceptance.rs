@@ -1312,3 +1312,142 @@ async fn public_citations_open_embedded_spa_under_a_gateway_prefix() -> Result<(
   }
   Ok(())
 }
+
+#[tokio::test]
+async fn real_server_expires_idle_runs_without_further_ingestion() -> Result<()> {
+  let stove = RunningStove::start(Some(0)).await?;
+  assert_eq!(
+    stove.get_json("/admin/status").await?["run_idle_timeout_seconds"],
+    3600
+  );
+  let mut grpc = stove.grpc_client().await?;
+  send_events(
+    &mut grpc,
+    [
+      run_started("cancelled-ci", "expiry-app", 1_704_067_200, &[]),
+      test_started(
+        "cancelled-ci",
+        "unfinished",
+        1_704_067_201,
+        "interrupted test",
+      ),
+    ],
+  )
+  .await?;
+  stove
+    .request_json(
+      Method::PUT,
+      "/admin/idle-timeout",
+      json!({"run_idle_timeout_seconds": 1}),
+    )
+    .await?;
+  // Simulate a cancelled producer. Only reads follow; the background worker must act.
+  tokio::time::timeout(Duration::from_secs(70), async {
+    loop {
+      let run = stove.get_json("/runs/cancelled-ci").await?;
+      if run["status"] == "ABANDONED" {
+        break Ok::<(), anyhow::Error>(());
+      }
+      tokio::time::sleep(Duration::from_millis(250)).await;
+    }
+  })
+  .await
+  .context("background expiry did not run")??;
+  let tests = stove.get_json("/runs/cancelled-ci/tests").await?;
+  assert_eq!(tests[0]["status"], "ABANDONED");
+  let purged = stove
+    .request_json(
+      Method::POST,
+      "/admin/purge",
+      json!({"run_ids": ["cancelled-ci"]}),
+    )
+    .await?;
+  assert_eq!(purged["purged_runs"], 1);
+  Ok(())
+}
+
+#[tokio::test]
+async fn two_pods_expire_once_and_share_lifecycle_and_idle_settings() -> Result<()> {
+  let database = PostgresTestDatabase::start().await?;
+  let (first, second) = tokio::try_join!(
+    RunningStove::start_postgres(&database.url, Some(0)),
+    RunningStove::start_postgres(&database.url, Some(0)),
+  )?;
+  let mut first_sse = SseStream::connect(&first, None).await?;
+  let mut second_sse = SseStream::connect(&second, None).await?;
+  first
+    .request_json(
+      Method::PUT,
+      "/admin/idle-timeout",
+      json!({"run_idle_timeout_seconds": 1}),
+    )
+    .await?;
+  assert_eq!(
+    second.get_json("/admin/status").await?["run_idle_timeout_seconds"],
+    1
+  );
+  let mut grpc = first.grpc_client().await?;
+  send_events(
+    &mut grpc,
+    [run_started("cancelled-ci", "app", 1_704_067_200, &[])],
+  )
+  .await?;
+  let (_, start) = next_shared_sse_frame(&mut first_sse, &mut second_sse).await?;
+  assert_eq!(start["event_type"], "run_started");
+  tokio::time::timeout(Duration::from_secs(70), async {
+    loop {
+      if second.get_json("/runs/cancelled-ci").await?["status"] == "ABANDONED" {
+        break Ok::<(), anyhow::Error>(());
+      }
+      tokio::time::sleep(Duration::from_millis(250)).await;
+    }
+  })
+  .await
+  .context("pods did not expire the idle run")??;
+  let (_, expired) = next_shared_sse_frame(&mut first_sse, &mut second_sse).await?;
+  assert_eq!(expired["event_type"], "run_lifecycle_changed");
+  assert_eq!(expired["payload"]["run"]["status"], "ABANDONED");
+  let database_url = database.url.clone();
+  tokio::task::spawn_blocking(move || -> Result<()> {
+    let mut client = postgres::Client::connect(&database_url, postgres::NoTls)?;
+    assert_eq!(
+      client
+        .query_one(
+          "SELECT count(*) FROM live_events WHERE event_type = 'run_lifecycle_changed'",
+          &[]
+        )?
+        .get::<_, i64>(0),
+      1
+    );
+    Ok(())
+  })
+  .await??;
+  first
+    .request_json(
+      Method::PUT,
+      "/admin/idle-timeout",
+      json!({"run_idle_timeout_seconds": 3600}),
+    )
+    .await?;
+  let mut grpc = second.grpc_client().await?;
+  send_events(
+    &mut grpc,
+    [test_started(
+      "cancelled-ci",
+      "resumed",
+      1_704_067_201,
+      "resumed test",
+    )],
+  )
+  .await?;
+  let (_, started) = next_shared_sse_frame(&mut first_sse, &mut second_sse).await?;
+  assert_eq!(started["event_type"], "test_started");
+  let (_, resumed) = next_shared_sse_frame(&mut first_sse, &mut second_sse).await?;
+  assert_eq!(resumed["event_type"], "run_lifecycle_changed");
+  assert_eq!(resumed["payload"]["run"]["status"], "RUNNING");
+  assert_eq!(
+    first.get_json("/admin/status").await?["run_idle_timeout_seconds"],
+    3600
+  );
+  Ok(())
+}

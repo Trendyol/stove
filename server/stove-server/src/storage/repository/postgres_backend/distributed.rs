@@ -6,6 +6,7 @@ use diesel::sql_types::Text;
 use postgres::fallible_iterator::FallibleIterator;
 use tokio::sync::mpsc;
 
+use super::super::lifecycle::RecoveryMode;
 use super::PostgresBackend;
 use super::writes::{apply_event, retention_on};
 use crate::error::{AppError, Result};
@@ -79,30 +80,22 @@ impl PostgresBackend {
       }
 
       verify_sequence(conn, &event.live.run_id, sequence, &identity.event_id)?;
+      let recovered = super::lifecycle::recover_run(
+        conn,
+        &event.live.run_id,
+        RecoveryMode::for_event(&event.persisted),
+      )?;
       let retention = retention_on(conn)?;
       apply_event(conn, &event.persisted, retention)?;
+      super::lifecycle::touch_run(conn, &event.live.run_id)?;
 
       self.metrics.wait("advisory_live_event", "write", || {
         Ok(diesel::sql_query(LIVE_EVENT_ORDER_LOCK).execute(conn)?)
       })?;
-      let live_event_id = diesel::insert_into(live_events::table)
-        .values((
-          live_events::event_id.eq(&identity.event_id),
-          live_events::run_id.eq(&event.live.run_id),
-          live_events::event_type.eq(event.live.event_type()),
-          live_events::payload.eq(serde_json::json!({})),
-        ))
-        .returning(live_events::id)
-        .get_result::<i64>(conn)?;
-      let payload = serde_json::to_value(
-        event
-          .live
-          .clone()
-          .with_seq(live_event_id_to_u64(live_event_id)?),
-      )?;
-      diesel::update(live_events::table.find(live_event_id))
-        .set(live_events::payload.eq(payload))
-        .execute(conn)?;
+      let live_event_id = append_live_event(conn, &identity.event_id, &event.live)?;
+      if recovered {
+        super::lifecycle::publish_lifecycle(conn, &event.live.run_id)?;
+      }
       diesel::insert_into(dashboard_event_inbox::table)
         .values((
           dashboard_event_inbox::event_id.eq(&identity.event_id),
@@ -205,4 +198,35 @@ fn verify_sequence(
     )));
   }
   Ok(())
+}
+
+pub(super) fn append_live_event(
+  conn: &mut PgConnection,
+  event_id: &str,
+  live: &crate::ingest::LiveDashboardEvent,
+) -> Result<i64> {
+  let mut live = live.clone();
+  if let crate::ingest::LiveDashboardPayload::RunStarted(payload) = &mut live.payload {
+    use crate::storage::schema::postgres::runs;
+    payload.last_activity_at = runs::table
+      .find(&live.run_id)
+      .select(runs::last_activity_at)
+      .first(conn)?;
+  }
+
+  diesel::sql_query(LIVE_EVENT_ORDER_LOCK).execute(conn)?;
+  let live_event_id = diesel::insert_into(live_events::table)
+    .values((
+      live_events::event_id.eq(event_id),
+      live_events::run_id.eq(&live.run_id),
+      live_events::event_type.eq(live.event_type()),
+      live_events::payload.eq(serde_json::json!({})),
+    ))
+    .returning(live_events::id)
+    .get_result::<i64>(conn)?;
+  let payload = serde_json::to_value(live.with_seq(live_event_id_to_u64(live_event_id)?))?;
+  diesel::update(live_events::table.find(live_event_id))
+    .set(live_events::payload.eq(payload))
+    .execute(conn)?;
+  Ok(live_event_id)
 }

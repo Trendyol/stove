@@ -2259,3 +2259,68 @@ async fn admin_preview_and_purge_use_exact_ids_and_protect_running_runs() {
   assert_eq!(protected["purged_runs"], 0);
   assert!(server.repo.get_run("run-active").unwrap().is_some());
 }
+
+#[tokio::test]
+async fn admin_idle_timeout_is_persisted_validated_and_used_for_purge() {
+  let server = TestServer::start().await;
+  assert_eq!(
+    server.get_json("/admin/status").await["run_idle_timeout_seconds"],
+    3600
+  );
+  server
+    .repo
+    .save_run_start("idle", "app", "2000-01-01T00:00:00Z", &[])
+    .unwrap();
+  server
+    .repo
+    .execute_database_query(
+      "UPDATE runs SET last_activity_at = '2000-01-01T00:00:00.000Z'",
+      1,
+    )
+    .unwrap();
+  let disabled = server
+    .client
+    .put(server.url("/admin/idle-timeout"))
+    .json(&serde_json::json!({"run_idle_timeout_seconds": 0}))
+    .send()
+    .await
+    .unwrap();
+  assert!(disabled.status().is_success());
+  assert_eq!(server.repo.expire_idle_runs().unwrap(), 0);
+  let invalid = server
+    .client
+    .put(server.url("/admin/idle-timeout"))
+    .json(&serde_json::json!({"run_idle_timeout_seconds": 2147483648_u64}))
+    .send()
+    .await
+    .unwrap();
+  assert_eq!(invalid.status(), reqwest::StatusCode::BAD_REQUEST);
+  assert_eq!(
+    server.get_json("/admin/status").await["run_idle_timeout_seconds"],
+    0
+  );
+  let enabled = server
+    .client
+    .put(server.url("/admin/idle-timeout"))
+    .json(&serde_json::json!({"run_idle_timeout_seconds": 3600}))
+    .send()
+    .await
+    .unwrap();
+  assert!(enabled.status().is_success());
+  assert_eq!(server.repo.expire_idle_runs().unwrap(), 1);
+  let run = server.get_json("/runs/idle").await;
+  assert_eq!(run["status"], "ABANDONED");
+  assert!(run["abandoned_at"].is_string());
+  assert!(run["ended_at"].is_null());
+  let purge = server
+    .client
+    .post(server.url("/admin/purge"))
+    .json(&serde_json::json!({"run_ids": ["idle"]}))
+    .send()
+    .await
+    .unwrap()
+    .json::<serde_json::Value>()
+    .await
+    .unwrap();
+  assert_eq!(purge["purged_runs"], 1);
+}

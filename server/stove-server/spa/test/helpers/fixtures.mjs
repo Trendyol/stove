@@ -15,6 +15,8 @@ export const app = {
   metadata: {},
 };
 export const run = {
+  last_activity_at: "2026-09-07T10:00:05.000Z",
+  abandoned_at: null,
   id: "run-1",
   app_name: "demo",
   started_at: app.latest_run_started_at,
@@ -76,6 +78,7 @@ export const span = {
   exception_stack_trace: null,
 };
 export const adminStatus = {
+  run_idle_timeout_seconds: 3600,
   backend: "sqlite",
   retention_runs_per_app: 5,
   runs: 1,

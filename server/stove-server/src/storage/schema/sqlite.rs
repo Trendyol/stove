@@ -12,6 +12,8 @@ diesel::table! {
     systems -> Text,
     stove_version -> Nullable<Text>,
     metadata -> Text,
+    last_activity_at -> Text,
+    abandoned_at -> Nullable<Text>,
   }
 }
 
@@ -159,3 +161,10 @@ diesel::allow_tables_to_appear_in_same_query!(
   live_events,
   dashboard_event_inbox,
 );
+
+diesel::table! {
+  dashboard_settings (setting_key) {
+    setting_key -> Text,
+    setting_value -> Text,
+  }
+}

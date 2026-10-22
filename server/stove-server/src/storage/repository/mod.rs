@@ -13,6 +13,7 @@ mod admin;
 mod distributed;
 mod evidence_sql;
 mod explorer;
+mod lifecycle;
 mod mapping;
 mod monitoring;
 mod postgres_backend;

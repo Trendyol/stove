@@ -26,6 +26,7 @@ async fn main() -> anyhow::Result<()> {
 
   prepare_fresh_start(&config)?;
   let repository = open_repository(&config)?;
+  repository.initialize_idle_timeout(config.run_idle_timeout_seconds)?;
 
   // Handle --clear flag
   if config.clear {
@@ -42,6 +43,7 @@ async fn main() -> anyhow::Result<()> {
   let live_event_relay = sse::relay::spawn(repository.clone(), sse_manager.clone());
   let ingestor = EventIngestor::new(repository.clone(), sse_manager.clone());
   let (shutdown_tx, shutdown_rx) = watch::channel(false);
+  let expiry = stove::run_expiry::spawn(repository.clone(), shutdown_rx.clone());
 
   let grpc_handle = tokio::spawn(serve_grpc(
     config.grpc_port,
@@ -57,7 +59,9 @@ async fn main() -> anyhow::Result<()> {
     shutdown_rx,
   ));
   print_endpoints(config.port, config.grpc_port);
-  run_until_shutdown(grpc_handle, http_handle, live_event_relay, shutdown_tx).await
+  let result = run_until_shutdown(grpc_handle, http_handle, live_event_relay, shutdown_tx).await;
+  expiry.await?;
+  result
 }
 
 async fn run_until_shutdown(

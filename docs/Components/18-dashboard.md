@@ -94,6 +94,7 @@ stove                                  # default UI/REST/MCP port 4040, gRPC por
 stove --public-url https://stove.example/observe  # public browser URL and optional gateway prefix
 stove --port 9000 --grpc-port 9001     # override ports
 stove --retention-runs-per-app 50      # keep 50 completed runs per app (default: 1; 0: unlimited)
+stove --run-idle-timeout-seconds 3600  # abandon runs after 1 hour without ingestion (0: disabled)
 stove --fresh-start                    # back up and recreate the DB, then start
 stove --db ./my-stove.sqlite           # custom DB path
 stove --database-url postgresql://stove:secret@db.example/stove
@@ -112,6 +113,7 @@ port = 4040
 grpc_port = 4041
 database_url_file = "/run/secrets/stove/database-url"
 retention_runs_per_app = 50
+run_idle_timeout_seconds = 3600
 ```
 
 The equivalent JSON keys are identical:
@@ -121,7 +123,8 @@ The equivalent JSON keys are identical:
   "port": 4040,
   "grpc_port": 4041,
   "database_url_file": "/run/secrets/stove/database-url",
-  "retention_runs_per_app": 50
+  "retention_runs_per_app": 50,
+  "run_idle_timeout_seconds": 3600
 }
 ```
 
@@ -217,6 +220,7 @@ data:
     grpc_port = 4041
     database_url_file = "/run/secrets/stove/database-url"
     retention_runs_per_app = 50
+    run_idle_timeout_seconds = 3600
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -252,7 +256,7 @@ spec:
               - { key: url, path: database-url }
 ```
 
-On a new PostgreSQL database, the first replica seeds the shared retention value from its resolved startup configuration. Later replicas do not overwrite it. Changes made on `/admin` are stored in PostgreSQL, immediately visible to every replica, and survive restarts.
+On a new PostgreSQL database, the first replica seeds the shared retention and idle-timeout values from its resolved startup configuration. Later replicas do not overwrite it. Changes made on `/admin` are stored in PostgreSQL, immediately visible to every replica, and survive restarts.
 
 After deployment:
 
@@ -348,7 +352,7 @@ Choosing a value narrows the application list and its runs, tests, and evidence.
 
 The sidebar can switch between retained runs and filter them by any number of metadata key/value pairs. Keys and values are selectable from those present in the application's retained runs, so users do not have to type CI identifiers manually. Every pair uses exact string matching and all supplied pairs must match.
 
-By default, Stove retains the newest completed run for each application, preserving the previous local behavior. Set `--retention-runs-per-app N` or `STOVE_RETENTION_RUNS_PER_APP=N` to keep more; `0` keeps unlimited history. Running runs are not removed by automatic retention. In PostgreSQL mode the value is shared and persisted; in SQLite mode it belongs to the current process.
+By default, Stove retains the newest completed run for each application, preserving the previous local behavior. Set `--retention-runs-per-app N` or `STOVE_RETENTION_RUNS_PER_APP=N` to keep more; `0` keeps unlimited history. Running runs are not removed by automatic retention. Ingestion keeps a just-completed run through its receipt and live-event commit; if it falls outside the retention window, a later retention pass removes it. In PostgreSQL mode the value is shared and persisted; in SQLite mode it belongs to the current process.
 
 ## Storage backends
 
@@ -415,6 +419,20 @@ Agents can apply the same dynamic filter through `stove_runs`:
 }
 ```
 
+## Abandoned runs
+
+Runs left behind by cancelled CI jobs or failed runners become `ABANDONED` after **3600 seconds (1 hour)** without newly committed ingestion. A background worker checks at startup and every 60 seconds, even without incoming requests. The run and its unfinished tests become abandoned; completed tests, evidence, and actual completion timestamps remain intact. Ordinary purge and retention can then remove the run.
+
+Set **Admin → Abandoned runs → Idle timeout (seconds)** to change the timeout. Use `0` to disable automatic expiry. This setting is persisted in both SQLite and PostgreSQL; PostgreSQL replicas share it. A change applies on the next sweep. Reducing the timeout can abandon runs already idle beyond the new value.
+
+For a new database, `--run-idle-timeout-seconds`, `STOVE_RUN_IDLE_TIMEOUT_SECONDS`, or file property `run_idle_timeout_seconds` seeds the value, using normal configuration precedence. The default is `3600` everywhere. Once stored, the Admin value takes precedence over startup configuration and survives restarts.
+
+Activity uses the database receipt clock, independent of producer timestamps. Duplicate retries and rejected events do not extend the deadline. A healthy test with no new ingestion for an hour can also expire; increase the timeout for long, silent work. Existing runs are migrated using their latest ingestion receipt, or migration time when receipt history is absent.
+
+If valid ingestion resumes before deletion, an abandoned run and its unfinished tests return to `RUNNING`. A late run completion supplies the actual outcome; tests missing their own completion remain abandoned. Recovery cannot restore purged evidence. Expiry and recovery reach open dashboards through durable live events, and MCP reports abandoned evidence as incomplete.
+
+PostgreSQL uses the built-in `pg_try_advisory_lock` on a dedicated session so only one pod sweeps a shared database at a time. Losing or closing that session releases the lock. Per-run transaction locks serialize expiry with ingestion, and the worker rechecks activity after taking the lock. No extension or separate coordination service is required. Deploy compatible server versions together: older versions cannot parse `ABANDONED`.
+
 ## Administration
 
 Select **Admin** in the dashboard header to open the dedicated `/admin` page, where you can inspect storage, browse the active database, run SQL, change runtime retention, preview and purge matching runs, or clear all data. SQL mutations and destructive administration operations require confirmation. A retention change prunes excess completed runs immediately. It lasts for the current process with SQLite and is persisted as a shared setting with PostgreSQL.
@@ -423,10 +441,11 @@ Purge preview accepts an optional application and RFC 3339 `older_than` cutoff, 
 
 | Endpoint | Use |
 |---|---|
-| `GET /api/v1/admin/status` | backend, retention, run, and evidence counts |
+| `GET /api/v1/admin/status` | backend, retention, idle timeout, run, and evidence counts |
 | `GET /api/v1/admin/database/schema` | active backend, tables, columns, nullability, and primary keys |
 | `POST /api/v1/admin/database/query` | run one SQL statement with `sql` and optional `max_rows` |
 | `PUT /api/v1/admin/top-filter` | set the browsing field with `{"metadata_key": "gitlab.team"}`; use `null` to disable |
+| `PUT /api/v1/admin/idle-timeout` | persist idle timeout with `{"run_idle_timeout_seconds": 3600}`; `0` disables expiry |
 | `PUT /api/v1/admin/retention` | set runtime retention with `{"runs_per_app": 50}` |
 | `POST /api/v1/admin/purge/preview` | preview with `app_name`, `older_than`, and `include_running` |
 | `POST /api/v1/admin/purge` | delete exact `run_ids`; active runs still require `include_running` |
@@ -462,6 +481,7 @@ The explorer has direct write access to Stove's tables. Confirmation in the brow
 | `--db` | `~/.stove-dashboard.db` | persistence path; also `STOVE_DB` |
 | `--database-url` | unset | PostgreSQL URL; replaces SQLite. Also configurable with `STOVE_DATABASE_URL` |
 | `--database-url-file` | unset | file containing the PostgreSQL URL; also `STOVE_DATABASE_URL_FILE` |
+| `--run-idle-timeout-seconds` | 3600 (1 hour) | initial idle timeout; `0` disables expiry. Also `STOVE_RUN_IDLE_TIMEOUT_SECONDS` or file property `run_idle_timeout_seconds`; persisted Admin changes override this seed |
 | `--retention-runs-per-app` | 1 | completed runs kept per app; `0` keeps all runs. Also configurable with `STOVE_RETENTION_RUNS_PER_APP` |
 | `--clear` | off | clear stored runs and exit |
 | `--fresh-start` | off | back up and recreate the SQLite DB before serving; unsupported with PostgreSQL |
@@ -498,4 +518,5 @@ The acceptance suite verifies the same ingestion, filtering, retention, administ
 | Dashboard empty | `stove` running? `dashboard { }` registered in `Stove().with`? `appName` set? |
 | Events not arriving | Port mismatch. `DashboardIngestion.Grpc(port = ...)` must match `--grpc-port` |
 | "gRPC disabled" warning | Expected if the server started after tests; restart in correct order |
+| Cancelled CI run remains running | After 1 hour without newly committed ingestion, the next sweep marks it abandoned and eligible for purge. Check Admin’s idle timeout and worker health if it remains running. |
 | Disk filling up | Set `--retention-runs-per-app` (or `STOVE_RETENTION_RUNS_PER_APP`) to limit completed runs per app |

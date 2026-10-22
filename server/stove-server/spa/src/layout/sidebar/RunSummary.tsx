@@ -27,6 +27,9 @@ export function RunSummary({
   const running = hasLiveTests ? tests.filter((t) => isRunning(t.status)).length : 0;
   return (
     <div className="stove-run-summary">
+      {run.status === "ABANDONED" && (
+        <p role="status">Abandoned — ingestion inactive. Last activity: {run.last_activity_at}</p>
+      )}
       <section className="stove-run-overview" aria-label="Run results">
         {failed > 0 && <strong className="is-failed">{failed} failed</strong>}
         <span>{passed} passed</span>

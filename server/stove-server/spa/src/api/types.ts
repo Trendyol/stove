@@ -4,6 +4,7 @@ import type { components } from "./generated/schema";
 export type { Status };
 
 export const EVENT_TYPE = {
+  RUN_LIFECYCLE_CHANGED: "run_lifecycle_changed",
   RUN_STARTED: "run_started",
   RUN_ENDED: "run_ended",
   TEST_STARTED: "test_started",

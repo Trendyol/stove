@@ -131,3 +131,10 @@ histogram_quantile(0.95,
 )
 increase(stove_db_retention_runs_deleted_total[1h])
 ```
+
+
+## Idle-run expiry
+
+The `run_expiry` worker checks at startup and every 60 seconds, using the existing worker success/error and duration metrics. Repository operation `expire_idle_runs` uses role `maintenance`. Logs report abandoned-run counts and failed sweeps; failures retry on the next tick. A pod that skips because another holds the PostgreSQL sweep lock completes a successful no-op.
+
+The timeout defaults to **3600 seconds (1 hour)** and is persisted through Admin’s **Abandoned runs** setting; `0` disables expiry. PostgreSQL uses one additional short-lived connection per sweep, outside the query pools, with a 2-second connection timeout, 10-second statement timeout, and 2-second lock timeout. Each pass considers at most 1000 runs. Monitor worker freshness and error counts; network failures can outlast server-side SQL timeouts.

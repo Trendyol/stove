@@ -15,6 +15,7 @@ impl SqliteBackend {
     let mut db = self.lock_read();
     let conn = db.conn();
     Ok(StorageStats {
+      run_idle_timeout_seconds: super::lifecycle::idle_timeout_on(conn)?.seconds(),
       backend: "sqlite".to_string(),
       retention_runs_per_app,
       runs: runs::table.count().get_result(conn)?,
@@ -37,7 +38,7 @@ impl SqliteBackend {
         .distinct()
         .load::<String>(conn)?;
       for app_name in apps {
-        prune_completed_runs_for_app_on(conn, &app_name, runs_per_app)?;
+        prune_completed_runs_for_app_on(conn, &app_name, runs_per_app, None)?;
       }
       Ok(())
     })

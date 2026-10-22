@@ -25,7 +25,7 @@ impl PostgresBackend {
     self.checkout_write()?.transaction(|conn| {
       let retention = retention_on(conn)?;
       save_run_end_on(conn, run)?;
-      prune_for_completed_run(conn, run.run_id, retention)
+      prune_for_completed_run(conn, run.run_id, retention, None)
     })
   }
 
@@ -73,7 +73,7 @@ pub(super) fn apply_event(
     WriteOperation::RunStarted(run) => save_run_start_on(conn, &run),
     WriteOperation::RunEnded(run) => {
       save_run_end_on(conn, &run)?;
-      prune_for_completed_run(conn, run.run_id, retention)
+      prune_for_completed_run(conn, run.run_id, retention, Some(run.run_id))
     }
     WriteOperation::TestStarted(test) => save_test_start_on(conn, &test),
     WriteOperation::TestEnded(test) => save_test_end_on(conn, &test),
@@ -91,6 +91,7 @@ fn save_run_start_on(conn: &mut PgConnection, run: &RunStart<'_>) -> Result<()> 
   diesel::insert_into(runs::table)
     .values((
       runs::id.eq(run.run_id),
+      runs::last_activity_at.eq(super::lifecycle::database_now(conn)?),
       runs::app_name.eq(run.app_name),
       runs::started_at.eq(run.started_at),
       runs::stove_version.eq(run.stove_version),
@@ -273,7 +274,12 @@ fn save_mock_warning_on(conn: &mut PgConnection, warning: &NewMockWarning) -> Re
   Ok(())
 }
 
-fn prune_for_completed_run(conn: &mut PgConnection, run_id: &str, retention: usize) -> Result<()> {
+fn prune_for_completed_run(
+  conn: &mut PgConnection,
+  run_id: &str,
+  retention: usize,
+  protected_run: Option<&str>,
+) -> Result<()> {
   if retention == 0 {
     return Ok(());
   }
@@ -283,7 +289,7 @@ fn prune_for_completed_run(conn: &mut PgConnection, run_id: &str, retention: usi
     .first::<String>(conn)
     .optional()?
   {
-    prune_app(conn, &app_name, retention)?;
+    prune_app(conn, &app_name, retention, protected_run)?;
   }
   Ok(())
 }
@@ -292,13 +298,14 @@ pub(in crate::storage::repository) fn prune_app(
   conn: &mut PgConnection,
   app_name: &str,
   retention: usize,
+  protected_run: Option<&str>,
 ) -> Result<()> {
   if retention == 0 {
     return Ok(());
   }
   crate::storage::metrics::retention(|| {
     let offset = i64::try_from(retention).unwrap_or(i64::MAX);
-    let expired = runs::table
+    let mut expired = runs::table
       .filter(runs::app_name.eq(app_name))
       .filter(runs::status.ne("RUNNING"))
       .order((
@@ -309,7 +316,15 @@ pub(in crate::storage::repository) fn prune_app(
       .offset(offset)
       .select(runs::id)
       .load::<String>(conn)?;
-    let deleted = diesel::delete(runs::table.filter(runs::id.eq_any(expired))).execute(conn)?;
+    // Keep the completing run through receipt/outbox commit, and recheck running
+    // status at deletion so concurrent recovery cannot remove a now-active run.
+    expired.retain(|id| Some(id.as_str()) != protected_run);
+    let deleted = diesel::delete(
+      runs::table
+        .filter(runs::id.eq_any(expired))
+        .filter(runs::status.ne("RUNNING")),
+    )
+    .execute(conn)?;
     Ok(deleted as u64)
   })
 }

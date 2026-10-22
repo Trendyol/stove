@@ -152,6 +152,10 @@ fn admin_routes() -> Router<AppState> {
       post(super::routes::execute_database_query),
     )
     .route("/admin/retention", put(super::routes::update_retention))
+    .route(
+      "/admin/idle-timeout",
+      put(super::routes::update_idle_timeout),
+    )
     .route("/admin/purge/preview", post(super::routes::preview_purge))
     .route("/admin/purge", post(super::routes::purge_runs))
 }

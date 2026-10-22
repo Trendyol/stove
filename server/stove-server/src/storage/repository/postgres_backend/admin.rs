@@ -21,6 +21,7 @@ impl PostgresBackend {
     let mut conn = self.checkout_read()?;
     let retention = retention_on(&mut conn)?;
     Ok(StorageStats {
+      run_idle_timeout_seconds: super::lifecycle::idle_timeout_on(&mut conn)?.seconds(),
       backend: "postgresql".to_string(),
       retention_runs_per_app: retention,
       runs: runs::table.count().get_result(&mut *conn)?,
@@ -52,7 +53,7 @@ impl PostgresBackend {
           .distinct()
           .load::<String>(conn)?;
         for app_name in apps {
-          prune_app(conn, &app_name, retention)?;
+          prune_app(conn, &app_name, retention, None)?;
         }
       }
       Ok(())
@@ -93,6 +94,12 @@ impl PostgresBackend {
 
   pub fn purge_runs(&self, run_ids: &[String], include_running: bool) -> Result<PurgeResult> {
     self.checkout_write()?.transaction(|conn| {
+      let mut lock_ids = run_ids.to_vec();
+      lock_ids.sort();
+      lock_ids.dedup();
+      for run_id in &lock_ids {
+        super::lifecycle::lock_run(conn, run_id)?;
+      }
       let selected = select_requested_runs(conn, run_ids, include_running)?;
       let evidence = evidence_counts(conn, &selected)?;
       diesel::delete(runs::table.filter(runs::id.eq_any(&selected))).execute(conn)?;

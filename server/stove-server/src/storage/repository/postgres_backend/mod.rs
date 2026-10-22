@@ -7,6 +7,7 @@ mod admin;
 mod database;
 mod distributed;
 mod explorer;
+pub(super) mod lifecycle;
 mod monitoring;
 mod reads;
 mod top_filter;

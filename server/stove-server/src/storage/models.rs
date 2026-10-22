@@ -10,6 +10,8 @@ use utoipa::ToSchema;
 pub enum RunStatus {
   #[serde(rename = "RUNNING")]
   Running,
+  #[serde(rename = "ABANDONED")]
+  Abandoned,
   #[serde(rename = "PASSED")]
   Passed,
   #[serde(rename = "FAILED")]
@@ -24,6 +26,7 @@ impl FromStr for RunStatus {
       "PASSED" => Ok(RunStatus::Passed),
       "FAILED" => Ok(RunStatus::Failed),
       "RUNNING" => Ok(RunStatus::Running),
+      "ABANDONED" => Ok(RunStatus::Abandoned),
       other => Err(format!("unknown run status: {other}")),
     }
   }
@@ -33,6 +36,7 @@ impl fmt::Display for RunStatus {
   fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
     match self {
       RunStatus::Running => write!(f, "RUNNING"),
+      RunStatus::Abandoned => write!(f, "ABANDONED"),
       RunStatus::Passed => write!(f, "PASSED"),
       RunStatus::Failed => write!(f, "FAILED"),
     }
@@ -44,6 +48,8 @@ impl fmt::Display for RunStatus {
 pub enum TestStatus {
   #[serde(rename = "RUNNING")]
   Running,
+  #[serde(rename = "ABANDONED")]
+  Abandoned,
   #[serde(rename = "PASSED")]
   Passed,
   #[serde(rename = "FAILED")]
@@ -61,6 +67,7 @@ impl FromStr for TestStatus {
       "FAILED" => Ok(TestStatus::Failed),
       "ERROR" => Ok(TestStatus::Error),
       "RUNNING" => Ok(TestStatus::Running),
+      "ABANDONED" => Ok(TestStatus::Abandoned),
       other => Err(format!("unknown test status: {other}")),
     }
   }
@@ -70,6 +77,7 @@ impl fmt::Display for TestStatus {
   fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
     match self {
       TestStatus::Running => write!(f, "RUNNING"),
+      TestStatus::Abandoned => write!(f, "ABANDONED"),
       TestStatus::Passed => write!(f, "PASSED"),
       TestStatus::Failed => write!(f, "FAILED"),
       TestStatus::Error => write!(f, "ERROR"),
@@ -135,6 +143,9 @@ pub struct TopFilterCatalog {
 /// A single test run (one execution of a test suite).
 #[derive(Debug, Clone, Serialize, ToSchema, PartialEq, Eq)]
 pub struct Run {
+  pub last_activity_at: String,
+  #[schema(required = true)]
+  pub abandoned_at: Option<String>,
   pub id: String,
   pub app_name: String,
   pub started_at: String,
@@ -314,6 +325,7 @@ pub struct EvidenceCounts {
 
 #[derive(Debug, Clone, Serialize, ToSchema, PartialEq, Eq)]
 pub struct StorageStats {
+  pub run_idle_timeout_seconds: u64,
   pub backend: String,
   pub retention_runs_per_app: usize,
   pub runs: i64,

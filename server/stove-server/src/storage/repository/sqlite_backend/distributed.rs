@@ -1,6 +1,7 @@
 use diesel::dsl::max;
 use diesel::prelude::*;
 
+use super::super::lifecycle::RecoveryMode;
 use super::SqliteBackend;
 use super::writes::apply_persisted_event;
 use crate::error::{AppError, Result};
@@ -34,26 +35,18 @@ impl SqliteBackend {
       }
 
       verify_sequence(conn, &event.live.run_id, sequence, &identity.event_id)?;
-      apply_persisted_event(conn, &event.persisted, retention)?;
-
-      let live_event_id = diesel::insert_into(live_events::table)
-        .values((
-          live_events::event_id.eq(&identity.event_id),
-          live_events::run_id.eq(&event.live.run_id),
-          live_events::event_type.eq(event.live.event_type()),
-          live_events::payload.eq("{}"),
-        ))
-        .returning(live_events::id)
-        .get_result::<i64>(conn)?;
-      let json = serde_json::to_string(
-        &event
-          .live
-          .clone()
-          .with_seq(live_event_id_to_u64(live_event_id)?),
+      let recovered = super::lifecycle::recover_run(
+        conn,
+        &event.live.run_id,
+        RecoveryMode::for_event(&event.persisted),
       )?;
-      diesel::update(live_events::table.find(live_event_id))
-        .set(live_events::payload.eq(json))
-        .execute(conn)?;
+      apply_persisted_event(conn, &event.persisted, retention)?;
+      super::lifecycle::touch_run(conn, &event.live.run_id)?;
+
+      let live_event_id = append_live_event(conn, &identity.event_id, &event.live)?;
+      if recovered {
+        super::lifecycle::publish_lifecycle(conn, &event.live.run_id)?;
+      }
       diesel::insert_into(dashboard_event_inbox::table)
         .values((
           dashboard_event_inbox::event_id.eq(&identity.event_id),
@@ -131,4 +124,34 @@ fn verify_sequence(
     )));
   }
   Ok(())
+}
+
+pub(super) fn append_live_event(
+  conn: &mut SqliteConnection,
+  event_id: &str,
+  live: &crate::ingest::LiveDashboardEvent,
+) -> Result<i64> {
+  let mut live = live.clone();
+  if let crate::ingest::LiveDashboardPayload::RunStarted(payload) = &mut live.payload {
+    use crate::storage::schema::sqlite::runs;
+    payload.last_activity_at = runs::table
+      .find(&live.run_id)
+      .select(runs::last_activity_at)
+      .first(conn)?;
+  }
+
+  let live_event_id = diesel::insert_into(live_events::table)
+    .values((
+      live_events::event_id.eq(event_id),
+      live_events::run_id.eq(&live.run_id),
+      live_events::event_type.eq(live.event_type()),
+      live_events::payload.eq("{}"),
+    ))
+    .returning(live_events::id)
+    .get_result::<i64>(conn)?;
+  let json = serde_json::to_string(&live.with_seq(live_event_id_to_u64(live_event_id)?))?;
+  diesel::update(live_events::table.find(live_event_id))
+    .set(live_events::payload.eq(json))
+    .execute(conn)?;
+  Ok(live_event_id)
 }

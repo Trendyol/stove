@@ -30,7 +30,8 @@ export function invalidateEvidenceQueries(
 function affectsEvidenceQuery(key: QueryKey, event: LiveDashboardEvent): boolean {
   if (event.run_id !== key[1]) return false;
   const type = event.event_type;
-  if (type === "run_started" || type === "run_ended") return true;
+  if (type === "run_started" || type === "run_ended" || type === "run_lifecycle_changed")
+    return true;
   const owner = event.payload.test_id ?? undefined;
   if (key[0] === "linked") {
     return (

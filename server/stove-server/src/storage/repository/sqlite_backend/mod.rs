@@ -10,6 +10,7 @@ use database::SqliteDatabase;
 pub(super) mod admin;
 pub(super) mod distributed;
 pub(super) mod explorer;
+pub(super) mod lifecycle;
 mod monitoring;
 pub(super) mod reads;
 mod top_filter;

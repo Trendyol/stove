@@ -18,10 +18,8 @@ import type {
   MockWarning,
   PurgePreview,
   PurgeResult,
-  Run,
   Snapshot,
   Span,
-  Test,
   TopFilterCatalog,
   TopFilterSettings,
   TopFilterValue,
@@ -29,12 +27,10 @@ import type {
 import {
   arrayOf,
   isBoolean,
-  isNullableNumber,
   isNullableString,
   isNumber,
   isRecord,
   isRunStatus,
-  isStatus,
   isString,
   isStringArray,
   isStringRecord,
@@ -83,33 +79,7 @@ export const isHealthResponse = object<HealthResponse>({
   checks: arrayOf(isHealthCheck),
 });
 
-export const isRun = object<Run>({
-  id: isString,
-  app_name: isString,
-  started_at: isString,
-  ended_at: isNullableString,
-  status: isRunStatus,
-  total_tests: isNumber,
-  passed: isNumber,
-  failed: isNumber,
-  duration_ms: isNullableNumber,
-  stove_version: isNullableString,
-  systems: isStringArray,
-  metadata: isStringRecord,
-});
-
-export const isTest = object<Test>({
-  id: isString,
-  run_id: isString,
-  test_name: isString,
-  spec_name: isString,
-  test_path: isStringArray,
-  started_at: isString,
-  ended_at: isNullableString,
-  status: isStatus,
-  duration_ms: isNullableNumber,
-  error: isNullableString,
-});
+export { isRun, isTest } from "./run-schemas";
 
 const isEvidenceCounts = object<EvidenceCounts>({
   tests: isNumber,
@@ -123,6 +93,7 @@ const isEvidenceCounts = object<EvidenceCounts>({
 export const isAdminStatus = object<AdminStatus>({
   backend: isString,
   retention_runs_per_app: isNumber,
+  run_idle_timeout_seconds: isNumber,
   runs: isNumber,
   running_runs: isNumber,
   evidence: isEvidenceCounts,

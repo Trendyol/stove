@@ -1,10 +1,12 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { api } from "../../api/client";
+import { DEFAULT_IDLE_TIMEOUT_SECONDS, isIdleTimeout } from "../../utils/idle-timeout";
 import type { MetadataFilter } from "../../utils/metadata-filter";
 import { adminKeys, refreshDatabaseQueries } from "./admin-queries";
 
 type AdminCommand =
+  | { kind: "idle-timeout"; seconds: number }
   | { kind: "retention"; runsPerApp: number }
   | { kind: "purge"; runIds: string[]; includeRunning: boolean }
   | { kind: "clear" };
@@ -22,6 +24,7 @@ export function useAdminController() {
     queryKey: adminKeys.status,
     queryFn: ({ signal }) => api.getAdminStatus(signal),
   });
+  const [idleTimeoutDraft, setIdleTimeout] = useState<number>();
   const [retentionDraft, setRetention] = useState<number>();
   const [filters, setFilters] = useState<PurgeFilters>({
     appName: "",
@@ -44,6 +47,9 @@ export function useAdminController() {
     onMutate: () => previewMutation.reset(),
     onSuccess: async (_, submitted) => {
       await refreshDatabaseQueries(queryClient);
+      if (submitted.kind === "idle-timeout") {
+        setIdleTimeout((draft) => (draft === submitted.seconds ? undefined : draft));
+      }
       if (submitted.kind === "retention") {
         setRetention((draft) =>
           draft !== undefined && normalizeRetention(draft) === submitted.runsPerApp
@@ -53,6 +59,9 @@ export function useAdminController() {
       }
     },
   });
+  const idleTimeout =
+    idleTimeoutDraft ?? statusQuery.data?.run_idle_timeout_seconds ?? DEFAULT_IDLE_TIMEOUT_SECONDS;
+  const idleTimeoutValid = isIdleTimeout(idleTimeout);
   const retention = retentionDraft ?? statusQuery.data?.retention_runs_per_app ?? 1;
   const preview = previewMutation.data ?? null;
 
@@ -79,6 +88,12 @@ export function useAdminController() {
 
   return {
     status: statusQuery.data ?? null,
+    idleTimeout,
+    idleTimeoutValid,
+    setIdleTimeout,
+    updateIdleTimeout: () => {
+      if (idleTimeoutValid) command.mutate({ kind: "idle-timeout", seconds: idleTimeout });
+    },
     retention,
     setRetention,
     ...filters,
@@ -108,6 +123,9 @@ export function useAdminController() {
 
 async function executeCommand(command: AdminCommand): Promise<void> {
   switch (command.kind) {
+    case "idle-timeout":
+      await api.updateIdleTimeout(command.seconds);
+      return;
     case "retention":
       await api.updateRetention(command.runsPerApp);
       return;

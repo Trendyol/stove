@@ -283,3 +283,104 @@ fn postgres_top_filter_is_shared_and_uses_the_latest_matching_run() {
       .is_empty()
   );
 }
+
+static LIFECYCLE_TEST_LOCK: std::sync::Mutex<()> = std::sync::Mutex::new(());
+
+#[test]
+fn postgres_idle_lifecycle_and_shared_settings() {
+  let _guard = LIFECYCLE_TEST_LOCK.lock().unwrap();
+  let Some(database) = TestSchema::from_env() else {
+    return;
+  };
+  let repo = std::sync::Arc::new(database.repository());
+  crate::storage::repository::lifecycle::tests::lifecycle_round_trip(&repo);
+  let other = database.repository();
+  other.update_idle_timeout(1234).unwrap();
+  repo.initialize_idle_timeout(3600).unwrap();
+  assert_eq!(repo.storage_stats().unwrap().run_idle_timeout_seconds, 1234);
+}
+
+#[test]
+fn postgres_sweep_lock_is_exclusive_and_released_on_disconnect() {
+  let _guard = LIFECYCLE_TEST_LOCK.lock().unwrap();
+  let Some(database) = TestSchema::from_env() else {
+    return;
+  };
+  let repo = database.repository();
+  repo
+    .save_run_start("idle-run", "app", "2000-01-01T00:00:00Z", &[])
+    .unwrap();
+  repo
+    .execute_database_query(
+      "UPDATE runs SET last_activity_at = '2000-01-01T00:00:00.000Z'",
+      1,
+    )
+    .unwrap();
+  let mut owner = connect_driver(&database.url).unwrap();
+  assert!(
+    owner
+      .query_one("SELECT pg_try_advisory_lock(1937012086, 2)", &[])
+      .unwrap()
+      .get::<_, bool>(0)
+  );
+  assert_eq!(repo.expire_idle_runs().unwrap(), 0);
+  drop(owner);
+  assert_eq!(repo.expire_idle_runs().unwrap(), 1);
+  let mut next_owner = connect_driver(&database.url).unwrap();
+  assert!(
+    next_owner
+      .query_one("SELECT pg_try_advisory_lock(1937012086, 2)", &[])
+      .unwrap()
+      .get::<_, bool>(0)
+  );
+}
+
+#[test]
+fn postgres_expiry_rechecks_activity_after_waiting_for_ingestion() {
+  let _guard = LIFECYCLE_TEST_LOCK.lock().unwrap();
+  let Some(mut database) = TestSchema::from_env() else {
+    return;
+  };
+  let repo = std::sync::Arc::new(database.repository());
+  repo
+    .save_run_start("idle-run", "app", "2000-01-01T00:00:00Z", &[])
+    .unwrap();
+  repo
+    .execute_database_query(
+      "UPDATE runs SET last_activity_at = '2000-01-01T00:00:00.000Z'",
+      1,
+    )
+    .unwrap();
+  let mut writer = connect_driver(&database.url).unwrap();
+  let mut transaction = writer.transaction().unwrap();
+  transaction
+    .query_one(
+      "SELECT pg_advisory_xact_lock(hashtextextended('idle-run', 0))",
+      &[],
+    )
+    .unwrap();
+  let worker_repo = repo.clone();
+  let worker = std::thread::spawn(move || worker_repo.expire_idle_runs());
+  let deadline = std::time::Instant::now() + std::time::Duration::from_secs(1);
+  loop {
+    let waiting: bool = database.root.query_one(
+      "SELECT EXISTS (SELECT 1 FROM pg_stat_activity WHERE application_name = $1 AND wait_event = 'advisory')",
+      &[&database.name],
+    ).unwrap().get(0);
+    if waiting {
+      break;
+    }
+    assert!(
+      std::time::Instant::now() < deadline,
+      "sweeper did not wait for the ingestion lock"
+    );
+    std::thread::sleep(std::time::Duration::from_millis(10));
+  }
+  transaction.execute("UPDATE runs SET last_activity_at = to_char(clock_timestamp() AT TIME ZONE 'UTC', 'YYYY-MM-DD\"T\"HH24:MI:SS.MS\"Z\"') WHERE id = 'idle-run'", &[]).unwrap();
+  transaction.commit().unwrap();
+  assert_eq!(worker.join().unwrap().unwrap(), 0);
+  assert_eq!(
+    repo.get_run("idle-run").unwrap().unwrap().status,
+    crate::storage::models::RunStatus::Running
+  );
+}

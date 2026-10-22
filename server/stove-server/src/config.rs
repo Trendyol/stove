@@ -5,6 +5,8 @@ use anyhow::{Context, Result, bail};
 use clap::{Parser, Subcommand};
 use serde::Deserialize;
 
+pub const DEFAULT_RUN_IDLE_TIMEOUT_SECONDS: u64 = 3600;
+
 const DEFAULT_HTTP_PORT: u16 = 4040;
 const DEFAULT_GRPC_PORT: u16 = 4041;
 const DEFAULT_RETENTION_RUNS_PER_APP: usize = 1;
@@ -19,6 +21,7 @@ pub struct Config {
   pub db: String,
   pub database_url: Option<String>,
   pub retention_runs_per_app: usize,
+  pub run_idle_timeout_seconds: u64,
   pub clear: bool,
   pub fresh_start: bool,
   pub update_skills: bool,
@@ -72,6 +75,10 @@ struct CliConfig {
   #[arg(long, env = "STOVE_RETENTION_RUNS_PER_APP")]
   retention_runs_per_app: Option<usize>,
 
+  /// Idle seconds before abandonment. Zero disables expiry; Admin changes persist across restarts.
+  #[arg(long, env = "STOVE_RUN_IDLE_TIMEOUT_SECONDS")]
+  run_idle_timeout_seconds: Option<u64>,
+
   /// Clear all stored runs and exit
   #[arg(long)]
   clear: bool,
@@ -97,6 +104,7 @@ struct CliConfig {
 #[derive(Default, Deserialize)]
 #[serde(deny_unknown_fields)]
 struct FileConfig {
+  run_idle_timeout_seconds: Option<u64>,
   public_url: Option<String>,
   port: Option<u16>,
   grpc_port: Option<u16>,
@@ -166,6 +174,14 @@ impl Config {
       .map(|value| crate::navigation::validate_public_url(&value).map_err(anyhow::Error::msg))
       .transpose()?;
     Ok(Self {
+      run_idle_timeout_seconds: cli
+        .run_idle_timeout_seconds
+        .or_else(|| {
+          file
+            .as_ref()
+            .and_then(|config| config.run_idle_timeout_seconds)
+        })
+        .unwrap_or(DEFAULT_RUN_IDLE_TIMEOUT_SECONDS),
       public_url,
       port: cli
         .port
@@ -382,6 +398,7 @@ mod tests {
     assert_eq!(config.grpc_port, 4041);
     assert!(config.database_url.is_none());
     assert_eq!(config.retention_runs_per_app, 1);
+    assert_eq!(config.run_idle_timeout_seconds, 3600);
     assert!(!config.clear);
     assert!(!config.fresh_start);
   }
@@ -485,6 +502,7 @@ grpc_port = 8081
 db = "data/stove.db"
 database_url_file = "database-url"
 retention_runs_per_app = 50
+run_idle_timeout_seconds = 7200
 "#,
     )
     .unwrap();
@@ -503,6 +521,7 @@ retention_runs_per_app = 50
       Some("postgresql://stove:secret@postgres/stove")
     );
     assert_eq!(config.retention_runs_per_app, 50);
+    assert_eq!(config.run_idle_timeout_seconds, 7200);
   }
 
   #[test]
@@ -515,7 +534,8 @@ retention_runs_per_app = 50
   "port": 7070,
   "grpc_port": 7071,
   "database_url": "postgresql://stove:secret@postgres/stove",
-  "retention_runs_per_app": 25
+  "retention_runs_per_app": 25,
+  "run_idle_timeout_seconds": 0
 }"#,
     )
     .unwrap();
@@ -525,6 +545,7 @@ retention_runs_per_app = 50
 
     assert_eq!(config.port, 7070);
     assert_eq!(config.grpc_port, 7071);
+    assert_eq!(config.run_idle_timeout_seconds, 0);
     assert_eq!(
       config.database_url.as_deref(),
       Some("postgresql://stove:secret@postgres/stove")
@@ -585,6 +606,22 @@ retention_runs_per_app = 50
     let config = Config::try_parse_from(["stove", "--retention-runs-per-app", "25"]).unwrap();
 
     assert_eq!(config.retention_runs_per_app, 25);
+  }
+
+  #[test]
+  fn idle_timeout_cli_overrides_file_and_can_disable() {
+    let dir = TempDir::new().unwrap();
+    let path = dir.path().join("stove.toml");
+    fs::write(&path, "run_idle_timeout_seconds = 7200").unwrap();
+    let config = Config::try_parse_from([
+      "stove",
+      "--config-file",
+      path.to_str().unwrap(),
+      "--run-idle-timeout-seconds",
+      "0",
+    ])
+    .unwrap();
+    assert_eq!(config.run_idle_timeout_seconds, 0);
   }
 
   #[test]

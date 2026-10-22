@@ -203,17 +203,19 @@ impl RawEvidenceKind {
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub(crate) enum RunStatusValue {
+  Abandoned,
   Running,
   Passed,
   Failed,
 }
 
 impl RunStatusValue {
-  pub(crate) const ALL: [Self; 3] = [Self::Running, Self::Passed, Self::Failed];
+  pub(crate) const ALL: [Self; 4] = [Self::Running, Self::Passed, Self::Failed, Self::Abandoned];
 
   pub(crate) const fn as_str(self) -> &'static str {
     match self {
       Self::Running => "RUNNING",
+      Self::Abandoned => "ABANDONED",
       Self::Passed => "PASSED",
       Self::Failed => "FAILED",
     }

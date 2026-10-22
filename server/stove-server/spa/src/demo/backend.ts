@@ -10,6 +10,7 @@ import type {
   Run,
   Test,
 } from "../api/types";
+import { DEFAULT_IDLE_TIMEOUT_SECONDS, isIdleTimeout } from "../utils/idle-timeout";
 import { createDemoData, type DemoData } from "./fixtures";
 
 const tables = [
@@ -54,6 +55,7 @@ function appSummary(run: Run, stoveVersion = run.stove_version): AppSummary {
 export function createDemoBackend(SQL: SqlJsStatic, version: string) {
   let db: Database;
   let retention = 0;
+  let idleTimeout = DEFAULT_IDLE_TIMEOUT_SECONDS;
   let topFilterKey: string | null = null;
   let seq = 0;
   let replayTimer: ReturnType<typeof setTimeout> | undefined;
@@ -88,6 +90,7 @@ export function createDemoBackend(SQL: SqlJsStatic, version: string) {
     db?.close();
     db = new SQL.Database();
     retention = 0;
+    idleTimeout = DEFAULT_IDLE_TIMEOUT_SECONDS;
     topFilterKey = null;
     const fixtures = createDemoData(version);
     for (const table of tables) {
@@ -136,6 +139,7 @@ export function createDemoBackend(SQL: SqlJsStatic, version: string) {
   const status = () => ({
     backend: "SQLite (demo, in browser memory)",
     retention_runs_per_app: retention,
+    run_idle_timeout_seconds: idleTimeout,
     runs: runs().length,
     running_runs: runs().filter((run) => run.status === "RUNNING").length,
     evidence: counts(runs().map((run) => run.id)),
@@ -487,6 +491,12 @@ export function createDemoBackend(SQL: SqlJsStatic, version: string) {
           return ok({ error: "Select a metadata key or disable the top filter" }, 400);
         topFilterKey = body.metadata_key;
         return ok({ metadata_key: topFilterKey });
+      }
+      if (method === "PUT" && path === "/admin/idle-timeout") {
+        const seconds = body.run_idle_timeout_seconds;
+        if (!isIdleTimeout(seconds)) return ok({ error: "Invalid idle timeout" }, 400);
+        idleTimeout = seconds;
+        return ok(status());
       }
       if (method === "PUT" && path === "/admin/retention") {
         if (!Number.isInteger(body.runs_per_app) || body.runs_per_app < 0)

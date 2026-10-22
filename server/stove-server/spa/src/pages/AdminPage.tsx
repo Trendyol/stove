@@ -4,6 +4,7 @@ import { ErrorNotice } from "../components/ErrorNotice";
 import { appPath } from "../utils/location";
 import { ClearAllCard, PurgeCard, RetentionCard, StorageCard } from "./admin/AdminSections";
 import { DatabaseExplorer } from "./admin/DatabaseExplorer";
+import { IdleTimeoutCard } from "./admin/IdleTimeoutCard";
 import { TopFilterCard } from "./admin/TopFilterCard";
 import { useAdminController } from "./admin/useAdminController";
 
@@ -42,6 +43,13 @@ export function AdminPage({ apps, onNavigateDashboard }: AdminPageProps) {
             onApply={admin.updateRetention}
           />
         </div>
+        <IdleTimeoutCard
+          seconds={admin.idleTimeout}
+          valid={admin.idleTimeoutValid}
+          busy={admin.busy}
+          onChange={admin.setIdleTimeout}
+          onApply={admin.updateIdleTimeout}
+        />
         <TopFilterCard />
         <PurgeCard
           apps={apps}

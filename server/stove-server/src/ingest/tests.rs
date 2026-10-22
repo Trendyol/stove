@@ -434,7 +434,7 @@ fn every_live_variant_matches_its_wire_envelope_storage_tag_and_schema() {
   let document = serde_json::to_value(crate::http::openapi_document()).unwrap();
   let schemas = &document["components"]["schemas"];
   let variants = schemas["LiveDashboardPayload"]["oneOf"].as_array().unwrap();
-  assert_eq!(variants.len(), cases.len());
+  assert_eq!(variants.len(), cases.len() + 1);
 
   for (payload, expected_tag) in cases {
     let prepared = service
@@ -569,4 +569,46 @@ fn metrics_count_committed_events_and_duplicates_separately() {
   let counters = svc.repository.metrics.snapshot().counters;
   assert_eq!(counters["events_committed"], 1);
   assert_eq!(counters["events_duplicate"], 1);
+}
+
+#[test]
+fn server_lifecycle_variant_matches_wire_and_schema() {
+  let service = test_service();
+  let document = serde_json::to_value(crate::http::openapi_document()).unwrap();
+  let variants = document["components"]["schemas"]["LiveDashboardPayload"]["oneOf"]
+    .as_array()
+    .unwrap();
+  // Lifecycle changes are server-generated and have no producer protobuf variant.
+  service
+    .repository
+    .save_run_start("run-lifecycle-wire", "app", "2026-01-01T00:00:00Z", &[])
+    .unwrap();
+  let lifecycle = crate::ingest::LiveDashboardEvent::new(
+    "run-lifecycle-wire",
+    crate::ingest::LiveDashboardPayload::RunLifecycleChanged(
+      crate::ingest::LiveRunLifecyclePayload {
+        run: service
+          .repository
+          .get_run("run-lifecycle-wire")
+          .unwrap()
+          .unwrap(),
+        tests: vec![],
+      },
+    ),
+  )
+  .with_seq(43);
+  let json = serde_json::to_value(&lifecycle).unwrap();
+  assert_eq!(lifecycle.event_type(), "run_lifecycle_changed");
+  assert_eq!(json["event_type"], lifecycle.event_type());
+  let variant = variants
+    .iter()
+    .find(|variant| variant["properties"]["event_type"]["enum"][0] == lifecycle.event_type())
+    .unwrap();
+  let payload_ref = variant["properties"]["payload"]["$ref"].as_str().unwrap();
+  let schema = document
+    .pointer(payload_ref.strip_prefix('#').unwrap())
+    .unwrap();
+  assert_eq!(schema["required"], serde_json::json!(["run", "tests"]));
+  assert_eq!(json["payload"]["run"]["id"], "run-lifecycle-wire");
+  assert_eq!(json["payload"]["tests"], serde_json::json!([]));
 }

@@ -565,3 +565,25 @@ test("sidebar dragging uses the navigator offset and stops on release or lost ca
   pointer("pointermove", 500);
   assert.equal(separator.getAttribute("aria-valuenow"), "300");
 });
+
+test("admin idle timeout defaults to one hour, preserves drafts and saves zero", async (t) => {
+  let saved = { ...adminStatus, run_idle_timeout_seconds: 3600 };
+  t.mock.method(api, "getAdminStatus", async () => saved);
+  t.mock.method(api, "updateIdleTimeout", async (seconds) => { saved = { ...saved, run_idle_timeout_seconds: seconds }; return saved; });
+  const { result, client } = mount(useAdminController);
+  assert.equal(result.current.idleTimeout, 3600);
+  await waitFor(() => assert.equal(result.current.busy, false));
+  act(() => result.current.setIdleTimeout(7200));
+  await act(async () => client.invalidateQueries({ queryKey: ["admin"] }));
+  assert.equal(result.current.idleTimeout, 7200);
+  act(() => result.current.setIdleTimeout(0));
+  act(() => result.current.updateIdleTimeout());
+  await waitFor(() => assert.equal(api.updateIdleTimeout.mock.callCount(), 1));
+  await waitFor(() => assert.equal(result.current.busy, false));
+  assert.equal(saved.run_idle_timeout_seconds, 0);
+  assert.equal(result.current.idleTimeout, 0);
+  act(() => result.current.setIdleTimeout(-1));
+  assert.equal(result.current.idleTimeoutValid, false);
+  act(() => result.current.updateIdleTimeout());
+  assert.equal(api.updateIdleTimeout.mock.callCount(), 1);
+});
