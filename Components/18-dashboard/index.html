@@ -2452,10 +2452,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#abandoned-runs" class="md-nav__link">
+  <a href="#idle-run-cleanup" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Abandoned runs
+        Idle run cleanup
       
     </span>
   </a>
@@ -3786,10 +3786,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#abandoned-runs" class="md-nav__link">
+  <a href="#idle-run-cleanup" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Abandoned runs
+        Idle run cleanup
       
     </span>
   </a>
@@ -4162,7 +4162,7 @@ Install <code>stove-server</code>, run <code>stove</code>, add <code>dashboard {
 </span><span id="__span-6-2"><a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a>stove<span class="w"> </span>--public-url<span class="w"> </span>https://stove.example/observe<span class="w">  </span><span class="c1"># public browser URL and optional gateway prefix</span>
 </span><span id="__span-6-3"><a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a>stove<span class="w"> </span>--port<span class="w"> </span><span class="m">9000</span><span class="w"> </span>--grpc-port<span class="w"> </span><span class="m">9001</span><span class="w">     </span><span class="c1"># override ports</span>
 </span><span id="__span-6-4"><a id="__codelineno-6-4" name="__codelineno-6-4" href="#__codelineno-6-4"></a>stove<span class="w"> </span>--retention-runs-per-app<span class="w"> </span><span class="m">50</span><span class="w">      </span><span class="c1"># keep 50 completed runs per app (default: 1; 0: unlimited)</span>
-</span><span id="__span-6-5"><a id="__codelineno-6-5" name="__codelineno-6-5" href="#__codelineno-6-5"></a>stove<span class="w"> </span>--run-idle-timeout-seconds<span class="w"> </span><span class="m">3600</span><span class="w">  </span><span class="c1"># abandon runs after 1 hour without ingestion (0: disabled)</span>
+</span><span id="__span-6-5"><a id="__codelineno-6-5" name="__codelineno-6-5" href="#__codelineno-6-5"></a>stove<span class="w"> </span>--run-idle-timeout-seconds<span class="w"> </span><span class="m">3600</span><span class="w">  </span><span class="c1"># delete idle runs after 1 hour without ingestion (0: disabled)</span>
 </span><span id="__span-6-6"><a id="__codelineno-6-6" name="__codelineno-6-6" href="#__codelineno-6-6"></a>stove<span class="w"> </span>--fresh-start<span class="w">                    </span><span class="c1"># back up and recreate the DB, then start</span>
 </span><span id="__span-6-7"><a id="__codelineno-6-7" name="__codelineno-6-7" href="#__codelineno-6-7"></a>stove<span class="w"> </span>--db<span class="w"> </span>./my-stove.sqlite<span class="w">           </span><span class="c1"># custom DB path</span>
 </span><span id="__span-6-8"><a id="__codelineno-6-8" name="__codelineno-6-8" href="#__codelineno-6-8"></a>stove<span class="w"> </span>--database-url<span class="w"> </span>postgresql://stove:secret@db.example/stove
@@ -4452,13 +4452,13 @@ Install <code>stove-server</code>, run <code>stove</code>, add <code>dashboard {
 </span><span id="__span-19-6"><a id="__codelineno-19-6" name="__codelineno-19-6" href="#__codelineno-19-6"></a><span class="w">  </span><span class="p">}</span>
 </span><span id="__span-19-7"><a id="__codelineno-19-7" name="__codelineno-19-7" href="#__codelineno-19-7"></a><span class="p">}</span>
 </span></code></pre></div>
-<h2 id="abandoned-runs">Abandoned runs<a class="headerlink" href="#abandoned-runs" title="Permanent link">&para;</a></h2>
-<p>Runs left behind by cancelled CI jobs or failed runners become <code>ABANDONED</code> after <strong>3600 seconds (1 hour)</strong> without newly committed ingestion. A background worker checks at startup and every 60 seconds, even without incoming requests. The run and its unfinished tests become abandoned; completed tests, evidence, and actual completion timestamps remain intact. Ordinary purge and retention can then remove the run.</p>
-<p>Set <strong>Admin → Abandoned runs → Idle timeout (seconds)</strong> to change the timeout. Use <code>0</code> to disable automatic expiry. This setting is persisted in both SQLite and PostgreSQL; PostgreSQL replicas share it. A change applies on the next sweep. Reducing the timeout can abandon runs already idle beyond the new value.</p>
+<h2 id="idle-run-cleanup">Idle run cleanup<a class="headerlink" href="#idle-run-cleanup" title="Permanent link">&para;</a></h2>
+<p>Running runs left behind by cancelled CI jobs or failed runners are permanently deleted after <strong>3600 seconds (1 hour)</strong> without newly committed ingestion. A background worker checks at startup and every 60 seconds, even without incoming requests. Deletion cascades to all tests, evidence, and ingestion receipts belonging to the run. Completed runs are unaffected; no additional status is introduced.</p>
+<p>Set <strong>Admin → Idle run cleanup → Idle timeout (seconds)</strong> to change the timeout. Use <code>0</code> to disable automatic expiry. This setting is persisted in both SQLite and PostgreSQL; PostgreSQL replicas share it. A change applies on the next sweep. Reducing the timeout can permanently delete runs already idle beyond the new value.</p>
 <p>For a new database, <code>--run-idle-timeout-seconds</code>, <code>STOVE_RUN_IDLE_TIMEOUT_SECONDS</code>, or file property <code>run_idle_timeout_seconds</code> seeds the value, using normal configuration precedence. The default is <code>3600</code> everywhere. Once stored, the Admin value takes precedence over startup configuration and survives restarts.</p>
 <p>Activity uses the database receipt clock, independent of producer timestamps. Duplicate retries and rejected events do not extend the deadline. A healthy test with no new ingestion for an hour can also expire; increase the timeout for long, silent work. Existing runs are migrated using their latest ingestion receipt, or migration time when receipt history is absent.</p>
-<p>If valid ingestion resumes before deletion, an abandoned run and its unfinished tests return to <code>RUNNING</code>. A late run completion supplies the actual outcome; tests missing their own completion remain abandoned. Recovery cannot restore purged evidence. Expiry and recovery reach open dashboards through durable live events, and MCP reports abandoned evidence as incomplete.</p>
-<p>PostgreSQL uses the built-in <code>pg_try_advisory_lock</code> on a dedicated session so only one pod sweeps a shared database at a time. Losing or closing that session releases the lock. Per-run transaction locks serialize expiry with ingestion, and the worker rechecks activity after taking the lock. No extension or separate coordination service is required. Deploy compatible server versions together: older versions cannot parse <code>ABANDONED</code>.</p>
+<p>New valid ingestion before the sweep refreshes the deadline. Once deleted, late test or completion events cannot revive the run. Open dashboards receive a durable deletion event and discard the removed run and evidence.</p>
+<p>PostgreSQL uses the built-in <code>pg_try_advisory_lock</code> on a dedicated session so only one pod sweeps a shared database at a time. Losing or closing that session releases the lock. Per-run transaction locks serialize expiry with ingestion, and the worker rechecks activity after taking the lock. No extension or separate coordination service is required.</p>
 <h2 id="administration">Administration<a class="headerlink" href="#administration" title="Permanent link">&para;</a></h2>
 <p>Select <strong>Admin</strong> in the dashboard header to open the dedicated <code>/admin</code> page, where you can inspect storage, browse the active database, run SQL, change runtime retention, preview and purge matching runs, or clear all data. SQL mutations and destructive administration operations require confirmation. A retention change prunes excess completed runs immediately. It lasts for the current process with SQLite and is persisted as a shared setting with PostgreSQL.</p>
 <p>Purge preview accepts an optional application and RFC 3339 <code>older_than</code> cutoff, then returns the exact run IDs and evidence counts. Purging uses those IDs. Both preview and purge exclude active runs unless <code>include_running</code> is explicitly <code>true</code>.</p>
@@ -4635,7 +4635,7 @@ Install <code>stove-server</code>, run <code>stove</code>, add <code>dashboard {
 </tr>
 <tr>
 <td>Cancelled CI run remains running</td>
-<td>After 1 hour without newly committed ingestion, the next sweep marks it abandoned and eligible for purge. Check Admin’s idle timeout and worker health if it remains running.</td>
+<td>After 1 hour without newly committed ingestion, the next sweep deletes the run and its tests and evidence. Check Admin’s idle timeout and worker health if it remains running.</td>
 </tr>
 <tr>
 <td>Disk filling up</td>
