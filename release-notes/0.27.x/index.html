@@ -4220,6 +4220,7 @@
 <h2 id="unreleased">Unreleased<a class="headerlink" href="#unreleased" title="Permanent link">&para;</a></h2>
 <p>Stove Server deletes running runs stranded by cancelled CI jobs or failed runners after one hour without new ingestion, including all their tests and evidence. Configure the persistent timeout in Admin; <code>0</code> disables cleanup. Initial CLI, environment, configuration-file, and dashboard defaults are all <code>3600</code> seconds.</p>
 <p>A background worker runs at startup and every minute. PostgreSQL advisory locks coordinate pods and serialize deletion with ingestion. Live dashboards discard deleted data. No additional run or test status is introduced.</p>
+<p>PostgreSQL migration V7 indexes the receipt-to-live-event foreign key so cascading run deletion avoids repeated full-table scans. This fixes idle cleanup timing out when the ingestion receipts table is large; the one-hour idle timeout and 10-second SQL statement limit are unchanged.</p>
 <h2 id="release-map">Release map<a class="headerlink" href="#release-map" title="Permanent link">&para;</a></h2>
 <table>
 <thead>
