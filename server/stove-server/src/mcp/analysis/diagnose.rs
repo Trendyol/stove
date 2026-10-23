@@ -38,10 +38,8 @@ impl Analyzer {
       .take(limit)
       .map(|test| self.diagnose_test(run, test, budget))
       .collect::<Result<Vec<_>, _>>()?;
-    let partial = matches!(run.status, RunStatus::Running | RunStatus::Abandoned)
-      || tests
-        .iter()
-        .any(|test| matches!(test.status, TestStatus::Running | TestStatus::Abandoned));
+    let partial = run.status == RunStatus::Running
+      || tests.iter().any(|test| test.status == TestStatus::Running);
     let remaining = tests.len().saturating_sub(offset + diagnoses.len());
     let next = if remaining > 0 {
       diagnosis_call(

@@ -75,7 +75,7 @@ struct CliConfig {
   #[arg(long, env = "STOVE_RETENTION_RUNS_PER_APP")]
   retention_runs_per_app: Option<usize>,
 
-  /// Idle seconds before abandonment. Zero disables expiry; Admin changes persist across restarts.
+  /// Idle seconds before deleting an inactive running run. Zero disables expiry; Admin changes persist across restarts.
   #[arg(long, env = "STOVE_RUN_IDLE_TIMEOUT_SECONDS")]
   run_idle_timeout_seconds: Option<u64>,
 

@@ -6,7 +6,6 @@ use diesel::sql_types::Text;
 use postgres::fallible_iterator::FallibleIterator;
 use tokio::sync::mpsc;
 
-use super::super::lifecycle::RecoveryMode;
 use super::PostgresBackend;
 use super::writes::{apply_event, retention_on};
 use crate::error::{AppError, Result};
@@ -59,11 +58,7 @@ impl PostgresBackend {
     let sequence = sequence_to_i64(identity.sequence, "PostgreSQL")?;
     self.checkout_write()?.transaction(|conn| {
       self.metrics.wait("advisory_run", "write", || {
-        Ok(
-          diesel::sql_query("SELECT pg_advisory_xact_lock(hashtextextended($1, 0))")
-            .bind::<Text, _>(&event.live.run_id)
-            .execute(conn)?,
-        )
+        super::lifecycle::lock_run(conn, &event.live.run_id)
       })?;
 
       let stored = dashboard_event_inbox::table
@@ -80,11 +75,6 @@ impl PostgresBackend {
       }
 
       verify_sequence(conn, &event.live.run_id, sequence, &identity.event_id)?;
-      let recovered = super::lifecycle::recover_run(
-        conn,
-        &event.live.run_id,
-        RecoveryMode::for_event(&event.persisted),
-      )?;
       let retention = retention_on(conn)?;
       apply_event(conn, &event.persisted, retention)?;
       super::lifecycle::touch_run(conn, &event.live.run_id)?;
@@ -93,9 +83,6 @@ impl PostgresBackend {
         Ok(diesel::sql_query(LIVE_EVENT_ORDER_LOCK).execute(conn)?)
       })?;
       let live_event_id = append_live_event(conn, &identity.event_id, &event.live)?;
-      if recovered {
-        super::lifecycle::publish_lifecycle(conn, &event.live.run_id)?;
-      }
       diesel::insert_into(dashboard_event_inbox::table)
         .values((
           dashboard_event_inbox::event_id.eq(&identity.event_id),
@@ -218,7 +205,7 @@ pub(super) fn append_live_event(
   let live_event_id = diesel::insert_into(live_events::table)
     .values((
       live_events::event_id.eq(event_id),
-      live_events::run_id.eq(&live.run_id),
+      live_events::run_id.eq(live.parent_run_id()),
       live_events::event_type.eq(live.event_type()),
       live_events::payload.eq(serde_json::json!({})),
     ))

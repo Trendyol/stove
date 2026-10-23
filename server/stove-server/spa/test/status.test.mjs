@@ -23,9 +23,3 @@ test("an unfinished group stays running and a completed group passes", () => {
   assert.equal(aggregateStatus(["RUNNING", "PASSED"]), "RUNNING");
   assert.equal(aggregateStatus(["PASSED", "PASSED"]), "PASSED");
 });
-
-test("abandoned tests are incomplete and never aggregated as passed", () => {
-  assert.equal(aggregateStatus(["PASSED", "ABANDONED"]), "ABANDONED");
-  assert.equal(aggregateStatus(["ABANDONED", "RUNNING"]), "RUNNING");
-  assert.equal(aggregateStatus(["ABANDONED", "FAILED"]), "FAILED");
-});

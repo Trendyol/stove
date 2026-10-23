@@ -148,7 +148,7 @@ impl Analyzer {
       "run_id": run.id,
       "run_status": run.status,
       "test": test_json(&test),
-      "data_freshness": if matches!(test.status, TestStatus::Running | TestStatus::Abandoned) || matches!(run.status, RunStatus::Running | RunStatus::Abandoned) { "partial" } else { "complete_or_idle" },
+      "data_freshness": if test.status == TestStatus::Running || run.status == RunStatus::Running { "partial" } else { "complete_or_idle" },
       "error_summary": clip_opt(test.error.as_deref(), budget.string_chars),
       "failed_entries": failed_entries
         .iter()

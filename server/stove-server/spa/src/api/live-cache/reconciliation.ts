@@ -1,6 +1,7 @@
 import type { QueryClient } from "@tanstack/react-query";
 import type { Status } from "../../utils/status";
 import type { DashboardQuery } from "../dashboard-queries";
+import { isDashboardDataQuery } from "../query-keys";
 import type {
   AppSummary,
   Entry,
@@ -18,9 +19,9 @@ export async function loadAndReconcileDashboardData<T>(
   query: DashboardQuery<T>,
   signal?: AbortSignal,
 ): Promise<T[]> {
-  const generation = lifecycleGenerations.get(queryClient) ?? 0;
+  const generation = deletionGenerations.get(queryClient) ?? 0;
   const persisted = await query.load(signal);
-  if (generation !== (lifecycleGenerations.get(queryClient) ?? 0)) {
+  if (generation !== (deletionGenerations.get(queryClient) ?? 0)) {
     return (
       queryClient.getQueryData(query.queryKey) ??
       loadAndReconcileDashboardData(queryClient, query, signal)
@@ -204,15 +205,14 @@ function mergeEvidenceRecords<T>(
 }
 
 function statusProgress(status: Status): number {
-  return status === "RUNNING" || status === "ABANDONED" ? 0 : 1;
+  return status === "RUNNING" ? 0 : 1;
 }
 
-const lifecycleGenerations = new WeakMap<QueryClient, number>();
-export function fenceLifecycleRequests(client: QueryClient) {
-  lifecycleGenerations.set(client, (lifecycleGenerations.get(client) ?? 0) + 1);
+const deletionGenerations = new WeakMap<QueryClient, number>();
+export function cancelPreDeletionRequests(client: QueryClient) {
+  deletionGenerations.set(client, (deletionGenerations.get(client) ?? 0) + 1);
   // Cancellation prevents old responses being published, even for individual-record queries.
   void client.cancelQueries({
-    predicate: (query) =>
-      ["apps", "runs", "tests", "linked", "focus"].includes(String(query.queryKey[0])),
+    predicate: isDashboardDataQuery,
   });
 }

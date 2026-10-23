@@ -134,7 +134,6 @@ fn full_event_lifecycle() {
   assert!(chrono::DateTime::parse_from_rfc3339(&receipt).is_ok());
   let expected_run = Run {
     last_activity_at: receipt,
-    abandoned_at: None,
     id: "run-1".into(),
     app_name: "product-api".into(),
     started_at: "2024-01-01T00:00:00Z".into(),

@@ -2,10 +2,7 @@ use crate::{
   ingest::EventIngestor,
   proto,
   sse::manager::SseManager,
-  storage::{
-    models::{RunStatus, TestStatus},
-    repository::Repository,
-  },
+  storage::{models::RunStatus, repository::Repository},
 };
 use std::sync::Arc;
 
@@ -68,6 +65,9 @@ pub(in crate::storage::repository) fn lifecycle_round_trip(repo: &Arc<Repository
       }),
     ))
     .unwrap();
+  repo
+    .save_snapshot("idle-run", "unfinished", "sys", "{}", "evidence")
+    .unwrap();
   // Producer timestamps are ancient, but receipt time is fresh.
   assert_eq!(repo.expire_idle_runs().unwrap(), 0);
   age(repo);
@@ -76,77 +76,29 @@ pub(in crate::storage::repository) fn lifecycle_round_trip(repo: &Arc<Repository
   repo.initialize_idle_timeout(3600).unwrap();
   assert_eq!(repo.storage_stats().unwrap().run_idle_timeout_seconds, 0);
   repo.update_idle_timeout(3600).unwrap();
-  // Duplicates and invalid sequence numbers cannot keep an abandoned producer alive.
+  // Duplicates and invalid sequence numbers cannot keep an inactive producer alive.
   assert!(ingestor.ingest(&start).unwrap().duplicate);
   assert!(ingestor.ingest(&test_start(99, "invalid")).is_err());
   assert_eq!(repo.expire_idle_runs().unwrap(), 1);
   assert_eq!(repo.expire_idle_runs().unwrap(), 0);
-  assert_abandoned_evidence(repo);
-  assert!(ingestor.ingest(&start).unwrap().duplicate);
-  assert_eq!(
-    repo.get_run("idle-run").unwrap().unwrap().status,
-    RunStatus::Abandoned
-  );
-  // The server event did not consume producer sequence 5.
-  ingestor.ingest(&test_start(5, "resumed")).unwrap();
-  let restored = repo.get_run("idle-run").unwrap().unwrap();
-  assert_eq!(restored.status, RunStatus::Running);
-  assert!(restored.abandoned_at.is_none());
-  assert_eq!(
-    repo
-      .get_test("idle-run", "unfinished")
-      .unwrap()
-      .unwrap()
-      .status,
-    TestStatus::Running
-  );
-  assert_eq!(
-    repo
-      .get_test("idle-run", "finished")
-      .unwrap()
-      .unwrap()
-      .status,
-    TestStatus::Passed
-  );
-  assert_eq!(
-    repo
-      .purge_runs(&["idle-run".into()], false)
-      .unwrap()
-      .purged_runs,
-    0
-  );
-  age(repo);
-  assert_eq!(repo.expire_idle_runs().unwrap(), 1);
-  ingestor
-    .ingest(&event(
-      6,
-      proto::dashboard_event::Event::RunEnded(proto::RunEndedEvent {
-        total_tests: 3,
-        passed: 1,
-        ..Default::default()
-      }),
-    ))
-    .unwrap();
-  assert_eq!(
-    repo.get_run("idle-run").unwrap().unwrap().status,
-    RunStatus::Passed
-  );
-  assert_eq!(
-    repo
-      .get_test("idle-run", "unfinished")
-      .unwrap()
-      .unwrap()
-      .status,
-    TestStatus::Abandoned
-  );
-  assert_eq!(repo.expire_idle_runs().unwrap(), 0);
-  assert_eq!(
-    repo
-      .purge_runs(&["idle-run".into()], false)
-      .unwrap()
-      .purged_runs,
-    1
-  );
+  assert!(repo.get_run("idle-run").unwrap().is_none());
+  assert!(repo.get_test("idle-run", "unfinished").unwrap().is_none());
+  assert!(repo.get_test("idle-run", "finished").unwrap().is_none());
+  let stats = repo.storage_stats().unwrap();
+  assert_eq!(stats.runs, 0);
+  assert_eq!(stats.evidence.tests, 0);
+  assert_eq!(stats.evidence.snapshots, 0);
+  // Late ingestion cannot revive deleted runs or orphan their tests.
+  assert!(ingestor.ingest(&test_start(5, "resumed")).is_err());
+  assert!(repo.get_run("idle-run").unwrap().is_none());
+  let log = repo.live_events_after(0, 100).unwrap();
+  assert_eq!(log.len(), 1);
+  let notification: serde_json::Value = serde_json::from_str(&log[0].json).unwrap();
+  assert_eq!(notification["event_type"], "run_deleted");
+  assert_eq!(notification["run_id"], "idle-run");
+  assert_eq!(notification["payload"], serde_json::json!({}));
+  repo.clear_all().unwrap();
+  assert_eq!(repo.live_events_after(0, 100).unwrap().len(), 0);
 }
 
 #[test]
@@ -171,22 +123,6 @@ fn sqlite_idle_settings_survive_restart() {
 }
 
 #[test]
-fn sqlite_retention_includes_abandoned_history() {
-  let repo = Arc::new(Repository::connect_sqlite(":memory:", 1).unwrap());
-  let ingestor = EventIngestor::new(repo.clone(), Arc::new(SseManager::new()));
-  ingestor.ingest(&start()).unwrap();
-  age(&repo);
-  assert_eq!(repo.expire_idle_runs().unwrap(), 1);
-  repo
-    .save_run_start("new", "idle-app", "2026-10-22T00:00:00Z", &[])
-    .unwrap();
-  repo
-    .save_run_end("new", "2026-10-22T00:00:10Z", 1, 1, 0, 10000)
-    .unwrap();
-  assert!(repo.get_run("idle-run").unwrap().is_none());
-}
-
-#[test]
 fn late_completion_outside_retention_commits_before_later_pruning() {
   let repo = Arc::new(Repository::connect_sqlite(":memory:", 1).unwrap());
   let ingestor = EventIngestor::new(repo.clone(), Arc::new(SseManager::new()));
@@ -197,8 +133,6 @@ fn late_completion_outside_retention_commits_before_later_pruning() {
   repo
     .save_run_end("new", "2026-10-22T00:00:10Z", 1, 1, 0, 10000)
     .unwrap();
-  age(&repo);
-  assert_eq!(repo.expire_idle_runs().unwrap(), 1);
   let ended = event(
     2,
     proto::dashboard_event::Event::RunEnded(proto::RunEndedEvent::default()),
@@ -232,38 +166,49 @@ fn sqlite_timeout_uses_configured_deadline_inclusive_of_boundary() {
   assert_eq!(repo.expire_idle_runs().unwrap(), 1);
 }
 
-fn assert_abandoned_evidence(repo: &Repository) {
-  let abandoned = repo.get_run("idle-run").unwrap().unwrap();
-  assert_eq!(abandoned.status, RunStatus::Abandoned);
-  assert!(abandoned.abandoned_at.is_some());
-  assert!(abandoned.ended_at.is_none());
-  assert!(abandoned.duration_ms.is_none());
-  assert_eq!(
+#[test]
+fn cleanup_preserves_active_and_completed_runs() {
+  let repo = Repository::connect_sqlite(":memory:", 0).unwrap();
+  for id in ["active", "completed", "idle-run", "another-idle-run"] {
     repo
-      .get_test("idle-run", "unfinished")
-      .unwrap()
-      .unwrap()
-      .status,
-    TestStatus::Abandoned
-  );
+      .save_run_start(id, "app", "2000-01-01T00:00:00Z", &[])
+      .unwrap();
+  }
+  repo
+    .save_run_end("completed", "2000-01-01T00:00:01Z", 1, 1, 0, 1000)
+    .unwrap();
+  repo
+    .execute_database_query(
+      "UPDATE runs SET last_activity_at = '2000-01-01T00:00:00.000Z' WHERE id != 'active'",
+      1,
+    )
+    .unwrap();
+  assert_eq!(repo.expire_idle_runs().unwrap(), 2);
+  assert!(repo.get_run("active").unwrap().is_some());
   assert_eq!(
-    repo
-      .get_test("idle-run", "finished")
-      .unwrap()
-      .unwrap()
-      .status,
-    TestStatus::Passed
+    repo.get_run("completed").unwrap().unwrap().status,
+    RunStatus::Passed
   );
-  assert_eq!(repo.storage_stats().unwrap().running_runs, 0);
-  assert_eq!(
-    repo
-      .preview_purge(None, None, false, &std::collections::BTreeMap::default())
-      .unwrap()
-      .run_ids,
-    vec!["idle-run"]
-  );
-  let log = repo.live_events_after(0, 100).unwrap();
-  let notification: serde_json::Value = serde_json::from_str(&log.last().unwrap().json).unwrap();
-  assert_eq!(notification["event_type"], "run_lifecycle_changed");
-  assert_eq!(notification["payload"]["run"]["status"], "ABANDONED");
+  assert!(repo.get_run("idle-run").unwrap().is_none());
+  assert!(repo.get_run("another-idle-run").unwrap().is_none());
+  assert_eq!(repo.live_events_after(0, 100).unwrap().len(), 2);
+}
+
+#[test]
+fn sqlite_cleanup_deletes_large_batches_with_one_notification_per_run() {
+  let repo = Repository::connect_sqlite(":memory:", 0).unwrap();
+  repo
+    .execute_database_query(
+      "WITH RECURSIVE ids(id) AS (SELECT 1 UNION ALL SELECT id + 1 FROM ids WHERE id < 1001)
+     INSERT INTO runs(id, app_name, started_at, last_activity_at)
+     SELECT 'idle-' || id, 'app', '2000-01-01T00:00:00.000Z', '2000-01-01T00:00:00.000Z' FROM ids",
+      1,
+    )
+    .unwrap();
+  assert_eq!(repo.expire_idle_runs().unwrap(), 1000);
+  assert_eq!(repo.storage_stats().unwrap().runs, 1);
+  assert_eq!(repo.live_events_after(0, 2000).unwrap().len(), 1000);
+  assert_eq!(repo.expire_idle_runs().unwrap(), 1);
+  assert_eq!(repo.storage_stats().unwrap().runs, 0);
+  assert_eq!(repo.live_events_after(0, 2000).unwrap().len(), 1001);
 }

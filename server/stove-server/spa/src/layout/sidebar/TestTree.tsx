@@ -178,6 +178,5 @@ function StatusDot({ status }: { status: Status }) {
   let tone = "running";
   if (status === "FAILED" || status === "ERROR") tone = "failed";
   else if (status === "PASSED") tone = "passed";
-  else if (status === "ABANDONED") tone = "abandoned";
   return <span className={`stove-tree-dot is-${tone}`} />;
 }

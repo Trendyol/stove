@@ -15,7 +15,6 @@ diesel::table! {
     stove_version -> Nullable<Text>,
     metadata -> Jsonb,
     last_activity_at -> Text,
-    abandoned_at -> Nullable<Text>,
   }
 }
 
@@ -143,7 +142,7 @@ diesel::table! {
   live_events (id) {
     id -> BigInt,
     event_id -> Text,
-    run_id -> Text,
+    run_id -> Nullable<Text>,
     event_type -> Text,
     payload -> Jsonb,
     created_at -> Timestamptz,

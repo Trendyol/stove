@@ -1,7 +1,6 @@
-//! Backend-independent rules for idle expiry and ingestion recovery.
+//! Backend-independent rules for idle expiry.
 use crate::config::DEFAULT_RUN_IDLE_TIMEOUT_SECONDS;
 use crate::error::{AppError, Result};
-use crate::ingest::PersistedDashboardEvent;
 
 pub(in crate::storage::repository) const SWEEP_BATCH_SIZE: i64 = 1000;
 const MAX_IDLE_TIMEOUT_SECONDS: u64 = i32::MAX as u64;
@@ -36,43 +35,19 @@ impl IdleTimeout {
   }
 
   /// Avoid reading the database clock at all when expiry is disabled.
-  pub fn expiry_window(
+  pub fn expiry_cutoff(
     self,
     database_now: impl FnOnce() -> Result<String>,
-  ) -> Result<Option<ExpiryWindow>> {
+  ) -> Result<Option<String>> {
     if self.0 == 0 {
       return Ok(None);
     }
-    let abandoned_at = database_now()?;
-    let now = chrono::DateTime::parse_from_rfc3339(&abandoned_at)
+    let database_time = database_now()?;
+    let now = chrono::DateTime::parse_from_rfc3339(&database_time)
       .map_err(|_| AppError::InvalidStoredField("database clock"))?;
     // Construction bounds the timeout to i32::MAX seconds.
     let cutoff = (now - chrono::Duration::seconds(self.0.cast_signed()))
       .to_rfc3339_opts(chrono::SecondsFormat::Millis, true);
-    Ok(Some(ExpiryWindow {
-      abandoned_at,
-      cutoff,
-    }))
-  }
-}
-
-/// Use one clock reading for both the eligibility cutoff and lifecycle timestamp.
-pub(in crate::storage::repository) struct ExpiryWindow {
-  pub abandoned_at: String,
-  pub cutoff: String,
-}
-
-#[derive(Clone, Copy, PartialEq, Eq)]
-pub(in crate::storage::repository) enum RecoveryMode {
-  ResumeTests,
-  CompleteRun,
-}
-
-impl RecoveryMode {
-  pub const fn for_event(event: &PersistedDashboardEvent) -> Self {
-    match event {
-      PersistedDashboardEvent::RunEnded { .. } => Self::CompleteRun,
-      _ => Self::ResumeTests,
-    }
+    Ok(Some(cutoff))
   }
 }

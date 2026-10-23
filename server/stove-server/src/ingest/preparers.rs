@@ -130,11 +130,6 @@ pub(super) fn prepare_test_ended(
   event: &proto::TestEndedEvent,
 ) -> AppResult<PreparedDashboardEvent> {
   let status: TestStatus = event.status.parse().map_err(AppError::InvalidEvent)?;
-  if status == TestStatus::Abandoned {
-    return Err(AppError::InvalidEvent(
-      "ABANDONED is a server-managed status".into(),
-    ));
-  }
   let ended_at = format_timestamp(event.timestamp.as_ref());
   Ok(PreparedDashboardEvent {
     live: LiveDashboardEvent::new(
@@ -164,11 +159,6 @@ pub(super) fn prepare_entry_recorded(
   open_assertion: Option<OpenAssertion>,
 ) -> AppResult<PreparedDashboardEvent> {
   let result: TestStatus = event.result.parse().map_err(AppError::InvalidEvent)?;
-  if result == TestStatus::Abandoned {
-    return Err(AppError::InvalidEvent(
-      "ABANDONED is a server-managed status".into(),
-    ));
-  }
   let metadata = serde_json::to_string(&event.metadata)?;
   let timestamp = format_timestamp(event.timestamp.as_ref());
   let (assertion_id, attempt_count, failure_count) = assertion_attempt(event, open_assertion);

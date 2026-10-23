@@ -1,5 +1,5 @@
 import type { QueryClient } from "@tanstack/react-query";
-import { dashboardKeys } from "../../api/query-keys";
+import { dashboardKeys, isDashboardDataQuery } from "../../api/query-keys";
 
 export const adminKeys = {
   root: ["admin"] as const,
@@ -7,25 +7,11 @@ export const adminKeys = {
   schema: ["admin", "schema"] as const,
 };
 
-const DASHBOARD_ROOTS = new Set([
-  "linked",
-  "focus",
-  "apps",
-  "runs",
-  "tests",
-  "entries",
-  "spans",
-  "snapshots",
-  "mock-interactions",
-  "mock-warnings",
-  "trace",
-]);
-
 /** Destructive operations must discard cached evidence before REST reconciliation. */
 export async function refreshDatabaseQueries(queryClient: QueryClient): Promise<void> {
   await Promise.all([
     queryClient.resetQueries({
-      predicate: (query) => DASHBOARD_ROOTS.has(String(query.queryKey[0])),
+      predicate: isDashboardDataQuery,
     }),
     queryClient.invalidateQueries({ queryKey: adminKeys.root }),
     // Refresh catalog membership without dropping the user's current browsing scope.

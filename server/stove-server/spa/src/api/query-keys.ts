@@ -16,3 +16,21 @@ export const dashboardKeys = {
   ambientMockWarnings: (runId: string) => ["mock-warnings", runId] as const,
   trace: (traceId: string) => ["trace", traceId] as const,
 };
+
+const DASHBOARD_ROOTS = new Set([
+  "linked",
+  "focus",
+  "apps",
+  "runs",
+  "tests",
+  "entries",
+  "spans",
+  "snapshots",
+  "mock-interactions",
+  "mock-warnings",
+  "trace",
+]);
+
+export function isDashboardDataQuery({ queryKey }: { queryKey: readonly unknown[] }): boolean {
+  return DASHBOARD_ROOTS.has(String(queryKey[0]));
+}

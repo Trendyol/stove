@@ -54,7 +54,6 @@ export function createDemoData(version: string, now = Date.now()): DemoData {
       const systems = ["HTTP", "PostgreSQL", "Kafka", "WireMock", "OIDC", "Redis"];
       data.runs.push({
         last_activity_at: new Date(start + 22_000).toISOString(),
-        abandoned_at: null,
         id: runId,
         app_name: app.name,
         started_at: new Date(start).toISOString(),

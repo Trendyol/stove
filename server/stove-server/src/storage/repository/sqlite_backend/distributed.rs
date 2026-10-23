@@ -1,7 +1,6 @@
 use diesel::dsl::max;
 use diesel::prelude::*;
 
-use super::super::lifecycle::RecoveryMode;
 use super::SqliteBackend;
 use super::writes::apply_persisted_event;
 use crate::error::{AppError, Result};
@@ -35,18 +34,10 @@ impl SqliteBackend {
       }
 
       verify_sequence(conn, &event.live.run_id, sequence, &identity.event_id)?;
-      let recovered = super::lifecycle::recover_run(
-        conn,
-        &event.live.run_id,
-        RecoveryMode::for_event(&event.persisted),
-      )?;
       apply_persisted_event(conn, &event.persisted, retention)?;
       super::lifecycle::touch_run(conn, &event.live.run_id)?;
 
       let live_event_id = append_live_event(conn, &identity.event_id, &event.live)?;
-      if recovered {
-        super::lifecycle::publish_lifecycle(conn, &event.live.run_id)?;
-      }
       diesel::insert_into(dashboard_event_inbox::table)
         .values((
           dashboard_event_inbox::event_id.eq(&identity.event_id),
@@ -143,7 +134,7 @@ pub(super) fn append_live_event(
   let live_event_id = diesel::insert_into(live_events::table)
     .values((
       live_events::event_id.eq(event_id),
-      live_events::run_id.eq(&live.run_id),
+      live_events::run_id.eq(live.parent_run_id()),
       live_events::event_type.eq(live.event_type()),
       live_events::payload.eq("{}"),
     ))

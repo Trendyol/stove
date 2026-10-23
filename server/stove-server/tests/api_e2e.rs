@@ -2261,7 +2261,7 @@ async fn admin_preview_and_purge_use_exact_ids_and_protect_running_runs() {
 }
 
 #[tokio::test]
-async fn admin_idle_timeout_is_persisted_validated_and_used_for_purge() {
+async fn admin_idle_timeout_is_persisted_validated_and_deletes_idle_runs() {
   let server = TestServer::start().await;
   assert_eq!(
     server.get_json("/admin/status").await["run_idle_timeout_seconds"],
@@ -2308,19 +2308,5 @@ async fn admin_idle_timeout_is_persisted_validated_and_used_for_purge() {
     .unwrap();
   assert!(enabled.status().is_success());
   assert_eq!(server.repo.expire_idle_runs().unwrap(), 1);
-  let run = server.get_json("/runs/idle").await;
-  assert_eq!(run["status"], "ABANDONED");
-  assert!(run["abandoned_at"].is_string());
-  assert!(run["ended_at"].is_null());
-  let purge = server
-    .client
-    .post(server.url("/admin/purge"))
-    .json(&serde_json::json!({"run_ids": ["idle"]}))
-    .send()
-    .await
-    .unwrap()
-    .json::<serde_json::Value>()
-    .await
-    .unwrap();
-  assert_eq!(purge["purged_runs"], 1);
+  assert!(server.get_json("/runs/idle").await.is_null());
 }

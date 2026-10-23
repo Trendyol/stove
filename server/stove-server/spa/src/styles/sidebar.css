@@ -906,9 +906,3 @@
   gap: 8px;
   align-items: baseline;
 }
-
-.stove-tree-dot.is-abandoned,
-.stove-test-status.is-abandoned {
-  background: #d97706;
-  animation: none;
-}

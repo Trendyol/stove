@@ -25,7 +25,7 @@ pub fn spawn(repository: Arc<Repository>, mut shutdown: watch::Receiver<bool>) -
       })
       .await;
       match result {
-        Ok(Ok(count)) if count > 0 => tracing::info!(count, "Marked idle runs abandoned"),
+        Ok(Ok(count)) if count > 0 => tracing::info!(count, "Deleted idle runs"),
         Ok(Ok(_)) => {}
         Ok(Err(error)) => tracing::warn!(%error, "Run expiry failed; retrying on next sweep"),
         Err(error) => tracing::warn!(%error, "Run expiry worker failed"),

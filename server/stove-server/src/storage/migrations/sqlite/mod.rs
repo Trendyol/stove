@@ -54,3 +54,54 @@ fn lifecycle_backfills_receipts_and_gives_legacy_runs_a_fresh_grace_period() {
   assert!(legacy <= chrono::Utc::now());
   run_migrations(&mut connection).unwrap();
 }
+
+#[test]
+fn idle_cleanup_migration_preserves_receipts_and_event_sequence() {
+  for keep_active in [false, true] {
+    let mut connection = Connection::open_in_memory().unwrap();
+    connection.execute_batch("PRAGMA foreign_keys=ON").unwrap();
+    embedded::migrations::runner()
+      .set_target(refinery::Target::Version(10))
+      .run(&mut connection)
+      .unwrap();
+    connection
+      .execute_batch(
+        "
+      INSERT INTO runs(id, app_name, started_at, status) VALUES
+        ('active', 'app', '2026-01-01', 'RUNNING');
+      INSERT INTO live_events(id, event_id, run_id, event_type, payload) VALUES
+        (20, 'active-event', 'active', 'run_started', '{}');
+      INSERT INTO dashboard_event_inbox(event_id, run_id, sequence, live_event_id) VALUES
+        ('active-event', 'active', 1, 20);
+    ",
+      )
+      .unwrap();
+    if !keep_active {
+      connection
+        .execute_batch("DELETE FROM runs WHERE id='active'")
+        .unwrap();
+    }
+    run_migrations(&mut connection).unwrap();
+    let count = |table: &str| {
+      connection
+        .query_row(&format!("SELECT count(*) FROM {table}"), [], |r| {
+          r.get::<_, i64>(0)
+        })
+        .unwrap()
+    };
+    assert_eq!(count("runs"), i64::from(keep_active));
+    assert_eq!(count("tests"), 0);
+    assert_eq!(count("dashboard_event_inbox"), i64::from(keep_active));
+    assert_eq!(count("live_events"), i64::from(keep_active));
+    connection.execute_batch("INSERT INTO live_events(event_id, run_id, event_type, payload) VALUES ('deleted', NULL, 'run_deleted', '{}')").unwrap();
+    assert!(connection.last_insert_rowid() > 20);
+    let violations = connection
+      .prepare("PRAGMA foreign_key_check")
+      .unwrap()
+      .query_map([], |_| Ok(()))
+      .unwrap()
+      .count();
+    assert_eq!(violations, 0);
+    run_migrations(&mut connection).unwrap();
+  }
+}

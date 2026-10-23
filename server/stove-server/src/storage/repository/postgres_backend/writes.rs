@@ -58,9 +58,15 @@ impl PostgresBackend {
   }
 
   pub fn clear_all(&self) -> Result<()> {
-    let mut conn = self.checkout_write()?;
-    diesel::delete(runs::table).execute(&mut *conn)?;
-    Ok(())
+    self.checkout_write()?.transaction(|conn| {
+      diesel::delete(runs::table).execute(conn)?;
+      diesel::delete(
+        crate::storage::schema::postgres::live_events::table
+          .filter(crate::storage::schema::postgres::live_events::run_id.is_null()),
+      )
+      .execute(conn)?;
+      Ok(())
+    })
   }
 }
 
@@ -316,8 +322,7 @@ pub(in crate::storage::repository) fn prune_app(
       .offset(offset)
       .select(runs::id)
       .load::<String>(conn)?;
-    // Keep the completing run through receipt/outbox commit, and recheck running
-    // status at deletion so concurrent recovery cannot remove a now-active run.
+    // Keep the completing run through receipt/outbox commit and protect active runs.
     expired.retain(|id| Some(id.as_str()) != protected_run);
     let deleted = diesel::delete(
       runs::table

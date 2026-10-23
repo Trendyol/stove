@@ -16,7 +16,6 @@ export const app = {
 };
 export const run = {
   last_activity_at: "2026-09-07T10:00:05.000Z",
-  abandoned_at: null,
   id: "run-1",
   app_name: "demo",
   started_at: app.latest_run_started_at,

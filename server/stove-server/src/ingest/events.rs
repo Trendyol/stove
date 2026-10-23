@@ -99,6 +99,21 @@ impl LiveDashboardEvent {
     }
   }
 
+  pub(crate) fn run_deleted(run_id: &str) -> Self {
+    Self::new(
+      run_id,
+      LiveDashboardPayload::RunDeleted(LiveRunDeletedPayload {}),
+    )
+  }
+
+  /// Deletion notifications outlive the run; other events keep a cascading parent reference.
+  pub(crate) fn parent_run_id(&self) -> Option<&str> {
+    match self.payload {
+      LiveDashboardPayload::RunDeleted(_) => None,
+      _ => Some(&self.run_id),
+    }
+  }
+
   #[must_use]
   pub const fn event_type(&self) -> &'static str {
     self.payload.event_type()
@@ -114,7 +129,7 @@ impl LiveDashboardEvent {
       LiveDashboardPayload::Snapshot(payload) => payload.id = temp_id,
       LiveDashboardPayload::MockInteraction(payload) => payload.id = temp_id,
       LiveDashboardPayload::MockWarning(payload) => payload.id = temp_id,
-      LiveDashboardPayload::RunLifecycleChanged(_)
+      LiveDashboardPayload::RunDeleted(_)
       | LiveDashboardPayload::RunStarted(_)
       | LiveDashboardPayload::RunEnded(_)
       | LiveDashboardPayload::TestStarted(_)
@@ -128,7 +143,7 @@ impl LiveDashboardEvent {
 #[serde(tag = "event_type", content = "payload", rename_all = "snake_case")]
 pub enum LiveDashboardPayload {
   RunStarted(LiveRunStartedPayload),
-  RunLifecycleChanged(LiveRunLifecyclePayload),
+  RunDeleted(LiveRunDeletedPayload),
   RunEnded(LiveRunEndedPayload),
   TestStarted(LiveTestStartedPayload),
   TestEnded(LiveTestEndedPayload),
@@ -143,7 +158,7 @@ impl LiveDashboardPayload {
   const fn event_type(&self) -> &'static str {
     match self {
       Self::RunStarted(_) => "run_started",
-      Self::RunLifecycleChanged(_) => "run_lifecycle_changed",
+      Self::RunDeleted(_) => "run_deleted",
       Self::RunEnded(_) => "run_ended",
       Self::TestStarted(_) => "test_started",
       Self::TestEnded(_) => "test_ended",
@@ -321,7 +336,4 @@ fn live_record_id(seq: u64) -> i64 {
 }
 
 #[derive(Clone, Debug, Serialize, ToSchema)]
-pub struct LiveRunLifecyclePayload {
-  pub run: crate::storage::models::Run,
-  pub tests: Vec<crate::storage::models::Test>,
-}
+pub struct LiveRunDeletedPayload {}

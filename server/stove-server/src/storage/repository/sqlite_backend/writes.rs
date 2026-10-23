@@ -70,6 +70,11 @@ impl SqliteBackend {
     self.lock_write().conn().transaction(|conn| {
       delete_all_evidence(conn)?;
       diesel::delete(runs::table).execute(conn)?;
+      diesel::delete(
+        crate::storage::schema::sqlite::live_events::table
+          .filter(crate::storage::schema::sqlite::live_events::run_id.is_null()),
+      )
+      .execute(conn)?;
       Ok(())
     })
   }

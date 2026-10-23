@@ -12,7 +12,6 @@ import {
 } from "./validation";
 export const isRun = object<Run>({
   last_activity_at: isString,
-  abandoned_at: isNullableString,
   id: isString,
   app_name: isString,
   started_at: isString,

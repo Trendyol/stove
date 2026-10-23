@@ -1,6 +1,6 @@
 import type { QueryClient, QueryKey } from "@tanstack/react-query";
 import { LiveCacheBuffer } from "./live-cache/buffer";
-import { fenceLifecycleRequests } from "./live-cache/reconciliation";
+import { cancelPreDeletionRequests } from "./live-cache/reconciliation";
 import {
   appendEntries,
   appendInteractions,
@@ -34,13 +34,13 @@ export function applyLiveDashboardEvents(
   events: readonly LiveDashboardEvent[],
 ) {
   if (events.length === 0) return;
-  const lifecycle = events.filter((event) => event.event_type === EVENT_TYPE.RUN_LIFECYCLE_CHANGED);
-  if (lifecycle.length) fenceLifecycleRequests(queryClient);
+  const deletions = events.filter((event) => event.event_type === EVENT_TYPE.RUN_DELETED);
+  if (deletions.length) cancelPreDeletionRequests(queryClient);
   const cache = new LiveCacheBuffer(queryClient);
   for (const event of events) applyEvent(cache, event);
   cache.flush();
-  if (lifecycle.length) {
-    for (const event of lifecycle) invalidateDashboardQueries(queryClient, event.run_id);
+  if (deletions.length) {
+    for (const event of deletions) invalidateDashboardQueries(queryClient, event.run_id);
     void queryClient.invalidateQueries({ queryKey: ["admin"] });
     void queryClient.invalidateQueries({ queryKey: ["top-filter"] });
   }
@@ -48,8 +48,8 @@ export function applyLiveDashboardEvents(
 
 function applyEvent(cache: LiveCacheBuffer, event: LiveDashboardEvent) {
   switch (event.event_type) {
-    case EVENT_TYPE.RUN_LIFECYCLE_CHANGED:
-      return applyLifecycle(cache, event);
+    case EVENT_TYPE.RUN_DELETED:
+      return applyRunDeleted(cache, event);
     case EVENT_TYPE.RUN_STARTED:
       return applyRunStarted(cache, event);
     case EVENT_TYPE.RUN_ENDED:
@@ -77,7 +77,6 @@ function applyRunStarted(cache: LiveCacheBuffer, event: LiveEventOf<"run_started
     ...event.payload,
     id: event.run_id,
     ended_at: null,
-    abandoned_at: null,
     status: "RUNNING",
     total_tests: 0,
     passed: 0,
@@ -188,6 +187,9 @@ export function invalidateDashboardQueries(queryClient: QueryClient, runId?: str
   queryClient.invalidateQueries({ queryKey: ["apps"] });
   queryClient.invalidateQueries({ queryKey: ["runs"] });
   if (runId) {
+    queryClient.invalidateQueries({ queryKey: ["linked", runId] });
+    queryClient.invalidateQueries({ queryKey: ["focus", runId] });
+    queryClient.invalidateQueries({ queryKey: ["trace"] });
     queryClient.invalidateQueries({ queryKey: ["tests", runId] });
     queryClient.invalidateQueries({ queryKey: ["entries", runId] });
     queryClient.invalidateQueries({ queryKey: ["spans", runId] });
@@ -265,18 +267,27 @@ function updateExistingQueryData<T>(
   }
 }
 
-function applyLifecycle(cache: LiveCacheBuffer, event: LiveEventOf<"run_lifecycle_changed">) {
-  const { run, tests } = event.payload;
-  updateCachedRuns(cache, event.run_id, () => run);
-  cache.setQueryData<AppSummary[]>(["apps"], (apps) =>
-    apps?.map((app) =>
-      app.latest_run_id === run.id ? { ...app, latest_status: run.status } : app,
-    ),
-  );
-  updateExistingQueryData<Test[]>(cache, ["tests", event.run_id], () => tests);
-  cache.setQueryData(["linked", event.run_id, "run"], run);
-  for (const test of tests) {
-    updateExistingQueryData(cache, ["linked", event.run_id, "test", test.id], () => test);
+function applyRunDeleted(cache: LiveCacheBuffer, event: LiveEventOf<"run_deleted">) {
+  const runId = event.run_id;
+  for (const [key, runs] of cache.getQueriesData<Run[]>({ queryKey: ["runs"] })) {
+    cache.setQueryData(
+      key,
+      runs?.filter((run) => run.id !== runId),
+    );
   }
-  updateExistingQueryData(cache, ["linked", event.run_id, "tests"], () => tests);
+  for (const [key, spans] of cache.getQueriesData<Span[]>({ queryKey: ["trace"] })) {
+    cache.setQueryData(
+      key,
+      spans?.filter((span) => span.run_id !== runId),
+    );
+  }
+  // Refetching apps selects the next latest surviving run, if any.
+  cache.setQueryData<AppSummary[]>(["apps"], (apps) =>
+    apps?.filter((app) => app.latest_run_id !== runId),
+  );
+  for (const [key, data] of cache.getQueriesData<unknown>({ queryKey: [] })) {
+    if (key[0] !== "runs" && key.includes(runId)) {
+      cache.setQueryData(key, Array.isArray(data) ? [] : null);
+    }
+  }
 }

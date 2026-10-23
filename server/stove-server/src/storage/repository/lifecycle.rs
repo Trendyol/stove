@@ -2,7 +2,7 @@ use super::{Backend, Repository};
 use crate::error::Result;
 
 mod policy;
-pub(super) use policy::{ExpiryWindow, IdleTimeout, RecoveryMode, SWEEP_BATCH_SIZE};
+pub(super) use policy::{IdleTimeout, SWEEP_BATCH_SIZE};
 
 impl Repository {
   /// Seed once. Runtime Admin changes are shared and survive process restarts.

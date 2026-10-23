@@ -94,7 +94,7 @@ stove                                  # default UI/REST/MCP port 4040, gRPC por
 stove --public-url https://stove.example/observe  # public browser URL and optional gateway prefix
 stove --port 9000 --grpc-port 9001     # override ports
 stove --retention-runs-per-app 50      # keep 50 completed runs per app (default: 1; 0: unlimited)
-stove --run-idle-timeout-seconds 3600  # abandon runs after 1 hour without ingestion (0: disabled)
+stove --run-idle-timeout-seconds 3600  # delete idle runs after 1 hour without ingestion (0: disabled)
 stove --fresh-start                    # back up and recreate the DB, then start
 stove --db ./my-stove.sqlite           # custom DB path
 stove --database-url postgresql://stove:secret@db.example/stove
@@ -419,19 +419,19 @@ Agents can apply the same dynamic filter through `stove_runs`:
 }
 ```
 
-## Abandoned runs
+## Idle run cleanup
 
-Runs left behind by cancelled CI jobs or failed runners become `ABANDONED` after **3600 seconds (1 hour)** without newly committed ingestion. A background worker checks at startup and every 60 seconds, even without incoming requests. The run and its unfinished tests become abandoned; completed tests, evidence, and actual completion timestamps remain intact. Ordinary purge and retention can then remove the run.
+Running runs left behind by cancelled CI jobs or failed runners are permanently deleted after **3600 seconds (1 hour)** without newly committed ingestion. A background worker checks at startup and every 60 seconds, even without incoming requests. Deletion cascades to all tests, evidence, and ingestion receipts belonging to the run. Completed runs are unaffected; no additional status is introduced.
 
-Set **Admin → Abandoned runs → Idle timeout (seconds)** to change the timeout. Use `0` to disable automatic expiry. This setting is persisted in both SQLite and PostgreSQL; PostgreSQL replicas share it. A change applies on the next sweep. Reducing the timeout can abandon runs already idle beyond the new value.
+Set **Admin → Idle run cleanup → Idle timeout (seconds)** to change the timeout. Use `0` to disable automatic expiry. This setting is persisted in both SQLite and PostgreSQL; PostgreSQL replicas share it. A change applies on the next sweep. Reducing the timeout can permanently delete runs already idle beyond the new value.
 
 For a new database, `--run-idle-timeout-seconds`, `STOVE_RUN_IDLE_TIMEOUT_SECONDS`, or file property `run_idle_timeout_seconds` seeds the value, using normal configuration precedence. The default is `3600` everywhere. Once stored, the Admin value takes precedence over startup configuration and survives restarts.
 
 Activity uses the database receipt clock, independent of producer timestamps. Duplicate retries and rejected events do not extend the deadline. A healthy test with no new ingestion for an hour can also expire; increase the timeout for long, silent work. Existing runs are migrated using their latest ingestion receipt, or migration time when receipt history is absent.
 
-If valid ingestion resumes before deletion, an abandoned run and its unfinished tests return to `RUNNING`. A late run completion supplies the actual outcome; tests missing their own completion remain abandoned. Recovery cannot restore purged evidence. Expiry and recovery reach open dashboards through durable live events, and MCP reports abandoned evidence as incomplete.
+New valid ingestion before the sweep refreshes the deadline. Once deleted, late test or completion events cannot revive the run. Open dashboards receive a durable deletion event and discard the removed run and evidence.
 
-PostgreSQL uses the built-in `pg_try_advisory_lock` on a dedicated session so only one pod sweeps a shared database at a time. Losing or closing that session releases the lock. Per-run transaction locks serialize expiry with ingestion, and the worker rechecks activity after taking the lock. No extension or separate coordination service is required. Deploy compatible server versions together: older versions cannot parse `ABANDONED`.
+PostgreSQL uses the built-in `pg_try_advisory_lock` on a dedicated session so only one pod sweeps a shared database at a time. Losing or closing that session releases the lock. Per-run transaction locks serialize expiry with ingestion, and the worker rechecks activity after taking the lock. No extension or separate coordination service is required.
 
 ## Administration
 
@@ -518,5 +518,5 @@ The acceptance suite verifies the same ingestion, filtering, retention, administ
 | Dashboard empty | `stove` running? `dashboard { }` registered in `Stove().with`? `appName` set? |
 | Events not arriving | Port mismatch. `DashboardIngestion.Grpc(port = ...)` must match `--grpc-port` |
 | "gRPC disabled" warning | Expected if the server started after tests; restart in correct order |
-| Cancelled CI run remains running | After 1 hour without newly committed ingestion, the next sweep marks it abandoned and eligible for purge. Check Admin’s idle timeout and worker health if it remains running. |
+| Cancelled CI run remains running | After 1 hour without newly committed ingestion, the next sweep deletes the run and its tests and evidence. Check Admin’s idle timeout and worker health if it remains running. |
 | Disk filling up | Set `--retention-runs-per-app` (or `STOVE_RETENTION_RUNS_PER_APP`) to limit completed runs per app |

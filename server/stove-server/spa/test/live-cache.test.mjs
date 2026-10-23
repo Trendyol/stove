@@ -813,29 +813,27 @@ test("reconciliation preserves both input snapshots when a retry arrives during 
   assert.equal(cached[0].id, -8);
 });
 
-test("lifecycle events expire and restore run and test caches despite older REST requests", async () => {
+test("deletion events remove runs and evidence despite older REST requests", async () => {
   const { run, testRecord, app } = await import("./helpers/fixtures.mjs");
   const client = new QueryClient();
-  const active = { ...run, status: "RUNNING", ended_at: null, duration_ms: null };
-  const activeTest = { ...testRecord, status: "RUNNING", ended_at: null, duration_ms: null };
-  client.setQueryData(["apps"], [{ ...app, latest_status: "RUNNING" }]);
-  client.setQueryData(["runs", "demo"], [active]);
-  client.setQueryData(["tests", run.id], [activeTest]);
+  client.setQueryData(["apps"], [{ ...app, latest_run_id: run.id }]);
+  client.setQueryData(["runs", "demo"], [run]);
+  client.setQueryData(["tests", run.id], [testRecord]);
+  client.setQueryData(["linked", run.id, "run"], run);
+  client.setQueryData(["entries", run.id, testRecord.id], [{ id: 1 }]);
+  client.setQueryData(["trace", "shared-trace"], [{run_id: run.id}, {run_id: "other-run"}]);
   let resolve;
   const pending = new Promise((done) => { resolve = done; });
   const query = { ...dashboardQueries.runs("demo"), load: () => pending };
   const request = loadAndReconcileDashboardData(client, query);
-  const abandoned = { ...active, status: "ABANDONED", abandoned_at: "2026-09-07T11:00:05.000Z" };
-  applyLiveDashboardEvent(client, { seq: 10, run_id: run.id, event_type: "run_lifecycle_changed",
-    payload: { run: abandoned, tests: [{ ...activeTest, status: "ABANDONED" }] } });
-  resolve([active]);
-  assert.equal((await request)[0].status, "ABANDONED");
-  assert.equal(client.getQueryData(["apps"])[0].latest_status, "ABANDONED");
-  assert.equal(client.getQueryData(["tests", run.id])[0].status, "ABANDONED");
-  const resumed = { ...active, last_activity_at: "2026-09-07T11:05:00.000Z" };
-  applyLiveDashboardEvent(client, { seq: 11, run_id: run.id, event_type: "run_lifecycle_changed",
-    payload: { run: resumed, tests: [activeTest] } });
-  assert.equal(client.getQueryData(["runs", "demo"])[0].status, "RUNNING");
-  assert.equal(client.getQueryData(["tests", run.id])[0].status, "RUNNING");
+  applyLiveDashboardEvent(client, { seq: 10, run_id: run.id, event_type: "run_deleted", payload: {} });
+  resolve([run]);
+  assert.deepEqual(await request, []);
+  assert.deepEqual(client.getQueryData(["runs", "demo"]), []);
+  assert.deepEqual(client.getQueryData(["apps"]), []);
+  assert.deepEqual(client.getQueryData(["tests", run.id]), []);
+  assert.deepEqual(client.getQueryData(["entries", run.id, testRecord.id]), []);
+  assert.equal(client.getQueryData(["linked", run.id, "run"]), null);
+  assert.deepEqual(client.getQueryData(["trace", "shared-trace"]), [{run_id: "other-run"}]);
   client.clear();
 });

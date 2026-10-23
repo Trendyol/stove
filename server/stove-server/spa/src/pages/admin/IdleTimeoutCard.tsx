@@ -11,10 +11,10 @@ interface IdleTimeoutCardProps {
 export function IdleTimeoutCard({ seconds, valid, busy, onChange, onApply }: IdleTimeoutCardProps) {
   return (
     <section className="stove-admin-card">
-      <h3>Abandoned runs</h3>
+      <h3>Idle run cleanup</h3>
       <p>
-        Mark runs abandoned after this period without new ingestion. Default:{" "}
-        {DEFAULT_IDLE_TIMEOUT_SECONDS} seconds (1 hour). Use 0 to disable.
+        Delete running runs and all their tests and evidence after this period without new
+        ingestion. Default: {DEFAULT_IDLE_TIMEOUT_SECONDS} seconds (1 hour). Use 0 to disable.
       </p>
       <label className="stove-admin-field">
         <span>Idle timeout (seconds)</span>
@@ -33,7 +33,7 @@ export function IdleTimeoutCard({ seconds, valid, busy, onChange, onApply }: Idl
       )}
       <p>
         Saved for all server instances. Applies on the next sweep, within one minute. Reducing this
-        value can abandon runs already idle beyond the new timeout.
+        value can permanently delete runs already idle beyond the new timeout.
       </p>
       <button type="button" disabled={busy || !valid} onClick={onApply}>
         Apply idle timeout

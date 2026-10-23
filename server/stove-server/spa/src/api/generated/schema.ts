@@ -680,8 +680,8 @@ export interface components {
             payload: components["schemas"]["LiveRunStartedPayload"];
         } | {
             /** @enum {string} */
-            event_type: "run_lifecycle_changed";
-            payload: components["schemas"]["LiveRunLifecyclePayload"];
+            event_type: "run_deleted";
+            payload: components["schemas"]["LiveRunDeletedPayload"];
         } | {
             /** @enum {string} */
             event_type: "run_ended";
@@ -777,6 +777,7 @@ export interface components {
             test_id: string | null;
             timestamp: string;
         };
+        LiveRunDeletedPayload: Record<string, never>;
         LiveRunEndedPayload: {
             /** Format: int64 */
             duration_ms: number;
@@ -788,10 +789,6 @@ export interface components {
             status: components["schemas"]["RunStatus"];
             /** Format: int32 */
             total_tests: number;
-        };
-        LiveRunLifecyclePayload: {
-            run: components["schemas"]["Run"];
-            tests: components["schemas"]["Test"][];
         };
         LiveRunStartedPayload: {
             app_name: string;
@@ -936,7 +933,6 @@ export interface components {
         };
         /** @description A single test run (one execution of a test suite). */
         Run: {
-            abandoned_at: string | null;
             app_name: string;
             /** Format: int64 */
             duration_ms: number | null;
@@ -961,7 +957,7 @@ export interface components {
          * @description Status of a test run.
          * @enum {string}
          */
-        RunStatus: "RUNNING" | "ABANDONED" | "PASSED" | "FAILED";
+        RunStatus: "RUNNING" | "PASSED" | "FAILED";
         /** @description A system snapshot captured during a test. */
         Snapshot: {
             captured_at: string | null;
@@ -1032,7 +1028,7 @@ export interface components {
          * @description Status of an individual test or entry result.
          * @enum {string}
          */
-        TestStatus: "RUNNING" | "ABANDONED" | "PASSED" | "FAILED" | "ERROR";
+        TestStatus: "RUNNING" | "PASSED" | "FAILED" | "ERROR";
         TopFilterCatalog: {
             available_keys: string[];
             settings: components["schemas"]["TopFilterSettings"];
