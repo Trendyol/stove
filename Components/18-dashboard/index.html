@@ -2313,6 +2313,17 @@
   
 </li>
         
+          <li class="md-nav__item">
+  <a href="#server-logging" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Server logging
+      
+    </span>
+  </a>
+  
+</li>
+        
       </ul>
     </nav>
   
@@ -3647,6 +3658,17 @@
   
 </li>
         
+          <li class="md-nav__item">
+  <a href="#server-logging" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Server logging
+      
+    </span>
+  </a>
+  
+</li>
+        
       </ul>
     </nav>
   
@@ -4177,6 +4199,7 @@ Install <code>stove-server</code>, run <code>stove</code>, add <code>dashboard {
 </span><span id="__span-7-3"><a id="__codelineno-7-3" name="__codelineno-7-3" href="#__codelineno-7-3"></a><span class="n">database_url_file</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"/run/secrets/stove/database-url"</span>
 </span><span id="__span-7-4"><a id="__codelineno-7-4" name="__codelineno-7-4" href="#__codelineno-7-4"></a><span class="n">retention_runs_per_app</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">50</span>
 </span><span id="__span-7-5"><a id="__codelineno-7-5" name="__codelineno-7-5" href="#__codelineno-7-5"></a><span class="n">run_idle_timeout_seconds</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">3600</span>
+</span><span id="__span-7-6"><a id="__codelineno-7-6" name="__codelineno-7-6" href="#__codelineno-7-6"></a><span class="n">log_format</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"json"</span>
 </span></code></pre></div>
 <p>The equivalent JSON keys are identical:</p>
 <div class="language-json highlight"><pre><span></span><code><span id="__span-8-1"><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a><span class="p">{</span>
@@ -4184,11 +4207,16 @@ Install <code>stove-server</code>, run <code>stove</code>, add <code>dashboard {
 </span><span id="__span-8-3"><a id="__codelineno-8-3" name="__codelineno-8-3" href="#__codelineno-8-3"></a><span class="w">  </span><span class="nt">"grpc_port"</span><span class="p">:</span><span class="w"> </span><span class="mi">4041</span><span class="p">,</span>
 </span><span id="__span-8-4"><a id="__codelineno-8-4" name="__codelineno-8-4" href="#__codelineno-8-4"></a><span class="w">  </span><span class="nt">"database_url_file"</span><span class="p">:</span><span class="w"> </span><span class="s2">"/run/secrets/stove/database-url"</span><span class="p">,</span>
 </span><span id="__span-8-5"><a id="__codelineno-8-5" name="__codelineno-8-5" href="#__codelineno-8-5"></a><span class="w">  </span><span class="nt">"retention_runs_per_app"</span><span class="p">:</span><span class="w"> </span><span class="mi">50</span><span class="p">,</span>
-</span><span id="__span-8-6"><a id="__codelineno-8-6" name="__codelineno-8-6" href="#__codelineno-8-6"></a><span class="w">  </span><span class="nt">"run_idle_timeout_seconds"</span><span class="p">:</span><span class="w"> </span><span class="mi">3600</span>
-</span><span id="__span-8-7"><a id="__codelineno-8-7" name="__codelineno-8-7" href="#__codelineno-8-7"></a><span class="p">}</span>
+</span><span id="__span-8-6"><a id="__codelineno-8-6" name="__codelineno-8-6" href="#__codelineno-8-6"></a><span class="w">  </span><span class="nt">"run_idle_timeout_seconds"</span><span class="p">:</span><span class="w"> </span><span class="mi">3600</span><span class="p">,</span>
+</span><span id="__span-8-7"><a id="__codelineno-8-7" name="__codelineno-8-7" href="#__codelineno-8-7"></a><span class="w">  </span><span class="nt">"log_format"</span><span class="p">:</span><span class="w"> </span><span class="s2">"json"</span>
+</span><span id="__span-8-8"><a id="__codelineno-8-8" name="__codelineno-8-8" href="#__codelineno-8-8"></a><span class="p">}</span>
 </span></code></pre></div>
 <p>Start it with <code>stove --config-file /etc/stove/stove.toml</code>, or set <code>STOVE_CONFIG_FILE</code> to the path. A secret file contains only the connection URL and may end with a newline. <code>--database-url-file</code> and <code>STOVE_DATABASE_URL_FILE</code> provide the same indirection without a general configuration file.</p>
 <p>CLI arguments and <code>STOVE_*</code> environment variables override the configuration file, which overrides built-in defaults. Configure only one of <code>database_url</code> and <code>database_url_file</code> at a given precedence level. Relative <code>db</code> and <code>database_url_file</code> paths inside a configuration file are resolved from that file's directory. Stove reads configuration and secrets once during startup, so restart replicas after rotating either file. Prefer a read-only secret mount over an inline URL, an environment variable, or a command-line argument because those values can be exposed by deployment inspection or process listings.</p>
+<h3 id="server-logging">Server logging<a class="headerlink" href="#server-logging" title="Permanent link">&para;</a></h3>
+<p>Server logs default to newline-delimited JSON on stdout, suitable for ingestion into Elasticsearch and viewing in Kibana. Each event includes <code>timestamp</code>, <code>level</code>, <code>target</code>, and a <code>fields</code> object containing <code>message</code> and any structured event fields. Startup endpoints are also logged as structured fields, without a plain-text banner in JSON mode.</p>
+<p>Use <code>stove --log-format text</code> for readable terminal output, or set <code>STOVE_LOG_FORMAT=text</code>. Configuration files accept <code>log_format = "json"</code> or <code>log_format = "text"</code> (JSON files use the same key). Precedence is CLI flag, environment variable, configuration file, then the JSON default.</p>
+<p><code>RUST_LOG</code> controls filtering for either format and defaults to <code>info</code>, for example <code>RUST_LOG=stove=debug,info stove</code>. CLI help, configuration errors before logging initializes, and interactive skills prompts remain plain text; prompts go to stderr.</p>
 <h2 id="run-with-docker">Run with Docker<a class="headerlink" href="#run-with-docker" title="Permanent link">&para;</a></h2>
 <p>The image serves the dashboard, REST API, and MCP on port <code>4040</code>, and receives test events over gRPC on port <code>4041</code>. It runs as a non-root user and supports Linux AMD64 and ARM64.</p>
 <p>Use <code>ghcr.io/trendyol/stove-server:latest</code> to follow stable releases or <code>ghcr.io/trendyol/stove-server:snapshot</code> to follow development snapshots. Publishing a Maven snapshot also publishes the matching server image with both its versioned tag (for example, <code>:1.0.0.558-SNAPSHOT</code>) and <code>:snapshot</code>. Snapshot publications never update <code>:latest</code>.</p>
@@ -4536,6 +4564,11 @@ Install <code>stove-server</code>, run <code>stove</code>, add <code>dashboard {
 <td><code>--config-file</code></td>
 <td>unset</td>
 <td>TOML or JSON configuration path; also <code>STOVE_CONFIG_FILE</code></td>
+</tr>
+<tr>
+<td><code>--log-format</code></td>
+<td><code>json</code></td>
+<td><code>json</code> or <code>text</code>; also <code>STOVE_LOG_FORMAT</code> or config-file <code>log_format</code>. Verbosity is controlled by <code>RUST_LOG</code> (default <code>info</code>)</td>
 </tr>
 <tr>
 <td><code>--public-url</code></td>
