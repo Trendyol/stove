@@ -1,4 +1,5 @@
 use std::net::SocketAddr;
+use std::process::ExitCode;
 use std::sync::Arc;
 
 use tokio::sync::watch;
@@ -15,10 +16,25 @@ use stove::sse;
 use stove::storage;
 
 #[tokio::main]
-async fn main() -> anyhow::Result<()> {
-  initialize_logging();
-  let config = config::Config::parse()?;
+async fn main() -> ExitCode {
+  let config = match config::Config::parse() {
+    Ok(config) => config,
+    Err(error) => {
+      eprintln!("Error: {error:#}");
+      return ExitCode::FAILURE;
+    }
+  };
+  initialize_logging(config.log_format);
+  match run(config).await {
+    Ok(()) => ExitCode::SUCCESS,
+    Err(error) => {
+      tracing::error!(error = %format!("{error:#}"), "Stove server failed");
+      ExitCode::FAILURE
+    }
+  }
+}
 
+async fn run(config: config::Config) -> anyhow::Result<()> {
   // Handle a `skills` subcommand if requested. Returns true when handled.
   if skills::handle_skills_command(&config).await? {
     return Ok(());
@@ -58,7 +74,7 @@ async fn main() -> anyhow::Result<()> {
     ingestor,
     shutdown_rx,
   ));
-  print_endpoints(config.port, config.grpc_port);
+  print_endpoints(config.port, config.grpc_port, config.log_format);
   let result = run_until_shutdown(grpc_handle, http_handle, live_event_relay, shutdown_tx).await;
   expiry.await?;
   result
@@ -89,12 +105,14 @@ async fn run_until_shutdown(
   server_result
 }
 
-fn initialize_logging() {
-  tracing_subscriber::fmt()
-    .with_env_filter(
-      tracing_subscriber::EnvFilter::try_from_default_env().unwrap_or_else(|_| "info".into()),
-    )
-    .init();
+fn initialize_logging(format: config::LogFormat) {
+  let subscriber = tracing_subscriber::fmt().with_env_filter(
+    tracing_subscriber::EnvFilter::try_from_default_env().unwrap_or_else(|_| "info".into()),
+  );
+  match format {
+    config::LogFormat::Json => subscriber.json().with_ansi(false).init(),
+    config::LogFormat::Text => subscriber.init(),
+  }
 }
 
 fn prepare_fresh_start(config: &config::Config) -> anyhow::Result<()> {
@@ -105,10 +123,9 @@ fn prepare_fresh_start(config: &config::Config) -> anyhow::Result<()> {
     anyhow::bail!("--fresh-start is only supported for the local SQLite database");
   }
   if let Some(backup_path) = config::handle_fresh_start(&config.db)? {
-    info!("Backed up database to {}", backup_path);
-    println!("  Backed up database to {backup_path}");
+    info!(backup_path, "Backed up database");
   }
-  println!("  Starting fresh — database will be recreated.");
+  info!("Starting fresh — database will be recreated.");
   Ok(())
 }
 
@@ -130,7 +147,7 @@ async fn serve_grpc(
 ) -> anyhow::Result<()> {
   let address = SocketAddr::from(([0, 0, 0, 0], port));
   let service = grpc::service::DashboardEventServiceImpl::new(ingestor);
-  info!("gRPC server listening on {}", address);
+  info!(%address, "gRPC server listening");
   tonic::transport::Server::builder()
     .add_service(proto::dashboard_event_service_server::DashboardEventServiceServer::new(service))
     .serve_with_shutdown(address, wait_for_shutdown(shutdown))
@@ -149,7 +166,7 @@ async fn serve_http(
   let address = SocketAddr::from(([0, 0, 0, 0], port));
   let router =
     http::server::create_router_with_public_url(repository, sse_manager, ingestor, public_url);
-  info!("HTTP server listening on {}", address);
+  info!(%address, "HTTP server listening");
   let listener = tokio::net::TcpListener::bind(address).await?;
   axum::serve(
     listener,
@@ -160,7 +177,19 @@ async fn serve_http(
   Ok(())
 }
 
-fn print_endpoints(http_port: u16, grpc_port: u16) {
+fn print_endpoints(http_port: u16, grpc_port: u16, format: config::LogFormat) {
+  if format == config::LogFormat::Json {
+    info!(
+      version = env!("STOVE_VERSION"),
+      ui = %format!("http://localhost:{http_port}"),
+      rest = %format!("http://localhost:{http_port}/api/v1"),
+      docs = %format!("http://localhost:{http_port}/swagger-ui"),
+      mcp = %format!("http://localhost:{http_port}/mcp"),
+      grpc = %format!("localhost:{grpc_port}"),
+      "Stove Server running"
+    );
+    return;
+  }
   println!(
     "\n  Stove Server v{} running\n  UI:   http://localhost:{}\n  REST: http://localhost:{}/api/v1\n  Docs: http://localhost:{}/swagger-ui\n  MCP:  http://localhost:{}/mcp\n  gRPC: localhost:{}\n",
     env!("STOVE_VERSION"),

@@ -59,8 +59,8 @@ pub async fn maybe_update_skills(config: &Config) {
   }
 
   let Some(repo_root) = current_git_root() else {
-    println!(
-      "  Stove skills can be installed from your project root: cd <your-repo> && stove skills install"
+    tracing::info!(
+      "Stove skills can be installed from your project root: cd <your-repo> && stove skills install"
     );
     return;
   };
@@ -70,7 +70,7 @@ pub async fn maybe_update_skills(config: &Config) {
   match decide_sync_action(&target, config.update_skills).await {
     SyncAction::Skip(reason) => {
       if let Some(message) = reason {
-        eprintln!("  warning: skipping Stove skills check ({message})");
+        tracing::warn!(reason = %message, "Skipping Stove skills check");
       }
     }
     SyncAction::Apply(remote) => apply_install(&target, &remote),
@@ -78,7 +78,7 @@ pub async fn maybe_update_skills(config: &Config) {
       match prompt_yes_no("  Install/update Stove agent skills from GitHub? [y/N] ") {
         Ok(true) => apply_install(&target, &remote),
         Ok(false) => {}
-        Err(err) => eprintln!("  warning: skills prompt failed: {err}"),
+        Err(err) => tracing::warn!(error = %err, "Skills prompt failed"),
       }
     }
   }
@@ -115,9 +115,9 @@ fn apply_install(target: &Path, remote: &RemoteSkills) {
   match install_skills(target, remote) {
     Ok(()) => {
       let target = target.display();
-      println!("  Updated Stove agent skills at {target}");
+      tracing::info!(%target, "Updated Stove agent skills");
     }
-    Err(err) => eprintln!("  warning: failed to install Stove skills: {err}"),
+    Err(err) => tracing::warn!(error = %err, "Failed to install Stove skills"),
   }
 }
 
@@ -360,8 +360,8 @@ fn swap_into_place(staging: &Path, target: &Path, aside: &Path) -> anyhow::Resul
 }
 
 fn prompt_yes_no(message: &str) -> anyhow::Result<bool> {
-  print!("{message}");
-  std::io::stdout().flush()?;
+  eprint!("{message}");
+  std::io::stderr().flush()?;
   let mut input = String::new();
   std::io::stdin().read_line(&mut input)?;
   Ok(matches!(

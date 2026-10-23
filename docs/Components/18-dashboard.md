@@ -114,6 +114,7 @@ grpc_port = 4041
 database_url_file = "/run/secrets/stove/database-url"
 retention_runs_per_app = 50
 run_idle_timeout_seconds = 3600
+log_format = "json"
 ```
 
 The equivalent JSON keys are identical:
@@ -124,13 +125,22 @@ The equivalent JSON keys are identical:
   "grpc_port": 4041,
   "database_url_file": "/run/secrets/stove/database-url",
   "retention_runs_per_app": 50,
-  "run_idle_timeout_seconds": 3600
+  "run_idle_timeout_seconds": 3600,
+  "log_format": "json"
 }
 ```
 
 Start it with `stove --config-file /etc/stove/stove.toml`, or set `STOVE_CONFIG_FILE` to the path. A secret file contains only the connection URL and may end with a newline. `--database-url-file` and `STOVE_DATABASE_URL_FILE` provide the same indirection without a general configuration file.
 
 CLI arguments and `STOVE_*` environment variables override the configuration file, which overrides built-in defaults. Configure only one of `database_url` and `database_url_file` at a given precedence level. Relative `db` and `database_url_file` paths inside a configuration file are resolved from that file's directory. Stove reads configuration and secrets once during startup, so restart replicas after rotating either file. Prefer a read-only secret mount over an inline URL, an environment variable, or a command-line argument because those values can be exposed by deployment inspection or process listings.
+
+### Server logging
+
+Server logs default to newline-delimited JSON on stdout, suitable for ingestion into Elasticsearch and viewing in Kibana. Each event includes `timestamp`, `level`, `target`, and a `fields` object containing `message` and any structured event fields. Startup endpoints are also logged as structured fields, without a plain-text banner in JSON mode.
+
+Use `stove --log-format text` for readable terminal output, or set `STOVE_LOG_FORMAT=text`. Configuration files accept `log_format = "json"` or `log_format = "text"` (JSON files use the same key). Precedence is CLI flag, environment variable, configuration file, then the JSON default.
+
+`RUST_LOG` controls filtering for either format and defaults to `info`, for example `RUST_LOG=stove=debug,info stove`. CLI help, configuration errors before logging initializes, and interactive skills prompts remain plain text; prompts go to stderr.
 
 ## Run with Docker
 
@@ -475,6 +485,7 @@ The explorer has direct write access to Stove's tables. Confirmation in the brow
 | Flag | Default | Notes |
 |---|---|---|
 | `--config-file` | unset | TOML or JSON configuration path; also `STOVE_CONFIG_FILE` |
+| `--log-format` | `json` | `json` or `text`; also `STOVE_LOG_FORMAT` or config-file `log_format`. Verbosity is controlled by `RUST_LOG` (default `info`) |
 | `--public-url` | unset | browser URL for MCP citations, including an optional path prefix; also `STOVE_PUBLIC_URL` or config-file `public_url` |
 | `--port` | 4040 | web UI, REST, and MCP; also `STOVE_PORT` |
 | `--grpc-port` | 4041 | event ingestion from Stove tests; also `STOVE_GRPC_PORT` |

@@ -2,7 +2,7 @@ use std::ffi::OsString;
 use std::path::{Path, PathBuf};
 
 use anyhow::{Context, Result, bail};
-use clap::{Parser, Subcommand};
+use clap::{Parser, Subcommand, ValueEnum};
 use serde::Deserialize;
 
 pub const DEFAULT_RUN_IDLE_TIMEOUT_SECONDS: u64 = 3600;
@@ -11,10 +11,19 @@ const DEFAULT_HTTP_PORT: u16 = 4040;
 const DEFAULT_GRPC_PORT: u16 = 4041;
 const DEFAULT_RETENTION_RUNS_PER_APP: usize = 1;
 
+#[derive(Clone, Copy, Debug, Default, Deserialize, PartialEq, Eq, ValueEnum)]
+#[serde(rename_all = "lowercase")]
+pub enum LogFormat {
+  #[default]
+  Json,
+  Text,
+}
+
 /// Resolved server configuration. Command-line arguments and environment variables
 /// override values loaded from the optional TOML or JSON configuration file.
 #[allow(clippy::struct_excessive_bools)] // CLI flags are naturally bool-heavy
 pub struct Config {
+  pub log_format: LogFormat,
   pub public_url: Option<String>,
   pub port: u16,
   pub grpc_port: u16,
@@ -39,6 +48,10 @@ pub struct Config {
 )]
 #[allow(clippy::struct_excessive_bools)] // CLI flags are naturally bool-heavy
 struct CliConfig {
+  /// Log output format (default: json)
+  #[arg(long, env = "STOVE_LOG_FORMAT", value_enum)]
+  log_format: Option<LogFormat>,
+
   /// Browser-accessible URL, including an optional gateway path prefix
   #[arg(long, env = "STOVE_PUBLIC_URL")]
   public_url: Option<String>,
@@ -104,6 +117,7 @@ struct CliConfig {
 #[derive(Default, Deserialize)]
 #[serde(deny_unknown_fields)]
 struct FileConfig {
+  log_format: Option<LogFormat>,
   run_idle_timeout_seconds: Option<u64>,
   public_url: Option<String>,
   port: Option<u16>,
@@ -174,6 +188,10 @@ impl Config {
       .map(|value| crate::navigation::validate_public_url(&value).map_err(anyhow::Error::msg))
       .transpose()?;
     Ok(Self {
+      log_format: cli
+        .log_format
+        .or_else(|| file.as_ref().and_then(|config| config.log_format))
+        .unwrap_or_default(),
       run_idle_timeout_seconds: cli
         .run_idle_timeout_seconds
         .or_else(|| {
