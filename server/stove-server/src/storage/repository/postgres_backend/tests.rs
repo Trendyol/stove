@@ -1,3 +1,4 @@
+mod cleanup;
 mod recovery;
 
 use std::collections::BTreeMap;
