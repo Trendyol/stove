@@ -17,7 +17,13 @@ Explore the full dashboard with fictional checkout runs: follow a payment timeou
 
 The demo stores its data only in browser memory. **Reset demo** restores the sample runs; reloading starts fresh too. No Stove server, Docker, or installation is required.
 
-{{ dashboard_preview() }}
+<iframe
+  class="stove-dashboard-demo"
+  src="https://trendyol.github.io/stove/dashboard-demo/"
+  title="Interactive Stove dashboard demo"
+  loading="lazy"
+  allow="fullscreen"
+></iframe>
 
 ## Open evidence from a report
 

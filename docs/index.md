@@ -12,7 +12,6 @@ hide:
     <div class="stove-hero-actions">
       <a class="stove-btn primary" href="#setup-wizard">✨ Launch the wizard</a>
       <a class="stove-btn" href="getting-started/">Getting started</a>
-      <a class="stove-btn" href="dashboard-demo/">Try the dashboard</a>
       <a class="stove-btn" href="recipes/">Recipes</a>
       <a class="stove-btn" href="https://github.com/Trendyol/stove">GitHub →</a>
     </div>
@@ -75,9 +74,15 @@ Stove registers the systems your app depends on, then registers one AUT runner. 
 
 When `dashboard { }` is registered and the `stove` server is running, registered systems stream local run evidence into a dashboard you can keep open while iterating. Timeline entries, system snapshots, Kafka observations, and exported spans stay attached to the test that produced them.
 
-{{ dashboard_preview("home") }}
+<iframe
+  class="stove-dashboard-demo"
+  src="https://trendyol.github.io/stove/dashboard-demo/"
+  title="Interactive Stove dashboard demo"
+  loading="lazy"
+  allow="fullscreen"
+></iframe>
 
-<p><a class="stove-btn primary" href="dashboard-demo/">Explore the interactive demo</a> <a class="stove-btn" href="Components/18-dashboard/">Dashboard setup</a></p>
+<p><a class="stove-btn primary" href="https://trendyol.github.io/stove/dashboard-demo/">Explore the interactive demo</a> <a class="stove-btn" href="Components/18-dashboard/">Dashboard setup</a></p>
 
 The demo runs in your browser with fictional test data. Switch applications and runs, inspect traces and mock calls, replay a test, or try the SQL workbench. Reset the demo whenever you want to start over.
 

@@ -98,7 +98,10 @@ def _emit_setup_json(docs_dir: Path, data: dict) -> Path:
         ),
         **data,
     }
-    out.write_text(json.dumps(payload, indent=2), encoding="utf-8")
+    content = json.dumps(payload, indent=2)
+    # This file is watched by `mkdocs serve`; unchanged writes cause a reload loop.
+    if not out.exists() or out.read_text(encoding="utf-8") != content:
+        out.write_text(content, encoding="utf-8")
     return out
 
 

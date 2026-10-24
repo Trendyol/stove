@@ -27,6 +27,24 @@
     height: 1.55rem;
 }
 
+/* Keep the standalone demo prominent in desktop and mobile navigation. */
+:is(.md-tabs__link, .md-nav__link)[href="https://trendyol.github.io/stove/dashboard-demo/"] {
+    width: fit-content;
+    padding: 0.35rem 0.65rem;
+    border-radius: 999px;
+    background: #fbbf24;
+    color: #1f2937;
+    font-weight: 700;
+    opacity: 1;
+}
+.md-tabs__link[href="https://trendyol.github.io/stove/dashboard-demo/"] {
+    margin-top: 0.4rem;
+}
+:is(.md-tabs__link, .md-nav__link)[href="https://trendyol.github.io/stove/dashboard-demo/"]:is(:hover, :focus-visible) {
+    background: #fde68a;
+    color: #111827;
+}
+
 /* Shared docs surface colors.
    Material's primary-light token is too faint in light mode and muddy in dark mode
    for larger callout surfaces, so these variables keep banners/cards readable. */
@@ -1596,6 +1614,16 @@ code.language-kotlin .token.punctuation {
 }
 .stove-ribbon-item strong { display: block; font-size: 0.92rem; }
 .stove-ribbon-item p { margin: 0.25rem 0 0; font-size: 0.78rem; color: var(--stove-doc-muted); }
+
+/* ---- Interactive dashboard demo ---- */
+.stove-dashboard-demo {
+    display: block;
+    width: 100%;
+    height: clamp(640px, 80vh, 900px);
+    margin: 1.2rem 0;
+    border: 1px solid var(--stove-doc-border);
+    border-radius: 12px;
+}
 
 /* ---- Static dashboard showcase ---- */
 .stove-dashboard-showcase {
