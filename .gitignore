@@ -88,6 +88,7 @@ build
 .kotlin
 *.tsbuildinfo
 .junie
+.serena/
 
 # Python artifacts (mkdocs hooks + macros)
 __pycache__/
