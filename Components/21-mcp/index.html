@@ -598,6 +598,8 @@
       
         
       
+        
+      
     
     
     
@@ -742,6 +744,34 @@
     
   
     Getting Started
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../agent-setup/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Agent Skills and Plugins
   
 
     
@@ -3590,18 +3620,47 @@ Start <code>stove</code>. Point your agent at the MCP endpoint. Agents call <cod
 </span><span id="__span-1-9"><a id="__codelineno-1-9" name="__codelineno-1-9" href="#__codelineno-1-9"></a><span class="p">}</span>
 </span></code></pre></div>
 <h2 id="connect-an-agent">Connect an agent<a class="headerlink" href="#connect-an-agent" title="Permanent link">&para;</a></h2>
-<div class="tabbed-set tabbed-alternate" data-tabs="1:2"><input checked="checked" id="claude-code" name="__tabbed_1" type="radio" /><input id="cursor--continue--" name="__tabbed_1" type="radio" /><div class="tabbed-labels"><label for="claude-code">Claude Code</label><label for="cursor--continue--">Cursor / Continue / ...</label></div>
+<p>Install the Stove skill and configure its MCP connection from your application repository:</p>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>stove<span class="w"> </span>skills<span class="w"> </span>install<span class="w"> </span>--agent<span class="w"> </span>claude<span class="w"> </span>--configure-mcp
+</span></code></pre></div>
+<p>Choose <code>codex</code>, <code>claude</code>, <code>cursor</code>, or <code>opencode</code>. Add <code>--dry-run</code> to preview destinations or <code>--global</code> for all projects. Start <code>stove</code> separately, then restart your agent session. See <a href="../../agent-setup/">Agent skills and plugins</a> for plugin installation, custom endpoints, and configuration locations.</p>
+<p>For manual configuration:</p>
+<div class="tabbed-set tabbed-alternate" data-tabs="1:5"><input checked="checked" id="claude-code" name="__tabbed_1" type="radio" /><input id="codex" name="__tabbed_1" type="radio" /><input id="cursor" name="__tabbed_1" type="radio" /><input id="opencode" name="__tabbed_1" type="radio" /><input id="other-clients" name="__tabbed_1" type="radio" /><div class="tabbed-labels"><label for="claude-code">Claude Code</label><label for="codex">Codex</label><label for="cursor">Cursor</label><label for="opencode">OpenCode</label><label for="other-clients">Other clients</label></div>
 <div class="tabbed-content">
 <div class="tabbed-block">
-<div class="language-json highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="c1">// ~/.config/claude-code/config.json</span>
-</span><span id="__span-2-2"><a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a><span class="p">{</span>
-</span><span id="__span-2-3"><a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a><span class="w">  </span><span class="nt">"mcpServers"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
-</span><span id="__span-2-4"><a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a><span class="w">    </span><span class="nt">"stove"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
-</span><span id="__span-2-5"><a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a><span class="w">      </span><span class="nt">"type"</span><span class="p">:</span><span class="w"> </span><span class="s2">"http"</span><span class="p">,</span>
-</span><span id="__span-2-6"><a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a><span class="w">      </span><span class="nt">"url"</span><span class="p">:</span><span class="w"> </span><span class="s2">"http://localhost:4040/mcp"</span>
-</span><span id="__span-2-7"><a id="__codelineno-2-7" name="__codelineno-2-7" href="#__codelineno-2-7"></a><span class="w">    </span><span class="p">}</span>
-</span><span id="__span-2-8"><a id="__codelineno-2-8" name="__codelineno-2-8" href="#__codelineno-2-8"></a><span class="w">  </span><span class="p">}</span>
-</span><span id="__span-2-9"><a id="__codelineno-2-9" name="__codelineno-2-9" href="#__codelineno-2-9"></a><span class="p">}</span>
+<p>Use <code>.mcp.json</code> in your project, or <code>~/.claude.json</code> for user-wide configuration. Merge this entry with existing settings:</p>
+<div class="language-json highlight"><pre><span></span><code><span id="__span-3-1"><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="p">{</span>
+</span><span id="__span-3-2"><a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a><span class="w">  </span><span class="nt">"mcpServers"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+</span><span id="__span-3-3"><a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a><span class="w">    </span><span class="nt">"stove"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+</span><span id="__span-3-4"><a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a><span class="w">      </span><span class="nt">"type"</span><span class="p">:</span><span class="w"> </span><span class="s2">"http"</span><span class="p">,</span>
+</span><span id="__span-3-5"><a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a><span class="w">      </span><span class="nt">"url"</span><span class="p">:</span><span class="w"> </span><span class="s2">"http://localhost:4040/mcp"</span>
+</span><span id="__span-3-6"><a id="__codelineno-3-6" name="__codelineno-3-6" href="#__codelineno-3-6"></a><span class="w">    </span><span class="p">}</span>
+</span><span id="__span-3-7"><a id="__codelineno-3-7" name="__codelineno-3-7" href="#__codelineno-3-7"></a><span class="w">  </span><span class="p">}</span>
+</span><span id="__span-3-8"><a id="__codelineno-3-8" name="__codelineno-3-8" href="#__codelineno-3-8"></a><span class="p">}</span>
+</span></code></pre></div>
+</div>
+<div class="tabbed-block">
+<p>Use <code>.codex/config.toml</code> in a trusted project, or <code>~/.codex/config.toml</code> for user-wide configuration:</p>
+<div class="language-toml highlight"><pre><span></span><code><span id="__span-4-1"><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="k">[mcp_servers.stove]</span>
+</span><span id="__span-4-2"><a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a><span class="n">url</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"http://localhost:4040/mcp"</span>
+</span></code></pre></div>
+</div>
+<div class="tabbed-block">
+<p>Use <code>.cursor/mcp.json</code> in your project, or <code>~/.cursor/mcp.json</code> for user-wide configuration:</p>
+<div class="language-json highlight"><pre><span></span><code><span id="__span-5-1"><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a><span class="p">{</span>
+</span><span id="__span-5-2"><a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a><span class="w">  </span><span class="nt">"mcpServers"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+</span><span id="__span-5-3"><a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a><span class="w">    </span><span class="nt">"stove"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="nt">"url"</span><span class="p">:</span><span class="w"> </span><span class="s2">"http://localhost:4040/mcp"</span><span class="p">}</span>
+</span><span id="__span-5-4"><a id="__codelineno-5-4" name="__codelineno-5-4" href="#__codelineno-5-4"></a><span class="w">  </span><span class="p">}</span>
+</span><span id="__span-5-5"><a id="__codelineno-5-5" name="__codelineno-5-5" href="#__codelineno-5-5"></a><span class="p">}</span>
+</span></code></pre></div>
+</div>
+<div class="tabbed-block">
+<p>Merge into <code>opencode.json</code> or your existing <code>opencode.jsonc</code>:</p>
+<div class="language-json highlight"><pre><span></span><code><span id="__span-6-1"><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a><span class="p">{</span>
+</span><span id="__span-6-2"><a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a><span class="w">  </span><span class="nt">"mcp"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+</span><span id="__span-6-3"><a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a><span class="w">    </span><span class="nt">"stove"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="nt">"type"</span><span class="p">:</span><span class="w"> </span><span class="s2">"remote"</span><span class="p">,</span><span class="w"> </span><span class="nt">"url"</span><span class="p">:</span><span class="w"> </span><span class="s2">"http://localhost:4040/mcp"</span><span class="p">,</span><span class="w"> </span><span class="nt">"enabled"</span><span class="p">:</span><span class="w"> </span><span class="kc">true</span><span class="p">}</span>
+</span><span id="__span-6-4"><a id="__codelineno-6-4" name="__codelineno-6-4" href="#__codelineno-6-4"></a><span class="w">  </span><span class="p">}</span>
+</span><span id="__span-6-5"><a id="__codelineno-6-5" name="__codelineno-6-5" href="#__codelineno-6-5"></a><span class="p">}</span>
 </span></code></pre></div>
 </div>
 <div class="tabbed-block">
@@ -3663,37 +3722,37 @@ Start <code>stove</code>. Point your agent at the MCP endpoint. Agents call <cod
 </table>
 <h2 id="link-reports-to-exact-evidence">Link reports to exact evidence<a class="headerlink" href="#link-reports-to-exact-evidence" title="Permanent link">&para;</a></h2>
 <p>Failure and evidence results include <code>navigation</code> with the exact <code>run_id</code>, optional <code>test_id</code>, browser <code>path</code>, and optional absolute <code>url</code>. Tests with a recorded error also include <code>error_navigation</code> to open that error. Agents can put these links beside their explanation in a report; reports themselves remain in the agent's output.</p>
-<div class="language-json highlight"><pre><span></span><code><span id="__span-3-1"><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="p">{</span>
-</span><span id="__span-3-2"><a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a><span class="w">  </span><span class="nt">"run_id"</span><span class="p">:</span><span class="w"> </span><span class="s2">"pipeline-42"</span><span class="p">,</span>
-</span><span id="__span-3-3"><a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a><span class="w">  </span><span class="nt">"test_id"</span><span class="p">:</span><span class="w"> </span><span class="s2">"test-failed"</span><span class="p">,</span>
-</span><span id="__span-3-4"><a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a><span class="w">  </span><span class="nt">"path"</span><span class="p">:</span><span class="w"> </span><span class="s2">"/observe/runs/pipeline-42/tests/test-failed?tab=timeline&amp;focus=entry:482"</span><span class="p">,</span>
-</span><span id="__span-3-5"><a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a><span class="w">  </span><span class="nt">"url"</span><span class="p">:</span><span class="w"> </span><span class="s2">"https://stove.example/observe/runs/pipeline-42/tests/test-failed?tab=timeline&amp;focus=entry:482"</span>
-</span><span id="__span-3-6"><a id="__codelineno-3-6" name="__codelineno-3-6" href="#__codelineno-3-6"></a><span class="p">}</span>
+<div class="language-json highlight"><pre><span></span><code><span id="__span-7-1"><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a><span class="p">{</span>
+</span><span id="__span-7-2"><a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a><span class="w">  </span><span class="nt">"run_id"</span><span class="p">:</span><span class="w"> </span><span class="s2">"pipeline-42"</span><span class="p">,</span>
+</span><span id="__span-7-3"><a id="__codelineno-7-3" name="__codelineno-7-3" href="#__codelineno-7-3"></a><span class="w">  </span><span class="nt">"test_id"</span><span class="p">:</span><span class="w"> </span><span class="s2">"test-failed"</span><span class="p">,</span>
+</span><span id="__span-7-4"><a id="__codelineno-7-4" name="__codelineno-7-4" href="#__codelineno-7-4"></a><span class="w">  </span><span class="nt">"path"</span><span class="p">:</span><span class="w"> </span><span class="s2">"/observe/runs/pipeline-42/tests/test-failed?tab=timeline&amp;focus=entry:482"</span><span class="p">,</span>
+</span><span id="__span-7-5"><a id="__codelineno-7-5" name="__codelineno-7-5" href="#__codelineno-7-5"></a><span class="w">  </span><span class="nt">"url"</span><span class="p">:</span><span class="w"> </span><span class="s2">"https://stove.example/observe/runs/pipeline-42/tests/test-failed?tab=timeline&amp;focus=entry:482"</span>
+</span><span id="__span-7-6"><a id="__codelineno-7-6" name="__codelineno-7-6" href="#__codelineno-7-6"></a><span class="p">}</span>
 </span></code></pre></div>
 <p>Configure the browser address with <code>STOVE_PUBLIC_URL=https://stove.example/observe</code>, <code>--public-url</code>, or <code>public_url</code> in the server configuration file. It can differ from the agent's internal MCP address. Without it, <code>url</code> is null and <code>path</code> is relative to the browser origin; agents should use a known browser origin, never guess one from an internal MCP hostname.</p>
 <p>Use the returned link unchanged. Entry links preserve the exact recorded attempt, even when a later retry passed. Span, snapshot, mock interaction, and warning links open the corresponding inspector. <code>stove_snapshot</code> includes the requested RFC 6901 <code>json_pointer</code> in its citation. Unattributed mocks and trace-only spans can link to run evidence without assigning a test.</p>
 <p>The dashboard starts with bounded context and lets readers expand it or open the full test. Missing or purged evidence produces an unavailable state; it never selects a newer run. Links remain valid only while their evidence is retained. Shared CI deployments should choose an appropriate retention period; the default keeps one completed run per app.</p>
 <h2 id="data-model">Data model<a class="headerlink" href="#data-model" title="Permanent link">&para;</a></h2>
-<div class="language-text highlight"><pre><span></span><code><span id="__span-4-1"><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>database
-</span><span id="__span-4-2"><a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a>└── apps           (one per appName)
-</span><span id="__span-4-3"><a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a>    └── runs       (one per test suite execution)
-</span><span id="__span-4-4"><a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a>        └── tests  (one per test case)
-</span><span id="__span-4-5"><a id="__codelineno-4-5" name="__codelineno-4-5" href="#__codelineno-4-5"></a>            ├── entries        HTTP/DB/Kafka/...
-</span><span id="__span-4-6"><a id="__codelineno-4-6" name="__codelineno-4-6" href="#__codelineno-4-6"></a>            ├── spans          OTel tree
-</span><span id="__span-4-7"><a id="__codelineno-4-7" name="__codelineno-4-7" href="#__codelineno-4-7"></a>            ├── snapshots      system state at failure
-</span><span id="__span-4-8"><a id="__codelineno-4-8" name="__codelineno-4-8" href="#__codelineno-4-8"></a>            └── interactions   WireMock/gRPC Mock exchanges and warnings
+<div class="language-text highlight"><pre><span></span><code><span id="__span-8-1"><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a>database
+</span><span id="__span-8-2"><a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a>└── apps           (one per appName)
+</span><span id="__span-8-3"><a id="__codelineno-8-3" name="__codelineno-8-3" href="#__codelineno-8-3"></a>    └── runs       (one per test suite execution)
+</span><span id="__span-8-4"><a id="__codelineno-8-4" name="__codelineno-8-4" href="#__codelineno-8-4"></a>        └── tests  (one per test case)
+</span><span id="__span-8-5"><a id="__codelineno-8-5" name="__codelineno-8-5" href="#__codelineno-8-5"></a>            ├── entries        HTTP/DB/Kafka/...
+</span><span id="__span-8-6"><a id="__codelineno-8-6" name="__codelineno-8-6" href="#__codelineno-8-6"></a>            ├── spans          OTel tree
+</span><span id="__span-8-7"><a id="__codelineno-8-7" name="__codelineno-8-7" href="#__codelineno-8-7"></a>            ├── snapshots      system state at failure
+</span><span id="__span-8-8"><a id="__codelineno-8-8" name="__codelineno-8-8" href="#__codelineno-8-8"></a>            └── interactions   WireMock/gRPC Mock exchanges and warnings
 </span></code></pre></div>
 <p>For a failed CI execution, start with <code>stove_diagnose</code>. Pass the CI run ID when known, or <code>app_name</code> plus exact metadata that identifies one run. Add <code>test_id</code> to investigate one test; omit it to process the run's failed tests. <code>stove_failures</code> remains a lightweight survey when discovering local runs.</p>
-<div class="language-json highlight"><pre><span></span><code><span id="__span-5-1"><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a><span class="p">{</span>
-</span><span id="__span-5-2"><a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a><span class="w">  </span><span class="nt">"app_name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"checkout-api"</span><span class="p">,</span>
-</span><span id="__span-5-3"><a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a><span class="w">  </span><span class="nt">"metadata"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
-</span><span id="__span-5-4"><a id="__codelineno-5-4" name="__codelineno-5-4" href="#__codelineno-5-4"></a><span class="w">    </span><span class="nt">"gitlab.project"</span><span class="p">:</span><span class="w"> </span><span class="s2">"commerce/checkout-api"</span><span class="p">,</span>
-</span><span id="__span-5-5"><a id="__codelineno-5-5" name="__codelineno-5-5" href="#__codelineno-5-5"></a><span class="w">    </span><span class="nt">"gitlab.pipeline_id"</span><span class="p">:</span><span class="w"> </span><span class="s2">"12345"</span><span class="p">,</span>
-</span><span id="__span-5-6"><a id="__codelineno-5-6" name="__codelineno-5-6" href="#__codelineno-5-6"></a><span class="w">    </span><span class="nt">"gitlab.job_id"</span><span class="p">:</span><span class="w"> </span><span class="s2">"67890"</span>
-</span><span id="__span-5-7"><a id="__codelineno-5-7" name="__codelineno-5-7" href="#__codelineno-5-7"></a><span class="w">  </span><span class="p">},</span>
-</span><span id="__span-5-8"><a id="__codelineno-5-8" name="__codelineno-5-8" href="#__codelineno-5-8"></a><span class="w">  </span><span class="nt">"limit"</span><span class="p">:</span><span class="w"> </span><span class="mi">3</span><span class="p">,</span>
-</span><span id="__span-5-9"><a id="__codelineno-5-9" name="__codelineno-5-9" href="#__codelineno-5-9"></a><span class="w">  </span><span class="nt">"budget"</span><span class="p">:</span><span class="w"> </span><span class="s2">"compact"</span>
-</span><span id="__span-5-10"><a id="__codelineno-5-10" name="__codelineno-5-10" href="#__codelineno-5-10"></a><span class="p">}</span>
+<div class="language-json highlight"><pre><span></span><code><span id="__span-9-1"><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a><span class="p">{</span>
+</span><span id="__span-9-2"><a id="__codelineno-9-2" name="__codelineno-9-2" href="#__codelineno-9-2"></a><span class="w">  </span><span class="nt">"app_name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"checkout-api"</span><span class="p">,</span>
+</span><span id="__span-9-3"><a id="__codelineno-9-3" name="__codelineno-9-3" href="#__codelineno-9-3"></a><span class="w">  </span><span class="nt">"metadata"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+</span><span id="__span-9-4"><a id="__codelineno-9-4" name="__codelineno-9-4" href="#__codelineno-9-4"></a><span class="w">    </span><span class="nt">"gitlab.project"</span><span class="p">:</span><span class="w"> </span><span class="s2">"commerce/checkout-api"</span><span class="p">,</span>
+</span><span id="__span-9-5"><a id="__codelineno-9-5" name="__codelineno-9-5" href="#__codelineno-9-5"></a><span class="w">    </span><span class="nt">"gitlab.pipeline_id"</span><span class="p">:</span><span class="w"> </span><span class="s2">"12345"</span><span class="p">,</span>
+</span><span id="__span-9-6"><a id="__codelineno-9-6" name="__codelineno-9-6" href="#__codelineno-9-6"></a><span class="w">    </span><span class="nt">"gitlab.job_id"</span><span class="p">:</span><span class="w"> </span><span class="s2">"67890"</span>
+</span><span id="__span-9-7"><a id="__codelineno-9-7" name="__codelineno-9-7" href="#__codelineno-9-7"></a><span class="w">  </span><span class="p">},</span>
+</span><span id="__span-9-8"><a id="__codelineno-9-8" name="__codelineno-9-8" href="#__codelineno-9-8"></a><span class="w">  </span><span class="nt">"limit"</span><span class="p">:</span><span class="w"> </span><span class="mi">3</span><span class="p">,</span>
+</span><span id="__span-9-9"><a id="__codelineno-9-9" name="__codelineno-9-9" href="#__codelineno-9-9"></a><span class="w">  </span><span class="nt">"budget"</span><span class="p">:</span><span class="w"> </span><span class="s2">"compact"</span>
+</span><span id="__span-9-10"><a id="__codelineno-9-10" name="__codelineno-9-10" href="#__codelineno-9-10"></a><span class="p">}</span>
 </span></code></pre></div>
 <p>The server resolves the run, collects test evidence, and returns ranked <code>findings</code> in one call: exception messages with service/operation and stack locations, mock near misses, assertion expected/actual values, and explicit diagnostic fields found inside failed-entry payloads and snapshots. It searches JSON before clipping, so a diagnostic beyond an ordinary snapshot preview can still be included without the agent knowing its pointer.</p>
 <p>Each diagnosis also includes <code>timeline_summary</code> and <code>trace_summary</code>. The timeline contains up to five chronological report entries around failures (or the first five when no entry failed), with timestamps, actions, results, trace IDs and citations. <code>omitted_events</code> counts report entries outside that selection; mock exchanges remain findings and can be inspected in the expanded timeline. The trace context includes up to eight spans ending at a failed span, or the longest span when none failed, with parent IDs, services, operations, start/end times and citations. It selects one trace, preferring error evidence over failed-entry correlation and span count, and reports <code>omitted_spans</code> and <code>omitted_traces</code>. Tracing must have been recorded and correlated to the test; otherwise <code>trace_status</code> is <code>uncorrelated</code>.</p>
@@ -3704,15 +3763,15 @@ Start <code>stove</code>. Point your agent at the MCP endpoint. Agents call <cod
 <p><code>status: "partial"</code> means the run is still active or more test pages remain; <code>data_freshness</code> distinguishes live data. Pages are not a database snapshot: when a live run completes, repeat from its first page to catch newly recorded failures. <code>insufficient_evidence</code> on a test means no specific finding was extracted. <code>not_found</code> can mean an incorrect selector or expired retention, not that CI passed.</p>
 <p>JSON extraction recognizes string values under <code>diagnosis</code>, <code>error</code>, <code>error_message</code>, <code>exception_message</code>, <code>failure_reason</code>, and <code>message</code> directly inside an <code>error</code> or <code>exception</code> object. Sensitive-key subtrees are skipped. Per test it visits at most 50,000 JSON nodes and skips payloads larger than 2 MB; skipped, malformed, and capped scans are reported. Other schemas can require the existing focused tools. These are bounded evidence heuristics, not an LLM running inside Stove or a guarantee that every cause can be inferred.</p>
 <p>For manual run discovery, <code>stove_runs.metadata</code> also selects an exact metadata subset. The keys are dynamic and all values are strings:</p>
-<div class="language-json highlight"><pre><span></span><code><span id="__span-6-1"><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a><span class="p">{</span>
-</span><span id="__span-6-2"><a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a><span class="w">  </span><span class="nt">"app_name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"checkout-api"</span><span class="p">,</span>
-</span><span id="__span-6-3"><a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a><span class="w">  </span><span class="nt">"status"</span><span class="p">:</span><span class="w"> </span><span class="s2">"FAILED"</span><span class="p">,</span>
-</span><span id="__span-6-4"><a id="__codelineno-6-4" name="__codelineno-6-4" href="#__codelineno-6-4"></a><span class="w">  </span><span class="nt">"metadata"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
-</span><span id="__span-6-5"><a id="__codelineno-6-5" name="__codelineno-6-5" href="#__codelineno-6-5"></a><span class="w">    </span><span class="nt">"team"</span><span class="p">:</span><span class="w"> </span><span class="s2">"checkout"</span><span class="p">,</span>
-</span><span id="__span-6-6"><a id="__codelineno-6-6" name="__codelineno-6-6" href="#__codelineno-6-6"></a><span class="w">    </span><span class="nt">"gitlab.project"</span><span class="p">:</span><span class="w"> </span><span class="s2">"commerce/checkout-api"</span><span class="p">,</span>
-</span><span id="__span-6-7"><a id="__codelineno-6-7" name="__codelineno-6-7" href="#__codelineno-6-7"></a><span class="w">    </span><span class="nt">"gitlab.pipeline_id"</span><span class="p">:</span><span class="w"> </span><span class="s2">"12345"</span>
-</span><span id="__span-6-8"><a id="__codelineno-6-8" name="__codelineno-6-8" href="#__codelineno-6-8"></a><span class="w">  </span><span class="p">}</span>
-</span><span id="__span-6-9"><a id="__codelineno-6-9" name="__codelineno-6-9" href="#__codelineno-6-9"></a><span class="p">}</span>
+<div class="language-json highlight"><pre><span></span><code><span id="__span-10-1"><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a><span class="p">{</span>
+</span><span id="__span-10-2"><a id="__codelineno-10-2" name="__codelineno-10-2" href="#__codelineno-10-2"></a><span class="w">  </span><span class="nt">"app_name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"checkout-api"</span><span class="p">,</span>
+</span><span id="__span-10-3"><a id="__codelineno-10-3" name="__codelineno-10-3" href="#__codelineno-10-3"></a><span class="w">  </span><span class="nt">"status"</span><span class="p">:</span><span class="w"> </span><span class="s2">"FAILED"</span><span class="p">,</span>
+</span><span id="__span-10-4"><a id="__codelineno-10-4" name="__codelineno-10-4" href="#__codelineno-10-4"></a><span class="w">  </span><span class="nt">"metadata"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+</span><span id="__span-10-5"><a id="__codelineno-10-5" name="__codelineno-10-5" href="#__codelineno-10-5"></a><span class="w">    </span><span class="nt">"team"</span><span class="p">:</span><span class="w"> </span><span class="s2">"checkout"</span><span class="p">,</span>
+</span><span id="__span-10-6"><a id="__codelineno-10-6" name="__codelineno-10-6" href="#__codelineno-10-6"></a><span class="w">    </span><span class="nt">"gitlab.project"</span><span class="p">:</span><span class="w"> </span><span class="s2">"commerce/checkout-api"</span><span class="p">,</span>
+</span><span id="__span-10-7"><a id="__codelineno-10-7" name="__codelineno-10-7" href="#__codelineno-10-7"></a><span class="w">    </span><span class="nt">"gitlab.pipeline_id"</span><span class="p">:</span><span class="w"> </span><span class="s2">"12345"</span>
+</span><span id="__span-10-8"><a id="__codelineno-10-8" name="__codelineno-10-8" href="#__codelineno-10-8"></a><span class="w">  </span><span class="p">}</span>
+</span><span id="__span-10-9"><a id="__codelineno-10-9" name="__codelineno-10-9" href="#__codelineno-10-9"></a><span class="p">}</span>
 </span></code></pre></div>
 <p>All supplied key/value pairs must match exactly and only retained runs are searchable. <code>stove_failures</code> does not accept metadata directly: pass a returned <code>run_id</code> to it, then use that same run ID with the failure, timeline, trace, snapshot, interaction, and raw-evidence tools.</p>
 <h2 id="token-budgeting">Token budgeting<a class="headerlink" href="#token-budgeting" title="Permanent link">&para;</a></h2>
@@ -3753,17 +3812,17 @@ Start <code>stove</code>. Point your agent at the MCP endpoint. Agents call <cod
 <p>Sensitive keys are auto-redacted (passwords, JWTs, common secret patterns).</p>
 <h2 id="recommended-agent-workflows">Recommended agent workflows<a class="headerlink" href="#recommended-agent-workflows" title="Permanent link">&para;</a></h2>
 <p>For a local server with one relevant run:</p>
-<div class="language-text highlight"><pre><span></span><code><span id="__span-7-1"><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a>1. stove_failures(limit=5, app_name="my-service", budget="tiny")
-</span><span id="__span-7-2"><a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a>   → list of recent failures, with test_id and run_id
-</span><span id="__span-7-3"><a id="__codelineno-7-3" name="__codelineno-7-3" href="#__codelineno-7-3"></a>
-</span><span id="__span-7-4"><a id="__codelineno-7-4" name="__codelineno-7-4" href="#__codelineno-7-4"></a>2. stove_failure_detail(test_id, run_id, budget="compact")
-</span><span id="__span-7-5"><a id="__codelineno-7-5" name="__codelineno-7-5" href="#__codelineno-7-5"></a>   → assertion, entries leading up to it, snapshot summary
-</span><span id="__span-7-6"><a id="__codelineno-7-6" name="__codelineno-7-6" href="#__codelineno-7-6"></a>
-</span><span id="__span-7-7"><a id="__codelineno-7-7" name="__codelineno-7-7" href="#__codelineno-7-7"></a>3. (optional) stove_trace(test_id, run_id)
-</span><span id="__span-7-8"><a id="__codelineno-7-8" name="__codelineno-7-8" href="#__codelineno-7-8"></a>   → call chain inside the app
-</span><span id="__span-7-9"><a id="__codelineno-7-9" name="__codelineno-7-9" href="#__codelineno-7-9"></a>
-</span><span id="__span-7-10"><a id="__codelineno-7-10" name="__codelineno-7-10" href="#__codelineno-7-10"></a>4. (optional) stove_snapshot(test_id, run_id, system="kafka")
-</span><span id="__span-7-11"><a id="__codelineno-7-11" name="__codelineno-7-11" href="#__codelineno-7-11"></a>   → drill into one system if root cause unclear
+<div class="language-text highlight"><pre><span></span><code><span id="__span-11-1"><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a>1. stove_failures(limit=5, app_name="my-service", budget="tiny")
+</span><span id="__span-11-2"><a id="__codelineno-11-2" name="__codelineno-11-2" href="#__codelineno-11-2"></a>   → list of recent failures, with test_id and run_id
+</span><span id="__span-11-3"><a id="__codelineno-11-3" name="__codelineno-11-3" href="#__codelineno-11-3"></a>
+</span><span id="__span-11-4"><a id="__codelineno-11-4" name="__codelineno-11-4" href="#__codelineno-11-4"></a>2. stove_failure_detail(test_id, run_id, budget="compact")
+</span><span id="__span-11-5"><a id="__codelineno-11-5" name="__codelineno-11-5" href="#__codelineno-11-5"></a>   → assertion, entries leading up to it, snapshot summary
+</span><span id="__span-11-6"><a id="__codelineno-11-6" name="__codelineno-11-6" href="#__codelineno-11-6"></a>
+</span><span id="__span-11-7"><a id="__codelineno-11-7" name="__codelineno-11-7" href="#__codelineno-11-7"></a>3. (optional) stove_trace(test_id, run_id)
+</span><span id="__span-11-8"><a id="__codelineno-11-8" name="__codelineno-11-8" href="#__codelineno-11-8"></a>   → call chain inside the app
+</span><span id="__span-11-9"><a id="__codelineno-11-9" name="__codelineno-11-9" href="#__codelineno-11-9"></a>
+</span><span id="__span-11-10"><a id="__codelineno-11-10" name="__codelineno-11-10" href="#__codelineno-11-10"></a>4. (optional) stove_snapshot(test_id, run_id, system="kafka")
+</span><span id="__span-11-11"><a id="__codelineno-11-11" name="__codelineno-11-11" href="#__codelineno-11-11"></a>   → drill into one system if root cause unclear
 </span></code></pre></div>
 <p>For CI agents using a shared server:</p>
 <ol>
