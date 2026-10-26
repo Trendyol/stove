@@ -1,6 +1,9 @@
 import { payloadSchemas } from "./live-schemas";
 import type {
   AdminStatus,
+  AgentSetupProvider,
+  AgentSetupResponse,
+  AgentSetupScope,
   AppSummary,
   DatabaseColumn,
   DatabaseQueryResult,
@@ -174,4 +177,23 @@ export const isFocusedEvidence = object<FocusedEvidence>({
   has_more_before: isBoolean,
   has_more_after: isBoolean,
   context_limit: isNumber,
+});
+
+const isAgentSetupScope = object<AgentSetupScope>({
+  command: isString,
+  skill_path: isString,
+  config_path: isString,
+  configuration: isString,
+});
+const isAgentSetupProvider = object<AgentSetupProvider>({
+  id: isString,
+  label: isString,
+  note: isString,
+  install_link: isNullableString,
+  project: isAgentSetupScope,
+  global: isAgentSetupScope,
+});
+export const isAgentSetupResponse = object<AgentSetupResponse>({
+  endpoint: isString,
+  providers: arrayOf(isAgentSetupProvider),
 });

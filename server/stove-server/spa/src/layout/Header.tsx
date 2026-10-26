@@ -1,10 +1,11 @@
 import type { MouseEventHandler } from "react";
 import stoveMarkUrl from "../assets/stove-mark.svg";
+import { ConnectAgentButton } from "../components/agent-connection/AgentConnectionProvider";
 import { ServerHealth } from "../components/ServerHealth";
 import { VersionMismatchWarning } from "../components/VersionMismatchWarning";
 import { useTheme } from "../hooks/useTheme";
 import { isDemo } from "../utils/demo-mode";
-import { appPath, basePath } from "../utils/location";
+import { appPath } from "../utils/location";
 import type { StoveRoute } from "../utils/routes";
 import type { VersionMismatchSummary } from "../utils/version-mismatch";
 
@@ -40,6 +41,7 @@ export function Header({
         {versionMismatchSummary ? (
           <VersionMismatchWarning summary={versionMismatchSummary} />
         ) : null}
+        <ConnectAgentButton />
         <ServerHealth liveConnected={liveConnected} />
         <a
           aria-current={activeRoute === "admin" ? "page" : undefined}
@@ -66,13 +68,7 @@ export function Header({
             <a href="https://github.com/Trendyol/stove" target="_blank" rel="noopener noreferrer">
               GitHub ↗
             </a>
-            <span>{isDemo ? "MCP is available with your own Stove server." : "MCP endpoint"}</span>
-            {!isDemo && (
-              <code>
-                {window.location.origin}
-                {basePath()}/mcp
-              </code>
-            )}
+            <ConnectAgentButton />
           </div>
         </details>
         <button

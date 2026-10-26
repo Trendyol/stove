@@ -44,6 +44,7 @@ nav:
     - Cookbook: cookbook.md
     - Playground: playground.md
     - Getting Started: getting-started.md
+    - Agent Skills and Plugins: agent-setup.md
   - JVM Frameworks:
     - Overview: frameworks/index.md
     - Spring Boot: frameworks/spring-boot.md

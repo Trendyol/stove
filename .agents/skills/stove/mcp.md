@@ -42,7 +42,11 @@ curl -s http://localhost:4040/api/v1/meta
 
 ## MCP client config
 
-Claude Code uses `type = "http"` for Streamable HTTP MCP servers:
+The dashboard's **Connect agent** panel generates the setup command for the selected agent and scope, using that server's MCP endpoint. It also provides manual configuration snippets. See the [agent setup guide](https://trendyol.github.io/stove/agent-setup/) for installation and update behavior.
+
+For standalone skill installation, run `stove skills install --agent claude --configure-mcp` from the application repository. Choose `codex`, `claude`, `cursor`, or `opencode`; add `--dry-run` to preview, `--global` for user-wide setup, or `--mcp-url URL` for a custom endpoint. Start Stove separately. Plugin installations already supply the default localhost connection; avoid installing a second copy of the skill.
+
+If your installed Stove binary does not support these options, configure MCP manually. Claude Code uses project `.mcp.json` or user-wide `~/.claude.json`, with `type = "http"` for Streamable HTTP MCP servers:
 
 ```json
 {
@@ -55,7 +59,7 @@ Claude Code uses `type = "http"` for Streamable HTTP MCP servers:
 }
 ```
 
-Some clients call the same field `transport` and may accept `streamable-http`. The endpoint URL is the load-bearing value.
+Cursor uses `mcpServers` in `.cursor/mcp.json`. Codex uses `[mcp_servers.stove]` with `url = "http://localhost:4040/mcp"` in `.codex/config.toml` (trusted project) or `~/.codex/config.toml`. OpenCode uses `"mcp": {"stove": {"type": "remote", "url": "http://localhost:4040/mcp", "enabled": true}}` in `opencode.json` or `opencode.jsonc`.
 
 For a shared deployment, replace `localhost` with the internal server name:
 

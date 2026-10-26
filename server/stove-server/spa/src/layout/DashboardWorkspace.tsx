@@ -1,5 +1,6 @@
 import { useLayoutEffect, useRef } from "react";
 import type { AppSummary, Run, Test } from "../api/types";
+import { ConnectAgentButton } from "../components/agent-connection/AgentConnectionProvider";
 import type { TopFilterPickerProps } from "../components/TopFilterPicker";
 import {
   PhoneNavigationProvider,
@@ -127,6 +128,9 @@ function WorkspaceEmpty({
       <div className="stove-kicker">{label}</div>
       <h1>{title}</h1>
       <p>{description}</p>
+      {waitingForFirstRun && !filtered && (
+        <ConnectAgentButton className="agent-primary stove-focus-ring" />
+      )}
     </div>
   );
 }

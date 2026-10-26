@@ -148,6 +148,10 @@ main() {
       echo "Add it with:  export PATH=\"${INSTALL_DIR}:\$PATH\""
       ;;
   esac
+
+  echo ""
+  echo "Next: run 'stove' to start the dashboard and MCP server."
+  echo "Agent setup: https://trendyol.github.io/stove/agent-setup/"
 }
 
 main

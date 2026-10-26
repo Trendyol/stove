@@ -231,7 +231,8 @@ mod tests {
       "binary"
     );
     assert_eq!(document["servers"][0]["url"], "..");
-    assert_eq!(document["paths"].as_object().unwrap().len(), 33);
+    assert_eq!(document["paths"].as_object().unwrap().len(), 34);
+    assert!(document["paths"]["/api/v1/agent-setup"]["get"].is_object());
     assert!(document["paths"]["/api/v1/top-filter"]["get"].is_object());
     assert!(document["paths"]["/api/v1/admin/top-filter"]["put"].is_object());
     assert!(document["paths"]["/api/v1/admin/idle-timeout"]["put"].is_object());

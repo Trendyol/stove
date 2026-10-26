@@ -1,0 +1,5 @@
+{
+  "mcpServers": {
+    "stove": { "type": "http", "url": "http://localhost:4040/mcp" }
+  }
+}

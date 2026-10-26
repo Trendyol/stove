@@ -262,6 +262,25 @@ because it was built above. If you change the REST API, regenerate the dashboard
 types with `mise exec -- npm --prefix server/stove-server/spa run generate:api`
 and review the generated diff.
 
+Agent setup adapters live in `server/stove-server/src/agent_setup/providers.rs`.
+To add an agent, implement `AgentProvider` with its skill directory and MCP
+configuration path/format, register it in `provider`, and add its CLI value to
+`SkillAgent` in `config.rs`. Reuse the comment-preserving formats in `formats.rs`;
+`config_file.rs` owns validation and safe writes. Keep provider-specific branches
+out of the installation flow. Extend `tests/skills_cli.rs` with the documented
+project/global destinations, environment overrides, and existing-config behavior,
+then update the supported agents in `docs/agent-setup.md`.
+
+The canonical agent skill and its focused guides live in `.agents/skills/stove/`;
+all plugin adapters package that same content. Plugin versions follow `version`
+in `gradle.properties`. After a Stove version bump, run
+`python3 scripts/package-agent-plugin.py --sync-version` and commit the three
+updated manifests with it. Verify packaging with
+`python3 -m unittest discover -s scripts/tests -p test_agent_plugin.py -v` and
+`python3 scripts/package-agent-plugin.py --output /tmp/stove-agent-plugin.zip`.
+See [agent updates and publishing](docs/agent-setup.md#package-and-publish) for
+release and downstream refresh behavior.
+
 To try the dashboard locally with its PostgreSQL-backed server:
 
 ```sh

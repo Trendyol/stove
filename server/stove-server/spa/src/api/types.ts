@@ -58,3 +58,7 @@ export type LivePayloads = { [Type in EventType]: LiveEventOf<Type>["payload"] }
 
 export type FocusedEvidence = components["schemas"]["FocusedEvidence"];
 export type EvidenceTarget = components["schemas"]["EvidenceTarget"];
+
+export type AgentSetupResponse = components["schemas"]["AgentSetupResponse"];
+export type AgentSetupProvider = components["schemas"]["AgentSetupProvider"];
+export type AgentSetupScope = components["schemas"]["AgentSetupScope"];

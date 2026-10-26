@@ -343,6 +343,128 @@ async fn meta_returns_server_version() {
   assert_eq!(body["mcp"]["endpoint"], format!("{}/mcp", server.base_url));
 }
 
+#[tokio::test]
+async fn agent_setup_preserves_browser_endpoint_and_provider_conventions() {
+  use base64::Engine;
+  let server = TestServer::start().await;
+  let endpoint = "https://example.test/gateway/stove/mcp";
+  let mut url = reqwest::Url::parse(&server.url("/agent-setup")).unwrap();
+  url.query_pairs_mut().append_pair("endpoint", endpoint);
+  let body: serde_json::Value = server
+    .client
+    .get(url)
+    .send()
+    .await
+    .unwrap()
+    .error_for_status()
+    .unwrap()
+    .json()
+    .await
+    .unwrap();
+  assert_eq!(body["endpoint"], endpoint);
+  let providers = body["providers"].as_array().unwrap();
+  assert_eq!(providers.len(), 4);
+  for (id, project, global, skill) in [
+    (
+      "codex",
+      ".codex/config.toml",
+      "~/.codex/config.toml",
+      ".agents/skills/stove",
+    ),
+    (
+      "claude",
+      ".mcp.json",
+      "~/.claude.json",
+      ".claude/skills/stove",
+    ),
+    (
+      "cursor",
+      ".cursor/mcp.json",
+      "~/.cursor/mcp.json",
+      ".agents/skills/stove",
+    ),
+    (
+      "opencode",
+      "opencode.json",
+      "~/.config/opencode/opencode.json",
+      ".agents/skills/stove",
+    ),
+  ] {
+    let provider = providers.iter().find(|p| p["id"] == id).unwrap();
+    assert_eq!(provider["project"]["config_path"], project);
+    assert_eq!(provider["global"]["config_path"], global);
+    assert_eq!(provider["project"]["skill_path"], skill);
+    assert_eq!(provider["global"]["skill_path"], format!("~/{skill}"));
+    for (scope, flag) in [("project", ""), ("global", " --global")] {
+      assert_eq!(
+        provider[scope]["command"],
+        format!("stove skills install --agent {id} --configure-mcp{flag} --mcp-url '{endpoint}'")
+      );
+      let snippet = provider[scope]["configuration"].as_str().unwrap();
+      if id == "codex" {
+        let config: toml_edit::DocumentMut = snippet.parse().unwrap();
+        assert_eq!(
+          config["mcp_servers"]["stove"]["url"].as_str(),
+          Some(endpoint)
+        );
+      } else {
+        let config: serde_json::Value = serde_json::from_str(snippet).unwrap();
+        let key = if id == "opencode" {
+          "mcp"
+        } else {
+          "mcpServers"
+        };
+        assert_eq!(config[key]["stove"]["url"], endpoint);
+      }
+    }
+    if id == "cursor" {
+      let link = reqwest::Url::parse(provider["install_link"].as_str().unwrap()).unwrap();
+      assert_eq!(link.scheme(), "cursor");
+      let encoded = link
+        .query_pairs()
+        .find(|(key, _)| key == "config")
+        .unwrap()
+        .1
+        .into_owned();
+      let decoded = base64::engine::general_purpose::STANDARD
+        .decode(encoded)
+        .unwrap();
+      let config: serde_json::Value = serde_json::from_slice(&decoded).unwrap();
+      assert_eq!(config, serde_json::json!({"type": "http", "url": endpoint}));
+    } else {
+      assert!(provider["install_link"].is_null());
+    }
+  }
+}
+
+#[tokio::test]
+async fn agent_setup_prefers_configured_public_url() {
+  let server = TestServer::start_with_public_url(Some("https://public.test/observe".into())).await;
+  let body = server
+    .get_json("/agent-setup?endpoint=http://internal.test/mcp")
+    .await;
+  assert_eq!(body["endpoint"], "https://public.test/observe/mcp");
+  assert_eq!(server.get("/agent-setup").await.status(), 200);
+}
+
+#[tokio::test]
+async fn agent_setup_rejects_missing_or_invalid_endpoints() {
+  let server = TestServer::start().await;
+  assert_eq!(server.get("/agent-setup").await.status(), 400);
+  for endpoint in [
+    "/mcp",
+    "file:///mcp",
+    "https://user:secret@example.test/mcp",
+    "https://example.test/mcp?token=secret",
+    "https://example.test/mcp#fragment",
+  ] {
+    let mut url = reqwest::Url::parse(&server.url("/agent-setup")).unwrap();
+    url.query_pairs_mut().append_pair("endpoint", endpoint);
+    let response = server.client.get(url).send().await.unwrap();
+    assert_eq!(response.status(), 400, "{endpoint}");
+  }
+}
+
 // ---------------------------------------------------------------------------
 // GET /api/v1/apps
 // ---------------------------------------------------------------------------

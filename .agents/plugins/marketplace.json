@@ -1,0 +1,12 @@
+{
+  "name": "stove-plugins",
+  "interface": { "displayName": "Stove" },
+  "plugins": [
+    {
+      "name": "stove",
+      "source": { "source": "local", "path": "./.agents" },
+      "policy": { "installation": "AVAILABLE", "authentication": "ON_INSTALL" },
+      "category": "Developer Tools"
+    }
+  ]
+}

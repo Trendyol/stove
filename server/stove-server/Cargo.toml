@@ -30,6 +30,7 @@ vendored-postgres = [
 ]
 
 [dependencies]
+base64 = "0.22"
 # Async runtime
 tokio = { version = "1", features = ["full"] }
 
@@ -65,6 +66,9 @@ native-tls = "0.2"
 # Serialization
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
+# Preserve user comments and formatting when adding an MCP connection.
+toml_edit = "0.25"
+jsonc-parser = { version = "0.34", features = ["cst"] }
 config-rs = { package = "config", version = "0.15", default-features = false, features = ["json", "toml"] }
 
 # CLI argument parsing

@@ -37,10 +37,21 @@ Or hit `GET /api/v1/meta` for metadata:
 
 ## Connect an agent
 
+Install the Stove skill and configure its MCP connection from your application repository:
+
+```bash
+stove skills install --agent claude --configure-mcp
+```
+
+Choose `codex`, `claude`, `cursor`, or `opencode`. Add `--dry-run` to preview destinations or `--global` for all projects. Start `stove` separately, then restart your agent session. See [Agent skills and plugins](../agent-setup.md) for plugin installation, custom endpoints, and configuration locations.
+
+For manual configuration:
+
 === "Claude Code"
 
+    Use `.mcp.json` in your project, or `~/.claude.json` for user-wide configuration. Merge this entry with existing settings:
+
     ```json
-    // ~/.config/claude-code/config.json
     {
       "mcpServers": {
         "stove": {
@@ -51,7 +62,40 @@ Or hit `GET /api/v1/meta` for metadata:
     }
     ```
 
-=== "Cursor / Continue / ..."
+=== "Codex"
+
+    Use `.codex/config.toml` in a trusted project, or `~/.codex/config.toml` for user-wide configuration:
+
+    ```toml
+    [mcp_servers.stove]
+    url = "http://localhost:4040/mcp"
+    ```
+
+=== "Cursor"
+
+    Use `.cursor/mcp.json` in your project, or `~/.cursor/mcp.json` for user-wide configuration:
+
+    ```json
+    {
+      "mcpServers": {
+        "stove": {"url": "http://localhost:4040/mcp"}
+      }
+    }
+    ```
+
+=== "OpenCode"
+
+    Merge into `opencode.json` or your existing `opencode.jsonc`:
+
+    ```json
+    {
+      "mcp": {
+        "stove": {"type": "remote", "url": "http://localhost:4040/mcp", "enabled": true}
+      }
+    }
+    ```
+
+=== "Other clients"
 
     Use the standard Streamable HTTP MCP transport. The URL is `http://localhost:4040/mcp`; the config key may be named `type` or `transport` depending on the client.
 

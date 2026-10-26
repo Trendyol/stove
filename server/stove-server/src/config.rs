@@ -2,7 +2,7 @@ use std::ffi::OsString;
 use std::path::{Path, PathBuf};
 
 use anyhow::{Context, Result, bail};
-use clap::{Parser, Subcommand, ValueEnum};
+use clap::{Args, Parser, Subcommand, ValueEnum};
 use serde::Deserialize;
 
 pub const DEFAULT_RUN_IDLE_TIMEOUT_SECONDS: u64 = 3600;
@@ -138,16 +138,60 @@ pub enum StoveCommand {
   },
 }
 
+/// Agent conventions used by standalone skill installation and MCP setup.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq, ValueEnum)]
+pub enum SkillAgent {
+  #[default]
+  Universal,
+  Codex,
+  Claude,
+  Cursor,
+  Opencode,
+}
+
+/// Installation is project-scoped unless a destination is explicitly selected.
+#[derive(Args, Debug, Default)]
+#[allow(clippy::struct_excessive_bools)] // Independent installation switches.
+pub struct SkillInstallOptions {
+  /// Install in the current directory instead of the Git root (legacy alias for --path .).
+  /// Installation replaces the selected Stove skill directory.
+  #[arg(long, conflicts_with_all = ["path", "global"])]
+  pub force: bool,
+
+  /// Project directory to configure, including directories outside Git.
+  #[arg(long, value_name = "DIRECTORY", conflicts_with = "global")]
+  pub path: Option<PathBuf>,
+
+  /// Install for the current user, across projects.
+  #[arg(long)]
+  pub global: bool,
+
+  /// Agent to configure. Universal uses .agents/skills and does not configure MCP.
+  #[arg(long, value_enum, default_value = "universal")]
+  pub agent: SkillAgent,
+
+  /// Copy a local Stove skill directory instead of downloading from GitHub.
+  #[arg(long, value_name = "SKILL_DIRECTORY")]
+  pub source: Option<PathBuf>,
+
+  /// Show destinations and configuration without downloading or writing files.
+  #[arg(long)]
+  pub dry_run: bool,
+
+  /// Also configure the selected agent's Stove MCP connection.
+  #[arg(long)]
+  pub configure_mcp: bool,
+
+  /// MCP endpoint for a local or shared Stove server.
+  #[arg(long, value_name = "URL", requires = "configure_mcp")]
+  pub mcp_url: Option<String>,
+}
+
 /// `stove skills <...>` subcommands.
 #[derive(Subcommand, Debug)]
 pub enum SkillsCommand {
-  /// Install or update Stove agent skills from GitHub at .agents/skills/stove.
-  Install {
-    /// Install at .agents/skills/stove in the current directory instead of the git root.
-    /// Works outside git repositories. Installation replaces the skill directory.
-    #[arg(long)]
-    force: bool,
-  },
+  /// Install or update Stove skills; optionally configure an agent's MCP connection.
+  Install(SkillInstallOptions),
 }
 
 impl Config {
@@ -668,7 +712,7 @@ run_idle_timeout_seconds = 7200
     let Some(StoveCommand::Skills { command }) = config.command else {
       panic!("expected skills subcommand");
     };
-    let SkillsCommand::Install { force } = command;
+    let SkillsCommand::Install(SkillInstallOptions { force, .. }) = command;
     assert!(!force);
   }
 
@@ -678,7 +722,7 @@ run_idle_timeout_seconds = 7200
     let Some(StoveCommand::Skills { command }) = config.command else {
       panic!("expected skills subcommand");
     };
-    let SkillsCommand::Install { force } = command;
+    let SkillsCommand::Install(SkillInstallOptions { force, .. }) = command;
     assert!(force);
   }
 }

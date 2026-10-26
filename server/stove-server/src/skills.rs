@@ -16,7 +16,7 @@ use std::path::{Path, PathBuf};
 use serde::Deserialize;
 use tokio::task::JoinSet;
 
-use crate::config::{Config, SkillsCommand, StoveCommand};
+use crate::config::{Config, SkillInstallOptions, SkillsCommand, StoveCommand};
 
 /// GitHub source coordinates and HTTP defaults.
 mod github {
@@ -45,7 +45,7 @@ pub async fn handle_skills_command(config: &Config) -> anyhow::Result<bool> {
     return Ok(false);
   };
   match command {
-    SkillsCommand::Install { force } => install_skills_command(*force).await?,
+    SkillsCommand::Install(options) => install_skills_command(options).await?,
   }
   Ok(true)
 }
@@ -121,35 +121,40 @@ fn apply_install(target: &Path, remote: &RemoteSkills) {
   }
 }
 
-/// `stove skills install` execution path.
-///
-/// Without `--force`: requires a git repository and installs into the resolved
-/// target under the repo root. With `--force`: skips git detection and
-/// installs into the resolved target relative to the current directory.
-async fn install_skills_command(force: bool) -> anyhow::Result<()> {
-  let cwd = std::env::current_dir()?;
-  let target = if force {
-    resolve_local_target(&cwd)
-  } else {
-    let repo_root = find_git_root(&cwd).ok_or_else(|| {
-      anyhow::anyhow!(
-        "stove skills install must be run inside a git repository (use --force to install in the current directory)"
-      )
-    })?;
-    resolve_local_target(&repo_root)
-  };
-
-  let remote = fetch_remote_skills().await?;
-  if remote.is_empty() {
-    anyhow::bail!("no Stove skills found in remote repository at any known path");
+/// Install the shared skill, with optional agent-specific MCP configuration.
+/// Resolve and validate the complete plan before downloading or changing files.
+async fn install_skills_command(options: &SkillInstallOptions) -> anyhow::Result<()> {
+  let plan = crate::agent_setup::InstallPlan::resolve(options)?;
+  plan.describe();
+  if options.dry_run {
+    println!("Dry run: no files changed.");
+    return Ok(());
   }
 
-  install_skills(&target, &remote)?;
+  let remote = if let Some(source) = &options.source {
+    RemoteSkills {
+      files: read_local_files(source).ok_or_else(|| {
+        anyhow::anyhow!(
+          "cannot read skill directory {} (symlinks are not supported)",
+          source.display()
+        )
+      })?,
+    }
+  } else {
+    fetch_remote_skills().await?
+  };
+  if !remote.files.contains_key("SKILL.md") {
+    anyhow::bail!("the skill source must contain SKILL.md");
+  }
+
+  install_skills(&plan.skill_target, &remote)?;
+  plan.write_mcp_config()?;
   println!(
     "Installed {} skill files at {}",
     remote.len(),
-    target.display()
+    plan.skill_target.display()
   );
+  println!("Restart your agent session to discover the skill.");
   Ok(())
 }
 
@@ -207,10 +212,22 @@ struct ContentsEntry {
   download_url: Option<String>,
 }
 
-/// Fetch the Stove skill files from GitHub.
-///
-/// Probes [`REMOTE_SKILL_PATHS`] in order and uses the first path that returns a
-/// non-empty directory listing.
+impl ContentsEntry {
+  fn relative_path(&self, parent: &str) -> anyhow::Result<String> {
+    validate_resource_path(&self.name)?;
+    if self.name.contains('/') {
+      anyhow::bail!("invalid GitHub directory entry: {}", self.name);
+    }
+    Ok(if parent.is_empty() {
+      self.name.clone()
+    } else {
+      format!("{parent}/{}", self.name)
+    })
+  }
+}
+
+/// Fetch the canonical skill. Only a missing directory permits a legacy fallback;
+/// partial downloads and API failures must not silently install older content.
 async fn fetch_remote_skills() -> anyhow::Result<RemoteSkills> {
   let client = reqwest::Client::builder()
     .user_agent(github::USER_AGENT)
@@ -218,10 +235,9 @@ async fn fetch_remote_skills() -> anyhow::Result<RemoteSkills> {
     .build()?;
 
   for remote_path in REMOTE_SKILL_PATHS {
-    match fetch_remote_skills_for_path(&client, remote_path).await {
-      Ok(snapshot) if !snapshot.is_empty() => return Ok(snapshot),
-      Ok(_) => {}
-      Err(err) => tracing::debug!("remote skills probe failed for {remote_path}: {err}"),
+    let snapshot = fetch_remote_skills_for_path(&client, remote_path).await?;
+    if !snapshot.is_empty() {
+      return Ok(snapshot);
     }
   }
   anyhow::bail!("no Stove skills found in remote repository at any known path");
@@ -231,39 +247,64 @@ async fn fetch_remote_skills_for_path(
   client: &reqwest::Client,
   remote_path: &str,
 ) -> anyhow::Result<RemoteSkills> {
-  let listing_url = format!(
-    "https://api.github.com/repos/{owner}/{repo}/contents/{path}?ref={ref_}",
-    owner = github::REPO_OWNER,
-    repo = github::REPO_NAME,
-    path = remote_path,
-    ref_ = github::REPO_REF,
+  let contents_url = format!(
+    "https://api.github.com/repos/{}/{}/contents/{}",
+    github::REPO_OWNER,
+    github::REPO_NAME,
+    remote_path,
   );
-  let response = client.get(&listing_url).send().await?;
-  if response.status() == reqwest::StatusCode::NOT_FOUND {
-    return Ok(RemoteSkills::default());
-  }
-  let entries: Vec<ContentsEntry> = response.error_for_status()?.json().await?;
+  fetch_skill_tree(client, &contents_url).await
+}
 
+async fn download_file(
+  client: reqwest::Client,
+  name: String,
+  url: String,
+) -> anyhow::Result<(String, Vec<u8>)> {
+  let body = client
+    .get(url)
+    .send()
+    .await?
+    .error_for_status()?
+    .bytes()
+    .await?;
+  Ok((name, body.to_vec()))
+}
+
+/// Fetch every resource beneath the skill, including nested references and scripts.
+async fn fetch_skill_tree(
+  client: &reqwest::Client,
+  contents_url: &str,
+) -> anyhow::Result<RemoteSkills> {
+  let mut directories = vec![String::new()];
   let mut downloads: JoinSet<anyhow::Result<(String, Vec<u8>)>> = JoinSet::new();
-  for entry in entries {
-    if entry.kind != "file" {
-      continue;
+  while let Some(relative) = directories.pop() {
+    let mut url = reqwest::Url::parse(contents_url)?;
+    if !relative.is_empty() {
+      url
+        .path_segments_mut()
+        .map_err(|()| anyhow::anyhow!("invalid contents URL"))?
+        .extend(relative.split('/'));
     }
-    let Some(url) = entry.download_url else {
-      continue;
-    };
-    let client = client.clone();
-    let name = entry.name;
-    downloads.spawn(async move {
-      let body = client
-        .get(&url)
-        .send()
-        .await?
-        .error_for_status()?
-        .bytes()
-        .await?;
-      Ok((name, body.to_vec()))
-    });
+    url.query_pairs_mut().append_pair("ref", github::REPO_REF);
+    let response = client.get(url).send().await?;
+    if response.status() == reqwest::StatusCode::NOT_FOUND && relative.is_empty() {
+      return Ok(RemoteSkills::default());
+    }
+    let entries: Vec<ContentsEntry> = response.error_for_status()?.json().await?;
+    for entry in entries {
+      let name = entry.relative_path(&relative)?;
+      match entry.kind.as_str() {
+        "dir" => directories.push(name),
+        "file" => {
+          let url = entry
+            .download_url
+            .ok_or_else(|| anyhow::anyhow!("missing download URL for {name}"))?;
+          downloads.spawn(download_file(client.clone(), name, url));
+        }
+        other => anyhow::bail!("unsupported skill resource type {other}: {name}"),
+      }
+    }
   }
 
   let mut files = BTreeMap::new();
@@ -271,7 +312,23 @@ async fn fetch_remote_skills_for_path(
     let (name, bytes) = result??;
     files.insert(name, bytes);
   }
+  if !files.contains_key("SKILL.md") {
+    anyhow::bail!("remote skill directory does not contain SKILL.md");
+  }
   Ok(RemoteSkills { files })
+}
+
+/// Resource paths must stay inside the skill on both Unix and Windows.
+fn validate_resource_path(name: &str) -> anyhow::Result<()> {
+  if name.is_empty()
+    || name.contains(['\\', ':'])
+    || name
+      .split('/')
+      .any(|part| part.is_empty() || part == "." || part == "..")
+  {
+    anyhow::bail!("invalid skill resource path: {name}");
+  }
+  Ok(())
 }
 
 /// Compare an existing local target directory against a remote snapshot.
@@ -288,20 +345,27 @@ pub fn skills_match(target: &Path, remote: &RemoteSkills) -> bool {
 }
 
 fn read_local_files(target: &Path) -> Option<BTreeMap<String, Vec<u8>>> {
-  if !target.is_dir() {
-    return None;
+  let mut files = BTreeMap::new();
+  let mut directories = vec![target.to_path_buf()];
+  while let Some(directory) = directories.pop() {
+    if !std::fs::symlink_metadata(&directory).ok()?.is_dir() {
+      return None;
+    }
+    for entry in std::fs::read_dir(&directory).ok()? {
+      let entry = entry.ok()?;
+      let kind = entry.file_type().ok()?;
+      let path = entry.path();
+      if kind.is_dir() {
+        directories.push(path);
+      } else if kind.is_file() {
+        let relative = path.strip_prefix(target).ok()?.to_str()?.replace('\\', "/");
+        files.insert(relative, std::fs::read(&path).ok()?);
+      } else {
+        return None;
+      }
+    }
   }
-  std::fs::read_dir(target)
-    .ok()?
-    .flatten()
-    .map(|entry| entry.path())
-    .filter(|path| path.is_file())
-    .map(|path| {
-      let name = path.file_name()?.to_str()?.to_string();
-      let bytes = std::fs::read(&path).ok()?;
-      Some((name, bytes))
-    })
-    .collect()
+  Some(files)
 }
 
 /// Replace the target directory with the remote snapshot.
@@ -309,6 +373,15 @@ fn read_local_files(target: &Path) -> Option<BTreeMap<String, Vec<u8>>> {
 /// Writes files into a sibling staging directory first, then performs a
 /// best-effort atomic swap (move-aside-old + rename-staging-into-place).
 pub fn install_skills(target: &Path, remote: &RemoteSkills) -> anyhow::Result<()> {
+  remote
+    .iter()
+    .try_for_each(|(name, _)| validate_resource_path(name))?;
+  if target.is_symlink() {
+    anyhow::bail!(
+      "refusing to replace symlinked skill directory: {}",
+      target.display()
+    );
+  }
   let parent = target
     .parent()
     .ok_or_else(|| anyhow::anyhow!("invalid skills target: {}", target.display()))?;
@@ -318,20 +391,26 @@ pub fn install_skills(target: &Path, remote: &RemoteSkills) -> anyhow::Result<()
     .file_name()
     .and_then(|n| n.to_str())
     .unwrap_or("stove");
-  let timestamp = chrono::Local::now().format("%Y%m%d-%H%M%S%3f");
+  let timestamp = uuid::Uuid::new_v4();
   let staging = parent.join(format!(".{target_name}-staging-{timestamp}"));
   let aside = parent.join(format!(".{target_name}-old-{timestamp}"));
 
-  write_staging(&staging, remote)?;
-  swap_into_place(&staging, target, &aside)
+  let result =
+    write_staging(&staging, remote).and_then(|()| swap_into_place(&staging, target, &aside));
+  if result.is_err() {
+    let _ = std::fs::remove_dir_all(&staging);
+  }
+  result
 }
 
 fn write_staging(staging: &Path, remote: &RemoteSkills) -> anyhow::Result<()> {
-  // remove_dir_all on a missing path returns NotFound — discard intentionally.
-  let _ = std::fs::remove_dir_all(staging);
-  std::fs::create_dir_all(staging)?;
+  std::fs::create_dir(staging)?;
   for (name, bytes) in remote.iter() {
-    std::fs::write(staging.join(name), bytes)?;
+    let path = staging.join(name);
+    if let Some(parent) = path.parent() {
+      std::fs::create_dir_all(parent)?;
+    }
+    std::fs::write(path, bytes)?;
   }
   Ok(())
 }
@@ -341,22 +420,16 @@ fn swap_into_place(staging: &Path, target: &Path, aside: &Path) -> anyhow::Resul
   if target_existed {
     std::fs::rename(target, aside)?;
   }
-
-  match std::fs::rename(staging, target) {
-    Ok(()) => {
-      if target_existed {
-        let _ = std::fs::remove_dir_all(aside);
-      }
-      Ok(())
+  if let Err(error) = std::fs::rename(staging, target) {
+    if target_existed {
+      let _ = std::fs::rename(aside, target);
     }
-    Err(err) => {
-      if target_existed {
-        let _ = std::fs::rename(aside, target);
-      }
-      let _ = std::fs::remove_dir_all(staging);
-      Err(anyhow::anyhow!("failed to install skills: {err}"))
-    }
+    return Err(anyhow::anyhow!("failed to install skills: {error}"));
   }
+  if target_existed {
+    let _ = std::fs::remove_dir_all(aside);
+  }
+  Ok(())
 }
 
 fn prompt_yes_no(message: &str) -> anyhow::Result<bool> {
@@ -383,6 +456,104 @@ mod tests {
         .map(|(name, bytes)| ((*name).to_string(), bytes.to_vec()))
         .collect(),
     }
+  }
+
+  #[test]
+  fn nested_resources_are_installed_compared_and_removed_on_update() {
+    let dir = TempDir::new().unwrap();
+    let target = dir.path().join("stove");
+    let remote = remote_with(&[
+      ("SKILL.md", b"skill"),
+      ("references/setup.md", b"guide"),
+      ("scripts/check.py", b"print('ok')"),
+    ]);
+    install_skills(&target, &remote).unwrap();
+    assert!(skills_match(&target, &remote));
+    fs::write(target.join("references/setup.md"), b"changed").unwrap();
+    assert!(!skills_match(&target, &remote));
+    install_skills(&target, &remote_with(&[("SKILL.md", b"new")])).unwrap();
+    assert!(!target.join("references").exists());
+  }
+
+  #[test]
+  fn invalid_resource_paths_leave_existing_installation_intact() {
+    let dir = TempDir::new().unwrap();
+    let target = dir.path().join("stove");
+    fs::create_dir(&target).unwrap();
+    fs::write(target.join("SKILL.md"), b"keep").unwrap();
+    for name in [
+      "../outside",
+      "/absolute",
+      "a/../../outside",
+      "a\\..\\outside",
+      "C:/outside",
+      "a//b",
+    ] {
+      assert!(install_skills(&target, &remote_with(&[(name, b"bad")])).is_err());
+      assert_eq!(fs::read(target.join("SKILL.md")).unwrap(), b"keep");
+    }
+    assert_eq!(fs::read_dir(dir.path()).unwrap().count(), 1);
+  }
+
+  #[cfg(unix)]
+  #[test]
+  fn symlinked_skill_directories_are_not_replaced_or_followed() {
+    let dir = TempDir::new().unwrap();
+    let original = dir.path().join("original");
+    fs::create_dir(&original).unwrap();
+    fs::write(original.join("SKILL.md"), b"keep").unwrap();
+    let link = dir.path().join("link");
+    std::os::unix::fs::symlink(&original, &link).unwrap();
+    assert!(read_local_files(&link).is_none());
+    assert!(install_skills(&link, &remote_with(&[("SKILL.md", b"bad")])).is_err());
+    assert_eq!(fs::read(original.join("SKILL.md")).unwrap(), b"keep");
+  }
+
+  #[tokio::test]
+  async fn github_download_includes_nested_resources_and_propagates_failures() {
+    use axum::{Json, Router, routing::get};
+    let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
+    let origin = format!("http://{}", listener.local_addr().unwrap());
+    let root_listing = serde_json::json!([
+      {"name": "SKILL.md", "type": "file", "download_url": format!("{origin}/raw/skill")},
+      {"name": "references", "type": "dir", "download_url": null}
+    ]);
+    let nested_listing = serde_json::json!([
+      {"name": "setup.md", "type": "file", "download_url": format!("{origin}/raw/setup")}
+    ]);
+    let bad_listing = serde_json::json!([
+      {"name": "SKILL.md", "type": "file", "download_url": format!("{origin}/missing")}
+    ]);
+    let router = Router::new()
+      .route("/contents", get(move || async { Json(root_listing) }))
+      .route(
+        "/contents/references",
+        get(move || async { Json(nested_listing) }),
+      )
+      .route("/broken", get(move || async { Json(bad_listing) }))
+      .route("/raw/skill", get(|| async { "skill" }))
+      .route("/raw/setup", get(|| async { "guide" }));
+    let server = tokio::spawn(async { axum::serve(listener, router).await.unwrap() });
+    let client = reqwest::Client::new();
+    let remote = fetch_skill_tree(&client, &format!("{origin}/contents"))
+      .await
+      .unwrap();
+    assert_eq!(
+      remote.files,
+      remote_with(&[("SKILL.md", b"skill"), ("references/setup.md", b"guide")]).files
+    );
+    assert!(
+      fetch_skill_tree(&client, &format!("{origin}/broken"))
+        .await
+        .is_err()
+    );
+    assert!(
+      fetch_skill_tree(&client, &format!("{origin}/absent"))
+        .await
+        .unwrap()
+        .is_empty()
+    );
+    server.abort();
   }
 
   #[test]

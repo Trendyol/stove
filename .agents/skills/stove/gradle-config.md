@@ -24,6 +24,7 @@ dependencies {
 
     // Add only what you need:
     testImplementation("com.trendyol:stove-http")
+    testImplementation("com.trendyol:stove-oidc")               // OIDC authentication fixtures
     testImplementation("com.trendyol:stove-postgres")
     testImplementation("com.trendyol:stove-mysql")
     testImplementation("com.trendyol:stove-mssql")
@@ -169,6 +170,7 @@ These callbacks run once per concrete subclass. Keep classes sharing Stove's glo
 | `stove-quarkus` | Quarkus starter |
 | `stove-micronaut` | Micronaut starter |
 | `stove-http` | HTTP client system |
+| `stove-oidc` | OIDC issuers, token grants, and mock authentication fixtures |
 | `stove-postgres` | PostgreSQL system |
 | `stove-mysql` | MySQL system |
 | `stove-mssql` | MSSQL system |

@@ -160,7 +160,7 @@ Need something else? [Write a custom system](https://trendyol.github.io/stove/wr
 
 The evidence in the dashboard is also available to coding agents through the server's read-only [MCP tools](https://trendyol.github.io/stove/Components/21-mcp/). An agent can inspect a failed run, follow its trace, and look at the recorded system state while helping you investigate.
 
-Run `stove skills install` in your repository to install the [Stove agent skill](.agents/skills/stove/). It covers setup, assertions, and failure investigation. See the [MCP guide](https://trendyol.github.io/stove/Components/21-mcp/) for configuration and usage.
+Run `stove skills install --agent claude --configure-mcp` in your repository to install the [Stove agent skill](.agents/skills/stove/) and configure its MCP connection. Choose `codex`, `claude`, `cursor`, or `opencode`; use `--dry-run` to preview or `--global` for all projects. The existing `stove skills install` command still installs the shared project skill. See [agent setup and plugin installation](https://trendyol.github.io/stove/agent-setup/) and the [MCP guide](https://trendyol.github.io/stove/Components/21-mcp/).
 
 ## Common questions
 

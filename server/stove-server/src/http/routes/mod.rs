@@ -1,3 +1,5 @@
+mod agent_setup;
+pub use agent_setup::*;
 mod admin;
 mod database_explorer;
 mod events;

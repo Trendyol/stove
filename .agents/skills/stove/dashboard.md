@@ -70,7 +70,7 @@ Budget four PostgreSQL connections per replica (read, write, database explorer, 
 
 ## Run the packaged server
 
-Stable releases publish `ghcr.io/trendyol/stove-server` for Linux AMD64 and ARM64. Pin the exact Stove version used by the tests.
+Stable releases publish `ghcr.io/trendyol/stove-server` for Linux AMD64 and ARM64. Set `STOVE_VERSION` to the exact released version resolved by the tests, from the project's version catalog or Gradle build, before running either command below.
 
 For SQLite, mount `/data`; the image defaults to `/data/stove.db`:
 
@@ -78,7 +78,7 @@ For SQLite, mount `/data`; the image defaults to `/data/stove.db`:
 docker run -d --name stove --restart unless-stopped \
   -p 4040:4040 -p 4041:4041 \
   -v stove-data:/data \
-  ghcr.io/trendyol/stove-server:0.26.0
+  "ghcr.io/trendyol/stove-server:${STOVE_VERSION:?Set STOVE_VERSION to the project Stove version}"
 ```
 
 For a current-source local server backed by PostgreSQL, run `just postgres-up` from `server/stove-server`. It builds the image and exposes HTTP/MCP on `4040`, gRPC on `4041`, and PostgreSQL on `5433`. Use `just postgres-down` to preserve data or `just postgres-reset` to delete the local PostgreSQL volume.
@@ -91,7 +91,7 @@ docker run -d --name stove --restart unless-stopped \
   -v /secure/stove/database-url:/run/secrets/stove-database-url:ro \
   -e STOVE_DATABASE_URL_FILE=/run/secrets/stove-database-url \
   -e STOVE_RETENTION_RUNS_PER_APP=50 \
-  ghcr.io/trendyol/stove-server:0.26.0
+  "ghcr.io/trendyol/stove-server:${STOVE_VERSION:?Set STOVE_VERSION to the project Stove version}"
 ```
 
 Port `4040` serves the UI, REST, admin page, and Streamable HTTP MCP endpoint (`/mcp`). Port `4041` is the gRPC ingestion endpoint configured through `DashboardSystemOptions(ingestion = DashboardIngestion.Grpc(host, port))`. Both ports must remain on a trusted internal network because Stove intentionally provides no authentication or authorization.

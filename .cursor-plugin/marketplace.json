@@ -1,0 +1,7 @@
+{
+  "name": "stove-plugins",
+  "owner": { "name": "Trendyol" },
+  "plugins": [
+    { "name": "stove", "source": "./.agents" }
+  ]
+}

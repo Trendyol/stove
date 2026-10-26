@@ -71,6 +71,7 @@ pub fn create_router_with_public_url(
 fn run_routes() -> Router<AppState> {
   Router::new()
     .route("/meta", get(super::routes::get_meta))
+    .route("/agent-setup", get(super::routes::get_agent_setup))
     .route("/health", get(super::routes::get_health))
     .route("/apps", get(super::routes::get_apps))
     .route("/top-filter", get(super::routes::get_top_filter))

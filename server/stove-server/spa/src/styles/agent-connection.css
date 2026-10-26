@@ -1,0 +1,264 @@
+.agent-dialog {
+  margin: auto;
+  width: min(760px, calc(100vw - 32px));
+  max-height: calc(100dvh - 48px);
+  overflow-y: auto;
+  padding: 28px;
+  border: 1px solid var(--stove-border-strong);
+  border-radius: 16px;
+  background: var(--stove-base);
+  color: var(--stove-text);
+  box-shadow: var(--stove-shadow);
+  font-family: var(--font-sans);
+  font-size: 13px;
+}
+.agent-dialog::backdrop {
+  background: rgb(0 0 0 / 55%);
+  backdrop-filter: blur(4px);
+}
+.agent-dialog-heading,
+.agent-section-heading,
+.agent-copy-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+.agent-dialog h2 {
+  margin-top: 5px;
+  font-size: 25px;
+  font-weight: 650;
+  letter-spacing: -0.035em;
+  color: var(--stove-text-heading);
+}
+.agent-close {
+  align-self: start;
+  border-radius: 7px;
+  padding: 0 9px;
+  font-size: 26px;
+  color: var(--stove-text-secondary);
+}
+.agent-close:hover {
+  background: var(--stove-card);
+}
+.agent-intro {
+  max-width: 580px;
+  margin: 10px 0 24px;
+  color: var(--stove-text-secondary);
+  line-height: 1.65;
+}
+.agent-picker {
+  margin: 0 0 18px;
+  border: 0;
+  padding: 0;
+  min-width: 0;
+}
+.agent-picker legend {
+  margin-bottom: 8px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--stove-text-secondary);
+}
+.agent-options {
+  display: flex;
+  gap: 4px;
+  border: 1px solid var(--stove-border);
+  background: var(--stove-surface);
+  border-radius: 9px;
+  padding: 4px;
+}
+.agent-options label {
+  position: relative;
+  flex: 1;
+  text-align: center;
+  cursor: pointer;
+}
+.agent-options input {
+  position: absolute;
+  opacity: 0;
+  width: 1px;
+  height: 1px;
+}
+.agent-option-label {
+  display: block;
+  padding: 10px 12px;
+  border-radius: 6px;
+  white-space: nowrap;
+  color: var(--stove-text-secondary);
+}
+.agent-scope .agent-option-label {
+  padding: 6px 16px;
+  font-size: 12px;
+}
+.agent-options input:checked + .agent-option-label {
+  background: var(--stove-base);
+  box-shadow: var(--stove-shadow-soft);
+  color: var(--stove-text-heading);
+  font-weight: 600;
+}
+.agent-options input:focus-visible + .agent-option-label {
+  outline: 2px solid var(--stove-blue);
+  outline-offset: 1px;
+}
+.agent-scope .agent-options {
+  width: fit-content;
+}
+
+.agent-install {
+  border: 1px solid var(--stove-border);
+  border-left: 3px solid var(--stove-ember);
+  background: var(--stove-panel);
+  border-radius: 10px;
+  padding: 18px;
+}
+.agent-section-heading h3 {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--stove-text-heading);
+}
+.agent-badge {
+  padding: 3px 7px;
+  border: 1px solid var(--stove-border);
+  border-radius: 5px;
+  color: var(--stove-text-secondary);
+  font-size: 10px;
+}
+.agent-install p,
+.agent-manual p {
+  margin: 10px 0 12px;
+  line-height: 1.65;
+  color: var(--stove-text-secondary);
+}
+.agent-dialog a {
+  color: var(--stove-blue);
+}
+.agent-copy-block {
+  min-width: 0;
+  overflow: hidden;
+  background: var(--stove-base);
+  border: 1px solid var(--stove-border);
+  border-radius: 8px;
+}
+.agent-copy-heading {
+  padding: 8px 12px;
+  background: var(--stove-card);
+  font-size: 11px;
+  color: var(--stove-text-secondary);
+}
+.agent-copy-heading button {
+  border-radius: 4px;
+  padding: 2px 5px;
+  color: var(--stove-text-heading);
+}
+.agent-copy-heading button:hover {
+  background: var(--stove-hover);
+}
+.agent-copy-block pre {
+  padding: 14px;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  line-height: 1.75;
+  user-select: text;
+}
+.agent-copy-error {
+  display: block;
+  padding: 0 12px 12px;
+  color: var(--stove-amber);
+  font-size: 12px;
+}
+.agent-manual {
+  margin: 22px 0;
+}
+.agent-manual summary {
+  cursor: pointer;
+  padding: 5px 0;
+  font-weight: 550;
+  color: var(--stove-text-heading);
+}
+.agent-manual code {
+  overflow-wrap: anywhere;
+}
+.agent-paths {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px 12px;
+  margin: 12px 0;
+  font-size: 12px;
+  color: var(--stove-text-secondary);
+}
+.agent-shortcut {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  margin-bottom: 14px;
+}
+.agent-shortcut-note {
+  flex: 1;
+  font-size: 12px;
+  line-height: 1.6;
+  color: var(--stove-text-secondary);
+}
+.agent-primary,
+.agent-dialog .agent-primary {
+  display: inline-block;
+  border-radius: 7px;
+  border: 1px solid var(--stove-border-strong);
+  padding: 9px 14px;
+  font-weight: 550;
+  color: var(--stove-text-heading);
+  background: var(--stove-surface);
+  text-decoration: none;
+}
+.agent-primary:hover {
+  background: var(--stove-card);
+}
+.workspace-empty .agent-primary {
+  margin-top: 20px;
+  font-size: 13px;
+}
+.agent-endpoint {
+  border-top: 1px solid var(--stove-border);
+  padding-top: 18px;
+}
+.agent-endpoint p {
+  margin-top: 10px;
+  color: var(--stove-text-muted);
+  font-size: 11px;
+  line-height: 1.6;
+}
+.agent-message {
+  padding: 18px;
+  background: var(--stove-surface);
+  border-radius: 8px;
+  line-height: 1.7;
+}
+.agent-message button {
+  margin: 10px 12px 0 0;
+}
+@media (max-width: 600px) {
+  .agent-dialog {
+    width: calc(100vw - 20px);
+    max-height: calc(100dvh - 20px);
+    padding: 18px;
+  }
+  .agent-options {
+    flex-wrap: wrap;
+  }
+  .agent-picker:not(.agent-scope) label {
+    flex-basis: 40%;
+  }
+  .agent-section-heading {
+    align-items: start;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+  .agent-shortcut {
+    align-items: start;
+    flex-direction: column;
+  }
+  .agent-install {
+    padding: 12px;
+  }
+}

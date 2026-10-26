@@ -9,7 +9,7 @@ Open only the focused guides needed for the user's task. Guide links are relativ
 
 ## First checks
 
-1. Check the project's resolved Stove version, existing test setup, and Gradle conventions before adding configuration. Installed skills follow upstream `main` and can describe APIs newer than the project's dependencies; do not upgrade dependencies just to match an example.
+1. Check the project's resolved Stove version, existing test setup, and Gradle conventions before adding configuration. Standalone downloads follow upstream `main`; plugins declare their Stove version, and local copies follow their source checkout. Any of these can differ from the project's dependencies; do not upgrade dependencies just to match an example.
 2. Identify the application-under-test mode:
    - JVM in-process: Spring Boot, Ktor, Micronaut, Quarkus.
    - Host process: Go, Python, Rust, Node.js, or another binary via `processApp` / `goApp`.

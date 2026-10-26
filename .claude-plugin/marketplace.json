@@ -1,0 +1,8 @@
+{
+  "name": "stove-plugins",
+  "metadata": { "description": "Stove skills and MCP setup for end-to-end testing and failure investigation." },
+  "owner": { "name": "Trendyol" },
+  "plugins": [
+    { "name": "stove", "source": "./.agents" }
+  ]
+}

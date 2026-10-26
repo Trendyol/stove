@@ -77,6 +77,8 @@ async function readResponse<T>(
 }
 
 export const api = {
+  getAgentSetup: (endpoint: string, signal?: AbortSignal) =>
+    get(`/agent-setup?${new URLSearchParams({ endpoint })}`, schema.isAgentSetupResponse, signal),
   getTopFilter: (signal?: AbortSignal) => get("/top-filter", schema.isTopFilterCatalog, signal),
   updateTopFilter: (settings: TopFilterSettings) =>
     send("/admin/top-filter", "PUT", settings, schema.isTopFilterSettings),

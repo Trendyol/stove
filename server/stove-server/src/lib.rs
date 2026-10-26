@@ -8,6 +8,7 @@
 
 pub const STOVE_SERVER_VERSION: &str = env!("STOVE_VERSION");
 
+pub(crate) mod agent_setup;
 pub mod config;
 pub(crate) mod error;
 pub(crate) mod focus;

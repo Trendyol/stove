@@ -16,6 +16,11 @@ jobs:
         with:
           fetch-depth: 0
 
+      - name: Validate and package agent plugin
+        run: |
+          python3 -m unittest discover -s scripts/tests -p test_agent_plugin.py -v
+          python3 scripts/package-agent-plugin.py --output "$RUNNER_TEMP/stove-agent-plugin.zip"
+
       - name: Set up JDK
         uses: actions/setup-java@v6
         with:
@@ -51,6 +56,11 @@ jobs:
         env:
           JRELEASER_GITHUB_TOKEN: ${{ secrets.BOT_REPO_TOKEN }}
           JRELEASER_PROJECT_VERSION: ${{ env.JRELEASER_PROJECT_VERSION }}
+
+      - name: Attach agent plugin to Stove release
+        run: gh release upload "v$JRELEASER_PROJECT_VERSION" "$RUNNER_TEMP/stove-agent-plugin.zip"
+        env:
+          GH_TOKEN: ${{ secrets.BOT_REPO_TOKEN }}
 
       - name: Tag Go stove-kafka module
         run: |

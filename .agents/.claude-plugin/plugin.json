@@ -1,0 +1,12 @@
+{
+  "name": "stove",
+  "version": "0.27.5",
+  "description": "Configure Stove end-to-end tests and investigate failures with recorded evidence.",
+  "author": {
+    "name": "Trendyol"
+  },
+  "homepage": "https://trendyol.github.io/stove/",
+  "repository": "https://github.com/Trendyol/stove",
+  "license": "Apache-2.0",
+  "skills": "./skills/"
+}

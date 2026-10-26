@@ -1,3 +1,4 @@
+import { AgentConnectionProvider } from "./components/agent-connection/AgentConnectionProvider";
 import { ErrorNotice } from "./components/ErrorNotice";
 import { useAppData } from "./hooks/useAppData";
 import { DashboardWorkspace } from "./layout/DashboardWorkspace";
@@ -8,6 +9,14 @@ import { appPath, navigateLink, useLocation } from "./utils/location";
 import type { StoveRoute } from "./utils/routes";
 
 export default function App() {
+  return (
+    <AgentConnectionProvider>
+      <AppContent />
+    </AgentConnectionProvider>
+  );
+}
+
+function AppContent() {
   const location = useLocation();
   if (location.kind === "evidence") return <LinkedWorkspace location={location.value} />;
   if (location.kind === "invalid")

@@ -11,3 +11,5 @@
 @import "./styles/responsive.css";
 @import "./styles/admin.css";
 @import "./styles/animations.css";
+
+@import "./styles/agent-connection.css";
