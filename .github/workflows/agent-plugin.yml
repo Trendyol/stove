@@ -37,7 +37,7 @@ jobs:
           PY
       - name: Package shared skill and adapters
         run: python scripts/package-agent-plugin.py --output "${{ runner.temp }}/stove-agent-plugin.zip"
-      - uses: actions/upload-artifact@v6
+      - uses: actions/upload-artifact@v7
         with:
           name: stove-agent-plugin
           path: ${{ runner.temp }}/stove-agent-plugin.zip
