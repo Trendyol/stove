@@ -3,10 +3,14 @@ name: Release
 on:
   workflow_dispatch:
 
+concurrency:
+  group: stove-release
+  cancel-in-progress: false
+
 jobs:
   release:
     runs-on: ubuntu-latest
-    if: github.repository == 'Trendyol/stove'
+    if: github.repository == 'Trendyol/stove' && github.ref == 'refs/heads/main'
     permissions:
       contents: write
       packages: write
@@ -15,11 +19,23 @@ jobs:
       - uses: actions/checkout@v7
         with:
           fetch-depth: 0
+          token: ${{ secrets.BOT_REPO_TOKEN }}
 
-      - name: Validate and package agent plugin
+      - name: Derive plugin versions and package release
         run: |
           python3 -m unittest discover -s scripts/tests -p test_agent_plugin.py -v
-          python3 scripts/package-agent-plugin.py --output "$RUNNER_TEMP/stove-agent-plugin.zip"
+          python3 scripts/package-agent-plugin.py --sync-version --output "$RUNNER_TEMP/stove-agent-plugin.zip"
+
+      - name: Commit generated marketplace versions before releasing
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -- .agents/plugin.json .agents/.claude-plugin/plugin.json .agents/.cursor-plugin/plugin.json
+          if ! git diff --cached --quiet; then
+            git commit -m 'chore(agents): align plugin versions for release'
+          fi
+          # Fail before publishing if main advanced; never force-push a release.
+          git push origin HEAD:refs/heads/main
 
       - name: Set up JDK
         uses: actions/setup-java@v6

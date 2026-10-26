@@ -273,11 +273,12 @@ then update the supported agents in `docs/agent-setup.md`.
 
 The canonical agent skill and its focused guides live in `.agents/skills/stove/`;
 all plugin adapters package that same content. Plugin versions follow `version`
-in `gradle.properties`. After a Stove version bump, run
-`python3 scripts/package-agent-plugin.py --sync-version` and commit the three
-updated manifests with it. Verify packaging with
+in `gradle.properties`; bump only that version. CI synchronizes the manifests in
+its temporary checkout. The release workflow commits and pushes the generated
+marketplace versions before publishing, so the release tag and ZIP contain the
+same versions. Verify packaging locally with
 `python3 -m unittest discover -s scripts/tests -p test_agent_plugin.py -v` and
-`python3 scripts/package-agent-plugin.py --output /tmp/stove-agent-plugin.zip`.
+`python3 scripts/package-agent-plugin.py --sync-version --output /tmp/stove-agent-plugin.zip`.
 See [agent updates and publishing](docs/agent-setup.md#package-and-publish) for
 release and downstream refresh behavior.
 

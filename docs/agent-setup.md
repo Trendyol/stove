@@ -145,21 +145,19 @@ See the platform documentation for [Codex plugin loading](https://developers.ope
 
 The plugin root is `.agents/`. Its `skills/stove/` directory is also the canonical source used by `stove skills install`; skill content is maintained once. The root `plugin.json` follows [Agent Plugins](https://agent-plugins.org/), and each `SKILL.md` follows [Agent Skills](https://agentskills.io/specification). Claude and Cursor compatibility manifests and repository marketplace catalogs point at the same plugin directory.
 
-`gradle.properties` is the version source for Stove and all three plugin manifests. When bumping Stove's `version`, synchronize the manifests and commit them together:
-
-```bash
-python3 scripts/package-agent-plugin.py --sync-version
-```
+`gradle.properties` is the version source for Stove and all three plugin manifests. Bump only Stove's `version`; no manual plugin version edits are needed. CI synchronizes the manifests in its temporary checkout before validation and packaging.
 
 Build a self-contained release archive:
 
 ```bash
-python3 scripts/package-agent-plugin.py --output /tmp/stove-agent-plugin.zip
+python3 scripts/package-agent-plugin.py --sync-version --output /tmp/stove-agent-plugin.zip
 ```
 
-The archive contains the plugin manifests, skill resources, local MCP configuration, README, and license. Packaging fails if any manifest version differs from `gradle.properties`; it never silently rewrites manifests unless `--sync-version` is requested. The Agent Plugin CI workflow tests packaging, validates the portable schemas, and uploads the archive for review. Version-file changes also trigger that check.
+The archive contains the plugin manifests, skill resources, local MCP configuration, README, and license. `--sync-version` updates the local manifests before packaging; omit it to check that they already match `gradle.properties`. The Agent Plugin CI workflow tests packaging, validates the portable schemas, and uploads the archive for review. Version-file changes also trigger that check.
 
-The Stove release workflow validates the package before publishing and attaches `stove-agent-plugin.zip` to the same `v<version>` GitHub release. Skill/plugin changes ship with the next Stove release; a skill-only release needs a new Stove patch version so cached plugins detect it. There is no separate plugin version counter.
+Run the Stove release workflow from `main`. It synchronizes the plugin versions, builds the archive, and commits and pushes changed manifests before publishing. This keeps repository marketplaces, the release tag, and `stove-agent-plugin.zip` aligned. The push uses the existing `BOT_REPO_TOKEN`; if `main` advances or the push is rejected, the workflow stops before publishing. Rerun it from the latest `main` after resolving the cause.
+
+The workflow attaches `stove-agent-plugin.zip` to the same `v<version>` GitHub release. Skill/plugin changes ship with the next Stove release; a skill-only release needs a new Stove patch version so cached plugins detect it. There is no separate plugin version counter.
 
 Publishing the repository marketplace makes it installable by repository URL. Listing in a public directory is a separate submission: see [OpenAI](https://developers.openai.com/plugins/deploy/submission), [Claude](https://code.claude.com/docs/en/plugins/publish), and [Cursor](https://cursor.com/docs/plugins/building#submitting-a-plugin). This repository does not automatically submit marketplace listings.
 
