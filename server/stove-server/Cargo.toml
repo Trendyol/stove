@@ -30,7 +30,7 @@ vendored-postgres = [
 ]
 
 [dependencies]
-base64 = "0.22"
+base64 = "0.23"
 # Async runtime
 tokio = { version = "1", features = ["full"] }
 
