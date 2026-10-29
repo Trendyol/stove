@@ -20,9 +20,10 @@ class Boot4xProtobufSerdeKafkaSystemTest : ProtobufSerdeKafkaSystemTests() {
               configureExposedConfiguration = {
                 listOf(
                   "kafka.bootstrapServers=${it.bootstrapServers}",
-                  "kafka.groupId=test-group",
+                  "kafka.groupId=${ProtobufSerdeTestTopics.group}",
+                  "kafka.topic=${ProtobufSerdeTestTopics.topic}",
                   "kafka.offset=earliest",
-                  "kafka.schemaRegistryUrl=mock://mock-registry"
+                  "kafka.schemaRegistryUrl=${ProtobufSerdeTestTopics.registry}"
                 )
               },
               containerOptions = KafkaContainerOptions(tag = "8.0.3")

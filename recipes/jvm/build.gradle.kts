@@ -10,6 +10,16 @@ plugins {
   java
 }
 
+// Recipe tests remain sequential inside each JVM, so spend the budget on modules.
+abstract class RecipeTestSlots : BuildService<BuildServiceParameters.None>
+
+val recipeTestBudget = providers.gradleProperty("stove.test.cpuBudget")
+  .map { it.toInt().also { value -> require(value > 0) } }
+  .getOrElse((Runtime.getRuntime().availableProcessors() * 0.8).toInt().coerceAtLeast(1))
+val recipeTestSlots = gradle.sharedServices.registerIfAbsent("recipeTestSlots", RecipeTestSlots::class) {
+  maxParallelUsages.set(recipeTestBudget)
+}
+
 subprojects {
   if (subprojects.isNotEmpty()) {
     return@subprojects
@@ -73,6 +83,7 @@ subprojects {
     withType<Test>().configureEach {
       // Suites share Stove and mutable fixtures inside a JVM; parallelize projects instead.
       maxParallelForks = 1
+      usesService(recipeTestSlots)
       doFirst {
         val isolatedTemp = temporaryDir.resolve("tmp").apply { mkdirs() }
         systemProperty("java.io.tmpdir", isolatedTemp.absolutePath)

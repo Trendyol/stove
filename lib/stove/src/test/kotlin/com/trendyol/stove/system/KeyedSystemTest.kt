@@ -3,6 +3,7 @@ package com.trendyol.stove.system
 import arrow.core.None
 import arrow.core.Some
 import com.trendyol.stove.system.abstractions.*
+import io.kotest.core.annotation.Isolate
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.collections.shouldContainAll
 import io.kotest.matchers.collections.shouldHaveSize
@@ -14,6 +15,8 @@ private object KeyA : SystemKey
 
 private object KeyB : SystemKey
 
+// Changes the global Stove instance.
+@Isolate
 class KeyedSystemTest :
   FunSpec({
     test("keyed getOrRegister stores and returns system") {

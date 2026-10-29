@@ -95,18 +95,23 @@ open class KafkaTestSpringBotApplicationForStringSerde {
     )
   )
 
-  @KafkaListener(topics = ["topic"], groupId = "group_id")
+  @KafkaListener(topics = ["\${kafka.publishTopic}"], groupId = "\${kafka.groupId}-publish")
   fun listen(message: String) {
     logger.info("Received Message in consumer: \n$message")
   }
 
-  @KafkaListener(topics = ["topic-failed"], groupId = "group_id")
+  @KafkaListener(topics = ["\${kafka.serdeTopic}"], groupId = "\${kafka.groupId}-serde")
+  fun listenSerde(message: String) {
+    logger.info("Received message with explicit serde: $message")
+  }
+
+  @KafkaListener(topics = ["\${kafka.failingTopic}"], groupId = "\${kafka.groupId}-failed")
   fun listenFailed(message: String) {
     logger.info("Received Message in failed consumer: \n$message")
     throw StoveBusinessException("This exception is thrown intentionally for testing purposes.")
   }
 
-  @KafkaListener(topics = ["topic-failed-dlt"], groupId = "group_id")
+  @KafkaListener(topics = ["\${kafka.failingTopic}-dlt"], groupId = "\${kafka.groupId}-dlt")
   fun listenDeadLetter(message: String) {
     logger.info("Received Message in the lead letter, and allowing the fail by just logging: \n$message")
   }

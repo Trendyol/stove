@@ -12,6 +12,9 @@ import java.util.UUID
 
 class RelationalDatabaseSystemTest :
   FunSpec({
+    // JDBC calls block; give each concurrent test its own thread.
+    blockingTest = true
+
     test("run initializes configuration and SQL operations for provided runtime") {
       RelationalDatabaseFixture().use { fixture ->
         fixture.system.run()

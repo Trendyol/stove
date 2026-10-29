@@ -4,14 +4,10 @@ import com.trendyol.stove.grpc.grpc
 import com.trendyol.stove.scoping.stoveTestId
 import com.trendyol.stove.system.stove
 import com.trendyol.stove.testing.grpcmock.test.*
-import io.grpc.Metadata
-import io.grpc.Status
-import io.grpc.StatusException
-import io.grpc.StatusRuntimeException
+import io.grpc.*
 import io.grpc.stub.MetadataUtils
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.FunSpec
-import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.nulls.shouldBeNull
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.string.shouldContain
@@ -19,6 +15,8 @@ import io.kotest.matchers.string.shouldContain
 /**
  * Test-scoped, fail-open request journaling: a request is excluded from a test's view
  * only when it is provably tagged with a different test id.
+ * Keep this fixture shared and tests ordered: later tests verify the test extension's
+ * cleanup of earlier tests' stubs and untagged evidence. Fresh fixtures would hide leaks.
  */
 class GrpcMockScopingTest :
   FunSpec({

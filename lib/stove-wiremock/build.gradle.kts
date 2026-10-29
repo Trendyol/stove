@@ -1,4 +1,5 @@
 dependencies {
+  testImplementation(testFixtures(projects.lib.stove))
   api(projects.lib.stove)
   api(libs.wiremock.standalone)
   api(libs.caffeine)

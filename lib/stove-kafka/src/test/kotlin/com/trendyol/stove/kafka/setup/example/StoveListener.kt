@@ -81,5 +81,13 @@ abstract class StoveListener(
 
   abstract suspend fun listen(record: ConsumerRecord<String, String>)
 
-  override fun close(): Unit = scope.cancel()
+  override fun close(): Unit = runBlocking {
+    // Stop polling before closing the non-thread-safe consumer.
+    scope.coroutineContext.job.cancelAndJoin()
+    try {
+      consumer.close()
+    } finally {
+      publisher.close()
+    }
+  }
 }

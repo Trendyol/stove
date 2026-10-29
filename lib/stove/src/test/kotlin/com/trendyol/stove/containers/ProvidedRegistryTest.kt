@@ -1,12 +1,17 @@
 package com.trendyol.stove.containers
 
+import io.kotest.core.annotation.Isolate
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.string.shouldContain
 import org.testcontainers.utility.DockerImageName
 
+// Changes the process-wide default container registry.
+@Isolate
 class ProvidedRegistryTest :
   FunSpec({
+    val originalRegistry = DEFAULT_REGISTRY
+    afterSpec { DEFAULT_REGISTRY = originalRegistry }
 
     beforeEach {
       // Reset to default before each test

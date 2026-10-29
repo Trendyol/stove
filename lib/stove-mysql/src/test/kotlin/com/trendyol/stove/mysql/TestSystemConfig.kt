@@ -3,10 +3,17 @@
 package com.trendyol.stove.mysql
 
 import com.trendyol.stove.extensions.kotest.StoveKotestExtension
+import com.trendyol.stove.rdbms.RelationalDatabaseExposedConfiguration
 import com.trendyol.stove.system.Stove
+import com.trendyol.stove.system.ValidationDsl
 import com.trendyol.stove.system.abstractions.ApplicationUnderTest
+import com.trendyol.stove.system.abstractions.ProvidedRuntime
+import com.trendyol.stove.testCaseConcurrency
+import com.trendyol.stove.testSpecConcurrency
 import io.kotest.core.config.AbstractProjectConfig
 import io.kotest.core.extensions.Extension
+import io.kotest.engine.concurrency.SpecExecutionMode
+import io.kotest.engine.concurrency.TestExecutionMode
 import org.slf4j.*
 import org.testcontainers.containers.MySQLContainer
 
@@ -80,7 +87,7 @@ class ContainerMySqlStrategy : MySqlTestStrategy {
       container = MySqlContainerOptions(
         tag = "9.6.0"
       ),
-      configureExposedConfiguration = { _ -> listOf() }
+      configureExposedConfiguration = ::captureSqlConfiguration
     ).migrations {
       register<InitialMigration>()
     }
@@ -133,7 +140,7 @@ class ProvidedMySqlStrategy : MySqlTestStrategy {
           logger.info("Running cleanup on provided instance")
           sqlOps.execute("DROP TABLE IF EXISTS MigrationHistory")
         },
-        configureExposedConfiguration = { _ -> listOf() }
+        configureExposedConfiguration = ::captureSqlConfiguration
       ).migrations {
         register<InitialMigration>()
       }
@@ -157,6 +164,8 @@ class ProvidedMySqlStrategy : MySqlTestStrategy {
 // ============================================================================
 
 class StoveConfig : AbstractProjectConfig() {
+  override val specExecutionMode = SpecExecutionMode.LimitedConcurrency(testSpecConcurrency())
+  override val testExecutionMode = TestExecutionMode.LimitedConcurrency(testCaseConcurrency())
   override val extensions: List<Extension> = listOf(StoveKotestExtension())
 
   private val strategy = MySqlTestStrategy.select()
@@ -164,4 +173,31 @@ class StoveConfig : AbstractProjectConfig() {
   override suspend fun beforeProject() = strategy.start()
 
   override suspend fun afterProject() = strategy.stop()
+}
+
+// Written once during project startup, before any concurrent tests run.
+private lateinit var sqlConfiguration: RelationalDatabaseExposedConfiguration
+
+private fun captureSqlConfiguration(config: RelationalDatabaseExposedConfiguration): List<String> {
+  sqlConfiguration = config
+  return emptyList()
+}
+
+internal suspend fun ValidationDsl.isolatedMysql(scenario: suspend MySqlSystem.() -> Unit) {
+  val config = sqlConfiguration
+  val options = MySqlOptions.provided(
+    jdbcUrl = config.jdbcUrl,
+    host = config.host,
+    port = config.port,
+    username = config.username,
+    password = config.password,
+    runMigrations = false,
+    configureExposedConfiguration = { emptyList() }
+  )
+  // Own the connection, retaining the suite's reporter and migrated database.
+  // Temporary tables belong to this connection and disappear when it closes.
+  MySqlSystem(stove, MySqlContext(ProvidedRuntime, options)).use { system ->
+    system.run()
+    scenario(system)
+  }
 }

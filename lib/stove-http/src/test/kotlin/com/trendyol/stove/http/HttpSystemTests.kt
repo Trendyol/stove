@@ -9,13 +9,16 @@ import com.trendyol.stove.extensions.kotest.StoveKotestExtension
 import com.trendyol.stove.http.HttpSystem.Companion.client
 import com.trendyol.stove.system.PortFinder
 import com.trendyol.stove.system.Stove
-import com.trendyol.stove.system.abstractions.ApplicationUnderTest
 import com.trendyol.stove.system.stove
+import com.trendyol.stove.testSpecConcurrency
 import com.trendyol.stove.wiremock.*
 import io.kotest.assertions.throwables.shouldThrow
+import io.kotest.core.annotation.Isolate
 import io.kotest.core.config.AbstractProjectConfig
 import io.kotest.core.extensions.Extension
 import io.kotest.core.spec.style.FunSpec
+import io.kotest.engine.concurrency.SpecExecutionMode
+import io.kotest.engine.concurrency.TestExecutionMode
 import io.kotest.matchers.*
 import io.kotest.matchers.string.shouldContain
 import io.ktor.client.request.*
@@ -24,19 +27,12 @@ import kotlinx.coroutines.flow.toList
 import java.time.Instant
 import java.util.*
 
-class NoApplication : ApplicationUnderTest<Unit> {
-  override suspend fun start(configurations: List<String>) {
-    // do nothing
-  }
-
-  override suspend fun stop() {
-    // do nothing
-  }
-}
-
 private val WIREMOCK_PORT = PortFinder.findAvailablePort()
 
 class StoveConfig : AbstractProjectConfig() {
+  override val specExecutionMode = SpecExecutionMode.LimitedConcurrency(testSpecConcurrency())
+  override val testExecutionMode = TestExecutionMode.Sequential
+
   override val extensions: List<Extension> = listOf(StoveKotestExtension())
 
   override suspend fun beforeProject(): Unit =
@@ -52,7 +48,10 @@ class StoveConfig : AbstractProjectConfig() {
           WireMockSystemOptions(WIREMOCK_PORT)
         }
 
-        applicationUnderTest(NoApplication())
+        httpClient(WebSocketClient) {
+          HttpClientSystemOptions(baseUrl = "http://localhost:$WS_PORT")
+        }
+        applicationUnderTest(WebSocketEchoServer())
       }.run()
 
   override suspend fun afterProject(): Unit = com.trendyol.stove.system.Stove
@@ -449,6 +448,8 @@ class HttpSystemTests :
     }
   })
 
+// Captures process-wide stdout and stderr.
+@Isolate
 class HttpConsoleTesting :
   ConsoleSpec({ capturedOutput ->
     test("should return error when request bodies do not match") {

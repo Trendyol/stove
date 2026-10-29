@@ -6,7 +6,7 @@ import com.trendyol.stove.system.stove
 import io.kotest.core.spec.style.ShouldSpec
 import io.kotest.matchers.shouldBe
 import org.apache.kafka.clients.admin.NewTopic
-import kotlin.random.Random
+import java.util.UUID
 import kotlin.time.Duration.Companion.seconds
 
 /**
@@ -21,16 +21,16 @@ abstract class StringSerdeKafkaSystemTests(
   should("publish and consume") {
     stove {
       kafka {
-        val userId = Random.nextInt().toString()
+        val userId = UUID.randomUUID().toString()
         val message =
           "this message is coming from ${testCase.descriptor.id.value} and testName is ${testCase.name.name}"
         val headers = mapOf("x-user-id" to userId)
-        publish("topic", message, headers = headers)
+        publish(StringSerdeTestTopics.publish, message, headers = headers)
         shouldBePublished<Any>(20.seconds) {
-          actual == message && this.metadata.headers["x-user-id"] == userId && this.metadata.topic == "topic"
+          actual == message && this.metadata.headers["x-user-id"] == userId && this.metadata.topic == StringSerdeTestTopics.publish
         }
         shouldBeConsumed<Any>(20.seconds) {
-          actual == message && this.metadata.headers["x-user-id"] == userId && this.metadata.topic == "topic"
+          actual == message && this.metadata.headers["x-user-id"] == userId && this.metadata.topic == StringSerdeTestTopics.publish
         }
       }
     }
@@ -40,21 +40,22 @@ abstract class StringSerdeKafkaSystemTests(
     shouldThrowMaybe<StoveBusinessException> {
       stove {
         kafka {
-          val userId = Random.nextInt().toString()
+          val userId = UUID.randomUUID().toString()
           val message =
             "this message is coming from ${testCase.descriptor.id.value} and testName is ${testCase.name.name}"
           val headers = mapOf("x-user-id" to userId)
-          publish("topic-failed", message, headers = headers)
+          publish(StringSerdeTestTopics.failing, message, headers = headers)
           shouldBePublished<Any>(20.seconds) {
-            actual == message && this.metadata.headers["x-user-id"] == userId && this.metadata.topic == "topic-failed"
+            actual == message && this.metadata.headers["x-user-id"] == userId && this.metadata.topic == StringSerdeTestTopics.failing
           }
           shouldBeFailed<Any>(20.seconds) {
-            actual == message && this.metadata.headers["x-user-id"] == userId && this.metadata.topic == "topic-failed" &&
+            actual == message && this.metadata.headers["x-user-id"] == userId && this.metadata.topic == StringSerdeTestTopics.failing &&
               reason is StoveBusinessException
           }
 
           shouldBePublished<Any>(20.seconds) {
-            actual == message && this.metadata.headers["x-user-id"] == userId && this.metadata.topic == "topic-failed$dltTopicSuffix"
+            actual == message && this.metadata.headers["x-user-id"] == userId &&
+              this.metadata.topic == "${StringSerdeTestTopics.failing}$dltTopicSuffix"
           }
         }
       }
@@ -65,10 +66,10 @@ abstract class StringSerdeKafkaSystemTests(
     stove {
       kafka {
         adminOperations {
-          val topic = "admin-test-topic-${Random.nextInt()}"
-          createTopics(listOf(NewTopic(topic, 1, 1)))
+          val topic = "admin-test-topic-${UUID.randomUUID()}"
+          createTopics(listOf(NewTopic(topic, 1, 1))).all().get()
           listTopics().names().get().contains(topic) shouldBe true
-          deleteTopics(listOf(topic))
+          deleteTopics(listOf(topic)).all().get()
           listTopics().names().get().contains(topic) shouldBe false
         }
       }
@@ -78,15 +79,15 @@ abstract class StringSerdeKafkaSystemTests(
   should("publish with ser/de") {
     stove {
       kafka {
-        val userId = Random.nextInt().toString()
+        val userId = UUID.randomUUID().toString()
         val message = "this message is coming from ${testCase.descriptor.id.value} and testName is ${testCase.name.name}"
         val headers = mapOf("x-user-id" to userId)
-        publish("topic", message, serde = StoveSerde.jackson.anyJsonStringSerde().some(), headers = headers)
+        publish(StringSerdeTestTopics.serde, message, serde = StoveSerde.jackson.anyJsonStringSerde().some(), headers = headers)
         shouldBePublished<String>(atLeastIn = 20.seconds) {
-          actual == message && this.metadata.headers["x-user-id"] == userId && this.metadata.topic == "topic"
+          actual == message && this.metadata.headers["x-user-id"] == userId && this.metadata.topic == StringSerdeTestTopics.serde
         }
         shouldBeConsumed<String>(atLeastIn = 20.seconds) {
-          actual == message && this.metadata.headers["x-user-id"] == userId && this.metadata.topic == "topic"
+          actual == message && this.metadata.headers["x-user-id"] == userId && this.metadata.topic == StringSerdeTestTopics.serde
         }
       }
     }

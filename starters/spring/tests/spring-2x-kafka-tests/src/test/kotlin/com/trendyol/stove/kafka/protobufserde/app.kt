@@ -130,7 +130,7 @@ open class KafkaTestSpringBotApplicationForProtobufSerde {
     )
   )
 
-  @KafkaListener(topics = ["topic-protobuf"], groupId = "group_id")
+  @KafkaListener(topics = ["\${kafka.topic}"], groupId = "\${kafka.groupId}")
   fun listen(message: Message) {
     logger.info("Received Message in consumer: $message")
   }

@@ -1,12 +1,15 @@
 package com.trendyol.stove.system
 
 import io.kotest.assertions.throwables.shouldThrow
+import io.kotest.core.annotation.Isolate
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.string.shouldContain
 import kotlinx.coroutines.runBlocking
 import kotlin.time.Duration.Companion.milliseconds
 
+// Changes the global Stove instance.
+@Isolate
 class ProvidedApplicationUnderTestTest :
   FunSpec({
     test("start with no health check is a no-op") {

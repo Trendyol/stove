@@ -13,7 +13,7 @@ import io.confluent.kafka.streams.serdes.protobuf.KafkaProtobufSerde
 sealed class KafkaRegistry(
   open val url: String
 ) {
-  object Mock : KafkaRegistry("mock://mock-registry")
+  object Mock : KafkaRegistry(ProtobufSerdeTestTopics.registry)
 
   data class Defined(
     override val url: String
@@ -22,8 +22,8 @@ sealed class KafkaRegistry(
   companion object {
     fun createSerde(registry: KafkaRegistry = Mock): KafkaProtobufSerde<Message> {
       val schemaRegistryClient = when (registry) {
-        is Mock -> MockSchemaRegistry.getClientForScope("mock-registry", listOf(ProtobufSchemaProvider()))
-        is Defined -> MockSchemaRegistry.getClientForScope(registry.url, listOf(ProtobufSchemaProvider()))
+        is Mock -> MockSchemaRegistry.getClientForScope(registry.url.removePrefix("mock://"), listOf(ProtobufSchemaProvider()))
+        is Defined -> MockSchemaRegistry.getClientForScope(registry.url.removePrefix("mock://"), listOf(ProtobufSchemaProvider()))
       }
       val serde: KafkaProtobufSerde<Message> = KafkaProtobufSerde<Message>(schemaRegistryClient)
       val serdeConfig: MutableMap<String, Any?> = HashMap()

@@ -5,6 +5,7 @@ import com.trendyol.stove.reporting.StoveReporter
 import com.trendyol.stove.serialization.StoveSerde
 import com.trendyol.stove.tracing.TraceContext
 import io.kotest.assertions.throwables.shouldThrow
+import io.kotest.core.annotation.Isolate
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.collections.shouldContainExactly
 import io.kotest.matchers.shouldBe
@@ -37,6 +38,8 @@ private fun record(
   reason = reason
 )
 
+// Tight deadline assertions must not compete with blocking socket and readiness specs.
+@Isolate
 class KafkaMessagingTests :
   FunSpec({
     test("store signals changes and replay flows emit each record once") {

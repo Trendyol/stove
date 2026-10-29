@@ -1,3 +1,4 @@
+import kotlin.math.sqrt
 import org.gradle.plugins.ide.idea.model.IdeaModel
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
@@ -69,6 +70,22 @@ kover {
     }
   }
 }
+// Share a CPU-derived budget across module JVMs and Kotest's two scheduling levels.
+abstract class TestConcurrencySlots : BuildService<BuildServiceParameters.None>
+
+val testCpuBudget = providers.gradleProperty("stove.test.cpuBudget")
+  .map { it.toInt().also { value -> require(value > 0) } }
+  .getOrElse((Runtime.getRuntime().availableProcessors() * 0.8).toInt().coerceAtLeast(1))
+val parallelTestModules = providers.gradleProperty("stove.test.parallelModules")
+  .map { it.toInt().also { value -> require(value > 0) } }
+  .getOrElse(sqrt(testCpuBudget.toDouble()).toInt().coerceAtLeast(1))
+  .coerceAtMost(testCpuBudget)
+  .coerceAtMost(gradle.startParameter.maxWorkerCount)
+val testJvmBudget = (testCpuBudget / parallelTestModules).coerceAtLeast(1)
+val testConcurrencySlots = gradle.sharedServices.registerIfAbsent("testConcurrencySlots", TestConcurrencySlots::class) {
+  maxParallelUsages.set(parallelTestModules)
+}
+
 val related = subprojects.of("lib", "spring", "examples", "ktor", "quarkus", "micronaut", "container", "process", "tests", "test-extensions", except = listOf("stove-bom"))
 dependencies { related.forEach { kover(it) } }
 
@@ -82,7 +99,7 @@ subprojects.of("lib", "spring", "examples", "ktor", "quarkus", "micronaut", "con
     plugin("idea")
   }
 
-  val testImplementation by configurations
+  val testImplementation = configurations.getByName("testImplementation")
   val libs = rootProject.libs
   detekt {
     buildUponDefaultConfig = true
@@ -135,8 +152,10 @@ subprojects.of("lib", "spring", "examples", "ktor", "quarkus", "micronaut", "con
 
   tasks {
     withType<Test>().configureEach {
-      // Suites share Stove and mutable fixtures inside a JVM; parallelize projects instead.
+      // Keep one tracing endpoint per JVM; audited suites enable Kotest concurrency separately.
       maxParallelForks = 1
+      usesService(testConcurrencySlots)
+      systemProperty("stove.test.concurrency", testJvmBudget)
       doFirst {
         val isolatedTemp = temporaryDir.resolve("tmp").apply { mkdirs() }
         systemProperty("java.io.tmpdir", isolatedTemp.absolutePath)
@@ -226,12 +245,12 @@ subprojects.of("lib", "spring", "ktor", "quarkus", "micronaut", "container", "pr
     publishToMavenCentral()
     pom {
       name.set(project.name)
-      description.set(project.properties["projectDescription"].toString())
-      url.set(project.properties["projectUrl"].toString())
+      description.set(providers.gradleProperty("projectDescription"))
+      url.set(providers.gradleProperty("projectUrl"))
       licenses {
         license {
-          name.set(project.properties["licence"].toString())
-          url.set(project.properties["licenceUrl"].toString())
+          name.set(providers.gradleProperty("licence"))
+          url.set(providers.gradleProperty("licenceUrl"))
         }
       }
       developers {
@@ -244,7 +263,7 @@ subprojects.of("lib", "spring", "ktor", "quarkus", "micronaut", "container", "pr
       scm {
         connection.set("scm:git@github.com:Trendyol/stove.git")
         developerConnection.set("scm:git:ssh://github.com:Trendyol/stove.git")
-        url.set(project.properties["projectUrl"].toString())
+        url.set(providers.gradleProperty("projectUrl"))
       }
     }
     if (project.hasSigningKey) signAllPublications()

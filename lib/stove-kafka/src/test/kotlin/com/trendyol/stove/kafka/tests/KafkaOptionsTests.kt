@@ -18,8 +18,11 @@ private class MarkerSerde(private val marker: String) : StoveSerde<Any, ByteArra
     error("MarkerSerde is only used to verify publisher serialization")
 }
 
+// Exercises process-wide bridge defaults and properties.
+@io.kotest.core.annotation.Isolate
 class KafkaOptionsTests :
   FunSpec({
+    testExecutionMode = io.kotest.engine.concurrency.TestExecutionMode.Sequential
 
     test("KafkaSystemOptions should have sensible defaults") {
       val options = object : KafkaSystemOptions(
