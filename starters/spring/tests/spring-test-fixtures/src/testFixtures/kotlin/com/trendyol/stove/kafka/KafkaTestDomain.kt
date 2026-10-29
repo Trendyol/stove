@@ -1,21 +1,15 @@
 package com.trendyol.stove.kafka
 
+import com.trendyol.stove.ConcurrentProjectConfig
 import io.kotest.assertions.*
 import io.kotest.assertions.print.Printed
 import io.kotest.common.reflection.bestName
-import io.kotest.core.config.AbstractProjectConfig
-import io.kotest.engine.concurrency.SpecExecutionMode
 
 /**
  * Application specs replace the global Stove instance and serde, so start them sequentially.
  * Independent root tests run concurrently within each application.
  */
-abstract class KafkaTestSetup : AbstractProjectConfig() {
-  override val specExecutionMode: SpecExecutionMode = SpecExecutionMode.Sequential
-  override val testExecutionMode = io.kotest.engine.concurrency.TestExecutionMode.LimitedConcurrency(
-    com.trendyol.stove.testCaseConcurrency(parallelSpecs = 1)
-  )
-}
+abstract class KafkaTestSetup : ConcurrentProjectConfig(concurrentSpecs = false, concurrentTests = true)
 
 /**
  * Test exception thrown to verify error handling in Kafka consumers.

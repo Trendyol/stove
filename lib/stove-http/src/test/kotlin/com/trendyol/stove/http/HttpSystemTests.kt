@@ -4,21 +4,18 @@ import arrow.core.*
 import com.github.tomakehurst.wiremock.client.WireMock
 import com.github.tomakehurst.wiremock.client.WireMock.*
 import com.github.tomakehurst.wiremock.matching.MultipartValuePattern
+import com.trendyol.stove.ConcurrentProjectConfig
 import com.trendyol.stove.ConsoleSpec
 import com.trendyol.stove.extensions.kotest.StoveKotestExtension
 import com.trendyol.stove.http.HttpSystem.Companion.client
 import com.trendyol.stove.system.PortFinder
 import com.trendyol.stove.system.Stove
 import com.trendyol.stove.system.stove
-import com.trendyol.stove.testSpecConcurrency
 import com.trendyol.stove.wiremock.*
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.annotation.Isolate
-import io.kotest.core.config.AbstractProjectConfig
 import io.kotest.core.extensions.Extension
 import io.kotest.core.spec.style.FunSpec
-import io.kotest.engine.concurrency.SpecExecutionMode
-import io.kotest.engine.concurrency.TestExecutionMode
 import io.kotest.matchers.*
 import io.kotest.matchers.string.shouldContain
 import io.ktor.client.request.*
@@ -29,10 +26,7 @@ import java.util.*
 
 private val WIREMOCK_PORT = PortFinder.findAvailablePort()
 
-class StoveConfig : AbstractProjectConfig() {
-  override val specExecutionMode = SpecExecutionMode.LimitedConcurrency(testSpecConcurrency())
-  override val testExecutionMode = TestExecutionMode.Sequential
-
+class StoveConfig : ConcurrentProjectConfig() {
   override val extensions: List<Extension> = listOf(StoveKotestExtension())
 
   override suspend fun beforeProject(): Unit =

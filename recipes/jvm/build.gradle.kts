@@ -2,6 +2,7 @@ import org.gradle.plugins.ide.idea.model.IdeaModel
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
 plugins {
+  id("com.trendyol.stove.test-conventions") apply false
   kotlin("jvm").version(libs.versions.kotlin)
   alias(libs.plugins.spotless)
   alias(libs.plugins.testLogger)
@@ -10,22 +11,13 @@ plugins {
   java
 }
 
-// Recipe tests remain sequential inside each JVM, so spend the budget on modules.
-abstract class RecipeTestSlots : BuildService<BuildServiceParameters.None>
-
-val recipeTestBudget = providers.gradleProperty("stove.test.cpuBudget")
-  .map { it.toInt().also { value -> require(value > 0) } }
-  .getOrElse((Runtime.getRuntime().availableProcessors() * 0.8).toInt().coerceAtLeast(1))
-val recipeTestSlots = gradle.sharedServices.registerIfAbsent("recipeTestSlots", RecipeTestSlots::class) {
-  maxParallelUsages.set(recipeTestBudget)
-}
-
 subprojects {
   if (subprojects.isNotEmpty()) {
     return@subprojects
   }
 
   apply {
+    plugin("com.trendyol.stove.test-conventions")
     plugin(rootProject.libs.plugins.spotless.get().pluginId)
     plugin(rootProject.libs.plugins.testLogger.get().pluginId)
     plugin(rootProject.libs.plugins.detekt.get().pluginId)
@@ -80,16 +72,6 @@ subprojects {
   }
 
   tasks {
-    withType<Test>().configureEach {
-      // Suites share Stove and mutable fixtures inside a JVM; parallelize projects instead.
-      maxParallelForks = 1
-      usesService(recipeTestSlots)
-      doFirst {
-        val isolatedTemp = temporaryDir.resolve("tmp").apply { mkdirs() }
-        systemProperty("java.io.tmpdir", isolatedTemp.absolutePath)
-      }
-    }
-
     if (JavaVersion.current().isCompatibleWith(JavaVersion.toVersion("25"))) {
       withType<io.gitlab.arturbosch.detekt.Detekt>().configureEach {
         enabled = false

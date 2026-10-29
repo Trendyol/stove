@@ -1,5 +1,6 @@
 package com.trendyol.stove.mssql
 
+import com.trendyol.stove.ConcurrentProjectConfig
 import com.trendyol.stove.database.migrations.*
 import com.trendyol.stove.extensions.kotest.StoveKotestExtension
 import com.trendyol.stove.functional.*
@@ -9,13 +10,8 @@ import com.trendyol.stove.system.ValidationDsl
 import com.trendyol.stove.system.abstractions.ApplicationUnderTest
 import com.trendyol.stove.system.abstractions.ProvidedRuntime
 import com.trendyol.stove.system.stove
-import com.trendyol.stove.testCaseConcurrency
-import com.trendyol.stove.testSpecConcurrency
-import io.kotest.core.config.AbstractProjectConfig
 import io.kotest.core.extensions.Extension
 import io.kotest.core.spec.style.ShouldSpec
-import io.kotest.engine.concurrency.SpecExecutionMode
-import io.kotest.engine.concurrency.TestExecutionMode
 import io.kotest.matchers.shouldBe
 import kotliquery.param
 import org.slf4j.*
@@ -190,9 +186,7 @@ class ProvidedMsSqlStrategy : MsSqlTestStrategy {
 // Kotest project config - selects strategy based on environment
 // ============================================================================
 
-class StoveConfig : AbstractProjectConfig() {
-  override val specExecutionMode = SpecExecutionMode.LimitedConcurrency(testSpecConcurrency())
-  override val testExecutionMode = TestExecutionMode.LimitedConcurrency(testCaseConcurrency())
+class StoveConfig : ConcurrentProjectConfig(concurrentTests = true) {
   override val extensions: List<Extension> = listOf(StoveKotestExtension())
 
   private val strategy = MsSqlTestStrategy.select()

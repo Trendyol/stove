@@ -29,6 +29,7 @@ dependencies {
   testImplementation(libs.kotest.framework.engine)
   testImplementation(libs.kotest.assertions.core)
   testImplementation(libs.logback.classic)
+  testFixturesApi(libs.kotest.framework.engine)
   testFixturesImplementation(libs.kotest.runner.junit6)
 }
 

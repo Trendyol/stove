@@ -1,9 +1,9 @@
-import kotlin.math.sqrt
 import org.gradle.plugins.ide.idea.model.IdeaModel
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
 plugins {
   id("com.trendyol.stove.build-logic")
+  id("com.trendyol.stove.test-conventions") apply false
   kotlin("jvm").version(libs.versions.kotlin)
   alias(libs.plugins.spotless)
   alias(libs.plugins.testLogger)
@@ -70,28 +70,13 @@ kover {
     }
   }
 }
-// Share a CPU-derived budget across module JVMs and Kotest's two scheduling levels.
-abstract class TestConcurrencySlots : BuildService<BuildServiceParameters.None>
-
-val testCpuBudget = providers.gradleProperty("stove.test.cpuBudget")
-  .map { it.toInt().also { value -> require(value > 0) } }
-  .getOrElse((Runtime.getRuntime().availableProcessors() * 0.8).toInt().coerceAtLeast(1))
-val parallelTestModules = providers.gradleProperty("stove.test.parallelModules")
-  .map { it.toInt().also { value -> require(value > 0) } }
-  .getOrElse(sqrt(testCpuBudget.toDouble()).toInt().coerceAtLeast(1))
-  .coerceAtMost(testCpuBudget)
-  .coerceAtMost(gradle.startParameter.maxWorkerCount)
-val testJvmBudget = (testCpuBudget / parallelTestModules).coerceAtLeast(1)
-val testConcurrencySlots = gradle.sharedServices.registerIfAbsent("testConcurrencySlots", TestConcurrencySlots::class) {
-  maxParallelUsages.set(parallelTestModules)
-}
-
 val related = subprojects.of("lib", "spring", "examples", "ktor", "quarkus", "micronaut", "container", "process", "tests", "test-extensions", except = listOf("stove-bom"))
 dependencies { related.forEach { kover(it) } }
 
 subprojects.of("lib", "spring", "examples", "ktor", "quarkus", "micronaut", "container", "process", "tests", "test-extensions", except = listOf("stove-bom")) {
   apply {
     plugin("kotlin")
+    plugin("com.trendyol.stove.test-conventions")
     plugin(rootProject.libs.plugins.spotless.get().pluginId)
     plugin(rootProject.libs.plugins.testLogger.get().pluginId)
     plugin(rootProject.libs.plugins.kover.get().pluginId)
@@ -151,17 +136,6 @@ subprojects.of("lib", "spring", "examples", "ktor", "quarkus", "micronaut", "con
   }
 
   tasks {
-    withType<Test>().configureEach {
-      // Keep one tracing endpoint per JVM; audited suites enable Kotest concurrency separately.
-      maxParallelForks = 1
-      usesService(testConcurrencySlots)
-      systemProperty("stove.test.concurrency", testJvmBudget)
-      doFirst {
-        val isolatedTemp = temporaryDir.resolve("tmp").apply { mkdirs() }
-        systemProperty("java.io.tmpdir", isolatedTemp.absolutePath)
-      }
-    }
-
     test {
       useJUnitPlatform()
       failFast = runningOnCI

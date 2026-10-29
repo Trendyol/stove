@@ -184,15 +184,27 @@ and in CI. Test scheduling uses a budget of 80% of the JVM's available logical
 CPUs, rounded down with a minimum of one. This bounds scheduled tests, not actual
 CPU utilization or background application threads.
 
-In the root build, a Gradle shared service limits concurrent test JVMs to
-`floor(sqrt(budget))`. Each JVM receives `floor(budget / moduleSlots)` slots.
-Kotest divides those into `floor(sqrt(jvmSlots))` concurrent specs and
-`floor(jvmSlots / specSlots)` root tests per spec. Rounding can leave spare
-slots. Suites with sequential application specs can spend all JVM slots on root
-tests. Recipe suites remain sequential inside a JVM, so their budget goes to
-parallel modules. Gradle compilation retains its normal CPU-based worker default.
+The `com.trendyol.stove.test-conventions` plugin in
+[`build-logic/test-conventions`](build-logic/test-conventions/) owns CPU allocation,
+test JVM limits, and temporary-directory isolation for both builds. It is a
+separate included build so recipes can keep using the published tracing plugin.
 
-Override the budget with `-Pstove.test.cpuBudget=N`, or the root build's module
+In the root build, a Gradle shared service allows up to `budget` concurrent test
+JVMs, bounded by Gradle workers. This prioritizes module concurrency because most
+suites still run sequentially inside their JVM. For example, four available CPUs
+give three concurrent test JVMs; eighteen CPUs give fourteen. With enough Gradle
+workers, each JVM receives one slot by default, so Kotest specs and tests run
+sequentially in that mode.
+
+Reducing the module allocation gives each JVM `floor(budget / moduleSlots)` slots.
+Audited Kotest suites divide those into `floor(sqrt(jvmSlots))` concurrent specs
+and `floor(jvmSlots / specSlots)` root tests per spec. Rounding can leave spare
+slots. Suites with sequential application specs can spend all JVM slots on root
+tests. Allocation is static: idle module slots are not borrowed by running JVMs.
+Recipe suites also spend their budget on parallel modules. Gradle compilation
+retains its normal CPU-based worker default.
+
+Override the budget with `-Pstove.test.cpuBudget=N`, or the module
 allocation with `-Pstove.test.parallelModules=N`. For a focused module run, use
 `-Pstove.test.parallelModules=1` to give that JVM the whole budget.
 `--max-workers=N` remains an upper bound on Gradle workers. IDE test runs use the
@@ -228,7 +240,9 @@ JVM temporary files and Stove state. Audited suites opt into Kotest concurrency:
   twenty operations, each with its own request builder.
 - Other suites retain sequential specs and tests. JUnit concurrency is unchanged.
 
-The module's `kotest.properties` selects its `AbstractProjectConfig`.
+The module's `kotest.properties` selects its project config. Audited suites extend
+`ConcurrentProjectConfig` from Stove's test fixtures, explicitly opting into
+concurrent specs and/or root tests while sharing the budget calculation.
 With Kotest 6, use `SpecExecutionMode.LimitedConcurrency` for specs and
 `TestExecutionMode.LimitedConcurrency` for root tests. These limits multiply;
 nested tests remain sequential. Do not enable either globally without auditing

@@ -117,6 +117,7 @@ sys.exit(1 if name == os.environ.get("LINT_FAIL_TOOL") else 0)
             ("build.gradle.kts", {"jvm"}),
             ("lib/stove/api/stove.api", {"jvm"}),
             ("recipes/jvm/example/src/Test.kt", {"recipes"}),
+            ("build-logic/test-conventions/src/main/kotlin/Convention.kt", {"jvm", "recipes"}),
             ("recipes/process/golang/go-showcase/main.go", {"go"}),
             ("recipes/process/golang/go-showcase/go.mod", {"go"}),
             ("go/stove-kafka/nested/client.go", {"go"}),
