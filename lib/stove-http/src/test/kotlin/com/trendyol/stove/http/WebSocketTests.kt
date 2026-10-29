@@ -4,6 +4,7 @@ import arrow.core.some
 import com.trendyol.stove.system.*
 import com.trendyol.stove.system.Stove
 import com.trendyol.stove.system.abstractions.ApplicationUnderTest
+import com.trendyol.stove.tracing.TraceContext
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.*
 import io.kotest.matchers.collections.shouldHaveSize
@@ -69,6 +70,17 @@ class WebSocketEchoServer : ApplicationUnderTest<Unit> {
             send(Frame.Text("Unauthorized"))
           }
           close(CloseReason(CloseReason.Codes.NORMAL, "Auth check complete"))
+        }
+
+        webSocket("/handshake") {
+          val handshakeHeaders = listOf(
+            call.request.headers["X-Client"],
+            call.request.headers["Authorization"],
+            call.request.headers[TraceContext.TRACEPARENT_HEADER],
+            call.request.headers[TraceContext.STOVE_TEST_ID_HEADER]
+          )
+          send(Frame.Text(handshakeHeaders.joinToString("\n")))
+          close(CloseReason(CloseReason.Codes.NORMAL, "Handshake captured"))
         }
 
         // Binary endpoint - echoes binary data
@@ -260,6 +272,22 @@ class WebSocketTests :
             send(Frame.Text("Raw frame"))
             val frame = incoming.receive()
             (frame as Frame.Text).readText() shouldBe "Echo: Raw frame"
+          }
+        }
+      }
+    }
+
+    test("typed and raw sessions preserve authentication and trace headers during the upgrade") {
+      val trace = TraceContext("a".repeat(32), "websocket-handshake", "b".repeat(16))
+      val expected = listOf("mobile", "Bearer token", trace.toTraceparent(), trace.testId).joinToString("\n")
+
+      TraceContext.withPropagation(trace) {
+        ValidationDsl(wsStove).http {
+          webSocket("/handshake", headers = mapOf("X-Client" to "mobile"), token = "token".some()) {
+            receiveText() shouldBe expected
+          }
+          webSocketRaw("/handshake", headers = mapOf("X-Client" to "mobile"), token = "token".some()) {
+            (incoming.receive() as Frame.Text).readText() shouldBe expected
           }
         }
       }

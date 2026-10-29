@@ -62,6 +62,19 @@ class StoveJUnitExtensionTest {
     }
   }
 
+  @Nested
+  @DisplayName("Order creation")
+  inner class OrderCreation {
+    @Test
+    @DisplayName("creates an order")
+    fun `includes nested display names in the report path`() {
+      val context = StoveTestContextHolder.get().shouldNotBeNull()
+      context.testPath shouldBe listOf("Order creation", "creates an order")
+      context.specName shouldBe "StoveJUnitExtensionTest"
+      context.testName shouldBe "creates an order"
+    }
+  }
+
   @Test
   fun `beforeEach should set up test context correctly`() {
     val context = StoveTestContextHolder.get()

@@ -8,6 +8,7 @@ import com.trendyol.stove.system.abstractions.*
 import com.trendyol.stove.system.annotations.StoveDsl
 import com.trendyol.stove.tracing.TraceContext
 import io.grpc.*
+import kotlinx.coroutines.runBlocking
 import java.util.concurrent.TimeUnit
 
 /**
@@ -271,14 +272,16 @@ class GrpcSystem(
 
   override fun then(): Stove = stove
 
-  override fun close() {
-    if (lazyGrpcChannel.isInitialized()) {
-      grpcChannel.shutdown()
-      grpcChannel.awaitTermination(SHUTDOWN_TIMEOUT_SECONDS, TimeUnit.SECONDS)
-    }
-    if (lazyWireClientResources.isInitialized()) {
-      wireClientResources.close()
-    }
+  override fun close(): Unit = runBlocking {
+    closeAll(
+      {
+        if (lazyGrpcChannel.isInitialized()) {
+          grpcChannel.shutdown()
+          grpcChannel.awaitTermination(SHUTDOWN_TIMEOUT_SECONDS, TimeUnit.SECONDS)
+        }
+      },
+      { if (lazyWireClientResources.isInitialized()) wireClientResources.close() }
+    )
   }
 
   companion object {

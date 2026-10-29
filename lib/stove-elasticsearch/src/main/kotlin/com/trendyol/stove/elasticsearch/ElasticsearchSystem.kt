@@ -11,6 +11,7 @@ import com.trendyol.stove.functional.*
 import com.trendyol.stove.reporting.Reports
 import com.trendyol.stove.system.Stove
 import com.trendyol.stove.system.abstractions.*
+import com.trendyol.stove.system.closeAll
 import kotlinx.coroutines.runBlocking
 import org.apache.http.HttpHost
 import org.apache.http.auth.*
@@ -189,9 +190,11 @@ class ElasticsearchSystem internal constructor(
 
   override fun close(): Unit = runBlocking {
     Try {
-      context.options.cleanup(esClient)
-      esClient._transport().close()
-      executeWithReuseCheck { stop() }
+      closeAll(
+        { if (::esClient.isInitialized) context.options.cleanup(esClient) },
+        { if (::esClient.isInitialized) esClient._transport().close() },
+        { executeWithReuseCheck { stop() } }
+      )
     }.recover { logger.warn("got an error while stopping elasticsearch: ${it.message}") }
   }
 
@@ -388,13 +391,12 @@ class ElasticsearchSystem internal constructor(
     else -> throw UnsupportedOperationException("Unsupported runtime type: ${context.runtime::class}")
   }
 
-  private fun createEsClient(exposedConfiguration: ElasticSearchExposedConfiguration): ElasticsearchClient =
-    context.options.clientConfigurer.restClientOverrideFn
-      .getOrElse { { cfg -> restClient(cfg) } }
-      .let { it(exposedConfiguration) }
-      .let { restClient ->
-        RestClientTransport(restClient, context.options.jsonpMapper, restClientCompatibilityOptions())
-      }.let { ElasticsearchClient(it) }
+  private fun createEsClient(exposedConfiguration: ElasticSearchExposedConfiguration): ElasticsearchClient {
+    val clientFactory = context.options.clientConfigurer.restClientOverrideFn.getOrElse { ::restClient }
+    val restClient = clientFactory(exposedConfiguration)
+    val transport = RestClientTransport(restClient, context.options.jsonpMapper, restClientCompatibilityOptions())
+    return ElasticsearchClient(transport)
+  }
 
   private fun restClientCompatibilityOptions(): RestClientOptions =
     RestClientOptions

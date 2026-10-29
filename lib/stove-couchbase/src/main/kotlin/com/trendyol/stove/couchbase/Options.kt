@@ -203,24 +203,8 @@ fun WithDsl.couchbase(
   configure: @StoveDsl () -> CouchbaseSystemOptions
 ): Stove {
   val options = configure()
-  val bucketDefinition = BucketDefinition(options.defaultBucket)
 
-  val runtime: SystemRuntime = if (options is ProvidedCouchbaseSystemOptions) {
-    ProvidedRuntime
-  } else {
-    withProvidedRegistry(
-      imageName = options.containerOptions.imageWithTag,
-      registry = options.containerOptions.registry,
-      compatibleSubstitute = options.containerOptions.compatibleSubstitute
-    ) { dockerImageName ->
-      options.containerOptions
-        .useContainerFn(dockerImageName)
-        .withBucket(bucketDefinition)
-        .withReuse(stove.keepDependenciesRunning)
-        .let { c -> c as StoveCouchbaseContainer }
-        .apply(options.containerOptions.containerFn)
-    }
-  }
+  val runtime = options.createRuntime(stove.keepDependenciesRunning)
 
   return stove.withCouchbase(options, runtime)
 }
@@ -230,26 +214,27 @@ fun WithDsl.couchbase(
   configure: @StoveDsl () -> CouchbaseSystemOptions
 ): Stove {
   val options = configure()
-  val bucketDefinition = BucketDefinition(options.defaultBucket)
 
-  val runtime: SystemRuntime = if (options is ProvidedCouchbaseSystemOptions) {
-    ProvidedRuntime
-  } else {
-    withProvidedRegistry(
-      imageName = options.containerOptions.imageWithTag,
-      registry = options.containerOptions.registry,
-      compatibleSubstitute = options.containerOptions.compatibleSubstitute
-    ) { dockerImageName ->
-      options.containerOptions
-        .useContainerFn(dockerImageName)
-        .withBucket(bucketDefinition)
-        .withReuse(stove.keepDependenciesRunning)
-        .let { c -> c as StoveCouchbaseContainer }
-        .apply(options.containerOptions.containerFn)
-    }
-  }
+  val runtime = options.createRuntime(stove.keepDependenciesRunning)
 
   return stove.withCouchbase(key, options, runtime)
+}
+
+private fun CouchbaseSystemOptions.createRuntime(keepDependenciesRunning: Boolean): SystemRuntime {
+  val bucketDefinition = BucketDefinition(defaultBucket)
+  if (this is ProvidedCouchbaseSystemOptions) return ProvidedRuntime
+  return withProvidedRegistry(
+    imageName = containerOptions.imageWithTag,
+    registry = containerOptions.registry,
+    compatibleSubstitute = containerOptions.compatibleSubstitute
+  ) { dockerImageName ->
+    containerOptions
+      .useContainerFn(dockerImageName)
+      .withBucket(bucketDefinition)
+      .withReuse(keepDependenciesRunning)
+      .let { c -> c as StoveCouchbaseContainer }
+      .apply(containerOptions.containerFn)
+  }
 }
 
 suspend fun ValidationDsl.couchbase(

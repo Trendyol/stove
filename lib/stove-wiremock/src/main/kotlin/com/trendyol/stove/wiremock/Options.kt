@@ -97,40 +97,28 @@ data class WireMockContext(
   val keyName: String? = null
 )
 
-internal fun Stove.withWireMock(options: WireMockSystemOptions = WireMockSystemOptions()): Stove =
-  WireMockSystem(
-    stove = this,
-    WireMockContext(
-      options.port,
-      options.removeStubAfterRequestMatched,
-      options.afterStubRemoved,
-      options.afterRequest,
-      options.serde,
-      options.retainRawInteractionBodies,
-      options.interactionBodyRedactor,
-      options.configure,
-      options.configureExposedConfiguration
-    )
-  ).also { getOrRegister(it) }
-    .let { this }
+internal fun Stove.withWireMock(options: WireMockSystemOptions = WireMockSystemOptions()): Stove {
+  getOrRegister(WireMockSystem(this, options.toContext()))
+  return this
+}
 
-internal fun Stove.withWireMock(key: SystemKey, options: WireMockSystemOptions = WireMockSystemOptions()): Stove =
-  WireMockSystem(
-    stove = this,
-    WireMockContext(
-      options.port,
-      options.removeStubAfterRequestMatched,
-      options.afterStubRemoved,
-      options.afterRequest,
-      options.serde,
-      options.retainRawInteractionBodies,
-      options.interactionBodyRedactor,
-      options.configure,
-      options.configureExposedConfiguration,
-      keyName = keyDisplayName(key)
-    )
-  ).also { getOrRegister(key, it) }
-    .let { this }
+internal fun Stove.withWireMock(key: SystemKey, options: WireMockSystemOptions = WireMockSystemOptions()): Stove {
+  getOrRegister(key, WireMockSystem(this, options.toContext(keyDisplayName(key))))
+  return this
+}
+
+private fun WireMockSystemOptions.toContext(keyName: String? = null): WireMockContext = WireMockContext(
+  port = port,
+  removeStubAfterRequestMatched = removeStubAfterRequestMatched,
+  afterStubRemoved = afterStubRemoved,
+  afterRequest = afterRequest,
+  serde = serde,
+  retainRawInteractionBodies = retainRawInteractionBodies,
+  interactionBodyRedactor = interactionBodyRedactor,
+  configure = configure,
+  configureExposedConfiguration = configureExposedConfiguration,
+  keyName = keyName
+)
 
 internal fun Stove.wiremock(): WireMockSystem =
   getOrNone<WireMockSystem>().getOrElse {

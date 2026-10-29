@@ -34,28 +34,21 @@ class StoveReporter(
   fun startTest(ctx: StoveTestContext) {
     contextThreadLocal.set(ctx.testId)
     reports.computeIfAbsent(ctx.testId) { TestReport(ctx.testId, ctx.testName) }
-    listeners.forEach {
-      runCatching { it.onTestStarted(ctx) }.onFailure { e -> logger.warn("Listener failed on onTestStarted", e) }
-    }
+    notifyListeners("onTestStarted") { it.onTestStarted(ctx) }
   }
 
   /** Mark the current test as failed */
   fun reportFailure(error: String) {
     val testId = resolveTestId() ?: return
-    listeners.forEach {
-      runCatching { it.onTestFailed(testId, error) }.onFailure { e -> logger.warn("Listener failed on onTestFailed", e) }
-    }
+    notifyListeners("onTestFailed") { it.onTestFailed(testId, error) }
   }
 
   /** End tracking the current test */
   fun endTest() {
     val testId = resolveTestId()
     try {
-      if (testId != null) {
-        listeners.forEach {
-          runCatching { it.onTestEnded(testId) }.onFailure { e -> logger.warn("Listener failed on onTestEnded", e) }
-        }
-      }
+      if (testId == null) return
+      notifyListeners("onTestEnded") { it.onTestEnded(testId) }
     } finally {
       contextThreadLocal.remove()
     }
@@ -65,9 +58,7 @@ class StoveReporter(
   fun record(entry: ReportEntry) {
     if (!isEnabled) return
     currentTest().record(entry)
-    listeners.forEach {
-      runCatching { it.onEntryRecorded(entry) }.onFailure { e -> logger.warn("Listener failed on onEntryRecorded", e) }
-    }
+    notifyListeners("onEntryRecorded") { it.onEntryRecorded(entry) }
   }
 
   /** Get report for current test, creating if needed */
@@ -119,6 +110,12 @@ class StoveReporter(
       emptyList()
     }
   }.getOrDefault(emptyList())
+
+  private inline fun notifyListeners(event: String, notify: (ReportEventListener) -> Unit) {
+    listeners.forEach { listener ->
+      runCatching { notify(listener) }.onFailure { logger.warn("Listener failed on $event", it) }
+    }
+  }
 
   private fun resolveTestId(): String? = StoveTestContextHolder.get()?.testId ?: contextThreadLocal.get()
 

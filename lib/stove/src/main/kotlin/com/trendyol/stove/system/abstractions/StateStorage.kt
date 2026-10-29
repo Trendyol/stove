@@ -96,47 +96,29 @@ internal class FileSystemStorage<TState : Any>(
    * Captures Stove state into the file system. Basically creates a Json file which contains the state of the [PluggedSystem]
    * that is run by [Stove].
    */
-  override suspend fun capture(start: suspend () -> TState): TState = when {
-    !options.keepDependenciesRunning -> {
-      l.info("State for ${name()} is being deleted at the path: ${pathForSystem.absolutePathString()}")
-      pathForSystem.deleteIfExists()
-      start()
-    }
+  override suspend fun capture(start: suspend () -> TState): TState {
+    if (options.keepDependenciesRunning) return recover(otherwise = start)
 
-    pathForSystem.exists() && options.keepDependenciesRunning -> {
-      recover(otherwise = start)
-    }
-
-    !pathForSystem.exists() && options.keepDependenciesRunning -> {
-      saveStateForNextRun(start())
-    }
-
-    else -> {
-      pathForSystem.deleteIfExists()
-      start()
-    }
+    l.info("State for ${name()} is being deleted at the path: ${pathForSystem.absolutePathString()}")
+    pathForSystem.deleteIfExists()
+    return start()
   }
 
   /**
-   * Returns true if [Stove] is being run for the first time.
+   * Returns true when reusable state was saved by a different process.
    */
   override fun isSubsequentRun(): Boolean = pathForSystem.exists() && options.keepDependenciesRunning && isDifferentProcess()
 
   /**
    * Recovers the state of [Stove] from the file system.
    */
-  private suspend fun recover(otherwise: suspend () -> TState): TState =
-    when {
-      pathForSystem.exists() -> {
-        l.info("State exists for ${name()}. System is being recovered from: ${pathForSystem.absolutePathString()}")
-        val swp = j.readValue<StateWithProcess<TState>>(pathForSystem.readBytes())
-        j.convertValue(swp.state, state.java)
-      }
+  private suspend fun recover(otherwise: suspend () -> TState): TState {
+    if (!pathForSystem.exists()) return saveStateForNextRun(otherwise())
 
-      else -> {
-        saveStateForNextRun(otherwise())
-      }
-    }
+    l.info("State exists for ${name()}. System is being recovered from: ${pathForSystem.absolutePathString()}")
+    val saved = j.readValue<StateWithProcess<TState>>(pathForSystem.readBytes())
+    return j.convertValue(saved.state, state.java)
+  }
 
   private fun saveStateForNextRun(state: TState): TState =
     state.also {

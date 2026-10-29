@@ -3,11 +3,13 @@ package com.trendyol.stove.mongodb
 import com.mongodb.*
 import com.mongodb.client.model.Filters.eq
 import com.mongodb.kotlin.client.coroutine.MongoClient
+import com.mongodb.kotlin.client.coroutine.MongoCollection
 import com.trendyol.stove.containers.StoveContainerInspectInformation
 import com.trendyol.stove.functional.*
 import com.trendyol.stove.reporting.Reports
 import com.trendyol.stove.system.Stove
 import com.trendyol.stove.system.abstractions.*
+import com.trendyol.stove.system.closeAll
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.runBlocking
 import org.bson.*
@@ -176,9 +178,11 @@ class MongodbSystem internal constructor(
 
   override fun close(): Unit = runBlocking {
     Try {
-      context.options.cleanup(mongoClient)
-      mongoClient.close()
-      executeWithReuseCheck { stop() }
+      closeAll(
+        { if (::mongoClient.isInitialized) context.options.cleanup(mongoClient) },
+        { if (::mongoClient.isInitialized) mongoClient.close() },
+        { executeWithReuseCheck { stop() } }
+      )
     }.recover {
       logger.warn("Closing mongodb got an error: $it")
     }
@@ -193,9 +197,7 @@ class MongodbSystem internal constructor(
       action = "Query '$collection'",
       input = arrow.core.Some(mapOf("collection" to collection, "filter" to query))
     ) {
-      val results = mongoClient
-        .getDatabase(context.options.databaseOptions.default.name)
-        .getCollection<Document>(collection)
+      val results = documentCollection(collection)
         .find(BsonDocument.parse(query))
         .map { context.options.serde.deserialize(it.toJson(context.options.jsonWriterSettings), T::class.java) }
         .toList()
@@ -214,9 +216,7 @@ class MongodbSystem internal constructor(
       action = "Get document",
       input = arrow.core.Some(mapOf("collection" to collection, "_id" to objectId))
     ) {
-      val document = mongoClient
-        .getDatabase(context.options.databaseOptions.default.name)
-        .getCollection<Document>(collection)
+      val document = documentCollection(collection)
         .find(filterById(objectId))
         .map { context.options.serde.deserialize(it.toJson(context.options.jsonWriterSettings), T::class.java) }
         .first()
@@ -239,17 +239,11 @@ class MongodbSystem internal constructor(
       input = arrow.core.Some(instance),
       metadata = mapOf("collection" to collection, "_id" to objectId)
     ) {
-      mongoClient
-        .getDatabase(context.options.databaseOptions.default.name)
-        .getCollection<Document>(collection)
-        .also { coll ->
-          context.options.serde
-            .serialize(instance)
-            .let { BsonDocument.parse(it) }
-            .let { doc -> Document(doc) }
-            .append(RESERVED_ID, ObjectId(objectId))
-            .let { coll.insertOne(it) }
-        }
+      val targetCollection = documentCollection(collection)
+      val serialized = BsonDocument.parse(context.options.serde.serialize(instance))
+      val document = Document(serialized).append(RESERVED_ID, ObjectId(objectId))
+      targetCollection.insertOne(document)
+      targetCollection
     }
     return this
   }
@@ -263,9 +257,7 @@ class MongodbSystem internal constructor(
       input = arrow.core.Some(mapOf("collection" to collection, "_id" to objectId)),
       expected = arrow.core.Some("Document not found")
     ) {
-      val exists = mongoClient
-        .getDatabase(context.options.databaseOptions.default.name)
-        .getCollection<Document>(collection)
+      val exists = documentCollection(collection)
         .find(filterById(objectId))
         .firstOrNull() != null
       if (exists) throw AssertionError("The document with the given id($objectId) was not expected, but found!")
@@ -281,13 +273,17 @@ class MongodbSystem internal constructor(
       action = "Delete document",
       metadata = mapOf("collection" to collection, "_id" to objectId)
     ) {
-      mongoClient
-        .getDatabase(context.options.databaseOptions.default.name)
-        .getCollection<Document>(collection)
+      documentCollection(collection)
         .deleteOne(filterById(objectId))
     }
     return this
   }
+
+  @PublishedApi
+  internal fun documentCollection(name: String): MongoCollection<Document> =
+    mongoClient
+      .getDatabase(context.options.databaseOptions.default.name)
+      .getCollection<Document>(name)
 
   /**
    * Pauses the container. Use with care, as it will pause the container which might affect other tests.

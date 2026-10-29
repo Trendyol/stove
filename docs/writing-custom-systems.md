@@ -230,6 +230,21 @@ class MySystem(
 
 For AUTs started by Stove runners, Stove collects every registered system's `configuration()` after systems start and before the runner is called. The merged `key=value` list is passed to the AUT runner together with static `withParameters`. `providedApplication()` is different: Stove only checks readiness and runs assertions; the already-running app must be configured externally.
 
+### Releasing owned resources
+
+When a system owns several resources, use `com.trendyol.stove.system.closeAll` inside its `close()` implementation:
+
+```kotlin
+override fun close(): Unit = runBlocking {
+  closeAll(
+    { if (::client.isInitialized) client.close() },
+    { container.stop() }
+  )
+}
+```
+
+Actions run in the order supplied, including when cleanup begins in a cancelled coroutine. A failed action does not skip later actions: the first failure is rethrown after cleanup, with subsequent failures attached as suppressed exceptions. Keep any system-specific logging or recovery around `closeAll`, and close only resources owned by your system.
+
 ## Extending built-in systems
 
 Sometimes a full system is overkill. An extension function on an existing system is enough.

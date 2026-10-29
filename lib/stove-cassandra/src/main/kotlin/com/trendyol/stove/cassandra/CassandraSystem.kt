@@ -10,6 +10,7 @@ import com.trendyol.stove.functional.*
 import com.trendyol.stove.reporting.Reports
 import com.trendyol.stove.system.Stove
 import com.trendyol.stove.system.abstractions.*
+import com.trendyol.stove.system.closeAll
 import kotlinx.coroutines.*
 import org.slf4j.*
 import java.net.InetSocketAddress
@@ -137,13 +138,13 @@ class CassandraSystem internal constructor(
 
   override fun close(): Unit = runBlocking {
     Try {
-      if (::cqlSession.isInitialized) {
-        context.options.cleanup(cqlSession)
-        cqlSession.close()
-      }
+      closeAll(
+        { if (::cqlSession.isInitialized) context.options.cleanup(cqlSession) },
+        { if (::cqlSession.isInitialized) cqlSession.close() }
+      )
     }.recover { logger.warn("Cassandra cleanup failed", it) }
     Try {
-      executeWithReuseCheck { stop() }
+      closeAll({ executeWithReuseCheck { stop() } })
     }.recover { logger.warn("Cassandra stop failed", it) }
   }
 
@@ -275,16 +276,7 @@ class CassandraSystem internal constructor(
     var lastException: Exception? = null
     repeat(SESSION_CREATE_MAX_ATTEMPTS) { attempt ->
       try {
-        return CqlSession
-          .builder()
-          .addContactPoint(InetSocketAddress(config.host, config.port))
-          .withLocalDatacenter(config.datacenter)
-          .withConfigLoader(context.options.createDriverConfigLoader())
-          .apply {
-            if (useKeyspace) {
-              withKeyspace(config.keyspace)
-            }
-          }.build()
+        return buildSession(config, useKeyspace)
       } catch (e: CancellationException) {
         throw e
       } catch (e: Exception) {
@@ -302,6 +294,15 @@ class CassandraSystem internal constructor(
       "Failed to create CQL session after $SESSION_CREATE_MAX_ATTEMPTS attempts",
       lastException
     )
+  }
+
+  private fun buildSession(config: CassandraExposedConfiguration, useKeyspace: Boolean): CqlSession {
+    val builder = CqlSession.builder()
+      .addContactPoint(InetSocketAddress(config.host, config.port))
+      .withLocalDatacenter(config.datacenter)
+      .withConfigLoader(context.options.createDriverConfigLoader())
+    if (useKeyspace) builder.withKeyspace(config.keyspace)
+    return builder.build()
   }
 
   @Suppress("TooGenericExceptionCaught")

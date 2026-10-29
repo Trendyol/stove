@@ -62,33 +62,31 @@ class StoveKotestExtension : TestCaseExtension {
   }
 
   /**
-   * Builds a display path by traversing the parent chain and prepending
-   * each test case's prefix (if any) to its name.
-   *
-   * For BehaviourSpec: ["Given: valid request", "When: creating", "Then: should succeed"]
-   * For FunSpec with context: ["context order creation", "should create order"]
-   * For flat FunSpec: ["should create order"]
+   * Builds the path from the outermost context to the leaf test, including Kotest display prefixes.
    */
-  private fun TestCase.buildDisplayPath(): List<String> {
-    val chain = mutableListOf<TestCase>()
-    var current: TestCase? = this
-    while (current != null) {
-      chain.add(0, current)
-      current = current.parent
-    }
-    return chain.map { tc ->
-      val prefix = tc.name.prefix ?: ""
-      "$prefix${tc.name.name}"
-    }
-  }
+  private fun TestCase.buildDisplayPath(): List<String> =
+    generateSequence(this) { it.parent }
+      .toList()
+      .asReversed()
+      .map { test -> "${test.name.prefix.orEmpty()}${test.name.name}" }
 
   private fun TestResult.enrichIfFailed(): TestResult {
     if (!Stove.options().shouldEnrichFailures()) return this
+    if (this !is TestResult.Failure && this !is TestResult.Error) return this
+
+    val report = TraceReportBuilder.buildFullReport()
+    if (report.isEmpty()) return this
 
     return when (this) {
-      is TestResult.Failure -> enrichFailure()
-      is TestResult.Error -> enrichError()
-      else -> this
+      is TestResult.Failure -> TestResult.Failure(
+        duration,
+        StoveTestFailureException(cause.toFailureMessage(), report, cause)
+      )
+
+      is TestResult.Error -> TestResult.Error(
+        duration,
+        StoveTestErrorException(cause.toFailureMessage(), report, cause)
+      )
     }
   }
 
@@ -99,30 +97,6 @@ class StoveKotestExtension : TestCaseExtension {
       else -> Unit
     }
     return this
-  }
-
-  private fun TestResult.Failure.enrichFailure(): TestResult {
-    val fullReport = TraceReportBuilder.buildFullReport()
-    return if (fullReport.isNotEmpty()) {
-      TestResult.Failure(
-        duration,
-        StoveTestFailureException(cause.toFailureMessage(), fullReport, cause)
-      )
-    } else {
-      this
-    }
-  }
-
-  private fun TestResult.Error.enrichError(): TestResult {
-    val fullReport = TraceReportBuilder.buildFullReport()
-    return if (fullReport.isNotEmpty()) {
-      TestResult.Error(
-        duration,
-        StoveTestErrorException(cause.toFailureMessage(), fullReport, cause)
-      )
-    } else {
-      this
-    }
   }
 
   private fun Throwable.toFailureMessage(): String =

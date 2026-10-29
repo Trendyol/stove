@@ -3,9 +3,10 @@ package com.trendyol.stove.container
 import com.trendyol.stove.system.ReadinessStrategy
 import com.trendyol.stove.system.application.argsMapper
 import com.trendyol.stove.system.application.envMapper
+import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
-import kotlinx.coroutines.runBlocking
+import io.kotest.matchers.string.shouldContain
 import org.testcontainers.containers.GenericContainer
 import org.testcontainers.utility.DockerImageName
 import kotlin.time.Duration.Companion.milliseconds
@@ -39,10 +40,8 @@ class ContainerApplicationUnderTestTest :
         }
       )
 
-      runBlocking {
-        aut.start(listOf("database.host=localhost", "database.port=5432"))
-        aut.stop()
-      }
+      aut.start(listOf("database.host=localhost", "database.port=5432"))
+      aut.stop()
 
       capturedCommand shouldBe listOf("worker", "--db-port=5432")
       capturedEnv shouldBe mapOf(
@@ -61,20 +60,54 @@ class ContainerApplicationUnderTestTest :
           readiness = ReadinessStrategy.FixedDelay(1.milliseconds)
         ),
         configureContainer = {
+          fakeContainer.started shouldBe false
           customizerCalled = true
         },
         containerFactory = { fakeContainer },
         launchConfigurationObserver = { _, _ -> }
       )
 
-      runBlocking {
-        aut.start(emptyList())
-        aut.stop()
-      }
+      aut.start(emptyList())
+      aut.stop()
 
       customizerCalled shouldBe true
       fakeContainer.started shouldBe true
       fakeContainer.stopped shouldBe true
+    }
+
+    test("startup errors include container logs and retain the cause") {
+      val failure = IllegalArgumentException("image failed")
+      val container = FakeContainer(startFailure = failure)
+      val aut = ContainerApplicationUnderTest(
+        image = "busybox:latest",
+        target = ContainerTarget.Worker(),
+        containerFactory = { container },
+        launchConfigurationObserver = { _, _ -> }
+      )
+
+      val thrown = shouldThrow<IllegalStateException> { aut.start(emptyList()) }
+
+      thrown.cause?.message shouldBe failure.message
+      thrown.message shouldContain "busybox:latest"
+      thrown.message shouldContain "application startup log"
+    }
+
+    test("failed readiness stops the container and later stop is a no-op") {
+      val container = FakeContainer()
+      val aut = ContainerApplicationUnderTest(
+        image = "busybox:latest",
+        target = ContainerTarget.Worker(
+          readiness = ReadinessStrategy.Probe(retries = 1, retryDelay = 1.milliseconds) { false }
+        ),
+        containerFactory = { container },
+        launchConfigurationObserver = { _, _ -> }
+      )
+
+      shouldThrow<IllegalStateException> { aut.start(emptyList()) }
+      aut.stop()
+
+      container.started shouldBe true
+      container.stopCalls shouldBe 1
     }
 
     test("stop is a no-op when container was never started") {
@@ -85,21 +118,25 @@ class ContainerApplicationUnderTestTest :
         launchConfigurationObserver = { _, _ -> }
       )
 
-      runBlocking {
-        aut.stop()
-      }
+      aut.stop()
     }
   })
 
-private class FakeContainer : GenericContainer<FakeContainer>(DockerImageName.parse("busybox:latest")) {
+private class FakeContainer(
+  private val startFailure: Throwable? = null
+) : GenericContainer<FakeContainer>(DockerImageName.parse("busybox:latest")) {
   var started: Boolean = false
-  var stopped: Boolean = false
+  var stopCalls: Int = 0
+  val stopped: Boolean get() = stopCalls > 0
 
   override fun start() {
+    startFailure?.let { throw it }
     started = true
   }
 
+  override fun getLogs(): String = "application startup log"
+
   override fun stop() {
-    stopped = true
+    stopCalls++
   }
 }

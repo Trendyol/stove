@@ -1,182 +1,169 @@
 package com.trendyol.stove.system
 
+import com.sun.net.httpserver.HttpServer
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.string.shouldContain
+import io.kotest.matchers.types.shouldBeInstanceOf
+import java.net.InetSocketAddress
 import java.net.ServerSocket
+import java.net.http.HttpTimeoutException
+import java.util.concurrent.atomic.AtomicInteger
 import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.seconds
+import kotlin.time.TimeSource
 
-class ReadinessCheckerTest :
-  FunSpec({
-    context("HttpGet strategy") {
-      test("passes when endpoint returns expected status") {
-        val port = ServerSocket(0).use { it.localPort }
-        val server = com.sun.net.httpserver.HttpServer.create(java.net.InetSocketAddress(port), 0)
-        server.createContext("/health") { exchange ->
-          exchange.sendResponseHeaders(200, 0)
-          exchange.responseBody.close()
-        }
-        server.start()
+class ReadinessCheckerTest : FunSpec({
+  context("HTTP readiness") {
+    test("waits for a recovering application and stops checking once healthy") {
+      HealthEndpoint(503, 503, 200).use { endpoint ->
+        ReadinessChecker.check(endpoint.strategy(retries = 5))
 
-        try {
-          ReadinessChecker.check(
-            ReadinessStrategy.HttpGet(
-              url = "http://localhost:$port/health",
-              retries = 3,
-              retryDelay = 100.milliseconds,
-              timeout = 2.seconds
-            )
-          )
-        } finally {
-          server.stop(0)
-        }
-      }
-
-      test("fails after retries when endpoint is unreachable") {
-        val error = shouldThrow<IllegalStateException> {
-          ReadinessChecker.check(
-            ReadinessStrategy.HttpGet(
-              url = "http://localhost:1/nonexistent",
-              retries = 2,
-              retryDelay = 50.milliseconds,
-              timeout = 500.milliseconds
-            )
-          )
-        }
-        error.message shouldContain "Health check failed after 2 attempts"
-      }
-
-      test("fails when endpoint returns unexpected status code") {
-        val port = ServerSocket(0).use { it.localPort }
-        val server = com.sun.net.httpserver.HttpServer.create(java.net.InetSocketAddress(port), 0)
-        server.createContext("/health") { exchange ->
-          exchange.sendResponseHeaders(503, 0)
-          exchange.responseBody.close()
-        }
-        server.start()
-
-        try {
-          val error = shouldThrow<IllegalStateException> {
-            ReadinessChecker.check(
-              ReadinessStrategy.HttpGet(
-                url = "http://localhost:$port/health",
-                retries = 2,
-                retryDelay = 50.milliseconds,
-                timeout = 2.seconds
-              )
-            )
-          }
-          error.message shouldContain "Health check failed after 2 attempts"
-        } finally {
-          server.stop(0)
-        }
-      }
-
-      test("accepts custom expected status codes") {
-        val port = ServerSocket(0).use { it.localPort }
-        val server = com.sun.net.httpserver.HttpServer.create(java.net.InetSocketAddress(port), 0)
-        server.createContext("/health") { exchange ->
-          exchange.sendResponseHeaders(204, -1)
-          exchange.responseBody.close()
-        }
-        server.start()
-
-        try {
-          ReadinessChecker.check(
-            ReadinessStrategy.HttpGet(
-              url = "http://localhost:$port/health",
-              retries = 2,
-              retryDelay = 50.milliseconds,
-              timeout = 2.seconds,
-              expectedStatusCodes = setOf(204)
-            )
-          )
-        } finally {
-          server.stop(0)
-        }
+        endpoint.requests shouldBe 3
       }
     }
 
-    context("TcpPort strategy") {
-      test("passes when port is open") {
-        val server = ServerSocket(0)
-        val port = server.localPort
-
-        try {
-          ReadinessChecker.check(
-            ReadinessStrategy.TcpPort(
-              port = port,
-              retries = 3,
-              retryDelay = 50.milliseconds
-            )
-          )
-        } finally {
-          server.close()
+    test("reports the last unhealthy response after exhausting retries") {
+      HealthEndpoint(503).use { endpoint ->
+        val failure = shouldThrow<IllegalStateException> {
+          ReadinessChecker.check(endpoint.strategy(retries = 2))
         }
-      }
 
-      test("fails after retries when port is closed") {
-        // Use port 1 which is almost certainly not open
-        val error = shouldThrow<IllegalStateException> {
-          ReadinessChecker.check(
-            ReadinessStrategy.TcpPort(
-              port = 1,
-              retries = 2,
-              retryDelay = 50.milliseconds
-            )
-          )
-        }
-        error.message shouldContain "TCP port 1 did not open after 2 attempts"
+        endpoint.requests shouldBe 2
+        failure.message shouldContain "Health check failed after 2 attempts"
+        failure.cause?.message shouldContain "unexpected status 503"
       }
     }
 
-    context("Probe strategy") {
-      test("passes when probe returns true") {
-        ReadinessChecker.check(
-          ReadinessStrategy.Probe(retries = 3, retryDelay = 50.milliseconds) { true }
-        )
-      }
+    test("accepts a custom healthy status immediately") {
+      HealthEndpoint(204).use { endpoint ->
+        ReadinessChecker.check(endpoint.strategy(expectedStatusCodes = setOf(204)))
 
-      test("fails after retries when probe returns false") {
-        val error = shouldThrow<IllegalStateException> {
+        endpoint.requests shouldBe 1
+      }
+    }
+
+    test("reports a timeout when the endpoint accepts connections but never responds") {
+      ServerSocket(0).use { unresponsive ->
+        val failure = shouldThrow<IllegalStateException> {
           ReadinessChecker.check(
-            ReadinessStrategy.Probe(retries = 2, retryDelay = 50.milliseconds) { false }
+            ReadinessStrategy.HttpGet(
+              url = "http://localhost:${unresponsive.localPort}/health",
+              retries = 2,
+              retryDelay = 1.milliseconds,
+              timeout = 100.milliseconds
+            )
           )
         }
-        error.message shouldContain "Readiness probe did not pass after 2 attempts"
+
+        failure.message shouldContain "Health check failed after 2 attempts"
+        failure.cause.shouldBeInstanceOf<HttpTimeoutException>()
+      }
+    }
+  }
+
+  context("TCP readiness") {
+    test("passes when the application port is open") {
+      ServerSocket(0).use { server ->
+        ReadinessChecker.check(ReadinessStrategy.TcpPort(server.localPort))
+      }
+    }
+
+    test("fails after retries when the port is closed") {
+      val port = ServerSocket(0).use { it.localPort }
+      val failure = shouldThrow<IllegalStateException> {
+        ReadinessChecker.check(ReadinessStrategy.TcpPort(port, retries = 2, retryDelay = 1.milliseconds))
       }
 
-      test("fails after retries when probe throws") {
-        val error = shouldThrow<IllegalStateException> {
-          ReadinessChecker.check(
-            ReadinessStrategy.Probe(retries = 2, retryDelay = 50.milliseconds) {
-              error("Connection refused")
-            }
-          )
+      failure.message shouldContain "TCP port $port did not open after 2 attempts"
+    }
+  }
+
+  context("custom readiness probes") {
+    test("stops retrying as soon as the application becomes ready") {
+      var attempts = 0
+      ReadinessChecker.check(
+        ReadinessStrategy.Probe(retries = 5, retryDelay = 1.milliseconds) {
+          ++attempts == 3
         }
-        error.message shouldContain "Readiness probe did not pass after 2 attempts"
-      }
+      )
 
-      test("passes after initial failures") {
-        var attempt = 0
+      attempts shouldBe 3
+    }
+
+    test("a throwing probe can recover on a later attempt") {
+      var attempts = 0
+      ReadinessChecker.check(
+        ReadinessStrategy.Probe(retries = 3, retryDelay = 1.milliseconds) {
+          if (++attempts == 1) error("application still starting")
+          true
+        }
+      )
+
+      attempts shouldBe 2
+    }
+
+    test("an unhealthy probe exhausts its retry budget") {
+      var attempts = 0
+      val failure = shouldThrow<IllegalStateException> {
         ReadinessChecker.check(
-          ReadinessStrategy.Probe(retries = 5, retryDelay = 50.milliseconds) {
-            attempt++
-            attempt >= 3
+          ReadinessStrategy.Probe(retries = 2, retryDelay = 1.milliseconds) {
+            attempts++
+            false
           }
         )
-        attempt shouldBe 3
       }
+
+      attempts shouldBe 2
+      failure.message shouldContain "Readiness probe did not pass after 2 attempts"
+      failure.cause?.message shouldBe "Probe returned false"
     }
 
-    context("FixedDelay strategy") {
-      test("completes after specified delay") {
-        val start = System.currentTimeMillis()
-        ReadinessChecker.check(ReadinessStrategy.FixedDelay(200.milliseconds))
-        val elapsed = System.currentTimeMillis() - start
-        (elapsed >= 180) shouldBe true
+    test("a failing probe retains the final error as its cause") {
+      var attempts = 0
+      val failure = shouldThrow<IllegalStateException> {
+        ReadinessChecker.check(
+          ReadinessStrategy.Probe(retries = 2, retryDelay = 1.milliseconds) {
+            error("attempt ${++attempts}")
+          }
+        )
       }
+
+      attempts shouldBe 2
+      failure.cause?.message shouldBe "attempt 2"
     }
-  })
+  }
+
+  test("fixed delay waits before allowing application validation") {
+    val start = TimeSource.Monotonic.markNow()
+
+    ReadinessChecker.check(ReadinessStrategy.FixedDelay(25.milliseconds))
+
+    (start.elapsedNow() >= 25.milliseconds) shouldBe true
+  }
+})
+
+private class HealthEndpoint(vararg statuses: Int) : AutoCloseable {
+  private val requestCount = AtomicInteger()
+  private val server = HttpServer.create(InetSocketAddress("localhost", 0), 0).apply {
+    createContext("/health") { exchange ->
+      val index = requestCount.getAndIncrement().coerceAtMost(statuses.lastIndex)
+      exchange.sendResponseHeaders(statuses[index], -1)
+      exchange.close()
+    }
+    start()
+  }
+  val requests: Int get() = requestCount.get()
+
+  fun strategy(retries: Int = 3, expectedStatusCodes: Set<Int> = setOf(200)): ReadinessStrategy.HttpGet =
+    ReadinessStrategy.HttpGet(
+      url = "http://localhost:${server.address.port}/health",
+      retries = retries,
+      retryDelay = 1.milliseconds,
+      timeout = 2.seconds,
+      expectedStatusCodes = expectedStatusCodes
+    )
+
+  override fun close() = server.stop(0)
+}

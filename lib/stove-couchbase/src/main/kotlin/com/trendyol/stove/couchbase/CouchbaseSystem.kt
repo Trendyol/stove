@@ -10,6 +10,7 @@ import com.trendyol.stove.functional.*
 import com.trendyol.stove.reporting.Reports
 import com.trendyol.stove.system.Stove
 import com.trendyol.stove.system.abstractions.*
+import com.trendyol.stove.system.closeAll
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.runBlocking
 import org.slf4j.*
@@ -185,9 +186,11 @@ class CouchbaseSystem internal constructor(
 
   override fun close(): Unit = runBlocking {
     Try {
-      context.options.cleanup(cluster)
-      cluster.disconnect()
-      executeWithReuseCheck { stop() }
+      closeAll(
+        { if (::cluster.isInitialized) context.options.cleanup(cluster) },
+        { if (::cluster.isInitialized) cluster.disconnect() },
+        { executeWithReuseCheck { stop() } }
+      )
     }.recover {
       logger.warn("Disconnecting the couchbase cluster got an error: $it")
     }

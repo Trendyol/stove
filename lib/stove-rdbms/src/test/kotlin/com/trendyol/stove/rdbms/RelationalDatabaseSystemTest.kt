@@ -6,34 +6,27 @@ import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
 import io.kotest.matchers.string.shouldContain
-import kotlinx.coroutines.runBlocking
 import kotliquery.sessionOf
+import java.io.Closeable
+import java.util.UUID
 
 class RelationalDatabaseSystemTest :
   FunSpec({
-    test("run should initialize configuration and sql operations for provided runtime") {
-      val stove = Stove()
-      val system = TestRelationalDatabaseSystem(stove)
+    test("run initializes configuration and SQL operations for provided runtime") {
+      RelationalDatabaseFixture().use { fixture ->
+        fixture.system.run()
 
-      runBlocking { system.run() }
-
-      system.configuration().joinToString() shouldContain "jdbc:h2:mem:testdb"
-      system.internalSqlOperations shouldNotBe null
+        fixture.system.configuration().joinToString() shouldContain "jdbc:h2:mem:"
+        fixture.system.internalSqlOperations shouldNotBe null
+      }
     }
 
-    test("shouldExecute and shouldQuery should use sql operations") {
-      val stove = Stove()
-      val system = TestRelationalDatabaseSystem(stove)
-
-      runBlocking {
+    test("SQL DSL creates and reads a user") {
+      RelationalDatabaseFixture().use { fixture ->
+        val system = fixture.system
         system.run()
         system.shouldExecute(
-          """
-          CREATE TABLE IF NOT EXISTS users (
-            id INT PRIMARY KEY,
-            name VARCHAR(50)
-          )
-          """.trimIndent()
+          "CREATE TABLE users (id INT PRIMARY KEY, name VARCHAR(50))"
         )
         system.shouldExecute("INSERT INTO users (id, name) VALUES (1, 'alice')")
 
@@ -46,12 +39,30 @@ class RelationalDatabaseSystemTest :
           query = "SELECT * FROM users",
           mapper = { row -> User(row.int("id"), row.string("name")) }
         ) { users ->
-          users.size shouldBe 1
-          users.first().name shouldBe "alice"
+          users shouldBe listOf(User(1, "alice"))
         }
       }
     }
+
+    test("closing before SQL initialization is safe") {
+      RelationalDatabaseFixture().use { fixture ->
+        fixture.system.close()
+      }
+    }
   })
+
+private class RelationalDatabaseFixture : Closeable {
+  private val stove = Stove()
+  val system = TestRelationalDatabaseSystem(stove)
+
+  override fun close() {
+    try {
+      system.close()
+    } finally {
+      stove.close()
+    }
+  }
+}
 
 private class TestRelationalDatabaseSystem(
   stove: Stove
@@ -65,7 +76,7 @@ private class TestRelationalDatabaseSystem(
   ) {}
 ) {
   private val config = RelationalDatabaseExposedConfiguration(
-    jdbcUrl = "jdbc:h2:mem:testdb;DB_CLOSE_DELAY=-1",
+    jdbcUrl = "jdbc:h2:mem:${UUID.randomUUID()}",
     host = "localhost",
     port = 0,
     username = "sa",

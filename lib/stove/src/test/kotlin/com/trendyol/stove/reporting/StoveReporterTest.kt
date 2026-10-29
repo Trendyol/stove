@@ -10,6 +10,23 @@ import io.kotest.matchers.string.shouldNotBeEmpty
 class StoveReporterTest :
   FunSpec({
 
+    test("a failing listener does not interrupt reports or other lifecycle listeners") {
+      val reporter = StoveReporter()
+      val received = mutableListOf<String>()
+      reporter.addListener(LifecycleListener { error("listener unavailable") })
+      reporter.addListener(LifecycleListener { received.add(it) })
+      val entry = ReportEntry.failure("HTTP", "test-1", "GET /api", "Not found")
+
+      reporter.startTest(StoveTestContext("test-1", "test1"))
+      reporter.record(entry)
+      reporter.reportFailure("Not found")
+      reporter.currentTest().entries() shouldBe listOf(entry)
+      reporter.endTest()
+
+      received shouldBe listOf("started", "entry", "failed", "ended")
+      reporter.currentTestIdOrNull() shouldBe null
+    }
+
     test("starts test and creates report") {
       val reporter = StoveReporter()
       val ctx = StoveTestContext("TestSpec::test1", "test1", "TestSpec")
@@ -192,3 +209,10 @@ class StoveReporterTest :
       reporter.hasFailures() shouldBe false
     }
   })
+
+private class LifecycleListener(private val receive: (String) -> Unit) : ReportEventListener {
+  override fun onTestStarted(ctx: StoveTestContext) = receive("started")
+  override fun onEntryRecorded(entry: ReportEntry) = receive("entry")
+  override fun onTestFailed(testId: String, error: String) = receive("failed")
+  override fun onTestEnded(testId: String) = receive("ended")
+}

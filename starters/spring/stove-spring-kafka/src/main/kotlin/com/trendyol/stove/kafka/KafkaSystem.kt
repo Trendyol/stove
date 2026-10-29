@@ -52,10 +52,7 @@ class KafkaSystem(
         put(ProducerConfig.CLIENT_ID_CONFIG, "stove-kafka-raw-producer")
       }
     )
-    KafkaTemplate(producerFactory).also {
-      it.setProducerListener(getInterceptor())
-      it.setCloseTimeout(1.seconds.toJavaDuration())
-    }
+    KafkaTemplate(producerFactory).configureForStove()
   }
 
   override fun snapshot(): SystemSnapshot {
@@ -434,10 +431,12 @@ class KafkaSystem(
 
   override fun close(): Unit = runBlocking {
     Try {
-      context.options.cleanup(admin)
-      if (rawKafkaTemplate.isInitialized()) rawKafkaTemplate.value.destroy()
-      kafkaTemplate.destroy()
-      executeWithReuseCheck { stop() }
+      closeAll(
+        { if (this@KafkaSystem::admin.isInitialized) context.options.cleanup(admin) },
+        { if (rawKafkaTemplate.isInitialized()) rawKafkaTemplate.value.destroy() },
+        { if (this@KafkaSystem::kafkaTemplate.isInitialized) kafkaTemplate.destroy() },
+        { executeWithReuseCheck { stop() } }
+      )
     }.recover {
       logger.warn("got an error while closing KafkaSystem", it)
     }
@@ -499,10 +498,8 @@ class KafkaSystem(
     val kafkaTemplates: Map<String, KafkaTemplate<Any, Any>> = context.getBeansOfType()
     return kafkaTemplates
       .values
-      .onEach {
-        it.setProducerListener(getInterceptor())
-        it.setCloseTimeout(1.seconds.toJavaDuration())
-      }.firstOrNone { safeContains(it, exposedConfiguration) }
+      .onEach { it.configureForStove() }
+      .firstOrNone { safeContains(it, exposedConfiguration) }
       .getOrElse {
         logger.warn("No KafkaTemplate found for the configured bootstrap servers, using a fallback KafkaTemplate")
         createFallbackTemplate(exposedConfiguration)
@@ -532,11 +529,12 @@ class KafkaSystem(
         put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, context.options.fallbackSerde.valueSerializer::class.java)
       }
     )
-    val fallbackTemplate = KafkaTemplate(producerFactory).also {
-      it.setProducerListener(getInterceptor())
-      it.setCloseTimeout(1.seconds.toJavaDuration())
-    }
-    return fallbackTemplate
+    return KafkaTemplate(producerFactory).configureForStove()
+  }
+
+  private fun KafkaTemplate<Any, Any>.configureForStove(): KafkaTemplate<Any, Any> = apply {
+    setProducerListener(getInterceptor())
+    setCloseTimeout(1.seconds.toJavaDuration())
   }
 
   private fun checkIfInterceptorConfiguredProperly(context: ApplicationContext) {

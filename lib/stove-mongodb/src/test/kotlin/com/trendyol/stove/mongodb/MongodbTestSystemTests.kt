@@ -295,6 +295,33 @@ class MongodbTestSystemTests :
       }
     }
 
+    test("document operations stay within the requested collection") {
+      val id = ObjectId().toHexString()
+      val primary = ExampleInstanceWithStringObjectId(id, id, "primary")
+      val secondary = ExampleInstanceWithStringObjectId(id, id, "secondary")
+
+      withRoutingCollections(id) { primaryCollection, secondaryCollection ->
+        save(primary, id, primaryCollection)
+        save(secondary, id, secondaryCollection)
+
+        shouldGet<ExampleInstanceWithStringObjectId>(id, primaryCollection) { actual ->
+          actual shouldBe primary
+        }
+        shouldQuery<ExampleInstanceWithStringObjectId>(
+          query = "{\"aggregateId\": \"$id\"}",
+          collection = secondaryCollection
+        ) { actual ->
+          actual shouldBe listOf(secondary)
+        }
+
+        shouldDelete(id, primaryCollection)
+        shouldNotExist(id, primaryCollection)
+        shouldGet<ExampleInstanceWithStringObjectId>(id, secondaryCollection) { actual ->
+          actual shouldBe secondary
+        }
+      }
+    }
+
     test("should delete") {
       val id = ObjectId()
       stove {
@@ -362,3 +389,21 @@ class MongodbTestSystemTests :
       }
     }
   })
+
+private suspend fun withRoutingCollections(
+  objectId: String,
+  scenario: suspend MongodbSystem.(primary: String, secondary: String) -> Unit
+) {
+  val primary = "routing_primary"
+  val secondary = "routing_secondary"
+  stove {
+    mongodb {
+      try {
+        scenario(primary, secondary)
+      } finally {
+        shouldDelete(objectId, primary)
+        shouldDelete(objectId, secondary)
+      }
+    }
+  }
+}

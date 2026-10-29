@@ -45,39 +45,38 @@ class ProcessApplicationUnderTest(
     val envVars = options.envProvider.provide(configMap)
     val cliArgs = options.argsProvider.provide(configMap)
     val fullCommand = options.command + cliArgs
-
-    val processBuilder = ProcessBuilder(fullCommand)
-      .redirectErrorStream(options.redirectErrorStream)
-
-    options.workingDirectory?.let { processBuilder.directory(it) }
-    processBuilder.environment().putAll(envVars)
-
-    // Inject port env var for Server targets
-    val target = options.target
-    if (target is ProcessTarget.Server) {
-      processBuilder.environment()[target.portEnvVar] = target.port.toString()
-    }
+    val processBuilder = createProcessBuilder(fullCommand, envVars)
 
     options.beforeStarted(configMap, options)
 
     logger.info("Starting process: {} with {} env vars and {} cli args", fullCommand, envVars.size, cliArgs.size)
-    process = withContext(Dispatchers.IO) { processBuilder.start() }
-    launchOutputReader(process!!)
+    val startedProcess = withContext(Dispatchers.IO) { processBuilder.start() }
+    process = startedProcess
+    launchOutputReader(startedProcess)
 
     ReadinessChecker.check(options.target.readiness)
     logger.info("Process is ready")
   }
 
-  override suspend fun stop() {
-    process?.let { p ->
-      logger.info("Stopping process (SIGTERM)")
-      p.destroy()
-      if (!p.waitFor(options.gracefulShutdownTimeout.inWholeSeconds, TimeUnit.SECONDS)) {
-        logger.warn("Process did not stop gracefully, force-killing")
-        p.destroyForcibly().waitFor()
+  private fun createProcessBuilder(command: List<String>, envVars: Map<String, String>): ProcessBuilder =
+    ProcessBuilder(command).apply {
+      redirectErrorStream(options.redirectErrorStream)
+      options.workingDirectory?.let(::directory)
+      environment().putAll(envVars)
+      (options.target as? ProcessTarget.Server)?.let { target ->
+        environment()[target.portEnvVar] = target.port.toString()
       }
-      logger.info("Process stopped (exit code: {})", p.exitValue())
     }
+
+  override suspend fun stop() {
+    val runningProcess = process ?: return
+    logger.info("Stopping process (SIGTERM)")
+    runningProcess.destroy()
+    if (!runningProcess.waitFor(options.gracefulShutdownTimeout.inWholeSeconds, TimeUnit.SECONDS)) {
+      logger.warn("Process did not stop gracefully, force-killing")
+      runningProcess.destroyForcibly().waitFor()
+    }
+    logger.info("Process stopped (exit code: {})", runningProcess.exitValue())
   }
 
   private fun launchOutputReader(process: Process) {

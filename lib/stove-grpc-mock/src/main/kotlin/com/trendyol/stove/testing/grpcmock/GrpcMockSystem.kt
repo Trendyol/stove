@@ -22,6 +22,7 @@ import com.trendyol.stove.scoping.TestScopeCleanupListener
 import com.trendyol.stove.scoping.TestScopedJournal
 import com.trendyol.stove.scoping.stoveTestId
 import com.trendyol.stove.system.Stove
+import com.trendyol.stove.system.closeAll
 import com.trendyol.stove.system.abstractions.*
 import io.grpc.*
 import io.grpc.protobuf.services.HealthStatusManager
@@ -184,17 +185,23 @@ class GrpcMockSystem internal constructor(
 
   override fun close(): Unit = runBlocking {
     Try {
-      if (reportListenerRegistered) {
-        stove.removeReportListener(reportListener)
-        stove.removeReportListener(warningReportListener)
-        reportListenerRegistered = false
-      }
-      stop()
-      handlerScope.cancel()
-      callJournal.clearAll()
-      stubs.clear()
-      matchedStubIds.clear()
-      validatedTests.clear()
+      closeAll(
+        {
+          if (reportListenerRegistered) {
+            stove.removeReportListener(reportListener)
+            stove.removeReportListener(warningReportListener)
+            reportListenerRegistered = false
+          }
+        },
+        { stop() },
+        { handlerScope.cancel() },
+        {
+          callJournal.clearAll()
+          stubs.clear()
+          matchedStubIds.clear()
+          validatedTests.clear()
+        }
+      )
     }.recover { logger.warn("Error stopping gRPC mock: ${it.message}") }
   }
 
@@ -1094,22 +1101,18 @@ class GrpcMockSystem internal constructor(
   // ==================== Internal: Call Handlers ====================
 
   private fun unaryHandler(fullMethodName: String): ServerCallHandler<ByteArray, ByteArray> =
-    ServerCalls.asyncUnaryCall { request, observer ->
-      val metadata = MetadataCapturingInterceptor.currentMetadata()
-      findAndProcessStub(fullMethodName, request, metadata).fold(
-        ifEmpty = { observer.sendUnimplemented(fullMethodName) },
-        ifSome = { registered -> registered.definition.sendResponse(observer) }
-      )
-    }
+    ServerCalls.asyncUnaryCall { request, observer -> dispatchRequest(fullMethodName, request, observer) }
 
   private fun serverStreamHandler(fullMethodName: String): ServerCallHandler<ByteArray, ByteArray> =
-    ServerCalls.asyncServerStreamingCall { request, observer ->
-      val metadata = MetadataCapturingInterceptor.currentMetadata()
-      findAndProcessStub(fullMethodName, request, metadata).fold(
-        ifEmpty = { observer.sendUnimplemented(fullMethodName) },
-        ifSome = { registered -> registered.definition.sendResponse(observer) }
-      )
-    }
+    ServerCalls.asyncServerStreamingCall { request, observer -> dispatchRequest(fullMethodName, request, observer) }
+
+  private fun dispatchRequest(fullMethodName: String, request: ByteArray, observer: StreamObserver<ByteArray>) {
+    val metadata = MetadataCapturingInterceptor.currentMetadata()
+    findAndProcessStub(fullMethodName, request, metadata).fold(
+      ifEmpty = { observer.sendUnimplemented(fullMethodName) },
+      ifSome = { registered -> registered.definition.sendResponse(observer) }
+    )
+  }
 
   private fun clientStreamHandler(fullMethodName: String): ServerCallHandler<ByteArray, ByteArray> =
     ServerCalls.asyncClientStreamingCall { responseObserver ->

@@ -93,25 +93,7 @@ fun WithDsl.kafka(
 ): Stove {
   val options = configure()
 
-  val runtime: SystemRuntime = when {
-    options is ProvidedKafkaSystemOptions -> ProvidedRuntime
-
-    options.useEmbeddedKafka -> EmbeddedKafkaRuntime
-
-    else -> withProvidedRegistry(
-      options.containerOptions.imageWithTag,
-      options.containerOptions.registry,
-      options.containerOptions.compatibleSubstitute
-    ) { dockerImageName ->
-      options.containerOptions
-        .useContainerFn(dockerImageName)
-        .withExposedPorts(*options.containerOptions.ports.toTypedArray())
-        .withReuse(stove.keepDependenciesRunning)
-        .let { c -> c as StoveKafkaContainer }
-        .apply(options.containerOptions.containerFn)
-    }
-  }
-  return stove.withKafka(options, runtime)
+  return stove.withKafka(options, kafkaRuntime(options))
 }
 
 /**
@@ -137,25 +119,26 @@ fun WithDsl.kafka(
 ): Stove {
   val options = configure()
 
-  val runtime: SystemRuntime = when {
-    options is ProvidedKafkaSystemOptions -> ProvidedRuntime
+  return stove.withKafka(key, options, kafkaRuntime(options))
+}
 
-    options.useEmbeddedKafka -> EmbeddedKafkaRuntime
+private fun WithDsl.kafkaRuntime(options: KafkaSystemOptions): SystemRuntime = when {
+  options is ProvidedKafkaSystemOptions -> ProvidedRuntime
 
-    else -> withProvidedRegistry(
-      options.containerOptions.imageWithTag,
-      options.containerOptions.registry,
-      options.containerOptions.compatibleSubstitute
-    ) { dockerImageName ->
-      options.containerOptions
-        .useContainerFn(dockerImageName)
-        .withExposedPorts(*options.containerOptions.ports.toTypedArray())
-        .withReuse(stove.keepDependenciesRunning)
-        .let { c -> c as StoveKafkaContainer }
-        .apply(options.containerOptions.containerFn)
-    }
+  options.useEmbeddedKafka -> EmbeddedKafkaRuntime
+
+  else -> withProvidedRegistry(
+    options.containerOptions.imageWithTag,
+    options.containerOptions.registry,
+    options.containerOptions.compatibleSubstitute
+  ) { dockerImageName ->
+    options.containerOptions
+      .useContainerFn(dockerImageName)
+      .withExposedPorts(*options.containerOptions.ports.toTypedArray())
+      .withReuse(stove.keepDependenciesRunning)
+      .let { it as StoveKafkaContainer }
+      .apply(options.containerOptions.containerFn)
   }
-  return stove.withKafka(key, options, runtime)
 }
 
 /**

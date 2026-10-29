@@ -210,24 +210,7 @@ fun WithDsl.mysql(
 ): Stove {
   val options = configure()
 
-  val runtime: SystemRuntime = if (options is ProvidedMySqlOptions) {
-    ProvidedRuntime
-  } else {
-    withProvidedRegistry(
-      options.container.imageWithTag,
-      options.container.registry,
-      options.container.compatibleSubstitute
-    ) { dockerImageName ->
-      options.container
-        .useContainerFn(dockerImageName)
-        .withDatabaseName(options.databaseName)
-        .withUsername(options.username)
-        .withPassword(options.password)
-        .withReuse(stove.keepDependenciesRunning)
-        .let { c -> c as StoveMySqlContainer }
-        .apply(options.container.containerFn)
-    }
-  }
+  val runtime = options.createRuntime(stove.keepDependenciesRunning)
   return stove.withMySql(options, runtime)
 }
 
@@ -237,25 +220,26 @@ fun WithDsl.mysql(
 ): Stove {
   val options = configure()
 
-  val runtime: SystemRuntime = if (options is ProvidedMySqlOptions) {
-    ProvidedRuntime
-  } else {
-    withProvidedRegistry(
-      options.container.imageWithTag,
-      options.container.registry,
-      options.container.compatibleSubstitute
-    ) { dockerImageName ->
-      options.container
-        .useContainerFn(dockerImageName)
-        .withDatabaseName(options.databaseName)
-        .withUsername(options.username)
-        .withPassword(options.password)
-        .withReuse(stove.keepDependenciesRunning)
-        .let { c -> c as StoveMySqlContainer }
-        .apply(options.container.containerFn)
-    }
-  }
+  val runtime = options.createRuntime(stove.keepDependenciesRunning)
   return stove.withMySql(key, options, runtime)
+}
+
+private fun MySqlOptions.createRuntime(keepDependenciesRunning: Boolean): SystemRuntime {
+  if (this is ProvidedMySqlOptions) return ProvidedRuntime
+  return withProvidedRegistry(
+    container.imageWithTag,
+    container.registry,
+    container.compatibleSubstitute
+  ) { dockerImageName ->
+    container
+      .useContainerFn(dockerImageName)
+      .withDatabaseName(databaseName)
+      .withUsername(username)
+      .withPassword(password)
+      .withReuse(keepDependenciesRunning)
+      .let { c -> c as StoveMySqlContainer }
+      .apply(container.containerFn)
+  }
 }
 
 suspend fun ValidationDsl.mysql(validation: @StoveDsl suspend MySqlSystem.() -> Unit): Unit =

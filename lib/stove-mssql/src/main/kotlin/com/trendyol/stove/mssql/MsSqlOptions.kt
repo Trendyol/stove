@@ -235,26 +235,7 @@ fun WithDsl.mssql(
 ): Stove {
   val options = configure()
 
-  val runtime: SystemRuntime = if (options is ProvidedMsSqlOptions) {
-    ProvidedRuntime
-  } else {
-    withProvidedRegistry(
-      options.container.imageWithTag,
-      options.container.registry,
-      options.container.compatibleSubstitute
-    ) { dockerImageName ->
-      options.container
-        .useContainerFn(dockerImageName)
-        .acceptLicense()
-        .withEnv("MSSQL_USER", options.userName)
-        .withEnv("MSSQL_SA_PASSWORD", options.password)
-        .withEnv("MSSQL_DB", options.databaseName)
-        .withPassword(options.password)
-        .withReuse(stove.keepDependenciesRunning)
-        .let { c -> c as StoveMsSqlContainer }
-        .apply(options.container.containerFn)
-    }
-  }
+  val runtime = options.createRuntime(stove.keepDependenciesRunning)
   return stove.withMsSql(options, runtime)
 }
 
@@ -264,27 +245,28 @@ fun WithDsl.mssql(
 ): Stove {
   val options = configure()
 
-  val runtime: SystemRuntime = if (options is ProvidedMsSqlOptions) {
-    ProvidedRuntime
-  } else {
-    withProvidedRegistry(
-      options.container.imageWithTag,
-      options.container.registry,
-      options.container.compatibleSubstitute
-    ) { dockerImageName ->
-      options.container
-        .useContainerFn(dockerImageName)
-        .acceptLicense()
-        .withEnv("MSSQL_USER", options.userName)
-        .withEnv("MSSQL_SA_PASSWORD", options.password)
-        .withEnv("MSSQL_DB", options.databaseName)
-        .withPassword(options.password)
-        .withReuse(stove.keepDependenciesRunning)
-        .let { c -> c as StoveMsSqlContainer }
-        .apply(options.container.containerFn)
-    }
-  }
+  val runtime = options.createRuntime(stove.keepDependenciesRunning)
   return stove.withMsSql(key, options, runtime)
+}
+
+private fun MsSqlOptions.createRuntime(keepDependenciesRunning: Boolean): SystemRuntime {
+  if (this is ProvidedMsSqlOptions) return ProvidedRuntime
+  return withProvidedRegistry(
+    container.imageWithTag,
+    container.registry,
+    container.compatibleSubstitute
+  ) { dockerImageName ->
+    container
+      .useContainerFn(dockerImageName)
+      .acceptLicense()
+      .withEnv("MSSQL_USER", userName)
+      .withEnv("MSSQL_SA_PASSWORD", password)
+      .withEnv("MSSQL_DB", databaseName)
+      .withPassword(password)
+      .withReuse(keepDependenciesRunning)
+      .let { c -> c as StoveMsSqlContainer }
+      .apply(container.containerFn)
+  }
 }
 
 suspend fun ValidationDsl.mssql(

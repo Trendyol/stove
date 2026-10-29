@@ -1,4 +1,5 @@
 dependencies {
+  testImplementation(testFixtures(projects.lib.stove))
   api(projects.lib.stoveRdbms)
   api(libs.testcontainers.postgres)
   api(libs.postgresql)

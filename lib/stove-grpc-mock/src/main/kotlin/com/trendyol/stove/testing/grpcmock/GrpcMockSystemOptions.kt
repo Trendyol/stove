@@ -73,42 +73,31 @@ internal data class GrpcMockContext(
   val keyName: String? = null
 )
 
-internal fun Stove.withGrpcMock(options: GrpcMockSystemOptions): Stove =
-  GrpcMockSystem(
-    stove = this,
-    GrpcMockContext(
-      options.port,
-      options.removeStubAfterRequestMatched,
-      options.enableHealthService,
-      options.enableReflectionService,
-      options.afterStubMatched,
-      options.onRequestReceived,
-      options.serverBuilder,
-      options.configureExposedConfiguration
-    )
-  ).also { getOrRegister(it) }
-    .let { this }
+internal fun Stove.withGrpcMock(options: GrpcMockSystemOptions): Stove {
+  getOrRegister(GrpcMockSystem(this, options.toContext()))
+  return this
+}
 
 internal fun Stove.grpcMock(): GrpcMockSystem = getOrNone<GrpcMockSystem>().getOrElse {
   throw SystemNotRegisteredException(GrpcMockSystem::class)
 }
 
-internal fun Stove.withGrpcMock(key: SystemKey, options: GrpcMockSystemOptions): Stove =
-  GrpcMockSystem(
-    stove = this,
-    GrpcMockContext(
-      options.port,
-      options.removeStubAfterRequestMatched,
-      options.enableHealthService,
-      options.enableReflectionService,
-      options.afterStubMatched,
-      options.onRequestReceived,
-      options.serverBuilder,
-      options.configureExposedConfiguration,
-      keyName = keyDisplayName(key)
-    )
-  ).also { getOrRegister(key, it) }
-    .let { this }
+internal fun Stove.withGrpcMock(key: SystemKey, options: GrpcMockSystemOptions): Stove {
+  getOrRegister(key, GrpcMockSystem(this, options.toContext(keyDisplayName(key))))
+  return this
+}
+
+private fun GrpcMockSystemOptions.toContext(keyName: String? = null): GrpcMockContext = GrpcMockContext(
+  port = port,
+  removeStubAfterRequestMatched = removeStubAfterRequestMatched,
+  enableHealthService = enableHealthService,
+  enableReflectionService = enableReflectionService,
+  afterStubMatched = afterStubMatched,
+  onRequestReceived = onRequestReceived,
+  serverBuilder = serverBuilder,
+  configureExposedConfiguration = configureExposedConfiguration,
+  keyName = keyName
+)
 
 internal fun Stove.grpcMock(key: SystemKey): GrpcMockSystem = getOrNone<GrpcMockSystem>(key).getOrElse {
   throw SystemNotRegisteredException(GrpcMockSystem::class, "No GrpcMockSystem registered with key '${keyDisplayName(key)}'")

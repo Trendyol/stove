@@ -186,22 +186,7 @@ fun WithDsl.redis(
 ): Stove {
   val options = configure()
 
-  val runtime: SystemRuntime = if (options is ProvidedRedisOptions) {
-    ProvidedRuntime
-  } else {
-    withProvidedRegistry(
-      options.container.image,
-      options.container.registry,
-      options.container.compatibleSubstitute
-    ) { dockerImageName ->
-      options.container
-        .useContainerFn(dockerImageName)
-        .withCommand("redis-server", "--requirepass", options.password)
-        .withReuse(stove.keepDependenciesRunning)
-        .let { c -> c as StoveRedisContainer }
-        .apply(options.container.containerFn)
-    }
-  }
+  val runtime = options.createRuntime(stove.keepDependenciesRunning)
   return stove.withRedis(options, runtime)
 }
 
@@ -211,23 +196,24 @@ fun WithDsl.redis(
 ): Stove {
   val options = configure()
 
-  val runtime: SystemRuntime = if (options is ProvidedRedisOptions) {
-    ProvidedRuntime
-  } else {
-    withProvidedRegistry(
-      options.container.image,
-      options.container.registry,
-      options.container.compatibleSubstitute
-    ) { dockerImageName ->
-      options.container
-        .useContainerFn(dockerImageName)
-        .withCommand("redis-server", "--requirepass", options.password)
-        .withReuse(stove.keepDependenciesRunning)
-        .let { c -> c as StoveRedisContainer }
-        .apply(options.container.containerFn)
-    }
-  }
+  val runtime = options.createRuntime(stove.keepDependenciesRunning)
   return stove.withRedis(key, options, runtime)
+}
+
+private fun RedisOptions.createRuntime(keepDependenciesRunning: Boolean): SystemRuntime {
+  if (this is ProvidedRedisOptions) return ProvidedRuntime
+  return withProvidedRegistry(
+    container.image,
+    container.registry,
+    container.compatibleSubstitute
+  ) { dockerImageName ->
+    container
+      .useContainerFn(dockerImageName)
+      .withCommand("redis-server", "--requirepass", password)
+      .withReuse(keepDependenciesRunning)
+      .let { c -> c as StoveRedisContainer }
+      .apply(container.containerFn)
+  }
 }
 
 suspend fun ValidationDsl.redis(validation: suspend RedisSystem.() -> Unit): Unit = validation(this.stove.redis())

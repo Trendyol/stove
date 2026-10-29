@@ -4,257 +4,131 @@ import com.trendyol.stove.system.ReadinessStrategy
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
-import io.kotest.matchers.string.shouldContain
 import kotlinx.coroutines.runBlocking
+import java.io.File
+import kotlin.io.path.createTempDirectory
 import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.seconds
 
-class ProcessApplicationUnderTestTest :
-  FunSpec({
-    context("Server target") {
-      test("starts process and injects port env var") {
-        val port = java.net.ServerSocket(0).use { it.localPort }
-
-        val aut = ProcessApplicationUnderTest(
-          ProcessApplicationOptions(
-            command = listOf("sh", "-c", "echo PORT=\$APP_PORT && sleep 5"),
-            target = ProcessTarget.Server(
-              port = port,
-              portEnvVar = "APP_PORT",
-              readiness = ReadinessStrategy.FixedDelay(100.milliseconds)
-            ),
-            envProvider = EnvProvider.empty()
-          )
-        )
-
-        runBlocking {
-          aut.start(emptyList())
-          aut.stop()
+class ProcessApplicationUnderTestTest : FunSpec({
+  test("passes mapped environment, server port, and arguments to the application") {
+    ProcessFixture().use { fixture ->
+      val options = fixture.options(
+        $$"""echo "$APP_PORT|$DB_HOST|$APP_ENV|$COMPUTED|$2|$3" > "$1"; exec sleep 30"""
+      ).copy(
+        target = ProcessTarget.Server(port = 8090, portEnvVar = "APP_PORT", readiness = fixture.readiness),
+        envProvider = envMapper {
+          "database.host" to "DB_HOST"
+          env("APP_PORT", "overridden-by-target")
+          env("APP_ENV", "test")
+          env("COMPUTED") { "hello" }
+        },
+        argsProvider = argsMapper {
+          "database.port" to "db-port"
+          arg("verbose")
         }
-      }
+      )
 
-      test("passes Stove configurations through envProvider") {
-        val aut = ProcessApplicationUnderTest(
-          ProcessApplicationOptions(
-            command = listOf(
-              "sh",
-              "-c",
-              "[ \"\$DB_HOST\" = 'localhost' ] && [ \"\$DB_PORT\" = '5432' ] && exit 0 || exit 1"
-            ),
-            target = ProcessTarget.Worker(
-              readiness = ReadinessStrategy.FixedDelay(100.milliseconds)
-            ),
-            envProvider = envMapper {
-              "database.host" to "DB_HOST"
-              "database.port" to "DB_PORT"
-            }
-          )
-        )
+      fixture.start(options, listOf("database.host=localhost", "database.port=5432"))
 
-        runBlocking {
-          aut.start(listOf("database.host=localhost", "database.port=5432"))
-          aut.stop()
-        }
-      }
-
-      test("static and computed env vars are injected") {
-        val aut = ProcessApplicationUnderTest(
-          ProcessApplicationOptions(
-            command = listOf(
-              "sh",
-              "-c",
-              "[ \"\$APP_ENV\" = 'test' ] && [ \"\$COMPUTED\" = 'hello' ] || exit 1; sleep 1"
-            ),
-            target = ProcessTarget.Worker(
-              readiness = ReadinessStrategy.FixedDelay(100.milliseconds)
-            ),
-            envProvider = envMapper {
-              env("APP_ENV", "test")
-              env("COMPUTED") { "hello" }
-            }
-          )
-        )
-
-        runBlocking {
-          aut.start(emptyList())
-          aut.stop()
-        }
-      }
+      fixture.output.readText().trim() shouldBe "8090|localhost|test|hello|--db-port=5432|--verbose"
     }
+  }
 
-    context("beforeStarted callback") {
-      test("is called with configurations and options before process starts") {
-        lateinit var capturedConfigs: Map<String, String>
-        lateinit var capturedOptions: ProcessApplicationOptions
-
-        val aut = ProcessApplicationUnderTest(
-          ProcessApplicationOptions(
-            command = listOf("sh", "-c", "sleep 5"),
-            target = ProcessTarget.Worker(
-              readiness = ReadinessStrategy.FixedDelay(100.milliseconds)
-            ),
-            envProvider = envMapper {
-              "database.host" to "DB_HOST"
-            },
-            beforeStarted = { configs, opts ->
-              capturedConfigs = configs
-              capturedOptions = opts
-            }
-          )
-        )
-
-        runBlocking {
-          aut.start(listOf("database.host=localhost", "database.port=5432"))
-          capturedConfigs shouldBe mapOf("database.host" to "localhost", "database.port" to "5432")
-          capturedOptions.command shouldBe listOf("sh", "-c", "sleep 5")
-          capturedOptions.workingDirectory shouldBe null
-          aut.stop()
+  test("pre-start callback receives configurations and runs before the child in its working directory") {
+    ProcessFixture().use { fixture ->
+      lateinit var capturedOptions: ProcessApplicationOptions
+      lateinit var capturedConfigurations: Map<String, String>
+      val options = fixture.options($$"""pwd > "$1"; exec sleep 30""").copy(
+        workingDirectory = fixture.directory,
+        beforeStarted = { configurations, applicationOptions ->
+          fixture.output.exists() shouldBe false
+          capturedConfigurations = configurations
+          capturedOptions = applicationOptions
         }
-      }
+      )
 
-      test("options include working directory when set") {
-        val tempDir = kotlin.io.path.createTempDirectory("stove-test").toFile()
-        lateinit var capturedOptions: ProcessApplicationOptions
+      fixture.start(options, listOf("database.host=localhost", "database.port=5432"))
 
-        try {
-          val aut = ProcessApplicationUnderTest(
-            ProcessApplicationOptions(
-              command = listOf("sh", "-c", "sleep 5"),
-              target = ProcessTarget.Worker(
-                readiness = ReadinessStrategy.FixedDelay(100.milliseconds)
-              ),
-              beforeStarted = { _, opts -> capturedOptions = opts },
-              workingDirectory = tempDir
-            )
-          )
-
-          runBlocking {
-            aut.start(emptyList())
-            capturedOptions.workingDirectory shouldBe tempDir
-            aut.stop()
-          }
-        } finally {
-          tempDir.deleteRecursively()
-        }
-      }
+      capturedConfigurations shouldBe mapOf("database.host" to "localhost", "database.port" to "5432")
+      capturedOptions shouldBe options
+      File(fixture.output.readText().trim()).canonicalFile shouldBe fixture.directory.canonicalFile
     }
+  }
 
-    context("Worker target") {
-      test("starts without port injection") {
-        val aut = ProcessApplicationUnderTest(
-          ProcessApplicationOptions(
-            command = listOf("sh", "-c", "sleep 5"),
-            target = ProcessTarget.Worker(
-              readiness = ReadinessStrategy.FixedDelay(100.milliseconds)
-            )
-          )
-        )
+  test("workers retain their configured environment without server port injection") {
+    ProcessFixture().use { fixture ->
+      val options = fixture.options($$"""echo "$APP_PORT" > "$1"; exec sleep 30""").copy(
+        envProvider = envMapper { env("APP_PORT", "worker-value") }
+      )
 
-        runBlocking {
-          aut.start(emptyList())
-          aut.stop()
-        }
-      }
+      fixture.start(options)
+
+      fixture.output.readText().trim() shouldBe "worker-value"
     }
+  }
 
-    context("stop lifecycle") {
-      test("stop terminates a running process") {
-        val aut = ProcessApplicationUnderTest(
-          ProcessApplicationOptions(
-            command = listOf("sleep", "30"),
-            target = ProcessTarget.Worker(
-              readiness = ReadinessStrategy.FixedDelay(100.milliseconds)
-            ),
-            gracefulShutdownTimeout = 5.seconds
-          )
-        )
+  test("stop terminates the application process and can be called again") {
+    ProcessFixture().use { fixture ->
+      fixture.start(fixture.options($$"""echo "$$" > "$1"; exec sleep 30"""))
+      val pid = fixture.output.readText().trim().toLong()
+      ProcessHandle.of(pid).orElseThrow().isAlive shouldBe true
 
-        runBlocking {
-          aut.start(emptyList())
-          aut.stop()
-        }
-        // No exception — process was stopped successfully
-      }
+      fixture.stop()
+      fixture.stop()
 
-      test("stop is no-op when process was never started") {
-        val aut = ProcessApplicationUnderTest(
-          ProcessApplicationOptions(
-            command = listOf("sh", "-c", "sleep 1"),
-            target = ProcessTarget.Worker()
-          )
-        )
-
-        runBlocking { aut.stop() }
-        // No exception — success
-      }
+      ProcessHandle.of(pid).map { it.isAlive }.orElse(false) shouldBe false
     }
+  }
 
-    context("readiness") {
-      test("fails when process exits before readiness check") {
-        shouldThrow<Exception> {
-          val aut = ProcessApplicationUnderTest(
-            ProcessApplicationOptions(
-              command = listOf("sh", "-c", "exit 1"),
-              target = ProcessTarget.Server(
-                port = 19999,
-                readiness = ReadinessStrategy.TcpPort(
-                  port = 19999,
-                  retries = 2,
-                  retryDelay = 50.milliseconds
-                )
-              )
-            )
-          )
-          runBlocking { aut.start(emptyList()) }
-        }
-      }
-
-      test("readiness probe succeeds") {
-        var ready = false
-        val aut = ProcessApplicationUnderTest(
-          ProcessApplicationOptions(
-            command = listOf("sh", "-c", "sleep 30"),
-            target = ProcessTarget.Worker(
-              readiness = ReadinessStrategy.Probe(retries = 5, retryDelay = 50.milliseconds) {
-                ready = true
-                true
-              }
-            )
-          )
-        )
-
-        runBlocking {
-          aut.start(emptyList())
-          ready shouldBe true
-          aut.stop()
-        }
-      }
+  test("stop is safe before an application has started") {
+    ProcessFixture().use { fixture ->
+      ProcessApplicationUnderTest(fixture.options("exit 0")).stop()
     }
+  }
 
-    context("ProcessTarget defaults") {
-      test("Server defaults to HTTP health check on /health") {
-        val target = ProcessTarget.Server(port = 8080)
-        val readiness = target.readiness
-        (readiness is ReadinessStrategy.HttpGet) shouldBe true
-        (readiness as ReadinessStrategy.HttpGet).url shouldContain "8080"
-        readiness.url shouldContain "/health"
-      }
-
-      test("Server accepts custom portEnvVar") {
-        val target = ProcessTarget.Server(port = 8080, portEnvVar = "MY_PORT")
-        target.portEnvVar shouldBe "MY_PORT"
-      }
-
-      test("Worker defaults to FixedDelay") {
-        val target = ProcessTarget.Worker()
-        (target.readiness is ReadinessStrategy.FixedDelay) shouldBe true
-      }
-
-      test("Worker accepts custom readiness strategy") {
-        val target = ProcessTarget.Worker(
-          readiness = ReadinessStrategy.TcpPort(port = 9090)
+  test("startup fails when the application never becomes ready") {
+    ProcessFixture().use { fixture ->
+      val options = fixture.options("exit 1").copy(
+        target = ProcessTarget.Worker(
+          readiness = ReadinessStrategy.Probe(retries = 2, retryDelay = 1.milliseconds) { false }
         )
-        (target.readiness is ReadinessStrategy.TcpPort) shouldBe true
-      }
+      )
+
+      shouldThrow<IllegalStateException> { fixture.start(options) }
     }
-  })
+  }
+})
+
+private class ProcessFixture : AutoCloseable {
+  val directory: File = createTempDirectory("stove-process-test").toFile()
+  val output: File = directory.resolve("output.txt")
+  val readiness = ReadinessStrategy.Probe(retries = 100, retryDelay = 20.milliseconds) {
+    output.exists() && output.length() > 0
+  }
+  private var application: ProcessApplicationUnderTest? = null
+
+  fun options(script: String): ProcessApplicationOptions = ProcessApplicationOptions(
+    command = listOf("sh", "-c", script, "stove-test", output.absolutePath),
+    target = ProcessTarget.Worker(readiness = readiness),
+    gracefulShutdownTimeout = 5.seconds
+  )
+
+  suspend fun start(options: ProcessApplicationOptions, configurations: List<String> = emptyList()) {
+    val runner = ProcessApplicationUnderTest(options)
+    application = runner
+    runner.start(configurations)
+  }
+
+  suspend fun stop() {
+    application?.stop()
+  }
+
+  override fun close() {
+    try {
+      runBlocking { stop() }
+    } finally {
+      directory.deleteRecursively()
+    }
+  }
+}

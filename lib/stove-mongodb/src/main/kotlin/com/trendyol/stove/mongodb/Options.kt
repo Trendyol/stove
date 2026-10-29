@@ -106,21 +106,7 @@ fun WithDsl.mongodb(
 ): Stove {
   val options = configure()
 
-  val runtime: SystemRuntime = if (options is ProvidedMongodbSystemOptions) {
-    ProvidedRuntime
-  } else {
-    withProvidedRegistry(
-      options.container.imageWithTag,
-      options.container.registry,
-      options.container.compatibleSubstitute
-    ) { dockerImageName ->
-      options.container
-        .useContainerFn(dockerImageName)
-        .withReuse(stove.keepDependenciesRunning)
-        .let { c -> c as StoveMongoContainer }
-        .apply(options.container.containerFn)
-    }
-  }
+  val runtime = options.createRuntime(stove.keepDependenciesRunning)
   return stove.withMongodb(options, runtime)
 }
 
@@ -130,22 +116,23 @@ fun WithDsl.mongodb(
 ): Stove {
   val options = configure()
 
-  val runtime: SystemRuntime = if (options is ProvidedMongodbSystemOptions) {
-    ProvidedRuntime
-  } else {
-    withProvidedRegistry(
-      options.container.imageWithTag,
-      options.container.registry,
-      options.container.compatibleSubstitute
-    ) { dockerImageName ->
-      options.container
-        .useContainerFn(dockerImageName)
-        .withReuse(stove.keepDependenciesRunning)
-        .let { c -> c as StoveMongoContainer }
-        .apply(options.container.containerFn)
-    }
-  }
+  val runtime = options.createRuntime(stove.keepDependenciesRunning)
   return stove.withMongodb(key, options, runtime)
+}
+
+private fun MongodbSystemOptions.createRuntime(keepDependenciesRunning: Boolean): SystemRuntime {
+  if (this is ProvidedMongodbSystemOptions) return ProvidedRuntime
+  return withProvidedRegistry(
+    container.imageWithTag,
+    container.registry,
+    container.compatibleSubstitute
+  ) { dockerImageName ->
+    container
+      .useContainerFn(dockerImageName)
+      .withReuse(keepDependenciesRunning)
+      .let { c -> c as StoveMongoContainer }
+      .apply(container.containerFn)
+  }
 }
 
 suspend fun ValidationDsl.mongodb(

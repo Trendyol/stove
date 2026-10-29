@@ -87,34 +87,42 @@ abstract class BridgeSystem<T : Any>(
    * @param D the type of bean to resolve.
    * @param block the block to execute with the resolved bean as receiver.
    */
-  @Suppress("TooGenericExceptionCaught")
   suspend inline fun <reified D : Any> using(block: suspend D.() -> Unit) {
     ensureContextInitialized()
-    val beanName = D::class.simpleName ?: "Unknown"
-    val metadata = mapOf("type" to (D::class.qualifiedName ?: ""))
+    reportBeanUsage(listOf(D::class)) { block(resolve()) }
+  }
+}
 
-    try {
-      block(resolve())
-      reporter.record(
-        ReportEntry.success(
-          system = reportSystemName,
-          testId = reporter.currentTestId(),
-          action = "Bean usage: $beanName",
-          metadata = metadata
-        )
+@PublishedApi
+@Suppress("TooGenericExceptionCaught")
+internal suspend inline fun BridgeSystem<*>.reportBeanUsage(types: List<KClass<*>>, block: () -> Unit) {
+  val beanNames = types.joinToString(", ") { it.simpleName ?: "Unknown" }
+  val metadata = if (types.size == 1) {
+    mapOf("type" to (types.single().qualifiedName ?: ""))
+  } else {
+    mapOf("types" to types.map { it.qualifiedName })
+  }
+  try {
+    block()
+    reporter.record(
+      ReportEntry.success(
+        system = reportSystemName,
+        testId = reporter.currentTestId(),
+        action = "Bean usage: $beanNames",
+        metadata = metadata
       )
-    } catch (e: Throwable) {
-      reporter.record(
-        ReportEntry.failure(
-          system = reportSystemName,
-          testId = reporter.currentTestId(),
-          action = "Bean usage: $beanName",
-          error = e.message ?: "Unknown error",
-          metadata = metadata
-        )
+    )
+  } catch (failure: Throwable) {
+    reporter.record(
+      ReportEntry.failure(
+        system = reportSystemName,
+        testId = reporter.currentTestId(),
+        action = "Bean usage: $beanNames",
+        error = failure.message ?: "Unknown error",
+        metadata = metadata
       )
-      throw e
-    }
+    )
+    throw failure
   }
 }
 
@@ -187,7 +195,6 @@ suspend inline fun <reified T : Any> ValidationDsl.using(
  * @param T2 the type of the second bean to resolve.
  * @param validation the block to execute with the resolved beans.
  */
-@Suppress("TooGenericExceptionCaught")
 suspend inline fun <
   reified T1 : Any,
   reified T2 : Any
@@ -195,36 +202,8 @@ suspend inline fun <
   crossinline validation: suspend (T1, T2) -> Unit
 ): Unit = stove.bridge().let { bridge ->
   bridge.ensureContextInitialized()
-  val name1 = T1::class.simpleName ?: "Unknown"
-  val name2 = T2::class.simpleName ?: "Unknown"
-  val beanNames = "$name1, $name2"
-  val metadata = mapOf(
-    "types" to listOf(T1::class.qualifiedName, T2::class.qualifiedName)
-  )
-
-  try {
-    val t1: T1 = bridge.resolve()
-    val t2: T2 = bridge.resolve()
-    validation(t1, t2)
-    bridge.reporter.record(
-      ReportEntry.success(
-        system = bridge.reportSystemName,
-        testId = bridge.reporter.currentTestId(),
-        action = "Bean usage: $beanNames",
-        metadata = metadata
-      )
-    )
-  } catch (e: Throwable) {
-    bridge.reporter.record(
-      ReportEntry.failure(
-        system = bridge.reportSystemName,
-        testId = bridge.reporter.currentTestId(),
-        action = "Bean usage: $beanNames",
-        error = e.message ?: "Unknown error",
-        metadata = metadata
-      )
-    )
-    throw e
+  bridge.reportBeanUsage(listOf(T1::class, T2::class)) {
+    validation(bridge.resolve<T1>(), bridge.resolve<T2>())
   }
 }
 
@@ -236,7 +215,6 @@ suspend inline fun <
  * @param T3 the type of the third bean to resolve.
  * @param validation the block to execute with the resolved beans.
  */
-@Suppress("TooGenericExceptionCaught")
 suspend inline fun <
   reified T1 : Any,
   reified T2 : Any,
@@ -245,38 +223,8 @@ suspend inline fun <
   crossinline validation: suspend (T1, T2, T3) -> Unit
 ): Unit = stove.bridge().let { bridge ->
   bridge.ensureContextInitialized()
-  val name1 = T1::class.simpleName ?: "Unknown"
-  val name2 = T2::class.simpleName ?: "Unknown"
-  val name3 = T3::class.simpleName ?: "Unknown"
-  val beanNames = "$name1, $name2, $name3"
-  val metadata = mapOf(
-    "types" to listOf(T1::class.qualifiedName, T2::class.qualifiedName, T3::class.qualifiedName)
-  )
-
-  try {
-    val t1: T1 = bridge.resolve()
-    val t2: T2 = bridge.resolve()
-    val t3: T3 = bridge.resolve()
-    validation(t1, t2, t3)
-    bridge.reporter.record(
-      ReportEntry.success(
-        system = bridge.reportSystemName,
-        testId = bridge.reporter.currentTestId(),
-        action = "Bean usage: $beanNames",
-        metadata = metadata
-      )
-    )
-  } catch (e: Throwable) {
-    bridge.reporter.record(
-      ReportEntry.failure(
-        system = bridge.reportSystemName,
-        testId = bridge.reporter.currentTestId(),
-        action = "Bean usage: $beanNames",
-        error = e.message ?: "Unknown error",
-        metadata = metadata
-      )
-    )
-    throw e
+  bridge.reportBeanUsage(listOf(T1::class, T2::class, T3::class)) {
+    validation(bridge.resolve<T1>(), bridge.resolve<T2>(), bridge.resolve<T3>())
   }
 }
 
@@ -289,7 +237,6 @@ suspend inline fun <
  * @param T4 the type of the fourth bean to resolve.
  * @param validation the block to execute with the resolved beans.
  */
-@Suppress("TooGenericExceptionCaught")
 suspend inline fun <
   reified T1 : Any,
   reified T2 : Any,
@@ -299,40 +246,8 @@ suspend inline fun <
   crossinline validation: suspend (T1, T2, T3, T4) -> Unit
 ): Unit = stove.bridge().let { bridge ->
   bridge.ensureContextInitialized()
-  val name1 = T1::class.simpleName ?: "Unknown"
-  val name2 = T2::class.simpleName ?: "Unknown"
-  val name3 = T3::class.simpleName ?: "Unknown"
-  val name4 = T4::class.simpleName ?: "Unknown"
-  val beanNames = "$name1, $name2, $name3, $name4"
-  val metadata = mapOf(
-    "types" to listOf(T1::class.qualifiedName, T2::class.qualifiedName, T3::class.qualifiedName, T4::class.qualifiedName)
-  )
-
-  try {
-    val t1: T1 = bridge.resolve()
-    val t2: T2 = bridge.resolve()
-    val t3: T3 = bridge.resolve()
-    val t4: T4 = bridge.resolve()
-    validation(t1, t2, t3, t4)
-    bridge.reporter.record(
-      ReportEntry.success(
-        system = bridge.reportSystemName,
-        testId = bridge.reporter.currentTestId(),
-        action = "Bean usage: $beanNames",
-        metadata = metadata
-      )
-    )
-  } catch (e: Throwable) {
-    bridge.reporter.record(
-      ReportEntry.failure(
-        system = bridge.reportSystemName,
-        testId = bridge.reporter.currentTestId(),
-        action = "Bean usage: $beanNames",
-        error = e.message ?: "Unknown error",
-        metadata = metadata
-      )
-    )
-    throw e
+  bridge.reportBeanUsage(listOf(T1::class, T2::class, T3::class, T4::class)) {
+    validation(bridge.resolve<T1>(), bridge.resolve<T2>(), bridge.resolve<T3>(), bridge.resolve<T4>())
   }
 }
 
@@ -346,7 +261,6 @@ suspend inline fun <
  * @param T5 the type of the fifth bean to resolve.
  * @param validation the block to execute with the resolved beans.
  */
-@Suppress("TooGenericExceptionCaught")
 suspend inline fun <
   reified T1 : Any,
   reified T2 : Any,
@@ -357,47 +271,7 @@ suspend inline fun <
   crossinline validation: suspend (T1, T2, T3, T4, T5) -> Unit
 ): Unit = stove.bridge().let { bridge ->
   bridge.ensureContextInitialized()
-  val name1 = T1::class.simpleName ?: "Unknown"
-  val name2 = T2::class.simpleName ?: "Unknown"
-  val name3 = T3::class.simpleName ?: "Unknown"
-  val name4 = T4::class.simpleName ?: "Unknown"
-  val name5 = T5::class.simpleName ?: "Unknown"
-  val beanNames = "$name1, $name2, $name3, $name4, $name5"
-  val metadata = mapOf(
-    "types" to listOf(
-      T1::class.qualifiedName,
-      T2::class.qualifiedName,
-      T3::class.qualifiedName,
-      T4::class.qualifiedName,
-      T5::class.qualifiedName
-    )
-  )
-
-  try {
-    val t1: T1 = bridge.resolve()
-    val t2: T2 = bridge.resolve()
-    val t3: T3 = bridge.resolve()
-    val t4: T4 = bridge.resolve()
-    val t5: T5 = bridge.resolve()
-    validation(t1, t2, t3, t4, t5)
-    bridge.reporter.record(
-      ReportEntry.success(
-        system = bridge.reportSystemName,
-        testId = bridge.reporter.currentTestId(),
-        action = "Bean usage: $beanNames",
-        metadata = metadata
-      )
-    )
-  } catch (e: Throwable) {
-    bridge.reporter.record(
-      ReportEntry.failure(
-        system = bridge.reportSystemName,
-        testId = bridge.reporter.currentTestId(),
-        action = "Bean usage: $beanNames",
-        error = e.message ?: "Unknown error",
-        metadata = metadata
-      )
-    )
-    throw e
+  bridge.reportBeanUsage(listOf(T1::class, T2::class, T3::class, T4::class, T5::class)) {
+    validation(bridge.resolve<T1>(), bridge.resolve<T2>(), bridge.resolve<T3>(), bridge.resolve<T4>(), bridge.resolve<T5>())
   }
 }

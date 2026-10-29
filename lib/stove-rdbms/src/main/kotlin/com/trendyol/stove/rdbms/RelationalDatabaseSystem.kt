@@ -9,6 +9,7 @@ import com.trendyol.stove.reporting.Reports
 import com.trendyol.stove.system.Stove
 import com.trendyol.stove.system.abstractions.*
 import com.trendyol.stove.system.annotations.StoveDsl
+import com.trendyol.stove.system.closeAll
 import kotlinx.coroutines.runBlocking
 import kotliquery.*
 import org.slf4j.*
@@ -34,30 +35,25 @@ abstract class RelationalDatabaseSystem<SELF : RelationalDatabaseSystem<SELF>> p
   protected abstract fun database(exposedConfiguration: RelationalDatabaseExposedConfiguration): Session
 
   override suspend fun run() {
-    exposedConfiguration = when (val runtime = context.runtime) {
-      is StoveContainer -> {
-        val jdbcContainer = runtime as JdbcDatabaseContainer<*>
-        state.capture {
-          jdbcContainer.start()
-          RelationalDatabaseExposedConfiguration(
-            jdbcUrl = jdbcContainer.jdbcUrl,
-            host = jdbcContainer.host,
-            port = jdbcContainer.firstMappedPort,
-            password = jdbcContainer.password,
-            username = jdbcContainer.username
-          )
-        }
-      }
-
-      is ProvidedRuntime -> {
-        getProvidedConfig()
-      }
-
-      else -> {
-        throw UnsupportedOperationException("Unsupported runtime type: ${runtime::class}")
-      }
-    }
+    exposedConfiguration = obtainExposedConfiguration()
     sqlOperations = NativeSqlOperations(database(exposedConfiguration))
+  }
+
+  private suspend fun obtainExposedConfiguration(): RelationalDatabaseExposedConfiguration = when (val runtime = context.runtime) {
+    is StoveContainer -> startContainer(runtime as JdbcDatabaseContainer<*>)
+    is ProvidedRuntime -> getProvidedConfig()
+    else -> throw UnsupportedOperationException("Unsupported runtime type: ${runtime::class}")
+  }
+
+  private suspend fun startContainer(container: JdbcDatabaseContainer<*>): RelationalDatabaseExposedConfiguration = state.capture {
+    container.start()
+    RelationalDatabaseExposedConfiguration(
+      jdbcUrl = container.jdbcUrl,
+      host = container.host,
+      port = container.firstMappedPort,
+      password = container.password,
+      username = container.username
+    )
   }
 
   /**
@@ -86,15 +82,7 @@ abstract class RelationalDatabaseSystem<SELF : RelationalDatabaseSystem<SELF>> p
   }
 
   suspend fun shouldExecute(sql: String): SELF {
-    report(
-      action = "Execute SQL",
-      input = Some(sql.trim()),
-      metadata = mapOf("sql" to sql.trim())
-    ) {
-      val affectedRows = internalSqlOperations.execute(sql)
-      check(affectedRows >= 0) { "Failed to execute sql: $sql" }
-      "$affectedRows row(s) affected"
-    }
+    reportSqlExecution(sql) { internalSqlOperations.execute(sql) }
     return this as SELF
   }
 
@@ -107,9 +95,11 @@ abstract class RelationalDatabaseSystem<SELF : RelationalDatabaseSystem<SELF>> p
   override fun close(): Unit =
     runBlocking {
       Try {
-        // Note: cleanup is handled in subclass via options
-        sqlOperations.close()
-        executeWithReuseCheck { stop() }
+        // Cleanup callbacks are handled by subclasses.
+        closeAll(
+          { if (::sqlOperations.isInitialized) sqlOperations.close() },
+          { executeWithReuseCheck { stop() } }
+        )
       }.recover {
         val containerInfo = when (val runtime = context.runtime) {
           is JdbcDatabaseContainer<*> -> runtime.containerName

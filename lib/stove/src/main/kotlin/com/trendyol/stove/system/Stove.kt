@@ -86,7 +86,7 @@ class Stove(
     configure(optionsDsl)
   }
 
-  private var cleanup: MutableList<(suspend () -> Unit)> = mutableListOf()
+  private val cleanup = mutableListOf<suspend () -> Unit>()
 
   @PublishedApi
   internal val activeSystems: MutableMap<KClass<*>, PluggedSystem> = mutableMapOf()
@@ -258,38 +258,27 @@ class Stove(
   private lateinit var applicationUnderTestContext: Any
 
   /**
-   * Runs the entire dependency tree that implements [RunnableSystemWithContext] since only the [RunnableSystemWithContext] can be run.
-   * Note that all the dependencies will run as parallel.
-   * It will invoke the runnable methods of [RunnableSystemWithContext]s with the order:
-   * - [RunnableSystemWithContext.beforeRun]
-   * - [RunnableSystemWithContext.run]
-   * - [RunnableSystemWithContext.afterRun]
+   * Starts registered systems in lifecycle phases: [BeforeRunAware.beforeRun], then [RunAware.run].
+   * Systems within each phase run in parallel. Their exposed configurations are passed to the
+   * application before [AfterRunAware.afterRun] initializes systems that need its context.
    */
   override suspend fun run() {
-    coroutineScope {
-      val allSystems = allRegisteredSystems()
-
-      allSystems.filterIsInstance<BeforeRunAware>()
-        .map { async(context = Dispatchers.IO) { it.beforeRun() } }.awaitAll()
-
-      allSystems.filterIsInstance<RunAware>()
-        .map { async(context = Dispatchers.IO) { it.run() } }.awaitAll()
-
-      val dependencyConfigurations =
-        allSystems
-          .filterIsInstance<ExposesConfiguration>()
-          .flatMap { it.configuration() }
-
-      applicationUnderTestContext = applicationUnderTest.start(dependencyConfigurations)
-
-      allSystems.filterIsInstance<AfterRunAware>()
-        .map { async(context = Dispatchers.IO) { it.afterRun() } }.awaitAll()
-
-      // Cleanup is handled by registerForDispose — no duplication here
-      cleanup.add { applicationUnderTest.stop() }
-    }
-
+    startRegisteredSystems()
     instance = this
+  }
+
+  private suspend fun startRegisteredSystems(): Unit = coroutineScope {
+    val systems = allRegisteredSystems()
+    systems.filterIsInstance<BeforeRunAware>().runInParallel { it.beforeRun() }
+    systems.filterIsInstance<RunAware>().runInParallel { it.run() }
+    val configurations = systems.filterIsInstance<ExposesConfiguration>().flatMap { it.configuration() }
+    applicationUnderTestContext = applicationUnderTest.start(configurations)
+    systems.filterIsInstance<AfterRunAware>().runInParallel { it.afterRun() }
+    cleanup.add { applicationUnderTest.stop() }
+  }
+
+  private suspend fun <T> Iterable<T>.runInParallel(action: suspend (T) -> Unit): Unit = coroutineScope {
+    map { system -> async(Dispatchers.IO) { action(system) } }.awaitAll()
   }
 
   /**
@@ -371,16 +360,19 @@ class Stove(
 
   override fun close(): Unit = runBlocking {
     Try {
-      if (options.dumpReportOnStop && options.reportingEnabled) {
-        // Only dump report if there are failures
-        val report = reporter.dumpIfFailed(options.defaultRenderer)
-        if (report.isNotEmpty()) {
-          logger.info("=== Stove Test Report (Failures Detected) ===")
-          logger.info(report)
-        }
-      }
-      cleanup.forEach { it() }
-    }.recover { logger.warn("got an error while stopping Stove: ${it.message}") }
+      closeAll(
+        { dumpFailureReport() },
+        { closeAll(cleanup) { it() } }
+      )
+    }.recover { logger.warn("got an error while stopping Stove: ${it.message}", it) }
+  }
+
+  private fun dumpFailureReport() {
+    if (!options.dumpReportOnStop || !options.reportingEnabled) return
+    val report = reporter.dumpIfFailed(options.defaultRenderer)
+    if (report.isEmpty()) return
+    logger.info("=== Stove Test Report (Failures Detected) ===")
+    logger.info(report)
   }
 }
 

@@ -105,6 +105,7 @@ public final class com/trendyol/stove/mongodb/MongodbSystem : com/trendyol/stove
 	public field mongoClient Lcom/mongodb/kotlin/client/coroutine/MongoClient;
 	public fun close ()V
 	public fun configuration ()Ljava/util/List;
+	public final fun documentCollection (Ljava/lang/String;)Lcom/mongodb/kotlin/client/coroutine/MongoCollection;
 	public fun executeWithReuseCheck (Lkotlin/jvm/functions/Function1;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public final fun getContext ()Lcom/trendyol/stove/mongodb/MongodbContext;
 	public final fun getMongoClient ()Lcom/mongodb/kotlin/client/coroutine/MongoClient;

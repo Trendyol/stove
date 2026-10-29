@@ -142,20 +142,7 @@ class DashboardSystem(
       }
       emitter.tryEmit(
         dashboardEvent {
-          entryRecorded = EntryRecordedEvent.newBuilder()
-            .setTestId(entry.testId)
-            .setTimestamp(entry.timestamp.toTimestamp())
-            .setSystem(entry.system)
-            .setAction(entry.action)
-            .setResult(entry.result.name)
-            .setInput(entry.input.getOrElse { "" }.toString())
-            .setOutput(entry.output.getOrElse { "" }.toString())
-            .putAllMetadata(entry.metadata.mapValues { it.value.toString() })
-            .setExpected(entry.expected.getOrElse { "" }.toString())
-            .setActual(entry.actual.getOrElse { "" }.toString())
-            .setError(entry.error.getOrElse { "" })
-            .setTraceId(entry.traceId.getOrElse { "" })
-            .build()
+          entryRecorded = entry.toProto()
         }
       )
       entry.isFailed && failureSnapshotTaken.add(entry.testId)
@@ -169,6 +156,21 @@ class DashboardSystem(
       }
     }
   }
+
+  private fun ReportEntry.toProto(): EntryRecordedEvent = EntryRecordedEvent.newBuilder()
+    .setTestId(testId)
+    .setTimestamp(timestamp.toTimestamp())
+    .setSystem(system)
+    .setAction(action)
+    .setResult(result.name)
+    .setInput(input.getOrElse { "" }.toString())
+    .setOutput(output.getOrElse { "" }.toString())
+    .putAllMetadata(metadata.mapValues { it.value.toString() })
+    .setExpected(expected.getOrElse { "" }.toString())
+    .setActual(actual.getOrElse { "" }.toString())
+    .setError(error.getOrElse { "" })
+    .setTraceId(traceId.getOrElse { "" })
+    .build()
 
   override fun onInteraction(interaction: MockInteraction) {
     if (!acceptingEvents.get()) return

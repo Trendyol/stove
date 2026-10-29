@@ -73,68 +73,57 @@ internal class ContainerApplicationUnderTest(
 
   override suspend fun start(configurations: List<String>): ContainerApplicationContext {
     val configurationMap = configurations.toConfigurationMap()
-    val commandArgs = argsProvider.provide(configurationMap)
-    val fullCommand = command + commandArgs
+    val fullCommand = command + argsProvider.provide(configurationMap)
     val envVars = resolveEnv(configurationMap)
     launchConfigurationObserver(fullCommand, envVars)
-
     beforeStarted(configurationMap)
 
     val container = containerFactory()
-    applyContainerConfiguration(container = container, fullCommand = fullCommand, envVars = envVars)
+    applyContainerConfiguration(container, fullCommand, envVars)
     logger.info("Starting container image {} with {} env vars", image, envVars.size)
-
-    runCatching {
-      withContext(Dispatchers.IO) {
-        container.start()
-      }
-    }.fold(
-      onSuccess = {},
-      onFailure = { throwable ->
-        val containerLogs = runCatching { container.logs }.getOrElse { "<container logs unavailable>" }
-        throw IllegalStateException(
-          "Failed to start container application `$image`. Logs:\n$containerLogs",
-          throwable
-        )
-      }
-    )
-    withContext(Dispatchers.IO) {
-      runCatching {
-        container.followOutput(Slf4jLogConsumer(logger).withPrefix(image))
-      }.onFailure {
-        logger.debug("Container log streaming could not be attached: {}", it.message)
-      }
-    }
+    startContainer(container)
+    attachContainerLogs(container)
 
     runningContainer = Some(container)
-    try {
-      ReadinessChecker.check(target.readiness)
-      logger.info("Container application is ready")
-    } catch (t: IllegalStateException) {
-      stop()
-      throw t
-    }
-
+    awaitReadiness()
     return ContainerApplicationContext(container)
   }
 
+  private suspend fun startContainer(container: GenericContainer<*>) {
+    try {
+      withContext(Dispatchers.IO) { container.start() }
+    } catch (failure: Throwable) {
+      val logs = runCatching { container.logs }.getOrElse { "<container logs unavailable>" }
+      throw IllegalStateException("Failed to start container application `$image`. Logs:\n$logs", failure)
+    }
+  }
+
+  private suspend fun attachContainerLogs(container: GenericContainer<*>): Unit = withContext(Dispatchers.IO) {
+    runCatching {
+      container.followOutput(Slf4jLogConsumer(logger).withPrefix(image))
+    }.onFailure {
+      logger.debug("Container log streaming could not be attached: {}", it.message)
+    }
+  }
+
+  private suspend fun awaitReadiness() {
+    try {
+      ReadinessChecker.check(target.readiness)
+      logger.info("Container application is ready")
+    } catch (failure: IllegalStateException) {
+      stop()
+      throw failure
+    }
+  }
+
   override suspend fun stop() {
-    when (val activeContainer = runningContainer) {
-      is Some -> {
-        val container = activeContainer.value
-        val gracefullyStopped = withContext(Dispatchers.IO) {
-          withTimeoutOrNull(gracefulShutdownTimeout) {
-            container.stop()
-          } != null
-        }
-
-        if (!gracefullyStopped) {
-          logger.warn("Container did not stop in time, force-closing")
-          withContext(Dispatchers.IO) { container.close() }
-        }
-      }
-
-      None -> Unit
+    val container = runningContainer.getOrNull() ?: return
+    val gracefullyStopped = withContext(Dispatchers.IO) {
+      withTimeoutOrNull(gracefulShutdownTimeout) { container.stop() } != null
+    }
+    if (!gracefullyStopped) {
+      logger.warn("Container did not stop in time, force-closing")
+      withContext(Dispatchers.IO) { container.close() }
     }
     runningContainer = None
   }
@@ -162,25 +151,17 @@ internal class ContainerApplicationUnderTest(
   }
 
   private fun configureTarget(container: GenericContainer<*>) {
-    when (val target = target) {
-      is ContainerTarget.Server -> {
-        if (target.bindHostPort) {
-          container.withExposedPorts(target.internalPort)
-          container.withCreateContainerCmdModifier { command ->
-            val hostConfig = command.hostConfig ?: HostConfig.newHostConfig()
-            command.withHostConfig(
-              hostConfig.withPortBindings(
-                PortBinding(
-                  Ports.Binding.bindPort(target.hostPort),
-                  ExposedPort(target.internalPort)
-                )
-              )
-            )
-          }
-        }
-      }
+    val server = target as? ContainerTarget.Server ?: return
+    if (!server.bindHostPort) return
 
-      is ContainerTarget.Worker -> Unit
+    container.withExposedPorts(server.internalPort)
+    container.withCreateContainerCmdModifier { command ->
+      val hostConfig = command.hostConfig ?: HostConfig.newHostConfig()
+      command.withHostConfig(
+        hostConfig.withPortBindings(
+          PortBinding(Ports.Binding.bindPort(server.hostPort), ExposedPort(server.internalPort))
+        )
+      )
     }
   }
 

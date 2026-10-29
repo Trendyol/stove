@@ -1,6 +1,7 @@
 package com.trendyol.stove.postgres
 
 import com.trendyol.stove.system.stove
+import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.ints.shouldBeGreaterThan
 import io.kotest.matchers.shouldBe
@@ -145,6 +146,43 @@ class PostgresqlSystemTests :
       }
     }
 
+    test("failed validation does not repeat or prevent later parameterized operations") {
+      withValidationUsers {
+        shouldExecute(
+          sql = "INSERT INTO ValidationUsers (name, age) VALUES (?, ?)",
+          parameters = listOf("Alice".param(), 30.param())
+        )
+        var mappedRows = 0
+        var assertionCalls = 0
+        shouldThrow<AssertionError> {
+          shouldQuery<Int>(
+            query = "SELECT age FROM ValidationUsers WHERE name = ?",
+            parameters = listOf("Alice".param()),
+            mapper = {
+              mappedRows++
+              it.int("age")
+            }
+          ) { ages ->
+            assertionCalls++
+            ages shouldBe listOf(31)
+          }
+        }
+        mappedRows shouldBe 1
+        assertionCalls shouldBe 1
+
+        shouldExecute(
+          sql = "UPDATE ValidationUsers SET age = ? WHERE name = ?",
+          parameters = listOf(31.param(), "Alice".param())
+        ).shouldQuery<Int>(
+          query = "SELECT age FROM ValidationUsers WHERE name = ?",
+          parameters = listOf("Alice".param()),
+          mapper = { it.int("age") }
+        ) { ages ->
+          ages shouldBe listOf(31)
+        }
+      }
+    }
+
     test("should work with parameterized queries") {
       stove {
         postgresql {
@@ -220,3 +258,16 @@ class PostgresqlSystemTests :
       }
     }
   })
+
+private suspend fun withValidationUsers(scenario: suspend PostgresqlSystem.() -> Unit) {
+  stove {
+    postgresql {
+      shouldExecute("CREATE TEMPORARY TABLE ValidationUsers (name VARCHAR(100) PRIMARY KEY, age INT NOT NULL)")
+      try {
+        scenario()
+      } finally {
+        shouldExecute("DROP TABLE ValidationUsers")
+      }
+    }
+  }
+}

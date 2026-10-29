@@ -207,24 +207,7 @@ fun WithDsl.postgresql(
 ): Stove {
   val options = configure()
 
-  val runtime: SystemRuntime = if (options is ProvidedPostgresqlOptions) {
-    ProvidedRuntime
-  } else {
-    withProvidedRegistry(
-      options.container.imageWithTag,
-      options.container.registry,
-      options.container.compatibleSubstitute
-    ) { dockerImageName ->
-      options.container
-        .useContainerFn(dockerImageName)
-        .withDatabaseName(options.databaseName)
-        .withUsername(options.username)
-        .withPassword(options.password)
-        .withReuse(stove.keepDependenciesRunning)
-        .let { c -> c as StovePostgresqlContainer }
-        .apply(options.container.containerFn)
-    }
-  }
+  val runtime = options.createRuntime(stove.keepDependenciesRunning)
   return stove.withPostgresql(options, runtime)
 }
 
@@ -234,25 +217,26 @@ fun WithDsl.postgresql(
 ): Stove {
   val options = configure()
 
-  val runtime: SystemRuntime = if (options is ProvidedPostgresqlOptions) {
-    ProvidedRuntime
-  } else {
-    withProvidedRegistry(
-      options.container.imageWithTag,
-      options.container.registry,
-      options.container.compatibleSubstitute
-    ) { dockerImageName ->
-      options.container
-        .useContainerFn(dockerImageName)
-        .withDatabaseName(options.databaseName)
-        .withUsername(options.username)
-        .withPassword(options.password)
-        .withReuse(stove.keepDependenciesRunning)
-        .let { c -> c as StovePostgresqlContainer }
-        .apply(options.container.containerFn)
-    }
-  }
+  val runtime = options.createRuntime(stove.keepDependenciesRunning)
   return stove.withPostgresql(key, options, runtime)
+}
+
+private fun PostgresqlOptions.createRuntime(keepDependenciesRunning: Boolean): SystemRuntime {
+  if (this is ProvidedPostgresqlOptions) return ProvidedRuntime
+  return withProvidedRegistry(
+    container.imageWithTag,
+    container.registry,
+    container.compatibleSubstitute
+  ) { dockerImageName ->
+    container
+      .useContainerFn(dockerImageName)
+      .withDatabaseName(databaseName)
+      .withUsername(username)
+      .withPassword(password)
+      .withReuse(keepDependenciesRunning)
+      .let { c -> c as StovePostgresqlContainer }
+      .apply(container.containerFn)
+  }
 }
 
 suspend fun ValidationDsl.postgresql(validation: @StoveDsl suspend PostgresqlSystem.() -> Unit): Unit =

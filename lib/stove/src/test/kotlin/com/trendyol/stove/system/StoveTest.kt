@@ -2,10 +2,8 @@ package com.trendyol.stove.system
 
 import arrow.core.None
 import com.trendyol.stove.system.abstractions.*
-import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
-import kotlinx.coroutines.runBlocking
 
 class StoveTest :
   FunSpec({
@@ -27,75 +25,91 @@ class StoveTest :
 
     test("run invokes lifecycle and passes configurations") {
       val stove = Stove()
-      val system = TestLifecycleSystem(stove)
-      val app = TestApplicationUnderTest()
+      val events = mutableListOf<String>()
+      val system = TestLifecycleSystem(stove, events)
+      val app = TestApplicationUnderTest(events)
 
       stove.getOrRegister(system)
       stove.applicationUnderTest(app)
 
-      runBlocking { stove.run() }
+      stove.run()
 
-      system.beforeRunCalled shouldBe true
-      system.runCalled shouldBe true
-      system.afterRunCalled shouldBe true
-      app.started shouldBe true
+      events shouldBe listOf("beforeRun", "run", "configuration", "application.start", "afterRun")
       app.receivedConfigs shouldBe listOf("system.config=true")
       stove.applicationUnderTestContext<String>() shouldBe "context"
       Stove.instanceInitialized() shouldBe true
+      stove { this.stove shouldBe stove }
+      stove.close()
+      events.takeLast(2) shouldBe listOf("system.close", "application.stop")
     }
 
-    test("stove validation DSL throws when not initialized") {
-      if (!Stove.instanceInitialized()) {
-        shouldThrow<IllegalStateException> {
-          runBlocking { stove { } }
+    test("a failed resource close still releases later resources and stops the application") {
+      val closed = mutableListOf<String>()
+      val stove = Stove()
+      stove.registerForDispose(
+        AutoCloseable {
+          closed.add("first resource")
+          error("close failed")
         }
-      } else {
-        runBlocking { stove { } }
-      }
+      )
+      stove.registerForDispose(AutoCloseable { closed.add("second resource") })
+      stove.applicationUnderTest(TestApplicationUnderTest { closed.add("application") })
+      stove.run()
+
+      stove.close()
+
+      closed shouldBe listOf("first resource", "second resource", "application")
     }
   })
 
-private class TestApplicationUnderTest : ApplicationUnderTest<String> {
-  var started: Boolean = false
+private class TestApplicationUnderTest(
+  private val events: MutableList<String> = mutableListOf(),
+  private val onStop: () -> Unit = {}
+) : ApplicationUnderTest<String> {
   var receivedConfigs: List<String> = emptyList()
 
   override suspend fun start(configurations: List<String>): String {
-    started = true
+    events.add("application.start")
     receivedConfigs = configurations
     return "context"
   }
 
-  override suspend fun stop() = Unit
+  override suspend fun stop() {
+    events.add("application.stop")
+    onStop()
+  }
 }
 
 private class TestLifecycleSystem(
-  override val stove: Stove
+  override val stove: Stove,
+  private val events: MutableList<String> = mutableListOf()
 ) : PluggedSystem,
   BeforeRunAware,
   RunAware,
   AfterRunAware,
   ExposesConfiguration {
-  var beforeRunCalled: Boolean = false
-  var runCalled: Boolean = false
-  var afterRunCalled: Boolean = false
-
   override suspend fun beforeRun() {
-    beforeRunCalled = true
+    events.add("beforeRun")
   }
 
   override suspend fun run() {
-    runCalled = true
+    events.add("run")
   }
 
   override suspend fun stop() = Unit
 
   override suspend fun afterRun() {
-    afterRunCalled = true
+    events.add("afterRun")
   }
 
-  override fun configuration(): List<String> = listOf("system.config=true")
+  override fun configuration(): List<String> {
+    events.add("configuration")
+    return listOf("system.config=true")
+  }
 
   override fun then(): Stove = stove
 
-  override fun close() = Unit
+  override fun close() {
+    events.add("system.close")
+  }
 }

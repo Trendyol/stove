@@ -100,21 +100,7 @@ fun WithDsl.cassandra(
 ): Stove {
   val options = configure()
 
-  val runtime: SystemRuntime = if (options is ProvidedCassandraSystemOptions) {
-    ProvidedRuntime
-  } else {
-    withProvidedRegistry(
-      options.container.imageWithTag,
-      options.container.registry,
-      options.container.compatibleSubstitute
-    ) { dockerImageName ->
-      options.container
-        .useContainerFn(dockerImageName)
-        .withReuse(stove.keepDependenciesRunning)
-        .let { c -> c as StoveCassandraContainer }
-        .apply(options.container.containerFn)
-    }
-  }
+  val runtime = options.createRuntime(stove.keepDependenciesRunning)
   return stove.withCassandra(options, runtime)
 }
 
@@ -124,22 +110,23 @@ fun WithDsl.cassandra(
 ): Stove {
   val options = configure()
 
-  val runtime: SystemRuntime = if (options is ProvidedCassandraSystemOptions) {
-    ProvidedRuntime
-  } else {
-    withProvidedRegistry(
-      options.container.imageWithTag,
-      options.container.registry,
-      options.container.compatibleSubstitute
-    ) { dockerImageName ->
-      options.container
-        .useContainerFn(dockerImageName)
-        .withReuse(stove.keepDependenciesRunning)
-        .let { c -> c as StoveCassandraContainer }
-        .apply(options.container.containerFn)
-    }
-  }
+  val runtime = options.createRuntime(stove.keepDependenciesRunning)
   return stove.withCassandra(key, options, runtime)
+}
+
+private fun CassandraSystemOptions.createRuntime(keepDependenciesRunning: Boolean): SystemRuntime {
+  if (this is ProvidedCassandraSystemOptions) return ProvidedRuntime
+  return withProvidedRegistry(
+    container.imageWithTag,
+    container.registry,
+    container.compatibleSubstitute
+  ) { dockerImageName ->
+    container
+      .useContainerFn(dockerImageName)
+      .withReuse(keepDependenciesRunning)
+      .let { c -> c as StoveCassandraContainer }
+      .apply(container.containerFn)
+  }
 }
 
 suspend fun ValidationDsl.cassandra(

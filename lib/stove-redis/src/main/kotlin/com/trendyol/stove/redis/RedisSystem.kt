@@ -7,6 +7,7 @@ import com.trendyol.stove.reporting.*
 import com.trendyol.stove.system.Stove
 import com.trendyol.stove.system.abstractions.*
 import com.trendyol.stove.system.annotations.StoveDsl
+import com.trendyol.stove.system.closeAll
 import io.lettuce.core.*
 import kotlinx.coroutines.runBlocking
 import org.slf4j.*
@@ -148,11 +149,11 @@ class RedisSystem(
 
   override fun close(): Unit = runBlocking {
     Try {
-      if (::client.isInitialized) {
-        context.options.cleanup(client)
-        client.shutdown()
-      }
-      executeWithReuseCheck { stop() }
+      closeAll(
+        { if (::client.isInitialized) context.options.cleanup(client) },
+        { if (::client.isInitialized) client.shutdown() },
+        { executeWithReuseCheck { stop() } }
+      )
     }.recover { logger.warn("Redis client shutdown failed", it) }
   }
 

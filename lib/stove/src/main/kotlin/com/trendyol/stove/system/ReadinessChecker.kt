@@ -47,67 +47,57 @@ object ReadinessChecker {
   }
 
   private suspend fun checkHttp(strategy: ReadinessStrategy.HttpGet) {
-    val client = HttpClient.newBuilder()
-      .connectTimeout(java.time.Duration.ofMillis(strategy.timeout.inWholeMilliseconds))
-      .build()
-
+    val timeout = java.time.Duration.ofMillis(strategy.timeout.inWholeMilliseconds)
+    val client = HttpClient.newBuilder().connectTimeout(timeout).build()
     val request = HttpRequest.newBuilder()
       .uri(URI.create(strategy.url))
       .GET()
-      .timeout(java.time.Duration.ofMillis(strategy.timeout.inWholeMilliseconds))
+      .timeout(timeout)
       .build()
 
-    retryUntilReady(strategy.retries, strategy.retryDelay, "Health check failed after ${strategy.retries} attempts for ${strategy.url}") {
-        attempt,
-        total
-      ->
-      val response = runCatching {
-        client.sendAsync(request, HttpResponse.BodyHandlers.ofString()).await()
-      }.onFailure {
-        logger.warn("Health check attempt ${attempt + 1}/$total failed: ${it.message}")
-      }.getOrThrow()
-
-      if (response.statusCode() !in strategy.expectedStatusCodes) {
-        logger.warn("Health check attempt ${attempt + 1}/$total failed: status ${response.statusCode()}")
-        throw IllegalStateException("Health check returned unexpected status ${response.statusCode()} from ${strategy.url}")
+    retryUntilReady(
+      strategy.retries,
+      strategy.retryDelay,
+      "Health check failed after ${strategy.retries} attempts for ${strategy.url}",
+      onFailure = { attempt, failure ->
+        logger.warn("Health check attempt $attempt/${strategy.retries} failed: ${failure.message}")
       }
-      logger.info("Health check passed for ${strategy.url} (status: ${response.statusCode()})")
+    ) {
+      val status = client.sendAsync(request, HttpResponse.BodyHandlers.ofString()).await().statusCode()
+      check(status in strategy.expectedStatusCodes) {
+        "Health check returned unexpected status $status from ${strategy.url}"
+      }
+      logger.info("Health check passed for ${strategy.url} (status: $status)")
     }
   }
 
   private suspend fun checkTcp(strategy: ReadinessStrategy.TcpPort) {
-    retryUntilReady(strategy.retries, strategy.retryDelay, "TCP port ${strategy.port} did not open after ${strategy.retries} attempts") {
-        attempt,
-        total
-      ->
-      runCatching {
-        Socket().use { socket ->
-          socket.connect(InetSocketAddress("localhost", strategy.port), TCP_CONNECT_TIMEOUT_MS)
-        }
-      }.onFailure {
-        logger.debug("TCP check attempt ${attempt + 1}/$total on port ${strategy.port} failed: ${it.message}")
-      }.getOrThrow()
-
-      logger.info("TCP port ${strategy.port} is open after ${attempt + 1} attempts")
+    retryUntilReady(
+      strategy.retries,
+      strategy.retryDelay,
+      "TCP port ${strategy.port} did not open after ${strategy.retries} attempts",
+      onFailure = { attempt, failure ->
+        logger.debug("TCP check attempt $attempt/${strategy.retries} on port ${strategy.port} failed: ${failure.message}")
+      }
+    ) { attempt ->
+      Socket().use { socket ->
+        socket.connect(InetSocketAddress("localhost", strategy.port), TCP_CONNECT_TIMEOUT_MS)
+      }
+      logger.info("TCP port ${strategy.port} is open after $attempt attempts")
     }
   }
 
   private suspend fun checkProbe(strategy: ReadinessStrategy.Probe) {
-    retryUntilReady(strategy.retries, strategy.retryDelay, "Readiness probe did not pass after ${strategy.retries} attempts") {
-        attempt,
-        total
-      ->
-      val ready = runCatching {
-        strategy.check()
-      }.onFailure {
-        logger.debug("Readiness probe attempt ${attempt + 1}/$total threw: ${it.message}")
-      }.getOrThrow()
-
-      if (!ready) {
-        logger.debug("Readiness probe attempt ${attempt + 1}/$total returned false")
-        error("Probe returned false")
+    retryUntilReady(
+      strategy.retries,
+      strategy.retryDelay,
+      "Readiness probe did not pass after ${strategy.retries} attempts",
+      onFailure = { attempt, failure ->
+        logger.debug("Readiness probe attempt $attempt/${strategy.retries} failed: ${failure.message}")
       }
-      logger.info("Readiness probe passed after ${attempt + 1} attempts")
+    ) { attempt ->
+      check(strategy.check()) { "Probe returned false" }
+      logger.info("Readiness probe passed after $attempt attempts")
     }
   }
 
@@ -115,20 +105,22 @@ object ReadinessChecker {
    * Retries [attempt] up to [retries] times with [retryDelay] between attempts.
    * The [attempt] block should return normally on success or throw on failure.
    */
+  @Suppress("TooGenericExceptionCaught")
   private suspend fun retryUntilReady(
     retries: Int,
     retryDelay: Duration,
     errorMessage: String,
-    attempt: suspend (index: Int, total: Int) -> Unit
+    onFailure: (attempt: Int, failure: Throwable) -> Unit,
+    attempt: suspend (number: Int) -> Unit
   ) {
     var lastException: Throwable? = null
     repeat(retries) { index ->
-      runCatching {
-        attempt(index, retries)
-      }.onSuccess {
+      try {
+        attempt(index + 1)
         return
-      }.onFailure {
-        lastException = it
+      } catch (failure: Throwable) {
+        lastException = failure
+        onFailure(index + 1, failure)
       }
       if (index < retries - 1) {
         delay(retryDelay)

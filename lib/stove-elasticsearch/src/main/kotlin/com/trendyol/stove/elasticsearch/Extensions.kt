@@ -65,24 +65,7 @@ fun WithDsl.elasticsearch(
 ): Stove {
   val options = configure()
 
-  val runtime: SystemRuntime = if (options is ProvidedElasticsearchSystemOptions) {
-    ProvidedRuntime
-  } else {
-    withProvidedRegistry(
-      imageName = options.container.imageWithTag,
-      registry = options.container.registry,
-      compatibleSubstitute = options.container.compatibleSubstitute
-    ) { dockerImageName -> StoveElasticSearchContainer(dockerImageName) }
-      .apply {
-        addExposedPorts(*options.container.exposedPorts.toIntArray())
-        withPassword(options.container.password)
-        if (options.container.disableSecurity) {
-          withEnv("xpack.security.enabled", "false")
-        }
-        withReuse(stove.keepDependenciesRunning)
-        options.container.containerFn(this)
-      }
-  }
+  val runtime = options.createRuntime(stove.keepDependenciesRunning)
   return stove.withElasticsearch(options, runtime)
 }
 
@@ -92,25 +75,26 @@ fun WithDsl.elasticsearch(
 ): Stove {
   val options = configure()
 
-  val runtime: SystemRuntime = if (options is ProvidedElasticsearchSystemOptions) {
-    ProvidedRuntime
-  } else {
-    withProvidedRegistry(
-      imageName = options.container.imageWithTag,
-      registry = options.container.registry,
-      compatibleSubstitute = options.container.compatibleSubstitute
-    ) { dockerImageName -> StoveElasticSearchContainer(dockerImageName) }
-      .apply {
-        addExposedPorts(*options.container.exposedPorts.toIntArray())
-        withPassword(options.container.password)
-        if (options.container.disableSecurity) {
-          withEnv("xpack.security.enabled", "false")
-        }
-        withReuse(stove.keepDependenciesRunning)
-        options.container.containerFn(this)
-      }
-  }
+  val runtime = options.createRuntime(stove.keepDependenciesRunning)
   return stove.withElasticsearch(key, options, runtime)
+}
+
+private fun ElasticsearchSystemOptions.createRuntime(keepDependenciesRunning: Boolean): SystemRuntime {
+  if (this is ProvidedElasticsearchSystemOptions) return ProvidedRuntime
+  return withProvidedRegistry(
+    imageName = container.imageWithTag,
+    registry = container.registry,
+    compatibleSubstitute = container.compatibleSubstitute
+  ) { dockerImageName -> StoveElasticSearchContainer(dockerImageName) }
+    .apply {
+      addExposedPorts(*container.exposedPorts.toIntArray())
+      withPassword(container.password)
+      if (container.disableSecurity) {
+        withEnv("xpack.security.enabled", "false")
+      }
+      withReuse(keepDependenciesRunning)
+      container.containerFn(this)
+    }
 }
 
 suspend fun ValidationDsl.elasticsearch(validation: @ElasticDsl suspend ElasticsearchSystem.() -> Unit): Unit =

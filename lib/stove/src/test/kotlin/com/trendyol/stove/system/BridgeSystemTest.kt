@@ -6,88 +6,78 @@ import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.string.shouldContain
-import kotlinx.coroutines.runBlocking
 import kotlin.reflect.KClass
 
 class BridgeSystemTest :
   FunSpec({
-    test("using records success for single bean") {
-      val stove = Stove()
-      val serviceA = ServiceA("initial")
-      val bridge = TestBridgeSystem(stove, mapOf(ServiceA::class to serviceA))
-      stove.getOrRegister<BridgeSystem<TestContext>>(bridge)
-      runBlocking { bridge.afterRun(TestContext()) }
+    test("using resolves a bean and reports the successful operation") {
+      val service = ServiceA("initial")
+      val fixture = BridgeFixture(service).start()
 
-      stove.reporter.startTest(StoveTestContext("test-id", "test-name", "spec"))
+      fixture.dsl.using<ServiceA> { value = "updated" }
 
-      runBlocking {
-        ValidationDsl(stove).using<ServiceA> { value = "updated" }
-      }
-
-      val entry = stove.reporter
-        .currentTest()
-        .entries()
-        .single()
-      entry.isPassed shouldBe true
-      entry.action shouldContain "Bean usage: ServiceA"
-      serviceA.value shouldBe "updated"
+      service.value shouldBe "updated"
+      fixture.entry.isPassed shouldBe true
+      fixture.entry.action shouldBe "Bean usage: ServiceA"
+      fixture.entry.metadata shouldBe mapOf("type" to ServiceA::class.qualifiedName)
     }
 
-    test("using records failure and rethrows") {
-      val stove = Stove()
-      val serviceA = ServiceA("initial")
-      val bridge = TestBridgeSystem(stove, mapOf(ServiceA::class to serviceA))
-      stove.getOrRegister<BridgeSystem<TestContext>>(bridge)
-      runBlocking { bridge.afterRun(TestContext()) }
+    test("using reports a failed operation and rethrows its error") {
+      val fixture = BridgeFixture(ServiceA("initial")).start()
 
-      stove.reporter.startTest(StoveTestContext("test-id", "test-name", "spec"))
-
-      val error = shouldThrow<IllegalStateException> {
-        runBlocking {
-          ValidationDsl(stove).using<ServiceA> { error("boom") }
-        }
+      val failure = shouldThrow<IllegalStateException> {
+        fixture.dsl.using<ServiceA> { error("boom") }
       }
 
-      error.message shouldBe "boom"
-      val entry = stove.reporter
-        .currentTest()
-        .entries()
-        .single()
-      entry.isFailed shouldBe true
-      entry.action shouldContain "Bean usage: ServiceA"
+      failure.message shouldBe "boom"
+      fixture.entry.isFailed shouldBe true
+      fixture.entry.action shouldBe "Bean usage: ServiceA"
     }
 
-    test("using with two beans records success") {
-      val stove = Stove()
-      val serviceA = ServiceA("a")
-      val serviceB = ServiceB(42)
-      val bridge = TestBridgeSystem(
-        stove,
-        mapOf(
-          ServiceA::class to serviceA,
-          ServiceB::class to serviceB
-        )
-      )
-      stove.getOrRegister<BridgeSystem<TestContext>>(bridge)
-      runBlocking { bridge.afterRun(TestContext()) }
+    test("using resolves multiple beans in declaration order") {
+      val fixture = BridgeFixture(ServiceA("a"), ServiceB(42)).start()
 
-      stove.reporter.startTest(StoveTestContext("test-id", "test-name", "spec"))
-
-      runBlocking {
-        ValidationDsl(stove).using<ServiceA, ServiceB> { a, b ->
-          a.value shouldBe "a"
-          b.number shouldBe 42
-        }
+      fixture.dsl.using<ServiceA, ServiceB> { a, b ->
+        a.value = "value-${b.number}"
       }
 
-      val entry = stove.reporter
-        .currentTest()
-        .entries()
-        .single()
+      fixture.dsl.using<ServiceA> { value shouldBe "value-42" }
+      val entry = fixture.entries.first()
       entry.isPassed shouldBe true
-      entry.action shouldContain "Bean usage: ServiceA, ServiceB"
+      entry.action shouldBe "Bean usage: ServiceA, ServiceB"
+      entry.metadata shouldBe mapOf("types" to listOf(ServiceA::class.qualifiedName, ServiceB::class.qualifiedName))
+      fixture.entries.size shouldBe 2
+    }
+
+    test("a missing bean is reported before the validation can run") {
+      val fixture = BridgeFixture(ServiceA("a")).start()
+      var validationRan = false
+
+      val failure = shouldThrow<IllegalStateException> {
+        fixture.dsl.using<ServiceA, ServiceB> { _, _ -> validationRan = true }
+      }
+
+      failure.message shouldContain "Missing bean for ServiceB"
+      validationRan shouldBe false
+      fixture.entry.isFailed shouldBe true
+      fixture.entry.action shouldBe "Bean usage: ServiceA, ServiceB"
     }
   })
+
+private class BridgeFixture(vararg beans: Any) {
+  private val stove = Stove()
+  private val bridge = TestBridgeSystem(stove, beans.associateBy { it::class })
+  val dsl = ValidationDsl(stove)
+  val entries get() = stove.reporter.currentTest().entries()
+  val entry get() = entries.single()
+
+  suspend fun start(): BridgeFixture {
+    stove.withBridgeSystem(bridge)
+    bridge.afterRun(TestContext())
+    stove.reporter.startTest(StoveTestContext("test-id", "test-name", "spec"))
+    return this
+  }
+}
 
 private data class ServiceA(
   var value: String

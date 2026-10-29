@@ -33,6 +33,7 @@ import com.trendyol.stove.scoping.stoveTestId
 import com.trendyol.stove.serialization.StoveSerde
 import com.trendyol.stove.system.Stove
 import com.trendyol.stove.system.abstractions.*
+import com.trendyol.stove.system.closeAll
 import com.trendyol.stove.wiremock.WireMockHeaders.APPLICATION_JSON
 import com.trendyol.stove.wiremock.WireMockHeaders.APPLICATION_JSON_UTF8
 import com.trendyol.stove.wiremock.WireMockHeaders.CONTENT_TYPE
@@ -1263,17 +1264,7 @@ class WireMockSystem(
     val passed = unmatched.isEmpty()
 
     if (!passed) {
-      val scopedStubs = callJournal.stubs(currentTestId)
-      val problems = unmatched.joinToString("\n") {
-        WireMockValidationMessages.unmatchedRequestDetails(
-          url = "${it.method.value()} ${it.url}",
-          bodyAsString = it.bodyAsString,
-          queryParams = serde.serialize(it.queryParams).decodeToString()
-        ) + "\nClosest stubs:\n" + WireMockNearMisses.closestStubsFor(it, scopedStubs)
-      }
-      val error = AssertionError(
-        WireMockValidationMessages.unmatchedRequests(problems)
-      )
+      val error = unmatchedRequestsError(currentTestId, unmatched)
 
       reporter.record(
         ReportEntry.failure(
@@ -1300,19 +1291,37 @@ class WireMockSystem(
     }
   }
 
+  private fun unmatchedRequestsError(testId: String, unmatched: List<LoggedRequest>): AssertionError {
+    val scopedStubs = callJournal.stubs(testId)
+    val problems = unmatched.joinToString("\n") { request ->
+      WireMockValidationMessages.unmatchedRequestDetails(
+        url = "${request.method.value()} ${request.url}",
+        bodyAsString = request.bodyAsString,
+        queryParams = serde.serialize(request.queryParams).decodeToString()
+      ) + "\nClosest stubs:\n" + WireMockNearMisses.closestStubsFor(request, scopedStubs)
+    }
+    return AssertionError(WireMockValidationMessages.unmatchedRequests(problems))
+  }
+
   /**
    * Closes the WireMock system and stops the server.
    */
   override fun close(): Unit = runBlocking {
     Try {
-      if (reportListenerRegistered) {
-        stove.removeReportListener(reportListener)
-        reportListenerRegistered = false
-      }
-      stop()
-      callJournal.clearAll()
-      validatedTests.clear()
-      dynamicResponses.clear()
+      closeAll(
+        {
+          if (reportListenerRegistered) {
+            stove.removeReportListener(reportListener)
+            reportListenerRegistered = false
+          }
+        },
+        { stop() },
+        {
+          callJournal.clearAll()
+          validatedTests.clear()
+          dynamicResponses.clear()
+        }
+      )
     }.recover { logger.warn("${WireMockValidationMessages.STOP_FAILED_PREFIX} ${it.message}") }
   }
 

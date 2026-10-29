@@ -922,21 +922,8 @@ class HttpSystem(
     headers: Map<String, String> = mapOf(),
     token: Option<String> = None,
     block: suspend StoveWebSocketSession.() -> Unit
-  ): HttpSystem {
-    ktorHttpClient.webSocket(
-      urlString = buildWebSocketUrl(uri),
-      request = {
-        headers.forEach { (key, value) -> this.headers.append(key, value) }
-        token.map {
-          this.headers.append(HeaderConstants.AUTHORIZATION, HeaderConstants.bearer(it))
-        }
-        injectWebSocketTraceHeaders()
-      }
-    ) {
-      val stoveSession = StoveWebSocketSession(this)
-      block(stoveSession)
-    }
-    return this
+  ): HttpSystem = webSocketRaw(uri, headers, token) {
+    block(StoveWebSocketSession(this))
   }
 
   /**

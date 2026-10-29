@@ -1129,6 +1129,7 @@ public abstract class com/trendyol/stove/system/BridgeSystem : com/trendyol/stov
 public final class com/trendyol/stove/system/BridgeSystemKt {
 	public static final fun bridge (Lcom/trendyol/stove/system/Stove;)Lcom/trendyol/stove/system/BridgeSystem;
 	public static final fun bridge-ypJx7X8 (Lcom/trendyol/stove/system/Stove;Lcom/trendyol/stove/system/BridgeSystem;)Lcom/trendyol/stove/system/Stove;
+	public static final fun reportBeanUsage (Lcom/trendyol/stove/system/BridgeSystem;Ljava/util/List;Lkotlin/jvm/functions/Function0;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public static final fun withBridgeSystem (Lcom/trendyol/stove/system/Stove;Lcom/trendyol/stove/system/BridgeSystem;)Lcom/trendyol/stove/system/Stove;
 }
 
@@ -1257,6 +1258,11 @@ public final class com/trendyol/stove/system/ReportingDsl {
 	public final fun enabled (Z)Lcom/trendyol/stove/system/StoveOptionsDsl;
 	public static synthetic fun enabled$default (Lcom/trendyol/stove/system/ReportingDsl;ZILjava/lang/Object;)Lcom/trendyol/stove/system/StoveOptionsDsl;
 	public final fun failureRenderer (Lcom/trendyol/stove/reporting/ReportRenderer;)Lcom/trendyol/stove/system/StoveOptionsDsl;
+}
+
+public final class com/trendyol/stove/system/ResourceCleanupKt {
+	public static final fun closeAll (Ljava/lang/Iterable;Lkotlin/jvm/functions/Function2;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static final fun closeAll ([Lkotlin/jvm/functions/Function1;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 }
 
 public final class com/trendyol/stove/system/Stove : com/trendyol/stove/system/abstractions/ReadyStove, java/lang/AutoCloseable {

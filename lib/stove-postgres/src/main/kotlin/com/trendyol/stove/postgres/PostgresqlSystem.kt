@@ -8,6 +8,7 @@ import com.trendyol.stove.reporting.Reports
 import com.trendyol.stove.system.Stove
 import com.trendyol.stove.system.abstractions.*
 import com.trendyol.stove.system.annotations.StoveDsl
+import com.trendyol.stove.system.closeAll
 import kotlinx.coroutines.runBlocking
 import kotliquery.*
 import org.slf4j.*
@@ -176,11 +177,11 @@ class PostgresqlSystem internal constructor(
 
   override fun close(): Unit = runBlocking {
     Try {
-      if (::sqlOperations.isInitialized) {
-        postgresContext.options.cleanup(sqlOperations)
-        sqlOperations.close()
-      }
-      executeWithReuseCheck { stop() }
+      closeAll(
+        { if (::sqlOperations.isInitialized) postgresContext.options.cleanup(sqlOperations) },
+        { if (::sqlOperations.isInitialized) sqlOperations.close() },
+        { executeWithReuseCheck { stop() } }
+      )
     }.recover { logger.warn("PostgreSQL stop failed", it) }
   }
 
@@ -193,28 +194,16 @@ class PostgresqlSystem internal constructor(
     crossinline mapper: (Row) -> T,
     crossinline assertion: (List<T>) -> Unit
   ): PostgresqlSystem {
-    report(
-      action = "Query",
-      input = arrow.core.Some(query.trim()),
-      metadata = mapOf("sql" to query.trim())
-    ) {
-      val results = sqlOperations.select(sql = query, parameters = parameters) { mapper(it) }
-      assertion(results)
-      results
-    }
+    reportSqlQuery(
+      sql = query,
+      query = { sqlOperations.select(sql = query, parameters = parameters) { mapper(it) } },
+      assertion = { assertion(it) }
+    )
     return this
   }
 
   suspend fun shouldExecute(sql: String, parameters: List<Parameter<*>> = emptyList()): PostgresqlSystem {
-    report(
-      action = "Execute SQL",
-      input = arrow.core.Some(sql.trim()),
-      metadata = mapOf("sql" to sql.trim())
-    ) {
-      val affectedRows = sqlOperations.execute(sql = sql, parameters = parameters)
-      check(affectedRows >= 0) { "Failed to execute sql: $sql" }
-      "$affectedRows row(s) affected"
-    }
+    reportSqlExecution(sql) { sqlOperations.execute(sql = sql, parameters = parameters) }
     return this
   }
 
