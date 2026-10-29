@@ -4,8 +4,11 @@ import arrow.core.some
 import com.trendyol.stove.system.*
 import com.trendyol.stove.system.Stove
 import com.trendyol.stove.system.abstractions.ApplicationUnderTest
+import com.trendyol.stove.system.abstractions.SystemKey
+import com.trendyol.stove.testCaseConcurrency
 import com.trendyol.stove.tracing.TraceContext
 import io.kotest.core.spec.style.FunSpec
+import io.kotest.engine.concurrency.TestExecutionMode
 import io.kotest.matchers.*
 import io.kotest.matchers.collections.shouldHaveSize
 import io.ktor.server.application.*
@@ -18,7 +21,9 @@ import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
 import kotlin.time.Duration.Companion.seconds
 
-private const val WS_PORT = 9877
+internal object WebSocketClient : SystemKey
+
+internal val WS_PORT = PortFinder.findAvailablePort()
 
 /**
  * Application under test that runs a simple WebSocket echo server.
@@ -109,28 +114,12 @@ class WebSocketEchoServer : ApplicationUnderTest<Unit> {
 
 class WebSocketTests :
   FunSpec({
-    lateinit var wsStove: Stove
-
-    beforeSpec {
-      wsStove = Stove()
-        .with {
-          httpClient {
-            HttpClientSystemOptions(
-              baseUrl = "http://localhost:$WS_PORT"
-            )
-          }
-          applicationUnderTest(WebSocketEchoServer())
-        }
-      wsStove.run()
-    }
-
-    afterSpec {
-      wsStove.close()
-    }
+    // Every invocation creates its own WebSocket session against the suite-owned server.
+    testExecutionMode = TestExecutionMode.LimitedConcurrency(testCaseConcurrency())
 
     test("should send and receive text messages via WebSocket") {
       stove {
-        http {
+        http(WebSocketClient) {
           webSocket("/echo") {
             send("Hello, WebSocket!")
             val response = receiveText()
@@ -142,7 +131,7 @@ class WebSocketTests :
 
     test("should send and receive multiple messages") {
       stove {
-        http {
+        http(WebSocketClient) {
           webSocket("/echo") {
             send("First")
             receiveText() shouldBe "Echo: First"
@@ -159,7 +148,7 @@ class WebSocketTests :
 
     test("should collect multiple messages from broadcast endpoint") {
       stove {
-        http {
+        http(WebSocketClient) {
           webSocket("/broadcast") {
             val messages = collectTexts(count = 5, timeout = 10.seconds)
             messages shouldHaveSize 5
@@ -172,7 +161,7 @@ class WebSocketTests :
 
     test("should handle authentication via headers") {
       stove {
-        http {
+        http(WebSocketClient) {
           webSocket(
             uri = "/secure",
             token = "my-secret-token".some()
@@ -186,7 +175,7 @@ class WebSocketTests :
 
     test("should handle custom headers") {
       stove {
-        http {
+        http(WebSocketClient) {
           webSocket(
             uri = "/secure",
             headers = mapOf("Authorization" to "Bearer custom-token")
@@ -200,7 +189,7 @@ class WebSocketTests :
 
     test("should send and receive binary data") {
       stove {
-        http {
+        http(WebSocketClient) {
           webSocket("/binary") {
             val data = byteArrayOf(1, 2, 3, 4, 5)
             send(data)
@@ -214,7 +203,7 @@ class WebSocketTests :
 
     test("should use StoveWebSocketMessage sealed class") {
       stove {
-        http {
+        http(WebSocketClient) {
           webSocket("/echo") {
             send(StoveWebSocketMessage.Text("Using sealed class"))
             val response = receive()
@@ -226,7 +215,7 @@ class WebSocketTests :
 
     test("should use incoming flow for streaming messages") {
       stove {
-        http {
+        http(WebSocketClient) {
           webSocket("/broadcast") {
             val messages = incomingTexts()
               .take(3)
@@ -243,7 +232,7 @@ class WebSocketTests :
 
     test("should receive text with timeout") {
       stove {
-        http {
+        http(WebSocketClient) {
           webSocket("/echo") {
             send("Quick message")
             val response = receiveTextWithTimeout(5.seconds)
@@ -256,7 +245,7 @@ class WebSocketTests :
 
     test("webSocketExpect should work as alias") {
       stove {
-        http {
+        http(WebSocketClient) {
           webSocketExpect("/echo") {
             send("Test")
             receiveText() shouldBe "Echo: Test"
@@ -267,7 +256,7 @@ class WebSocketTests :
 
     test("webSocketRaw should provide access to underlying session") {
       stove {
-        http {
+        http(WebSocketClient) {
           webSocketRaw("/echo") {
             send(Frame.Text("Raw frame"))
             val frame = incoming.receive()
@@ -282,12 +271,14 @@ class WebSocketTests :
       val expected = listOf("mobile", "Bearer token", trace.toTraceparent(), trace.testId).joinToString("\n")
 
       TraceContext.withPropagation(trace) {
-        ValidationDsl(wsStove).http {
-          webSocket("/handshake", headers = mapOf("X-Client" to "mobile"), token = "token".some()) {
-            receiveText() shouldBe expected
-          }
-          webSocketRaw("/handshake", headers = mapOf("X-Client" to "mobile"), token = "token".some()) {
-            (incoming.receive() as Frame.Text).readText() shouldBe expected
+        stove {
+          http(WebSocketClient) {
+            webSocket("/handshake", headers = mapOf("X-Client" to "mobile"), token = "token".some()) {
+              receiveText() shouldBe expected
+            }
+            webSocketRaw("/handshake", headers = mapOf("X-Client" to "mobile"), token = "token".some()) {
+              (incoming.receive() as Frame.Text).readText() shouldBe expected
+            }
           }
         }
       }
@@ -295,7 +286,7 @@ class WebSocketTests :
 
     test("should properly close connection") {
       stove {
-        http {
+        http(WebSocketClient) {
           webSocket("/echo") {
             send("Before close")
             receiveText() shouldBe "Echo: Before close"
@@ -307,7 +298,7 @@ class WebSocketTests :
 
     test("should access underlying session for advanced operations") {
       stove {
-        http {
+        http(WebSocketClient) {
           webSocket("/echo") {
             underlyingSession {
               send(Frame.Text("Advanced"))
@@ -321,7 +312,7 @@ class WebSocketTests :
 
     test("should send StoveWebSocketMessage.Binary and receive binary response") {
       stove {
-        http {
+        http(WebSocketClient) {
           webSocket("/binary") {
             val data = byteArrayOf(10, 20, 30)
             send(StoveWebSocketMessage.Binary(data))
@@ -334,7 +325,7 @@ class WebSocketTests :
 
     test("should receive binary with timeout") {
       stove {
-        http {
+        http(WebSocketClient) {
           webSocket("/binary") {
             send(byteArrayOf(1, 2, 3))
             val response = receiveBinaryWithTimeout(5.seconds)
@@ -347,7 +338,7 @@ class WebSocketTests :
 
     test("should collect multiple binary messages") {
       stove {
-        http {
+        http(WebSocketClient) {
           webSocket("/binary") {
             repeat(3) { i ->
               send(byteArrayOf((i + 1).toByte()))
@@ -364,7 +355,7 @@ class WebSocketTests :
 
     test("should use incoming flow for binary streaming") {
       stove {
-        http {
+        http(WebSocketClient) {
           webSocket("/binary") {
             repeat(3) { i ->
               send(byteArrayOf((i + 10).toByte()))
@@ -381,7 +372,7 @@ class WebSocketTests :
 
     test("should use generic incoming flow for mixed messages") {
       stove {
-        http {
+        http(WebSocketClient) {
           webSocket("/echo") {
             send("Test message")
             val messages = incoming()
@@ -443,46 +434,50 @@ class StoveWebSocketMessageTests :
 class WebSocketUrlBuildingTests :
   FunSpec({
     test("should convert http to ws") {
-      val testSystem = Stove()
-      testSystem.with {
-        httpClient {
-          HttpClientSystemOptions(baseUrl = "http://localhost:8080")
+      Stove().use { testSystem ->
+        testSystem.with {
+          httpClient {
+            HttpClientSystemOptions(baseUrl = "http://localhost:8080")
+          }
         }
+        val httpSystem = testSystem.getOrNone<HttpSystem>().getOrNull()!!
+        httpSystem.buildWebSocketUrl("/chat") shouldBe "ws://localhost:8080/chat"
       }
-      val httpSystem = testSystem.getOrNone<HttpSystem>().getOrNull()!!
-      httpSystem.buildWebSocketUrl("/chat") shouldBe "ws://localhost:8080/chat"
     }
 
     test("should convert https to wss") {
-      val testSystem = Stove()
-      testSystem.with {
-        httpClient {
-          HttpClientSystemOptions(baseUrl = "https://localhost:8080")
+      Stove().use { testSystem ->
+        testSystem.with {
+          httpClient {
+            HttpClientSystemOptions(baseUrl = "https://localhost:8080")
+          }
         }
+        val httpSystem = testSystem.getOrNone<HttpSystem>().getOrNull()!!
+        httpSystem.buildWebSocketUrl("/chat") shouldBe "wss://localhost:8080/chat"
       }
-      val httpSystem = testSystem.getOrNone<HttpSystem>().getOrNull()!!
-      httpSystem.buildWebSocketUrl("/chat") shouldBe "wss://localhost:8080/chat"
     }
 
     test("should handle uri without leading slash") {
-      val testSystem = Stove()
-      testSystem.with {
-        httpClient {
-          HttpClientSystemOptions(baseUrl = "http://localhost:8080")
+      Stove().use { testSystem ->
+        testSystem.with {
+          httpClient {
+            HttpClientSystemOptions(baseUrl = "http://localhost:8080")
+          }
         }
+        val httpSystem = testSystem.getOrNone<HttpSystem>().getOrNull()!!
+        httpSystem.buildWebSocketUrl("chat") shouldBe "ws://localhost:8080/chat"
       }
-      val httpSystem = testSystem.getOrNone<HttpSystem>().getOrNull()!!
-      httpSystem.buildWebSocketUrl("chat") shouldBe "ws://localhost:8080/chat"
     }
 
     test("should handle baseUrl without protocol") {
-      val testSystem = Stove()
-      testSystem.with {
-        httpClient {
-          HttpClientSystemOptions(baseUrl = "localhost:8080")
+      Stove().use { testSystem ->
+        testSystem.with {
+          httpClient {
+            HttpClientSystemOptions(baseUrl = "localhost:8080")
+          }
         }
+        val httpSystem = testSystem.getOrNone<HttpSystem>().getOrNull()!!
+        httpSystem.buildWebSocketUrl("/chat") shouldBe "ws://localhost:8080/chat"
       }
-      val httpSystem = testSystem.getOrNone<HttpSystem>().getOrNull()!!
-      httpSystem.buildWebSocketUrl("/chat") shouldBe "ws://localhost:8080/chat"
     }
   })

@@ -1,3 +1,5 @@
+import java.security.MessageDigest
+
 plugins {
   kotlin("jvm") version "2.4.21"
   idea
@@ -10,7 +12,10 @@ val dockerExecutable = providers.environmentVariable("DOCKER_EXECUTABLE").getOrE
 val coverageEnabled = providers.gradleProperty("go.coverage").map { it.toBoolean() }.getOrElse(false)
 val goCoverDirPath = layout.buildDirectory.dir("go-coverage").get().asFile.absolutePath
 val goCoverOutPath = layout.buildDirectory.dir("go-coverage").get().asFile.resolve("coverage.out").absolutePath
-val goShowcaseContainerImage = "stove-go-showcase-container:local"
+// Keep image creation/removal isolated when separate checkouts share a Docker daemon.
+val checkoutId = MessageDigest.getInstance("SHA-256")
+  .digest(rootDir.absolutePath.toByteArray()).take(8).joinToString("") { "%02x".format(it) }
+val goShowcaseContainerImage = "stove-go-showcase-container:$checkoutId"
 
 tasks.register<Exec>("goModTidy") {
   description = "Runs go mod tidy to sync dependencies."
@@ -203,6 +208,11 @@ dependencies {
 kotlin { jvmToolchain(21) }
 
 tasks.withType<Test> {
+  maxParallelForks = 1
+  doFirst {
+    val isolatedTemp = temporaryDir.resolve("tmp").apply { mkdirs() }
+    systemProperty("java.io.tmpdir", isolatedTemp.absolutePath)
+  }
   useJUnitPlatform()
   jvmArgs("--add-opens", "java.base/java.util=ALL-UNNAMED")
 }

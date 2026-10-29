@@ -177,6 +177,120 @@ Replace the test module with the one you changed. To discover Gradle projects,
 run `mise exec -- ./gradlew projects`. Gradle test reports are written under each
 module's `build/reports/tests/` directory.
 
+### Parallel test execution
+
+The root JVM build and standalone JVM recipes run projects in parallel locally
+and in CI. Test scheduling uses a budget of 80% of the JVM's available logical
+CPUs, rounded down with a minimum of one. This bounds scheduled tests, not actual
+CPU utilization or background application threads.
+
+The `com.trendyol.stove.test-conventions` plugin in
+[`build-logic/test-conventions`](build-logic/test-conventions/) owns CPU allocation,
+test JVM limits, and temporary-directory isolation for both builds. It is a
+separate included build so recipes can keep using the published tracing plugin.
+
+In the root build, a Gradle shared service allows up to `budget` concurrent
+convention-managed test JVMs, bounded by Gradle workers. The tracing Gradle
+plugin tests use their own build configuration and can run alongside these. This prioritizes module concurrency because most
+suites still run sequentially inside their JVM. For example, four available CPUs
+give three concurrent test JVMs; eighteen CPUs give fourteen. With enough Gradle
+workers, each JVM receives one slot by default, so Kotest specs and tests run
+sequentially in that mode.
+
+Reducing the module allocation gives each JVM `floor(budget / moduleSlots)` slots.
+Audited Kotest suites divide those into `floor(sqrt(jvmSlots))` concurrent specs
+and `floor(jvmSlots / specSlots)` root tests per spec. Rounding can leave spare
+slots. Suites with sequential application specs can spend all JVM slots on root
+tests. Allocation is static: idle module slots are not borrowed by running JVMs.
+Recipe suites also spend their budget on parallel modules. Gradle compilation
+retains its normal CPU-based worker default.
+
+Override the budget with `-Pstove.test.cpuBudget=N`, or the module
+allocation with `-Pstove.test.parallelModules=N`. For a focused module run, use
+`-Pstove.test.parallelModules=1` to give that JVM the whole budget.
+`--max-workers=N` remains an upper bound on Gradle workers. IDE test runs use the
+same 80% CPU rule for their single JVM.
+
+Adapter test variants are independent dependencies of `check`, so the default,
+provided, and Kafka embedded modes can overlap. Use
+`mise exec -- ./gradlew :lib:stove-kafka:check --parallel` to run every Kafka
+mode; `:lib:stove-kafka:test` runs only the default mode. The other adapters
+with a provided mode follow the same convention. Full `build` and coverage
+commands still include every mode.
+
+Each convention-managed test task uses one fork and its own `build/tmp/<task>/tmp` directory for
+JVM temporary files and Stove state. Audited suites opt into Kotest concurrency:
+
+- `lib/stove` runs specs concurrently. Specs that change the global Stove
+  instance, default registry, or raw trace thread-local state use `@Isolate`.
+  The Kafka messaging spec is also isolated because it asserts tight deadlines.
+  Root tests remain sequential except the scoping suites, which own their fixtures.
+- `lib/stove-rdbms` runs specs and root tests concurrently. Each test owns its
+  Stove instance and a uniquely named in-memory database.
+- PostgreSQL, MySQL, and SQL Server integration suites run specs and root tests
+  concurrently. CRUD scenarios use separate connections and session-local
+  temporary tables (PostgreSQL/MySQL) or unique tables with cleanup (SQL Server).
+  The suite-owned system still starts the container/provided runtime and runs
+  migrations; SQL Server copies each test table's structure from the migrated table.
+- `lib/stove-kafka` runs specs and root tests concurrently in container,
+  provided, and embedded modes. Application scenarios have distinct topics,
+  consumer groups, and consumers; direct consumers own their topics and handles.
+  Commit/re-read steps remain together inside one test. Bridge-default and global
+  serde tests use `@Isolate` and sequential root tests.
+- Spring Boot 2.x/3.x/4.x Kafka suites run independent root tests concurrently
+  with separate topics and listener groups. Application specs remain sequential
+  because their startup replaces the global Stove instance and serde.
+- `lib/stove-http` runs specs concurrently against one suite-owned Stove with
+  separate HTTP and WebSocket clients. WebSocket root tests own their sessions.
+  REST tests reuse mock routes and remain sequential; console capture is isolated.
+- `WireMockConcurrentStubbingTest` runs root tests concurrently with a fresh
+  server per test. Its concurrent-stubbing scenario still shares one server among
+  twenty operations, each with its own request builder.
+- Other suites retain sequential specs and tests. JUnit concurrency is unchanged.
+
+The module's `kotest.properties` selects its project config. Audited suites extend
+`ConcurrentProjectConfig` from Stove's test fixtures, explicitly opting into
+concurrent specs and/or root tests while sharing the budget calculation.
+With Kotest 6, use `SpecExecutionMode.LimitedConcurrency` for specs and
+`TestExecutionMode.LimitedConcurrency` for root tests. These limits multiply;
+nested tests remain sequential. Do not enable either globally without auditing
+shared state and cleanup. `@Isolate` prevents overlap with other specs; keep the
+isolated spec's own test execution mode sequential too.
+
+Shared infrastructure does not always require sequential tests. Keep expensive
+servers or containers at suite scope when each test can own its mutable state:
+
+| Fixture | Isolation needed before enabling concurrency |
+| --- | --- |
+| REST mocks | Separate routes/stubs and request attribution; avoid resetting other tests' mocks. |
+| SQL integration suites | Implemented separate connections and test-owned tables; startup migration coverage remains suite-owned. |
+| Kafka integration suites | Implemented separate scenario topics/groups and consumer handles; JVM-wide serializer/bridge configuration remains serialized. |
+| WireMock/gRPC cleanup suites | Deliberately share a fixture across ordered tests to verify that completed tests' stubs and untagged evidence cannot leak forward. Fresh fixtures per test would hide broken cleanup. |
+| Global Stove, registry, tracing, or console state | Keep isolated, or refactor to instance-local state while retaining coverage of the global API. |
+
+The cleanup suites could instead model several explicit test lifecycles within
+one scenario, but must still exercise the test extension's cleanup hooks. Merely
+creating a new server for every assertion would lose their integration use-case.
+
+Testcontainers assigns host ports to each container. Recipe application and
+bridge ports are selected dynamically, and WireMock binds port zero and passes
+its actual URL to the application. The tracing Gradle plugin assigns a port per
+test task, so do not increase `maxParallelForks` for instrumented tasks: their
+forks would inherit the same tracing endpoint.
+
+A free-port lookup releases its socket before the application starts; it reduces
+collisions but cannot guarantee that another process will not take that port.
+Prefer binding port zero and reading the actual bound port whenever the server
+API supports it. Do not enable container reuse or point parallel suites at the
+same provided database unless their data and cleanup are isolated.
+
+Run concurrent builds in separate checkouts or worktrees. Two Gradle invocations
+in the same checkout can still share generated files, test reports, and coverage
+outputs. The Go process/container recipe keeps its Kafka-library runs ordered
+because they share build and coverage artifacts; dynamic ports let it coexist
+with other suites. Its container mode still requires Docker host networking.
+
+
 Useful root commands:
 
 ```sh

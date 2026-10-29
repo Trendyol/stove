@@ -1,7 +1,9 @@
 package com.trendyol.stove.scoping
 
 import com.trendyol.stove.reporting.StoveTestContext
+import com.trendyol.stove.testCaseConcurrency
 import io.kotest.core.spec.style.FunSpec
+import io.kotest.engine.concurrency.TestExecutionMode
 import io.kotest.matchers.collections.shouldContainExactly
 import io.kotest.matchers.shouldBe
 import java.util.concurrent.Executors
@@ -9,6 +11,8 @@ import java.util.concurrent.TimeUnit
 
 class TestScopedJournalTest :
   FunSpec({
+    testExecutionMode = TestExecutionMode.LimitedConcurrency(testCaseConcurrency())
+
     test("untagged entries are visible to every test") {
       val journal = TestScopedJournal<String>()
       journal.record(null, "untagged")

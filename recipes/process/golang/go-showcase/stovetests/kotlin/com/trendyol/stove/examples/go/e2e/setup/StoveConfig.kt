@@ -15,6 +15,7 @@ import com.trendyol.stove.postgres.postgresql
 import com.trendyol.stove.process.ProcessTarget
 import com.trendyol.stove.process.envMapper as processEnvMapper
 import com.trendyol.stove.process.goApp
+import com.trendyol.stove.system.PortFinder
 import com.trendyol.stove.system.Stove
 import com.trendyol.stove.system.application.envMapper as containerEnvMapper
 import com.trendyol.stove.tracing.tracing
@@ -22,8 +23,8 @@ import io.kotest.core.config.AbstractProjectConfig
 import io.kotest.core.extensions.Extension
 import java.io.File
 
-private const val APP_PORT = 8090
-private const val OTLP_PORT = 4317
+private val APP_PORT = PortFinder.findAvailablePort()
+private val OTLP_PORT = PortFinder.findAvailablePort()
 private const val COVERAGE_DIR_IN_CONTAINER = "/tmp/go-coverage"
 
 private enum class GoAutMode {

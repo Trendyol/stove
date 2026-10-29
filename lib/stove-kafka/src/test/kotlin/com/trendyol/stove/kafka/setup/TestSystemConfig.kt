@@ -1,5 +1,6 @@
 package com.trendyol.stove.kafka.setup
 
+import com.trendyol.stove.ConcurrentProjectConfig
 import com.trendyol.stove.extensions.kotest.StoveKotestExtension
 import com.trendyol.stove.kafka.*
 import com.trendyol.stove.kafka.setup.example.KafkaTestShared
@@ -7,7 +8,6 @@ import com.trendyol.stove.system.*
 import com.trendyol.stove.system.Stove
 import com.trendyol.stove.system.abstractions.ApplicationUnderTest
 import io.github.nomisRev.kafka.publisher.PublisherSettings
-import io.kotest.core.config.AbstractProjectConfig
 import io.kotest.core.extensions.Extension
 import org.apache.kafka.clients.admin.*
 import org.apache.kafka.clients.consumer.ConsumerConfig
@@ -19,6 +19,7 @@ import org.testcontainers.utility.DockerImageName
 import java.util.*
 
 private const val KAFKA_BOOTSTRAP_SERVERS = "kafka.bootstrapServers"
+private val kafkaApplication = KafkaApplicationUnderTest()
 
 // ============================================================================
 // Shared components
@@ -28,6 +29,7 @@ class KafkaApplicationUnderTest : ApplicationUnderTest<Unit> {
   private val logger: Logger = LoggerFactory.getLogger(javaClass)
   private lateinit var client: AdminClient
   private val consumers: MutableList<AutoCloseable> = mutableListOf()
+  private var stopped = false
 
   override suspend fun start(configurations: List<String>) {
     val configuration = configurations
@@ -88,8 +90,12 @@ class KafkaApplicationUnderTest : ApplicationUnderTest<Unit> {
   }
 
   override suspend fun stop() {
-    client.close()
-    consumers.forEach { it.close() }
+    if (stopped) return
+    stopped = true
+    closeAll(
+      { closeAll(consumers) { it.close() } },
+      { client.close() }
+    )
   }
 }
 
@@ -173,13 +179,13 @@ class ContainerKafkaStrategy : KafkaTestStrategy {
     Stove()
       .with {
         kafka { options }
-        applicationUnderTest(KafkaApplicationUnderTest())
+        applicationUnderTest(kafkaApplication)
       }.run()
   }
 
   override suspend fun stop() {
-    com.trendyol.stove.system.Stove
-      .stop()
+    // Close client resources while the broker is still available. Stove also invokes this idempotent stop.
+    closeAll({ kafkaApplication.stop() }, { Stove.stop() })
     logger.info("Kafka container tests completed")
   }
 }
@@ -211,13 +217,13 @@ class EmbeddedKafkaStrategy : KafkaTestStrategy {
     Stove()
       .with {
         kafka { options }
-        applicationUnderTest(KafkaApplicationUnderTest())
+        applicationUnderTest(kafkaApplication)
       }.run()
   }
 
   override suspend fun stop() {
-    com.trendyol.stove.system.Stove
-      .stop()
+    // Close client resources while the broker is still available. Stove also invokes this idempotent stop.
+    closeAll({ kafkaApplication.stop() }, { Stove.stop() })
     logger.info("Kafka embedded tests completed")
   }
 }
@@ -271,14 +277,13 @@ class ProvidedKafkaStrategy : KafkaTestStrategy {
     Stove()
       .with {
         kafka { options }
-        applicationUnderTest(KafkaApplicationUnderTest())
+        applicationUnderTest(kafkaApplication)
       }.run()
   }
 
   override suspend fun stop() {
-    com.trendyol.stove.system.Stove
-      .stop()
-    externalContainer.stop()
+    // Close client resources while the broker is still available. Stove also invokes this idempotent stop.
+    closeAll({ kafkaApplication.stop() }, { Stove.stop() }, { externalContainer.stop() })
     logger.info("Kafka provided tests completed")
   }
 }
@@ -295,7 +300,7 @@ private fun setupBridgePort() {
 // Kotest project config - selects strategy based on environment
 // ============================================================================
 
-class StoveConfig : AbstractProjectConfig() {
+class StoveConfig : ConcurrentProjectConfig(concurrentTests = true) {
   override val extensions: List<Extension> = listOf(StoveKotestExtension())
 
   private val strategy = KafkaTestStrategy.select()

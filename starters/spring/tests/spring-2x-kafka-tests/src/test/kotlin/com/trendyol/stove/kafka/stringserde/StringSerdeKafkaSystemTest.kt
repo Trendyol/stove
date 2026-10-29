@@ -21,7 +21,10 @@ class Boot2xStringSerdeKafkaSystemTests : StringSerdeKafkaSystemTests() {
               configureExposedConfiguration = {
                 listOf(
                   "kafka.bootstrapServers=${it.bootstrapServers}",
-                  "kafka.groupId=test-group",
+                  "kafka.groupId=${StringSerdeTestTopics.group}",
+                  "kafka.publishTopic=${StringSerdeTestTopics.publish}",
+                  "kafka.serdeTopic=${StringSerdeTestTopics.serde}",
+                  "kafka.failingTopic=${StringSerdeTestTopics.failing}",
                   "kafka.offset=earliest"
                 )
               },

@@ -25,6 +25,6 @@ val testWithProvided = tasks.register<Test>("testWithProvided") {
   }
 }
 
-tasks.test.configure {
+tasks.check.configure {
   dependsOn(testWithProvided)
 }

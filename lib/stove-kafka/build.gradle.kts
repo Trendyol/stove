@@ -3,6 +3,7 @@ plugins {
 }
 
 dependencies {
+  testImplementation(testFixtures(projects.lib.stove))
   api(projects.lib.stove)
   api(libs.testcontainers.kafka)
   api(libs.kafka)
@@ -82,6 +83,6 @@ val testWithProvided = tasks.register<Test>("testWithProvided") {
   }
 }
 
-tasks.test.configure {
+tasks.check.configure {
   dependsOn(testWithEmbedded, testWithProvided)
 }

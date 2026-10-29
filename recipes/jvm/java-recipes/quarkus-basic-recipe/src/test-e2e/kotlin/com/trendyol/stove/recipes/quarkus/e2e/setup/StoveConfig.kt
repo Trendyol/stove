@@ -13,6 +13,8 @@ import io.kotest.core.extensions.Extension
  * Kotest project configuration that sets up Stove TestSystem for Quarkus e2e tests.
  */
 class StoveConfig : AbstractProjectConfig() {
+  private val appPort = PortFinder.findAvailablePort()
+
   override val extensions: List<Extension> = listOf(StoveKotestExtension())
 
   override suspend fun beforeProject() {
@@ -23,7 +25,7 @@ class StoveConfig : AbstractProjectConfig() {
         }
         httpClient {
           HttpClientSystemOptions(
-            baseUrl = "http://localhost:8040"
+            baseUrl = "http://localhost:$appPort"
           )
         }
         quarkus(
@@ -31,7 +33,7 @@ class StoveConfig : AbstractProjectConfig() {
             QuarkusMainApp.main(params)
           },
           withParameters = listOf(
-            "quarkus.http.port=8040"
+            "quarkus.http.port=$appPort"
           )
         )
       }.run()

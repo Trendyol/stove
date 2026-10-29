@@ -6,6 +6,7 @@ plugins {
 }
 
 dependencies {
+  testFixturesApi(testFixtures(projects.lib.stove))
   testFixturesApi(projects.starters.spring.stoveSpring)
   testFixturesApi(projects.starters.spring.stoveSpringKafka)
   testFixturesApi(libs.kotest.runner.junit6)

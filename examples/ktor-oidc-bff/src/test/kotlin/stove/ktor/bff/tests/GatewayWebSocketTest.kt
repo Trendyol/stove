@@ -59,7 +59,7 @@ class GatewayWebSocketTest : FunSpec({
         removeAll { it.first == "Sec-WebSocket-Version" }
         add("Sec-WebSocket-Version" to "12")
       } shouldBe HttpStatusCode.UpgradeRequired
-      rawHandshake { add("Origin" to origin) } shouldBe HttpStatusCode.Forbidden
+      rawHandshake { add("Origin" to browserOrigin) } shouldBe HttpStatusCode.Forbidden
       rawHandshake { add("Sec-WebSocket-Protocol" to "invalid protocol") } shouldBe HttpStatusCode.BadRequest
       rawHandshake(method = "POST") shouldBe HttpStatusCode.MethodNotAllowed
       rawHandshake(body = "x") { add("Content-Length" to "1") } shouldBe HttpStatusCode.BadRequest

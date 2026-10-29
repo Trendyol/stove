@@ -1,5 +1,6 @@
 package com.trendyol.stove.tracing
 
+import io.kotest.core.annotation.Isolate
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.nulls.shouldBeNull
 import io.kotest.matchers.nulls.shouldNotBeNull
@@ -12,6 +13,8 @@ import io.opentelemetry.context.Context
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
+// Exercises raw thread-local propagation across coroutine dispatcher changes.
+@Isolate
 class TraceContextTest :
   FunSpec({
 

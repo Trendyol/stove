@@ -3,6 +3,7 @@ import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
 plugins {
   id("com.trendyol.stove.build-logic")
+  id("com.trendyol.stove.test-conventions") apply false
   kotlin("jvm").version(libs.versions.kotlin)
   alias(libs.plugins.spotless)
   alias(libs.plugins.testLogger)
@@ -75,6 +76,7 @@ dependencies { related.forEach { kover(it) } }
 subprojects.of("lib", "spring", "examples", "ktor", "quarkus", "micronaut", "container", "process", "tests", "test-extensions", except = listOf("stove-bom")) {
   apply {
     plugin("kotlin")
+    plugin("com.trendyol.stove.test-conventions")
     plugin(rootProject.libs.plugins.spotless.get().pluginId)
     plugin(rootProject.libs.plugins.testLogger.get().pluginId)
     plugin(rootProject.libs.plugins.kover.get().pluginId)
@@ -82,7 +84,7 @@ subprojects.of("lib", "spring", "examples", "ktor", "quarkus", "micronaut", "con
     plugin("idea")
   }
 
-  val testImplementation by configurations
+  val testImplementation = configurations.getByName("testImplementation")
   val libs = rootProject.libs
   detekt {
     buildUponDefaultConfig = true
@@ -99,7 +101,12 @@ subprojects.of("lib", "spring", "examples", "ktor", "quarkus", "micronaut", "con
 
   spotless {
     kotlin {
-      target("src/**/*.kt")
+      target(
+        fileTree("src") {
+          include("**/*.kt")
+          exclude("**/build/**", "**/generated/**", "**/out/**")
+        }
+      )
       ktlint(libs.ktlint.cli.get().version)
         .setEditorConfigPath(rootProject.layout.projectDirectory.file(".editorconfig"))
         .editorConfigOverride(
@@ -108,7 +115,6 @@ subprojects.of("lib", "spring", "examples", "ktor", "quarkus", "micronaut", "con
             "ktlint_standard_class-signature" to "disabled"
           )
         )
-      targetExclude("build/**", "**/build/**", "generated/**", "**/generated/**", "out/**", "**/out/**")
       targetExcludeIfContentContains("generated")
       targetExcludeIfContentContainsRegex("generated.*")
     }
@@ -123,7 +129,6 @@ subprojects.of("lib", "spring", "examples", "ktor", "quarkus", "micronaut", "con
             "ktlint_standard_class-signature" to "disabled"
           )
         )
-      targetExclude("build/**", "**/build/**", "generated/**", "**/generated/**", "out/**", "**/out/**")
     }
   }
   the<IdeaModel>().apply {
@@ -134,7 +139,6 @@ subprojects.of("lib", "spring", "examples", "ktor", "quarkus", "micronaut", "con
   }
 
   tasks {
-
     test {
       useJUnitPlatform()
       failFast = runningOnCI
@@ -218,12 +222,12 @@ subprojects.of("lib", "spring", "ktor", "quarkus", "micronaut", "container", "pr
     publishToMavenCentral()
     pom {
       name.set(project.name)
-      description.set(project.properties["projectDescription"].toString())
-      url.set(project.properties["projectUrl"].toString())
+      description.set(providers.gradleProperty("projectDescription"))
+      url.set(providers.gradleProperty("projectUrl"))
       licenses {
         license {
-          name.set(project.properties["licence"].toString())
-          url.set(project.properties["licenceUrl"].toString())
+          name.set(providers.gradleProperty("licence"))
+          url.set(providers.gradleProperty("licenceUrl"))
         }
       }
       developers {
@@ -236,7 +240,7 @@ subprojects.of("lib", "spring", "ktor", "quarkus", "micronaut", "container", "pr
       scm {
         connection.set("scm:git@github.com:Trendyol/stove.git")
         developerConnection.set("scm:git:ssh://github.com:Trendyol/stove.git")
-        url.set(project.properties["projectUrl"].toString())
+        url.set(providers.gradleProperty("projectUrl"))
       }
     }
     if (project.hasSigningKey) signAllPublications()

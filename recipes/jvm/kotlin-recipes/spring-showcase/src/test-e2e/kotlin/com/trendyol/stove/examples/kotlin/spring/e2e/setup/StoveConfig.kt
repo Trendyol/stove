@@ -7,6 +7,7 @@ import com.trendyol.stove.kafka.*
 import com.trendyol.stove.postgres.*
 import com.trendyol.stove.serialization.StoveSerde
 import com.trendyol.stove.spring.*
+import com.trendyol.stove.system.PortFinder
 import com.trendyol.stove.system.Stove
 import com.trendyol.stove.testing.grpcmock.*
 import com.trendyol.stove.tracing.tracing
@@ -15,12 +16,13 @@ import io.kotest.core.config.AbstractProjectConfig
 import io.kotest.core.extensions.Extension
 import org.springframework.kafka.support.serializer.JsonSerializer
 
-const val GRPC_MOCK_PORT = 9092
-const val GRPC_SERVER_PORT = 50051
+val APP_PORT = PortFinder.findAvailablePort()
+private val GRPC_MOCK_PORT = PortFinder.findAvailablePort()
+private val GRPC_SERVER_PORT = PortFinder.findAvailablePort()
 
 class StoveConfig : AbstractProjectConfig() {
   init {
-    stoveKafkaBridgePortDefault = "50053"
+    stoveKafkaBridgePortDefault = PortFinder.findAvailablePortAsString()
     System.setProperty(STOVE_KAFKA_BRIDGE_PORT, stoveKafkaBridgePortDefault)
   }
 
@@ -31,7 +33,7 @@ class StoveConfig : AbstractProjectConfig() {
       .with {
         httpClient {
           HttpClientSystemOptions(
-            baseUrl = "http://localhost:8024"
+            baseUrl = "http://localhost:$APP_PORT"
           )
         }
 
@@ -120,7 +122,7 @@ class StoveConfig : AbstractProjectConfig() {
               }
           },
           withParameters = listOf(
-            "server.port=8024",
+            "server.port=$APP_PORT",
             "grpc.server.port=$GRPC_SERVER_PORT",
             "external-apis.fraud-detection.host=localhost",
             "external-apis.fraud-detection.port=$GRPC_MOCK_PORT"

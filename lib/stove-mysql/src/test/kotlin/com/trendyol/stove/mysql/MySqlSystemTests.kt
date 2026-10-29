@@ -11,6 +11,7 @@ import kotliquery.param
  */
 class MySqlSystemTests :
   FunSpec({
+    blockingTest = true
     data class IdAndDescription(
       val id: Long,
       val description: String
@@ -34,11 +35,10 @@ class MySqlSystemTests :
 
     test("should execute DDL and DML statements") {
       stove {
-        mysql {
-          shouldExecute("DROP TABLE IF EXISTS Dummies")
+        isolatedMysql {
           shouldExecute(
             """
-            CREATE TABLE IF NOT EXISTS Dummies (
+            CREATE TEMPORARY TABLE IF NOT EXISTS Dummies (
               id INT AUTO_INCREMENT PRIMARY KEY,
               description VARCHAR (50) NOT NULL
             )
@@ -60,11 +60,10 @@ class MySqlSystemTests :
 
     test("should handle multiple inserts and queries") {
       stove {
-        mysql {
-          shouldExecute("DROP TABLE IF EXISTS TestItems")
+        isolatedMysql {
           shouldExecute(
             """
-            CREATE TABLE IF NOT EXISTS TestItems (
+            CREATE TEMPORARY TABLE IF NOT EXISTS TestItems (
               id INT AUTO_INCREMENT PRIMARY KEY,
               name VARCHAR (100) NOT NULL,
               value INT NOT NULL
@@ -105,11 +104,10 @@ class MySqlSystemTests :
 
     test("should work with mutable classes") {
       stove {
-        mysql {
-          shouldExecute("DROP TABLE IF EXISTS Dummies")
+        isolatedMysql {
           shouldExecute(
             """
-            CREATE TABLE IF NOT EXISTS Dummies (
+            CREATE TEMPORARY TABLE IF NOT EXISTS Dummies (
               id INT AUTO_INCREMENT PRIMARY KEY,
               description VARCHAR (50) NOT NULL
             )
@@ -134,11 +132,10 @@ class MySqlSystemTests :
 
     test("should work with parameterized queries") {
       stove {
-        mysql {
-          shouldExecute("DROP TABLE IF EXISTS Products")
+        isolatedMysql {
           shouldExecute(
             """
-            CREATE TABLE IF NOT EXISTS Products (
+            CREATE TEMPORARY TABLE IF NOT EXISTS Products (
               id INT AUTO_INCREMENT PRIMARY KEY,
               name VARCHAR (100) NOT NULL,
               price DECIMAL(10,2) NOT NULL,

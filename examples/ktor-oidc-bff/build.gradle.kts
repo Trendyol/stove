@@ -8,7 +8,7 @@ application {
   mainClass.set("stove.ktor.bff.ApplicationKt")
 }
 
-val indexSessionMigrations by tasks.registering {
+val indexSessionMigrations = tasks.register("indexSessionMigrations") {
   val migrationRoot = layout.projectDirectory.dir("src/main/resources/db/bff").asFile
   val migrationFiles = fileTree(migrationRoot) { include("**/*.sql", "**/*.sql.conf") }
   val migrationResources = layout.buildDirectory.dir("generated/session-migrations")

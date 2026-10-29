@@ -25,6 +25,8 @@ import java.net.http.HttpResponse.BodyHandlers
 /**
  * Fail-open scoping: journal entries are excluded from a test's view only when they are
  * provably tagged with a different test id; untagged evidence is visible to every test.
+ * Keep this fixture shared and tests ordered: later tests verify the test extension's
+ * cleanup of earlier tests' stubs and untagged evidence. Fresh fixtures would hide leaks.
  */
 class WireMockFailOpenScopingTest :
   FunSpec({

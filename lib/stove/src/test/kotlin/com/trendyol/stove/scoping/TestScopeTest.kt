@@ -3,12 +3,16 @@ package com.trendyol.stove.scoping
 import com.trendyol.stove.interactions.InteractionAttribution
 import com.trendyol.stove.interactions.resolveAttribution
 import com.trendyol.stove.interactions.traceparentTraceId
+import com.trendyol.stove.testCaseConcurrency
 import io.kotest.core.spec.style.FunSpec
+import io.kotest.engine.concurrency.TestExecutionMode
 import io.kotest.matchers.nulls.shouldBeNull
 import io.kotest.matchers.shouldBe
 
 class TestScopeTest :
   FunSpec({
+    testExecutionMode = TestExecutionMode.LimitedConcurrency(testCaseConcurrency())
+
     test("test id source distinguishes header from baggage") {
       mapOf("X-Stove-Test-Id" to "t-1").stoveTestIdWithSource() shouldBe ("t-1" to TestIdSource.HEADER)
       mapOf("baggage" to "stove.test.id=t-2").stoveTestIdWithSource() shouldBe ("t-2" to TestIdSource.BAGGAGE)

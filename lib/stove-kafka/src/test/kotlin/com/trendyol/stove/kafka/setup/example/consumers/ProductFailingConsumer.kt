@@ -10,13 +10,9 @@ import org.apache.kafka.clients.consumer.ConsumerRecord
 @Suppress("TooGenericExceptionCaught", "TooGenericExceptionThrown")
 class ProductFailingConsumer(
   consumerSettings: Map<String, Any>,
-  producerSettings: PublisherSettings<String, Any>
+  producerSettings: PublisherSettings<String, Any>,
+  override val topicDefinition: TopicDefinition
 ) : StoveListener(consumerSettings, producerSettings) {
-  override val topicDefinition: TopicDefinition = TopicDefinition(
-    "productFailing",
-    "productFailing.retry",
-    "productFailing.error"
-  )
 
   override suspend fun listen(record: ConsumerRecord<String, String>) {
     record

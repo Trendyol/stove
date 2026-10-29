@@ -1,17 +1,15 @@
 package com.trendyol.stove.kafka
 
+import com.trendyol.stove.ConcurrentProjectConfig
 import io.kotest.assertions.*
 import io.kotest.assertions.print.Printed
 import io.kotest.common.reflection.bestName
-import io.kotest.core.config.AbstractProjectConfig
-import io.kotest.engine.concurrency.SpecExecutionMode
 
 /**
- * Shared Kafka test configuration - runs tests sequentially.
+ * Application specs replace the global Stove instance and serde, so start them sequentially.
+ * Independent root tests run concurrently within each application.
  */
-abstract class KafkaTestSetup : AbstractProjectConfig() {
-  override val specExecutionMode: SpecExecutionMode = SpecExecutionMode.Sequential
-}
+abstract class KafkaTestSetup : ConcurrentProjectConfig(concurrentSpecs = false, concurrentTests = true)
 
 /**
  * Test exception thrown to verify error handling in Kafka consumers.
@@ -49,4 +47,20 @@ inline fun <reified T : Throwable> shouldThrowMaybe(block: () -> Any) {
       )
     )
   }
+}
+
+/** Separate application routes, partitions and consumer groups for each root scenario. */
+object StringSerdeTestTopics {
+  private val suffix = java.util.UUID.randomUUID().toString()
+  val publish = "publish-$suffix"
+  val serde = "serde-$suffix"
+  val failing = "failing-$suffix"
+  val group = "string-$suffix"
+}
+
+object ProtobufSerdeTestTopics {
+  private val suffix = java.util.UUID.randomUUID().toString()
+  val topic = "protobuf-$suffix"
+  val group = "protobuf-$suffix"
+  val registry = "mock://protobuf-$suffix"
 }

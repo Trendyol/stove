@@ -1,6 +1,7 @@
 package com.trendyol.stove.tracing
 
 import arrow.core.getOrElse
+import com.trendyol.stove.system.PortFinder
 import io.grpc.ManagedChannelBuilder
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.collections.shouldHaveSize
@@ -25,7 +26,7 @@ private const val TEST_STACKTRACE = """java.lang.RuntimeException: Something wen
 
 class OtlpSpanReceiverTest :
   FunSpec({
-    val testPort = 14317 // Use a non-standard port to avoid conflicts
+    val testPort = PortFinder.findAvailablePort()
 
     test("start should succeed on available port") {
       val collector = StoveTraceCollector()

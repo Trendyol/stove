@@ -15,7 +15,7 @@ suspend fun GatewayProtocolFixture.rawHandshake(
   val target = Url(origin)
   val headers = mutableListOf(
     "Host" to target.hostWithPort,
-    "Origin" to origin,
+    "Origin" to browserOrigin,
     "Connection" to "Upgrade",
     "Upgrade" to "websocket",
     "Sec-WebSocket-Version" to "13",

@@ -12,7 +12,7 @@ val stoveCompatibilityVersionValue = providers
       .trim()
   }
 
-val generateDashboardVersionSource by tasks.registering(GenerateDashboardVersionSourceTask::class) {
+val generateDashboardVersionSource = tasks.register<GenerateDashboardVersionSourceTask>("generateDashboardVersionSource") {
   description = "Generates a source file containing the Stove version."
   stoveCompatibilityVersion.set(stoveCompatibilityVersionValue)
   outputDir.set(generatedDashboardSourcesDir)

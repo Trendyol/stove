@@ -37,6 +37,6 @@ tasks.withType<Test>().configureEach {
   systemProperty("elasticsearchTestTag", elasticsearchTestTag.get())
 }
 
-tasks.test.configure {
+tasks.check.configure {
   dependsOn(testWithProvided)
 }

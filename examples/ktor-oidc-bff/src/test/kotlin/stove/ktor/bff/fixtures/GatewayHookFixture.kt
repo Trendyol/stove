@@ -1,6 +1,5 @@
 package stove.ktor.bff.fixtures
 
-import com.trendyol.stove.system.PortFinder
 import io.ktor.client.request.*
 import io.ktor.http.*
 import io.ktor.server.application.*
@@ -24,11 +23,10 @@ class GatewayHookFixture : AutoCloseable {
   val credentials = AtomicInteger()
   val upstreamCalls = AtomicInteger()
   val invalidations = AtomicInteger()
-  private val port = PortFinder.findAvailablePort()
-  val origin = "http://127.0.0.1:$port"
-  private val upstream = embeddedServer(CIO, host = "127.0.0.1", port = port) {
+  private val upstream = embeddedServer(CIO, host = "127.0.0.1", port = 0) {
     gatewayHookApi { upstreamCalls.incrementAndGet() }
   }.start(wait = false)
+  val origin = upstream.loopbackOrigin()
 
   fun install(application: Application, routes: GatewayRoutes, configure: GatewayHooks.() -> Unit) = with(application) {
     install(Authentication) {

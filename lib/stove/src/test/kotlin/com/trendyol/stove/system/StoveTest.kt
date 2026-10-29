@@ -2,9 +2,12 @@ package com.trendyol.stove.system
 
 import arrow.core.None
 import com.trendyol.stove.system.abstractions.*
+import io.kotest.core.annotation.Isolate
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
 
+// Changes the global Stove instance.
+@Isolate
 class StoveTest :
   FunSpec({
     test("getOrRegister returns existing instance") {

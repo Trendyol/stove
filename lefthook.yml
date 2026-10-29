@@ -46,6 +46,7 @@ pre-commit:
     - name: recipes
       glob:
         - 'recipes/jvm/**'
+        - 'build-logic/test-conventions/**'
         - 'gradle/libs.versions.toml'
         - '.editorconfig'
         - 'justfile'

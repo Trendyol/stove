@@ -27,12 +27,12 @@ abstract class ProtobufSerdeKafkaSystemTests :
             description = "description-${Random.nextInt()}"
           }
           val headers = mapOf("x-user-id" to userId)
-          publish("topic-protobuf", testProduct, headers = headers)
+          publish(ProtobufSerdeTestTopics.topic, testProduct, headers = headers)
           shouldBePublished<Product>(20.seconds) {
-            actual == testProduct && this.metadata.headers["x-user-id"] == userId && this.metadata.topic == "topic-protobuf"
+            actual == testProduct && this.metadata.headers["x-user-id"] == userId && this.metadata.topic == ProtobufSerdeTestTopics.topic
           }
           shouldBeConsumed<Product>(20.seconds) {
-            actual == testProduct && this.metadata.headers["x-user-id"] == userId && this.metadata.topic == "topic-protobuf"
+            actual == testProduct && this.metadata.headers["x-user-id"] == userId && this.metadata.topic == ProtobufSerdeTestTopics.topic
           }
 
           val orderId = Random.nextInt().toString()
@@ -41,13 +41,13 @@ abstract class ProtobufSerdeKafkaSystemTests :
             customerId = userId
             products += testProduct
           }
-          publish("topic-protobuf", testOrder, headers = headers)
+          publish(ProtobufSerdeTestTopics.topic, testOrder, headers = headers)
           shouldBePublished<Order>(20.seconds) {
-            actual == testOrder && this.metadata.headers["x-user-id"] == userId && this.metadata.topic == "topic-protobuf"
+            actual == testOrder && this.metadata.headers["x-user-id"] == userId && this.metadata.topic == ProtobufSerdeTestTopics.topic
           }
 
           shouldBeConsumed<Order>(20.seconds) {
-            actual == testOrder && this.metadata.headers["x-user-id"] == userId && this.metadata.topic == "topic-protobuf"
+            actual == testOrder && this.metadata.headers["x-user-id"] == userId && this.metadata.topic == ProtobufSerdeTestTopics.topic
           }
         }
       }

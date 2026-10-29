@@ -22,6 +22,7 @@ import kotliquery.param
  */
 class PostgresqlSystemTests :
   FunSpec({
+    blockingTest = true
 
     data class IdAndDescription(
       val id: Long,
@@ -46,11 +47,10 @@ class PostgresqlSystemTests :
 
     test("should execute DDL and DML statements") {
       stove {
-        postgresql {
+        isolatedPostgresql {
           shouldExecute(
             """
-            DROP TABLE IF EXISTS Dummies;
-            CREATE TABLE IF NOT EXISTS Dummies (
+            CREATE TEMPORARY TABLE IF NOT EXISTS Dummies (
               id serial PRIMARY KEY,
               description VARCHAR (50) NOT NULL
             );
@@ -72,11 +72,10 @@ class PostgresqlSystemTests :
 
     test("should handle multiple inserts and queries") {
       stove {
-        postgresql {
+        isolatedPostgresql {
           shouldExecute(
             """
-            DROP TABLE IF EXISTS TestItems;
-            CREATE TABLE IF NOT EXISTS TestItems (
+            CREATE TEMPORARY TABLE IF NOT EXISTS TestItems (
               id serial PRIMARY KEY,
               name VARCHAR (100) NOT NULL,
               value INT NOT NULL
@@ -119,11 +118,10 @@ class PostgresqlSystemTests :
 
     test("should work with mutable classes") {
       stove {
-        postgresql {
+        isolatedPostgresql {
           shouldExecute(
             """
-            DROP TABLE IF EXISTS Dummies;
-            CREATE TABLE IF NOT EXISTS Dummies (
+            CREATE TEMPORARY TABLE IF NOT EXISTS Dummies (
               id serial PRIMARY KEY,
               description VARCHAR (50) NOT NULL
             );
@@ -185,11 +183,10 @@ class PostgresqlSystemTests :
 
     test("should work with parameterized queries") {
       stove {
-        postgresql {
+        isolatedPostgresql {
           shouldExecute(
             """
-            DROP TABLE IF EXISTS Users;
-            CREATE TABLE IF NOT EXISTS Users (
+            CREATE TEMPORARY TABLE IF NOT EXISTS Users (
               id serial PRIMARY KEY,
               name VARCHAR (100) NOT NULL,
               age INT NOT NULL,
@@ -261,7 +258,7 @@ class PostgresqlSystemTests :
 
 private suspend fun withValidationUsers(scenario: suspend PostgresqlSystem.() -> Unit) {
   stove {
-    postgresql {
+    isolatedPostgresql {
       shouldExecute("CREATE TEMPORARY TABLE ValidationUsers (name VARCHAR(100) PRIMARY KEY, age INT NOT NULL)")
       try {
         scenario()

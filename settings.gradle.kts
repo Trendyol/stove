@@ -4,6 +4,7 @@ rootProject.name = "stove"
 
 pluginManagement {
   includeBuild("build-logic")
+  includeBuild("build-logic/test-conventions")
 
   repositories {
     gradlePluginPortal()

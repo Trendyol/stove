@@ -5,12 +5,14 @@ on:
     branches: [main]
     paths:
       - 'recipes/jvm/**'
+      - 'build-logic/test-conventions/**'
       - 'gradle/libs.versions.toml'
       - '.github/workflows/build-jvm-recipes.yml'
   pull_request:
     branches: [main]
     paths:
       - 'recipes/jvm/**'
+      - 'build-logic/test-conventions/**'
       - 'gradle/libs.versions.toml'
       - '.github/workflows/build-jvm-recipes.yml'
 
@@ -39,7 +41,8 @@ jobs:
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v6
         with:
-          cache-read-only: ${{ github.ref != 'refs/heads/main' }}
+          # Let same-repository PRs reuse their own cache; fork PRs stay read-only.
+          cache-read-only: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name != github.repository }}
           cache-encryption-key: ${{ secrets.GRADLE_CACHE_ENCRYPTION_KEY }}
 
       # Run all tasks in a single Gradle invocation
@@ -48,7 +51,7 @@ jobs:
           ./recipes/jvm/gradlew -p recipes/jvm build e2eTest \
             --build-cache \
             --no-daemon \
-            -Dorg.gradle.parallel=true
+            --parallel
 
       # Upload test results
       - name: Upload test results

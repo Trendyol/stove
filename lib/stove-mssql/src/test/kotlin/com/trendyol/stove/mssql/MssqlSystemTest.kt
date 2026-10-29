@@ -1,12 +1,15 @@
 package com.trendyol.stove.mssql
 
+import com.trendyol.stove.ConcurrentProjectConfig
 import com.trendyol.stove.database.migrations.*
 import com.trendyol.stove.extensions.kotest.StoveKotestExtension
 import com.trendyol.stove.functional.*
+import com.trendyol.stove.rdbms.RelationalDatabaseExposedConfiguration
 import com.trendyol.stove.system.Stove
+import com.trendyol.stove.system.ValidationDsl
 import com.trendyol.stove.system.abstractions.ApplicationUnderTest
+import com.trendyol.stove.system.abstractions.ProvidedRuntime
 import com.trendyol.stove.system.stove
-import io.kotest.core.config.AbstractProjectConfig
 import io.kotest.core.extensions.Extension
 import io.kotest.core.spec.style.ShouldSpec
 import io.kotest.matchers.shouldBe
@@ -103,7 +106,7 @@ class ContainerMsSqlStrategy : MsSqlTestStrategy {
       ) {
         withStartupAttempts(3)
       },
-      configureExposedConfiguration = { _ -> listOf() }
+      configureExposedConfiguration = ::captureSqlConfiguration
     ).migrations {
       register<InitialMigration>()
     }
@@ -159,7 +162,7 @@ class ProvidedMsSqlStrategy : MsSqlTestStrategy {
           logger.info("Running cleanup on provided instance")
           Try { sqlOps.execute("DROP TABLE IF EXISTS Person") }
         },
-        configureExposedConfiguration = { _ -> listOf() }
+        configureExposedConfiguration = ::captureSqlConfiguration
       ).migrations {
         register<InitialMigration>()
       }
@@ -183,7 +186,7 @@ class ProvidedMsSqlStrategy : MsSqlTestStrategy {
 // Kotest project config - selects strategy based on environment
 // ============================================================================
 
-class StoveConfig : AbstractProjectConfig() {
+class StoveConfig : ConcurrentProjectConfig(concurrentTests = true) {
   override val extensions: List<Extension> = listOf(StoveKotestExtension())
 
   private val strategy = MsSqlTestStrategy.select()
@@ -199,9 +202,10 @@ class StoveConfig : AbstractProjectConfig() {
 
 class MssqlSystemTests :
   ShouldSpec({
+    blockingTest = true
     should("work") {
       stove {
-        mssql {
+        isolatedMssql { personTable ->
           ops {
             val result = select("SELECT 1") {
               it.int(1)
@@ -209,10 +213,10 @@ class MssqlSystemTests :
             result.first() shouldBe 1
           }
 
-          shouldExecute("insert into Person values (1, 'Doe', 'John', '123 Main St', 'Springfield')")
+          shouldExecute("insert into $personTable values (1, 'Doe', 'John', '123 Main St', 'Springfield')")
 
           shouldQuery<Person>(
-            query = "select * from Person",
+            query = "select * from $personTable",
             mapper = {
               Person(
                 it.int(1),
@@ -238,10 +242,10 @@ class MssqlSystemTests :
 
     should("work with parameterized queries") {
       stove {
-        mssql {
+        isolatedMssql { personTable ->
           // Insert with parameters
           shouldExecute(
-            sql = "insert into Person values (?, ?, ?, ?, ?)",
+            sql = "insert into $personTable values (?, ?, ?, ?, ?)",
             parameters = listOf(
               2.param(),
               "Smith".param(),
@@ -252,7 +256,7 @@ class MssqlSystemTests :
           )
 
           shouldExecute(
-            sql = "insert into Person values (?, ?, ?, ?, ?)",
+            sql = "insert into $personTable values (?, ?, ?, ?, ?)",
             parameters = listOf(
               3.param(),
               "Johnson".param(),
@@ -264,7 +268,7 @@ class MssqlSystemTests :
 
           // Query with parameters
           shouldQuery<Person>(
-            query = "select * from Person where City = ? order by PersonID",
+            query = "select * from $personTable where City = ? order by PersonID",
             parameters = listOf("Boston".param()),
             mapper = {
               Person(
@@ -293,7 +297,7 @@ class MssqlSystemTests :
 
           // Query with multiple parameters
           shouldQuery<Person>(
-            query = "select * from Person where LastName = ? and FirstName = ?",
+            query = "select * from $personTable where LastName = ? and FirstName = ?",
             parameters = listOf("Smith".param(), "Jane".param()),
             mapper = {
               Person(
@@ -316,3 +320,33 @@ class MssqlSystemTests :
       }
     }
   })
+
+// Written once during project startup, before any concurrent tests run.
+private lateinit var sqlConfiguration: RelationalDatabaseExposedConfiguration
+
+private fun captureSqlConfiguration(config: RelationalDatabaseExposedConfiguration): List<String> {
+  sqlConfiguration = config
+  return emptyList()
+}
+
+internal suspend fun ValidationDsl.isolatedMssql(scenario: suspend MsSqlSystem.(String) -> Unit) {
+  val config = sqlConfiguration
+  val options = MsSqlOptions.provided(
+    jdbcUrl = config.jdbcUrl, host = config.host, port = config.port,
+    applicationName = "test", databaseName = "test", userName = config.username,
+    password = config.password, runMigrations = false,
+    configureExposedConfiguration = { emptyList() }
+  )
+  // Own the connection, retaining the suite's reporter and migrated database.
+  // SQL Server temp tables created by prepared statements do not outlive that statement.
+  val personTable = "Person_" + java.util.UUID.randomUUID().toString().replace("-", "")
+  MsSqlSystem(stove, MsSqlContext(ProvidedRuntime, options)).use { system ->
+    system.run()
+    system.shouldExecute("SELECT TOP 0 * INTO $personTable FROM Person")
+    try {
+      scenario(system, personTable)
+    } finally {
+      system.shouldExecute("DROP TABLE $personTable")
+    }
+  }
+}

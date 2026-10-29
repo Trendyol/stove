@@ -4,6 +4,7 @@ import arrow.core.some
 import com.trendyol.stove.kafka.kafka
 import com.trendyol.stove.kafka.setup.example.DomainEvents.ProductCreated
 import com.trendyol.stove.kafka.setup.example.DomainEvents.ProductFailingCreated
+import com.trendyol.stove.kafka.setup.example.KafkaTestShared
 import com.trendyol.stove.system.stove
 import io.github.nomisRev.kafka.createTopic
 import io.kotest.assertions.throwables.shouldThrow
@@ -16,14 +17,15 @@ import org.apache.kafka.clients.admin.NewTopic
 import org.apache.kafka.clients.consumer.ConsumerRecord
 import org.apache.kafka.common.serialization.*
 import org.apache.kafka.common.utils.Utils
-import kotlin.random.Random
+import java.util.UUID
 import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.minutes
 import kotlin.time.Duration.Companion.seconds
 
 class KafkaSystemTests :
   FunSpec({
-    val randomString = { Random.nextInt(0, Int.MAX_VALUE).toString() }
+    blockingTest = true
+    val randomString = { UUID.randomUUID().toString() }
 
     test("migration should create test topics") {
       stove {
@@ -47,12 +49,12 @@ class KafkaSystemTests :
         kafka {
           val key = randomString()
           val productId = "$key[productCreated]"
-          publish("product", message = ProductCreated(productId), key = key.some())
+          publish(KafkaTestShared.product.topic, message = ProductCreated(productId), key = key.some())
           shouldBePublished<ProductCreated> {
             actual.productId == productId
           }
 
-          peekPublishedMessages(topic = "product") {
+          peekPublishedMessages(topic = KafkaTestShared.product.topic) {
             it.key == key
           }
 
@@ -60,7 +62,7 @@ class KafkaSystemTests :
             actual.productId == productId
           }
 
-          peekConsumedMessages(topic = "product") {
+          peekConsumedMessages(topic = KafkaTestShared.product.topic) {
             it.key == key
           }
         }
@@ -210,16 +212,16 @@ class KafkaSystemTests :
       stove {
         kafka {
           val messages = ProductCreated.randoms(100)
-          messages.map { async { publish("product", it, key = randomString().some()) } }.awaitAll()
+          messages.map { async { publish(KafkaTestShared.bulk.topic, it, key = randomString().some()) } }.awaitAll()
           messages.map { async { shouldBePublished<ProductCreated> { actual.productId == it.productId } } }.awaitAll()
           messages.map { async { shouldBeConsumed<ProductCreated>(1.minutes) { actual.productId == it.productId } } }.awaitAll()
 
-          peekConsumedMessages(topic = "product") {
-            it.offset == 100L
+          peekConsumedMessages(topic = KafkaTestShared.bulk.topic) {
+            it.offset == 99L
           }
 
-          peekCommittedMessages(topic = "product") { record ->
-            record.offset == 101L // next offset
+          peekCommittedMessages(topic = KafkaTestShared.bulk.topic) { record ->
+            record.offset == 100L // next offset
           }
         }
       }
@@ -231,16 +233,16 @@ class KafkaSystemTests :
           val string = randomString()
           val productId = "$string[productFailingCreated]"
           val key = string.some()
-          publish("productFailing", ProductFailingCreated(productId), key = key)
+          publish(KafkaTestShared.failing.topic, ProductFailingCreated(productId), key = key)
           shouldBeRetried<ProductFailingCreated>(atLeastIn = 1.minutes, times = 3) {
             actual.productId == productId
           }
 
           shouldBePublished<ProductFailingCreated>(atLeastIn = 1.minutes) {
-            this.metadata.topic == "productFailing.error"
+            this.metadata.topic == KafkaTestShared.failing.deadLetterTopic
           }
 
-          peekPublishedMessages(topic = "productFailing.error") {
+          peekPublishedMessages(topic = KafkaTestShared.failing.deadLetterTopic) {
             it.key == string
           }
         }
@@ -263,7 +265,7 @@ class KafkaSystemTests :
             actual.productId == productId
           }
 
-          consumer<String, ProductCreated>(topic, readOnly = false) {
+          consumer<String, ProductCreated>(topic, keyDeserializer = StringDeserializer(), readOnly = false) {
             println(it) // it should commit
           }
 
@@ -292,6 +294,7 @@ class KafkaSystemTests :
           consumer<String, ProductCreated>(
             topic = topic,
             readOnly = false,
+            keyDeserializer = StringDeserializer(),
             keepConsumingAtLeastFor = 5.seconds,
             pollTimeout = 250.milliseconds
           ) {
@@ -322,7 +325,7 @@ class KafkaSystemTests :
           }
 
           val consumerGroup1 = randomString()
-          consumer<String, ProductCreated>(topic, readOnly = true, autoOffsetReset = "earliest", groupId = consumerGroup1) {
+          consumer<String, ProductCreated>(topic, keyDeserializer = StringDeserializer(), readOnly = true, autoOffsetReset = "earliest", groupId = consumerGroup1) {
             println(it)
           }
 
@@ -333,18 +336,18 @@ class KafkaSystemTests :
 
           // and consumer can re-read
           val reReadMessages = mutableListOf<ConsumerRecord<*, *>>()
-          consumer<String, ProductCreated>(topic, readOnly = true, autoOffsetReset = "earliest", groupId = consumerGroup1) {
+          consumer<String, ProductCreated>(topic, keyDeserializer = StringDeserializer(), readOnly = true, autoOffsetReset = "earliest", groupId = consumerGroup1) {
             reReadMessages.add(it)
           }
           reReadMessages.size shouldBe consumedMessages.size
 
           // and consumer can commit
-          consumer<String, ProductCreated>(topic, readOnly = false, autoOffsetReset = "earliest", groupId = consumerGroup1) {
+          consumer<String, ProductCreated>(topic, keyDeserializer = StringDeserializer(), readOnly = false, autoOffsetReset = "earliest", groupId = consumerGroup1) {
             println(it)
           }
 
           val committedMessagesAfterCommit = mutableListOf<ConsumerRecord<*, *>>()
-          consumer<String, ProductCreated>(topic, readOnly = true, autoOffsetReset = "earliest", groupId = consumerGroup1) {
+          consumer<String, ProductCreated>(topic, keyDeserializer = StringDeserializer(), readOnly = true, autoOffsetReset = "earliest", groupId = consumerGroup1) {
             committedMessagesAfterCommit.add(it)
           }
           committedMessagesAfterCommit.size shouldBe 0

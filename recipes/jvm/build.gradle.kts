@@ -2,6 +2,7 @@ import org.gradle.plugins.ide.idea.model.IdeaModel
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
 plugins {
+  id("com.trendyol.stove.test-conventions") apply false
   kotlin("jvm").version(libs.versions.kotlin)
   alias(libs.plugins.spotless)
   alias(libs.plugins.testLogger)
@@ -16,6 +17,7 @@ subprojects {
   }
 
   apply {
+    plugin("com.trendyol.stove.test-conventions")
     plugin(rootProject.libs.plugins.spotless.get().pluginId)
     plugin(rootProject.libs.plugins.testLogger.get().pluginId)
     plugin(rootProject.libs.plugins.detekt.get().pluginId)
