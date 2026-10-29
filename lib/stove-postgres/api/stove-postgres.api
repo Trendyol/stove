@@ -2,8 +2,8 @@ public final class com/trendyol/stove/postgres/OptionsKt {
 	public static final field DEFAULT_POSTGRES_IMAGE_NAME Ljava/lang/String;
 	public static final fun postgresql-JSkDyPw (Lcom/trendyol/stove/system/Stove;Lkotlin/jvm/functions/Function2;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public static final fun postgresql-QljV9L8 (Lcom/trendyol/stove/system/Stove;Lcom/trendyol/stove/system/abstractions/SystemKey;Lkotlin/jvm/functions/Function2;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
-	public static final fun postgresql-SscbJ7Y (Lcom/trendyol/stove/system/Stove;Lcom/trendyol/stove/system/abstractions/SystemKey;Lkotlin/jvm/functions/Function0;)Lcom/trendyol/stove/system/Stove;
-	public static final fun postgresql-ypJx7X8 (Lcom/trendyol/stove/system/Stove;Lkotlin/jvm/functions/Function0;)Lcom/trendyol/stove/system/Stove;
+	public static final fun postgresql-SscbJ7Y (Lcom/trendyol/stove/system/Stove;Lcom/trendyol/stove/system/abstractions/SystemKey;Lkotlin/jvm/functions/Function1;)Lcom/trendyol/stove/system/Stove;
+	public static final fun postgresql-ypJx7X8 (Lcom/trendyol/stove/system/Stove;Lkotlin/jvm/functions/Function1;)Lcom/trendyol/stove/system/Stove;
 }
 
 public final class com/trendyol/stove/postgres/PostgresSqlMigrationContext {
@@ -65,7 +65,7 @@ public final class com/trendyol/stove/postgres/PostgresqlOptions$Companion {
 	public static synthetic fun provided$default (Lcom/trendyol/stove/postgres/PostgresqlOptions$Companion;Ljava/lang/String;Ljava/lang/String;ILjava/lang/String;Ljava/lang/String;Ljava/lang/String;ZLkotlin/jvm/functions/Function2;Lkotlin/jvm/functions/Function1;ILjava/lang/Object;)Lcom/trendyol/stove/postgres/ProvidedPostgresqlOptions;
 }
 
-public final class com/trendyol/stove/postgres/PostgresqlSystem : com/trendyol/stove/reporting/Reports, com/trendyol/stove/system/abstractions/ExposesConfiguration, com/trendyol/stove/system/abstractions/PluggedSystem, com/trendyol/stove/system/abstractions/RunAware {
+public final class com/trendyol/stove/postgres/PostgresqlSystem : com/trendyol/stove/chaos/ChaosCapableSystem, com/trendyol/stove/reporting/Reports, com/trendyol/stove/system/abstractions/ExposesConfiguration, com/trendyol/stove/system/abstractions/RunAware {
 	public static final field Companion Lcom/trendyol/stove/postgres/PostgresqlSystem$Companion;
 	public field sqlOperations Lcom/trendyol/stove/rdbms/NativeSqlOperations;
 	public fun close ()V

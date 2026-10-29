@@ -1,5 +1,6 @@
 dependencies {
   api(projects.lib.stoveRdbms)
+  testImplementation(testFixtures(projects.lib.stove))
   api(libs.testcontainers.mssql)
   api(libs.microsoft.sqlserver.jdbc)
 }

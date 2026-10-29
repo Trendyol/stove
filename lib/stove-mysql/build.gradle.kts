@@ -1,5 +1,6 @@
 dependencies {
   api(projects.lib.stoveRdbms)
+  testImplementation(testFixtures(projects.lib.stove))
   api(libs.testcontainers.mysql)
   api(libs.mysql.connector)
   testImplementation(projects.testExtensions.stoveExtensionsKotest)

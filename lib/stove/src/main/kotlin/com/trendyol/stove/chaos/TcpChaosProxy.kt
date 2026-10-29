@@ -8,9 +8,10 @@ import java.net.Socket
 import java.net.SocketException
 import java.net.URI
 import java.util.concurrent.ConcurrentHashMap
-import java.util.concurrent.Executors
 import java.util.concurrent.RejectedExecutionException
+import java.util.concurrent.SynchronousQueue
 import java.util.concurrent.ThreadFactory
+import java.util.concurrent.ThreadPoolExecutor
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicInteger
@@ -57,9 +58,19 @@ class TcpChaosProxy(
 ) : Closeable,
   NetworkPartitionTarget {
   private val running = AtomicBoolean(false)
-  private val partitioned = AtomicBoolean(false)
+  private val traffic = TcpTrafficGate()
   private val connections = ConcurrentHashMap.newKeySet<Connection>()
-  private val executor = Executors.newCachedThreadPool(DaemonThreadFactory("$name-chaos-proxy"))
+
+  // Bounded workers and no pending task queue: saturation closes the new connection.
+  private val executor = ThreadPoolExecutor(
+    0,
+    257,
+    60,
+    TimeUnit.SECONDS,
+    SynchronousQueue(),
+    DaemonThreadFactory("$name-chaos-proxy")
+  )
+  private val pendingSources = ConcurrentHashMap.newKeySet<Socket>()
   private val lifecycleLock = ReentrantLock()
   private lateinit var targetSocketAddress: InetSocketAddress
   private var targetEndpoint: TcpEndpoint? = null
@@ -91,86 +102,115 @@ class TcpChaosProxy(
     }
   }
 
-  override fun partition() {
-    partitioned.set(true)
-    connections.toList().forEach(Connection::close)
+  override fun partition() = applyFault(NetworkFault.Unavailable)
+
+  internal fun applyFault(next: NetworkFault) {
+    traffic.changeFault(next)
+    if (next == NetworkFault.Unavailable) connections.forEach(Connection::close)
   }
 
-  override fun heal() {
-    partitioned.set(false)
-  }
+  override fun heal() = traffic.changeFault(null)
 
   private fun acceptConnections() {
     while (running.get()) {
       try {
-        val source = server.accept()
-        if (!running.get() || partitioned.get()) {
-          source.close()
-          continue
-        }
-        executeOrClose(source) { connect(source) }
+        scheduleConnection(server.accept())
       } catch (_: SocketException) {
         if (running.get()) throw IllegalStateException("$name proxy accept failed")
       }
     }
   }
 
-  private fun connect(source: Socket) {
+  private fun scheduleConnection(source: Socket) {
+    val epoch = traffic.epoch
+    if (!canConnect(epoch)) {
+      source.close()
+      return
+    }
+    pendingSources += source
+    executeOrClose(Closeable { discardPending(source) }) { connect(source, epoch) }
+  }
+
+  private fun discardPending(source: Socket) {
+    pendingSources -= source
+    source.close()
+  }
+
+  private fun canConnect(epoch: Int): Boolean = running.get() && traffic.admitsConnection(epoch)
+
+  private fun connect(source: Socket, epoch: Int) {
     val destination = Socket()
     try {
       destination.connect(targetSocketAddress, TCP_CONNECT_TIMEOUT_MILLIS)
-      if (partitioned.get()) {
-        source.close()
-        destination.close()
-        return
-      }
-
       source.tcpNoDelay = true
       destination.tcpNoDelay = true
       val connection = Connection(source, destination)
       connections += connection
-      if (partitioned.get()) {
-        connection.close()
-        connections -= connection
+      if (!canConnect(epoch)) {
+        closeConnection(connection)
         return
       }
-      executeOrClose(connection) { pump(connection, source, destination) }
-      executeOrClose(connection) { pump(connection, destination, source) }
+      val cleanup = Closeable { closeConnection(connection) }
+      executeOrClose(cleanup) { pump(connection, source, destination, TrafficDirection.Requests) }
+      executeOrClose(cleanup) { pump(connection, destination, source, TrafficDirection.Responses) }
     } catch (_: Exception) {
       source.close()
       destination.close()
+    } finally {
+      pendingSources -= source
     }
   }
 
   private fun pump(
     connection: Connection,
     source: Socket,
-    destination: Socket
+    destination: Socket,
+    direction: TrafficDirection
   ) {
     try {
-      source.getInputStream().use { input ->
-        destination.getOutputStream().use(input::copyTo)
-      }
+      copyTraffic(connection, source, destination, direction)
     } catch (_: Exception) {
-      // Connection shutdown and injected partitions are expected in this proxy.
+      // Shutdown and injected faults interrupt socket reads and forwarding gates.
     } finally {
-      connection.close()
-      connections -= connection
+      closeConnection(connection)
     }
   }
 
+  private fun copyTraffic(
+    connection: Connection,
+    source: Socket,
+    destination: Socket,
+    direction: TrafficDirection
+  ) {
+    val input = source.getInputStream()
+    val output = destination.getOutputStream()
+    val buffer = ByteArray(DEFAULT_BUFFER_SIZE)
+    while (awaitForwarding(connection, direction, delayChunk = false)) {
+      val count = input.read(buffer)
+      if (count < 0 || !awaitForwarding(connection, direction, delayChunk = true)) return
+      output.write(buffer, 0, count)
+    }
+  }
+
+  private fun closeConnection(connection: Connection) {
+    connection.close()
+    connections -= connection
+    traffic.wakeWorkers()
+  }
+
+  private fun awaitForwarding(connection: Connection, direction: TrafficDirection, delayChunk: Boolean): Boolean =
+    traffic.awaitForwarding(direction, delayChunk) { running.get() && !connection.closed.get() }
+
   override fun close() {
-    val shouldAwait = lifecycleLock.withLock {
-      if (!running.getAndSet(false)) return
-      partitioned.set(true)
-      server.close()
-      connections.toList().forEach(Connection::close)
+    lifecycleLock.withLock {
+      if (executor.isShutdown) return
+      running.set(false)
+      if (::server.isInitialized) server.close()
+      applyFault(NetworkFault.Unavailable)
+      pendingSources.forEach { runCatching(it::close) }
       executor.shutdownNow()
-      true
     }
-    if (shouldAwait) {
-      executor.awaitTermination(PROXY_SHUTDOWN_TIMEOUT_SECONDS, TimeUnit.SECONDS)
-    }
+    executor.awaitTermination(PROXY_SHUTDOWN_TIMEOUT_SECONDS, TimeUnit.SECONDS)
   }
 
   private fun executeOrClose(
@@ -188,7 +228,7 @@ class TcpChaosProxy(
     private val source: Socket,
     private val destination: Socket
   ) : Closeable {
-    private val closed = AtomicBoolean(false)
+    val closed = AtomicBoolean(false)
 
     override fun close() {
       if (!closed.compareAndSet(false, true)) return

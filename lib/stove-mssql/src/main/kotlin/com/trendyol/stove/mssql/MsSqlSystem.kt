@@ -2,12 +2,14 @@
 
 package com.trendyol.stove.mssql
 
+import com.trendyol.stove.chaos.*
 import com.trendyol.stove.functional.*
 import com.trendyol.stove.rdbms.*
 import com.trendyol.stove.reporting.Reports
 import com.trendyol.stove.system.Stove
 import com.trendyol.stove.system.abstractions.*
 import com.trendyol.stove.system.annotations.StoveDsl
+import com.trendyol.stove.system.closeAll
 import kotlinx.coroutines.runBlocking
 import kotliquery.*
 import org.slf4j.*
@@ -16,7 +18,7 @@ import org.slf4j.*
 class MsSqlSystem internal constructor(
   override val stove: Stove,
   private val mssqlContext: MsSqlContext
-) : PluggedSystem,
+) : ChaosCapableSystem,
   RunAware,
   ExposesConfiguration,
   Reports {
@@ -39,19 +41,15 @@ class MsSqlSystem internal constructor(
   override suspend fun stop(): Unit = whenContainer { it.stop() }
 
   override fun close(): Unit = runBlocking {
-    Try {
-      if (::sqlOperations.isInitialized) {
-        mssqlContext.options.cleanup(sqlOperations)
-        sqlOperations.close()
-      }
-      executeWithReuseCheck { stop() }
-    }.recover {
-      logger.warn("got an error while stopping the MSSQL system")
-    }.let { }
+    closeAll(
+      { if (::sqlOperations.isInitialized) mssqlContext.options.cleanup(sqlOperations) },
+      { if (::sqlOperations.isInitialized) sqlOperations.close() },
+      { executeWithReuseCheck { stop() } }
+    )
   }
 
   override fun configuration(): List<String> =
-    mssqlContext.options.configureExposedConfiguration(exposedConfiguration)
+    mssqlContext.options.configureExposedConfiguration(applicationConfiguration(exposedConfiguration, RelationalDatabaseChaosAdapter))
 
   suspend inline fun <reified T : Any> shouldQuery(
     query: String,

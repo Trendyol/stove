@@ -4,6 +4,7 @@ package com.trendyol.stove.redis
 
 import arrow.core.getOrElse
 import com.redis.testcontainers.RedisContainer
+import com.trendyol.stove.chaos.*
 import com.trendyol.stove.containers.*
 import com.trendyol.stove.database.migrations.*
 import com.trendyol.stove.system.*
@@ -181,58 +182,46 @@ data class RedisContext(
  * }
  * ```
  */
-fun WithDsl.redis(
-  configure: () -> RedisOptions
-): Stove {
-  val options = configure()
+fun WithDsl.redis(configure: @StoveDsl ChaosSetupScope.() -> RedisOptions): Stove =
+  configureRedis(null, configure)
 
-  val runtime: SystemRuntime = if (options is ProvidedRedisOptions) {
-    ProvidedRuntime
-  } else {
-    withProvidedRegistry(
-      options.container.image,
-      options.container.registry,
-      options.container.compatibleSubstitute
-    ) { dockerImageName ->
-      options.container
-        .useContainerFn(dockerImageName)
-        .withCommand("redis-server", "--requirepass", options.password)
-        .withReuse(stove.keepDependenciesRunning)
-        .let { c -> c as StoveRedisContainer }
-        .apply(options.container.containerFn)
-    }
+fun WithDsl.redis(key: SystemKey, configure: @StoveDsl ChaosSetupScope.() -> RedisOptions): Stove =
+  configureRedis(key, configure)
+
+private fun WithDsl.configureRedis(key: SystemKey?, configure: ChaosSetupScope.() -> RedisOptions): Stove {
+  val scope = ChaosSetupScope()
+  val options = configure(scope)
+  val runtime = options.createRuntime(stove.keepDependenciesRunning)
+  if (key == null) stove.withRedis(options, runtime) else stove.withRedis(key, options, runtime)
+  if (scope.chaosEnabled) {
+    val system = if (key == null) stove.redis() else stove.redis(key)
+    system.enableChaosRouting()
   }
-  return stove.withRedis(options, runtime)
+  return stove
 }
 
-fun WithDsl.redis(
-  key: SystemKey,
-  configure: () -> RedisOptions
-): Stove {
-  val options = configure()
-
-  val runtime: SystemRuntime = if (options is ProvidedRedisOptions) {
-    ProvidedRuntime
-  } else {
-    withProvidedRegistry(
-      options.container.image,
-      options.container.registry,
-      options.container.compatibleSubstitute
-    ) { dockerImageName ->
-      options.container
-        .useContainerFn(dockerImageName)
-        .withCommand("redis-server", "--requirepass", options.password)
-        .withReuse(stove.keepDependenciesRunning)
-        .let { c -> c as StoveRedisContainer }
-        .apply(options.container.containerFn)
-    }
+private fun RedisOptions.createRuntime(keepDependenciesRunning: Boolean): SystemRuntime {
+  if (this is ProvidedRedisOptions) return ProvidedRuntime
+  return withProvidedRegistry(
+    container.image,
+    container.registry,
+    container.compatibleSubstitute
+  ) { dockerImageName ->
+    container
+      .useContainerFn(dockerImageName)
+      .withCommand("redis-server", "--requirepass", password)
+      .withReuse(keepDependenciesRunning)
+      .let { c -> c as StoveRedisContainer }
+      .apply(container.containerFn)
   }
-  return stove.withRedis(key, options, runtime)
 }
 
-suspend fun ValidationDsl.redis(validation: suspend RedisSystem.() -> Unit): Unit = validation(this.stove.redis())
+suspend fun ValidationDsl.redis(validation: suspend RedisSystem.() -> Unit): Unit = withSystemValidation(this.stove.redis(), validation)
 
-suspend fun ValidationDsl.redis(key: SystemKey, validation: suspend RedisSystem.() -> Unit): Unit = validation(this.stove.redis(key))
+suspend fun ValidationDsl.redis(key: SystemKey, validation: suspend RedisSystem.() -> Unit): Unit = withSystemValidation(
+  this.stove.redis(key),
+  validation
+)
 
 internal fun Stove.redis(): RedisSystem =
   getOrNone<RedisSystem>().getOrElse {

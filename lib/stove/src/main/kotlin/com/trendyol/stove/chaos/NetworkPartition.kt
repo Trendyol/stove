@@ -1,5 +1,7 @@
 package com.trendyol.stove.chaos
 
+import com.trendyol.stove.system.closeAll
+
 /** A named application-to-dependency network link that can be partitioned and healed. */
 interface NetworkPartitionTarget {
   val name: String
@@ -10,36 +12,19 @@ interface NetworkPartitionTarget {
 }
 
 /**
- * Runs an experiment with the selected network links partitioned.
- *
- * Every successfully partitioned target is healed in reverse order when the experiment finishes,
- * fails, or is cancelled. If recovery also fails, the experiment failure remains primary and the
- * recovery failure is attached as suppressed evidence.
+ * Partitions each distinct target and restores successfully partitioned targets in reverse order.
+ * Restoration runs even on cancellation; secondary failures are attached to the original failure.
  */
 suspend fun <T> withNetworkPartition(
   vararg targets: NetworkPartitionTarget,
   experiment: suspend () -> T
 ): T {
-  val partitionedTargets = mutableListOf<NetworkPartitionTarget>()
-  var experimentFailure: Throwable? = null
-
-  try {
+  val partitioned = mutableListOf<NetworkPartitionTarget>()
+  return restoring(restore = { closeAll(partitioned.asReversed()) { it.heal() } }) {
     targets.distinct().forEach { target ->
       target.partition()
-      partitionedTargets += target
+      partitioned += target
     }
-    return experiment()
-  } catch (failure: Throwable) {
-    experimentFailure = failure
-    throw failure
-  } finally {
-    val recoveryFailure = partitionedTargets
-      .asReversed()
-      .mapNotNull { target -> runCatching(target::heal).exceptionOrNull() }
-      .reduceOrNull { first, next -> first.apply { addSuppressed(next) } }
-
-    if (recoveryFailure != null) {
-      experimentFailure?.addSuppressed(recoveryFailure) ?: throw recoveryFailure
-    }
+    experiment()
   }
 }

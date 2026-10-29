@@ -3,6 +3,7 @@
 package com.trendyol.stove.postgres
 
 import arrow.core.getOrElse
+import com.trendyol.stove.chaos.*
 import com.trendyol.stove.containers.*
 import com.trendyol.stove.database.migrations.*
 import com.trendyol.stove.rdbms.*
@@ -202,61 +203,44 @@ internal fun Stove.postgresql(key: SystemKey): PostgresqlSystem =
  * }
  * ```
  */
-fun WithDsl.postgresql(
-  configure: () -> PostgresqlOptions
-): Stove {
-  val options = configure()
+fun WithDsl.postgresql(configure: @StoveDsl ChaosSetupScope.() -> PostgresqlOptions): Stove =
+  configurePostgresql(null, configure)
 
-  val runtime: SystemRuntime = if (options is ProvidedPostgresqlOptions) {
-    ProvidedRuntime
-  } else {
-    withProvidedRegistry(
-      options.container.imageWithTag,
-      options.container.registry,
-      options.container.compatibleSubstitute
-    ) { dockerImageName ->
-      options.container
-        .useContainerFn(dockerImageName)
-        .withDatabaseName(options.databaseName)
-        .withUsername(options.username)
-        .withPassword(options.password)
-        .withReuse(stove.keepDependenciesRunning)
-        .let { c -> c as StovePostgresqlContainer }
-        .apply(options.container.containerFn)
-    }
+fun WithDsl.postgresql(key: SystemKey, configure: @StoveDsl ChaosSetupScope.() -> PostgresqlOptions): Stove =
+  configurePostgresql(key, configure)
+
+private fun WithDsl.configurePostgresql(key: SystemKey?, configure: ChaosSetupScope.() -> PostgresqlOptions): Stove {
+  val scope = ChaosSetupScope()
+  val options = configure(scope)
+  val runtime = options.createRuntime(stove.keepDependenciesRunning)
+  if (key == null) stove.withPostgresql(options, runtime) else stove.withPostgresql(key, options, runtime)
+  if (scope.chaosEnabled) {
+    val system = if (key == null) stove.postgresql() else stove.postgresql(key)
+    system.enableChaosRouting()
   }
-  return stove.withPostgresql(options, runtime)
+  return stove
 }
 
-fun WithDsl.postgresql(
-  key: SystemKey,
-  configure: () -> PostgresqlOptions
-): Stove {
-  val options = configure()
-
-  val runtime: SystemRuntime = if (options is ProvidedPostgresqlOptions) {
-    ProvidedRuntime
-  } else {
-    withProvidedRegistry(
-      options.container.imageWithTag,
-      options.container.registry,
-      options.container.compatibleSubstitute
-    ) { dockerImageName ->
-      options.container
-        .useContainerFn(dockerImageName)
-        .withDatabaseName(options.databaseName)
-        .withUsername(options.username)
-        .withPassword(options.password)
-        .withReuse(stove.keepDependenciesRunning)
-        .let { c -> c as StovePostgresqlContainer }
-        .apply(options.container.containerFn)
-    }
+private fun PostgresqlOptions.createRuntime(keepDependenciesRunning: Boolean): SystemRuntime {
+  if (this is ProvidedPostgresqlOptions) return ProvidedRuntime
+  return withProvidedRegistry(
+    container.imageWithTag,
+    container.registry,
+    container.compatibleSubstitute
+  ) { dockerImageName ->
+    container
+      .useContainerFn(dockerImageName)
+      .withDatabaseName(databaseName)
+      .withUsername(username)
+      .withPassword(password)
+      .withReuse(keepDependenciesRunning)
+      .let { c -> c as StovePostgresqlContainer }
+      .apply(container.containerFn)
   }
-  return stove.withPostgresql(key, options, runtime)
 }
 
 suspend fun ValidationDsl.postgresql(validation: @StoveDsl suspend PostgresqlSystem.() -> Unit): Unit =
-  validation(this.stove.postgresql())
+  withSystemValidation(this.stove.postgresql(), validation)
 
 suspend fun ValidationDsl.postgresql(key: SystemKey, validation: @StoveDsl suspend PostgresqlSystem.() -> Unit): Unit =
-  validation(this.stove.postgresql(key))
+  withSystemValidation(this.stove.postgresql(key), validation)

@@ -2,12 +2,14 @@
 
 package com.trendyol.stove.mysql
 
+import com.trendyol.stove.chaos.*
 import com.trendyol.stove.functional.*
 import com.trendyol.stove.rdbms.*
 import com.trendyol.stove.reporting.Reports
 import com.trendyol.stove.system.Stove
 import com.trendyol.stove.system.abstractions.*
 import com.trendyol.stove.system.annotations.StoveDsl
+import com.trendyol.stove.system.closeAll
 import kotlinx.coroutines.runBlocking
 import kotliquery.*
 import org.slf4j.*
@@ -19,7 +21,7 @@ import org.slf4j.*
 class MySqlSystem internal constructor(
   override val stove: Stove,
   private val mysqlContext: MySqlContext
-) : PluggedSystem,
+) : ChaosCapableSystem,
   RunAware,
   ExposesConfiguration,
   Reports {
@@ -42,17 +44,15 @@ class MySqlSystem internal constructor(
   override suspend fun stop(): Unit = whenContainer { it.stop() }
 
   override fun close(): Unit = runBlocking {
-    Try {
-      if (::sqlOperations.isInitialized) {
-        mysqlContext.options.cleanup(sqlOperations)
-        sqlOperations.close()
-      }
-      executeWithReuseCheck { stop() }
-    }.recover { logger.warn("MySQL stop failed", it) }
+    closeAll(
+      { if (::sqlOperations.isInitialized) mysqlContext.options.cleanup(sqlOperations) },
+      { if (::sqlOperations.isInitialized) sqlOperations.close() },
+      { executeWithReuseCheck { stop() } }
+    )
   }
 
   override fun configuration(): List<String> =
-    mysqlContext.options.configureExposedConfiguration(exposedConfiguration)
+    mysqlContext.options.configureExposedConfiguration(applicationConfiguration(exposedConfiguration, RelationalDatabaseChaosAdapter))
 
   suspend inline fun <reified T : Any> shouldQuery(
     query: String,

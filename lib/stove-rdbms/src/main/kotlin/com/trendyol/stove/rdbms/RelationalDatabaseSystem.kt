@@ -4,14 +4,13 @@ package com.trendyol.stove.rdbms
 
 import arrow.core.Some
 import com.trendyol.stove.containers.StoveContainer
-import com.trendyol.stove.functional.*
 import com.trendyol.stove.reporting.Reports
 import com.trendyol.stove.system.Stove
 import com.trendyol.stove.system.abstractions.*
 import com.trendyol.stove.system.annotations.StoveDsl
+import com.trendyol.stove.system.closeAll
 import kotlinx.coroutines.runBlocking
 import kotliquery.*
-import org.slf4j.*
 import org.testcontainers.containers.JdbcDatabaseContainer
 
 @Suppress("UNCHECKED_CAST", "MemberVisibilityCanBePrivate")
@@ -23,8 +22,6 @@ abstract class RelationalDatabaseSystem<SELF : RelationalDatabaseSystem<SELF>> p
   RunAware,
   ExposesConfiguration,
   Reports {
-  private val logger: Logger = LoggerFactory.getLogger(javaClass)
-
   protected lateinit var exposedConfiguration: RelationalDatabaseExposedConfiguration
 
   protected lateinit var sqlOperations: NativeSqlOperations
@@ -104,21 +101,12 @@ abstract class RelationalDatabaseSystem<SELF : RelationalDatabaseSystem<SELF>> p
     }
   }
 
-  override fun close(): Unit =
-    runBlocking {
-      Try {
-        // Note: cleanup is handled in subclass via options
-        sqlOperations.close()
-        executeWithReuseCheck { stop() }
-      }.recover {
-        val containerInfo = when (val runtime = context.runtime) {
-          is JdbcDatabaseContainer<*> -> runtime.containerName
-          is ProvidedRuntime -> "provided instance"
-          else -> "unknown runtime"
-        }
-        logger.warn("got an error while stopping the container $containerInfo ")
-      }.let { }
-    }
+  override fun close(): Unit = runBlocking {
+    closeAll(
+      { if (::sqlOperations.isInitialized) sqlOperations.close() },
+      { executeWithReuseCheck { stop() } }
+    )
+  }
 
   @PublishedApi
   internal var internalSqlOperations: NativeSqlOperations

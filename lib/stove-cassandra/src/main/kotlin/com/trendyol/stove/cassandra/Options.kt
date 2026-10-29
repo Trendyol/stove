@@ -3,6 +3,7 @@
 package com.trendyol.stove.cassandra
 
 import arrow.core.getOrElse
+import com.trendyol.stove.chaos.*
 import com.trendyol.stove.containers.*
 import com.trendyol.stove.system.*
 import com.trendyol.stove.system.abstractions.*
@@ -95,58 +96,53 @@ internal fun Stove.cassandra(key: SystemKey): CassandraSystem =
  * }
  * ```
  */
-fun WithDsl.cassandra(
-  configure: () -> CassandraSystemOptions
-): Stove {
-  val options = configure()
 
-  val runtime: SystemRuntime = if (options is ProvidedCassandraSystemOptions) {
-    ProvidedRuntime
-  } else {
-    withProvidedRegistry(
-      options.container.imageWithTag,
-      options.container.registry,
-      options.container.compatibleSubstitute
-    ) { dockerImageName ->
-      options.container
-        .useContainerFn(dockerImageName)
-        .withReuse(stove.keepDependenciesRunning)
-        .let { c -> c as StoveCassandraContainer }
-        .apply(options.container.containerFn)
-    }
+/**
+ * Enables application-link faults for a dedicated single-node container when enableChaos() is called.
+ * The application must use the exposed contact point as its only seed. Cluster discovery, topology
+ * changes, provided clusters and alternate contact points are unsupported.
+ */
+fun WithDsl.cassandra(configure: @StoveDsl ChaosSetupScope.() -> CassandraSystemOptions): Stove =
+  configureCassandra(null, configure)
+
+fun WithDsl.cassandra(key: SystemKey, configure: @StoveDsl ChaosSetupScope.() -> CassandraSystemOptions): Stove =
+  configureCassandra(key, configure)
+
+private fun WithDsl.configureCassandra(key: SystemKey?, configure: ChaosSetupScope.() -> CassandraSystemOptions): Stove {
+  val scope = ChaosSetupScope()
+  val options = configure(scope)
+  require(!scope.chaosEnabled || options !is ProvidedCassandraSystemOptions) {
+    "Cassandra chaos supports only a dedicated single-node container; provided clusters can advertise unproxied peers"
   }
-  return stove.withCassandra(options, runtime)
+  val runtime = options.createRuntime(stove.keepDependenciesRunning)
+  if (key == null) stove.withCassandra(options, runtime) else stove.withCassandra(key, options, runtime)
+  if (scope.chaosEnabled) {
+    val system = if (key == null) stove.cassandra() else stove.cassandra(key)
+    system.enableChaosRouting()
+  }
+  return stove
 }
 
-fun WithDsl.cassandra(
-  key: SystemKey,
-  configure: () -> CassandraSystemOptions
-): Stove {
-  val options = configure()
-
-  val runtime: SystemRuntime = if (options is ProvidedCassandraSystemOptions) {
-    ProvidedRuntime
-  } else {
-    withProvidedRegistry(
-      options.container.imageWithTag,
-      options.container.registry,
-      options.container.compatibleSubstitute
-    ) { dockerImageName ->
-      options.container
-        .useContainerFn(dockerImageName)
-        .withReuse(stove.keepDependenciesRunning)
-        .let { c -> c as StoveCassandraContainer }
-        .apply(options.container.containerFn)
-    }
+private fun CassandraSystemOptions.createRuntime(keepDependenciesRunning: Boolean): SystemRuntime {
+  if (this is ProvidedCassandraSystemOptions) return ProvidedRuntime
+  return withProvidedRegistry(
+    container.imageWithTag,
+    container.registry,
+    container.compatibleSubstitute
+  ) { dockerImageName ->
+    container
+      .useContainerFn(dockerImageName)
+      .withReuse(keepDependenciesRunning)
+      .let { c -> c as StoveCassandraContainer }
+      .apply(container.containerFn)
   }
-  return stove.withCassandra(key, options, runtime)
 }
 
 suspend fun ValidationDsl.cassandra(
   validation: @CassandraDsl suspend CassandraSystem.() -> Unit
-): Unit = validation(this.stove.cassandra())
+): Unit = withSystemValidation(this.stove.cassandra(), validation)
 
 suspend fun ValidationDsl.cassandra(
   key: SystemKey,
   validation: @CassandraDsl suspend CassandraSystem.() -> Unit
-): Unit = validation(this.stove.cassandra(key))
+): Unit = withSystemValidation(this.stove.cassandra(key), validation)

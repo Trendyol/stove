@@ -2,11 +2,13 @@
 
 package com.trendyol.stove.redis
 
+import com.trendyol.stove.chaos.*
 import com.trendyol.stove.functional.*
 import com.trendyol.stove.reporting.*
 import com.trendyol.stove.system.Stove
 import com.trendyol.stove.system.abstractions.*
 import com.trendyol.stove.system.annotations.StoveDsl
+import com.trendyol.stove.system.closeAll
 import io.lettuce.core.*
 import kotlinx.coroutines.runBlocking
 import org.slf4j.*
@@ -125,7 +127,7 @@ import org.slf4j.*
 class RedisSystem(
   override val stove: Stove,
   private val context: RedisContext
-) : PluggedSystem,
+) : ChaosCapableSystem,
   RunAware,
   ExposesConfiguration,
   Reports {
@@ -147,16 +149,16 @@ class RedisSystem(
   override suspend fun stop(): Unit = whenContainer { it.stop() }
 
   override fun close(): Unit = runBlocking {
-    Try {
-      if (::client.isInitialized) {
-        context.options.cleanup(client)
-        client.shutdown()
-      }
-      executeWithReuseCheck { stop() }
-    }.recover { logger.warn("Redis client shutdown failed", it) }
+    closeAll(
+      { if (::client.isInitialized) context.options.cleanup(client) },
+      { if (::client.isInitialized) client.shutdown() },
+      { executeWithReuseCheck { stop() } }
+    )
   }
 
-  override fun configuration(): List<String> = context.options.configureExposedConfiguration(exposedConfiguration)
+  override fun configuration(): List<String> = context.options.configureExposedConfiguration(
+    applicationConfiguration(exposedConfiguration, RedisChaosAdapter)
+  )
 
   /**
    * Pauses the container. Use with care, as it will pause the container which might affect other tests.
@@ -207,6 +209,7 @@ class RedisSystem(
   private fun createClient(config: RedisExposedConfiguration): RedisClient =
     RedisClient.create(
       RedisURI.create(config.host, config.port).apply {
+        database = config.database.toInt()
         setCredentialsProvider(CredentialsProvider.from { RedisCredentials.just(null, config.password) })
       }
     )

@@ -3,6 +3,7 @@
 package com.trendyol.stove.mysql
 
 import com.trendyol.stove.extensions.kotest.StoveKotestExtension
+import com.trendyol.stove.rdbms.RelationalDatabaseExposedConfiguration
 import com.trendyol.stove.system.Stove
 import com.trendyol.stove.system.abstractions.ApplicationUnderTest
 import io.kotest.core.config.AbstractProjectConfig
@@ -13,6 +14,8 @@ import org.testcontainers.containers.MySQLContainer
 // ============================================================================
 // Shared components
 // ============================================================================
+
+internal lateinit var applicationDatabaseConfiguration: RelationalDatabaseExposedConfiguration
 
 class NoOpApplication : ApplicationUnderTest<Unit> {
   override suspend fun start(configurations: List<String>) = Unit
@@ -80,14 +83,20 @@ class ContainerMySqlStrategy : MySqlTestStrategy {
       container = MySqlContainerOptions(
         tag = "9.6.0"
       ),
-      configureExposedConfiguration = { _ -> listOf() }
+      configureExposedConfiguration = { configuration ->
+        applicationDatabaseConfiguration = configuration
+        emptyList()
+      }
     ).migrations {
       register<InitialMigration>()
     }
 
     Stove()
       .with {
-        mysql { options }
+        mysql {
+          enableChaos()
+          options
+        }
         applicationUnderTest(NoOpApplication())
       }.run()
   }
@@ -133,14 +142,20 @@ class ProvidedMySqlStrategy : MySqlTestStrategy {
           logger.info("Running cleanup on provided instance")
           sqlOps.execute("DROP TABLE IF EXISTS MigrationHistory")
         },
-        configureExposedConfiguration = { _ -> listOf() }
+        configureExposedConfiguration = { configuration ->
+          applicationDatabaseConfiguration = configuration
+          emptyList()
+        }
       ).migrations {
         register<InitialMigration>()
       }
 
     Stove()
       .with {
-        mysql { options }
+        mysql {
+          enableChaos()
+          options
+        }
         applicationUnderTest(NoOpApplication())
       }.run()
   }

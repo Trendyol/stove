@@ -1,6 +1,7 @@
 package com.trendyol.stove.postgres
 
 import com.trendyol.stove.extensions.kotest.StoveKotestExtension
+import com.trendyol.stove.rdbms.RelationalDatabaseExposedConfiguration
 import com.trendyol.stove.system.Stove
 import com.trendyol.stove.system.abstractions.ApplicationUnderTest
 import com.trendyol.stove.system.stove
@@ -12,6 +13,8 @@ import org.testcontainers.postgresql.PostgreSQLContainer
 // ============================================================================
 // Shared components
 // ============================================================================
+
+internal lateinit var applicationDatabaseConfiguration: RelationalDatabaseExposedConfiguration
 
 class NoOpApplication : ApplicationUnderTest<Unit> {
   override suspend fun start(configurations: List<String>) = Unit
@@ -74,14 +77,20 @@ class ContainerPostgresStrategy : PostgresTestStrategy {
 
     val options = PostgresqlOptions(
       databaseName = "testing",
-      configureExposedConfiguration = { _ -> listOf() }
+      configureExposedConfiguration = { configuration ->
+        applicationDatabaseConfiguration = configuration
+        emptyList()
+      }
     ).migrations {
       register<InitialMigration>()
     }
 
     Stove()
       .with {
-        postgresql { options }
+        postgresql {
+          enableChaos()
+          options
+        }
         applicationUnderTest(NoOpApplication())
       }.run()
   }
@@ -128,14 +137,20 @@ class ProvidedPostgresStrategy : PostgresTestStrategy {
           logger.info("Running cleanup on provided instance")
           sqlOps.execute("DROP TABLE IF EXISTS MigrationHistory CASCADE")
         },
-        configureExposedConfiguration = { _ -> listOf() }
+        configureExposedConfiguration = { configuration ->
+          applicationDatabaseConfiguration = configuration
+          emptyList()
+        }
       ).migrations {
         register<InitialMigration>()
       }
 
     Stove()
       .with {
-        postgresql { options }
+        postgresql {
+          enableChaos()
+          options
+        }
         applicationUnderTest(NoOpApplication())
       }.run()
   }

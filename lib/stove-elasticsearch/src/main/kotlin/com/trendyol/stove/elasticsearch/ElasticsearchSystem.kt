@@ -7,10 +7,12 @@ import co.elastic.clients.elasticsearch._types.query_dsl.Query
 import co.elastic.clients.elasticsearch.core.*
 import co.elastic.clients.transport.rest_client.RestClientOptions
 import co.elastic.clients.transport.rest_client.RestClientTransport
+import com.trendyol.stove.chaos.*
 import com.trendyol.stove.functional.*
 import com.trendyol.stove.reporting.Reports
 import com.trendyol.stove.system.Stove
 import com.trendyol.stove.system.abstractions.*
+import com.trendyol.stove.system.closeAll
 import kotlinx.coroutines.runBlocking
 import org.apache.http.HttpHost
 import org.apache.http.auth.*
@@ -161,7 +163,7 @@ import kotlin.jvm.optionals.getOrElse
 class ElasticsearchSystem internal constructor(
   override val stove: Stove,
   private val context: ElasticsearchContext
-) : PluggedSystem,
+) : ChaosCapableSystem,
   RunAware,
   AfterRunAware,
   ExposesConfiguration,
@@ -188,14 +190,15 @@ class ElasticsearchSystem internal constructor(
   override suspend fun stop(): Unit = whenContainer { it.stop() }
 
   override fun close(): Unit = runBlocking {
-    Try {
-      context.options.cleanup(esClient)
-      esClient._transport().close()
-      executeWithReuseCheck { stop() }
-    }.recover { logger.warn("got an error while stopping elasticsearch: ${it.message}") }
+    closeAll(
+      { if (::esClient.isInitialized) context.options.cleanup(esClient) },
+      { if (::esClient.isInitialized) esClient._transport().close() },
+      { executeWithReuseCheck { stop() } }
+    )
   }
 
-  override fun configuration(): List<String> = context.options.configureExposedConfiguration(exposedConfiguration)
+  override fun configuration(): List<String> =
+    context.options.configureExposedConfiguration(applicationConfiguration(exposedConfiguration, ElasticsearchChaosAdapter))
 
   suspend inline fun <reified T : Any> shouldQuery(
     query: String,

@@ -3,6 +3,7 @@
 package com.trendyol.stove.mysql
 
 import arrow.core.getOrElse
+import com.trendyol.stove.chaos.*
 import com.trendyol.stove.containers.*
 import com.trendyol.stove.database.migrations.*
 import com.trendyol.stove.rdbms.*
@@ -205,61 +206,44 @@ internal fun Stove.mysql(key: SystemKey): MySqlSystem =
  * }
  * ```
  */
-fun WithDsl.mysql(
-  configure: () -> MySqlOptions
-): Stove {
-  val options = configure()
+fun WithDsl.mysql(configure: @StoveDsl ChaosSetupScope.() -> MySqlOptions): Stove =
+  configureMySql(null, configure)
 
-  val runtime: SystemRuntime = if (options is ProvidedMySqlOptions) {
-    ProvidedRuntime
-  } else {
-    withProvidedRegistry(
-      options.container.imageWithTag,
-      options.container.registry,
-      options.container.compatibleSubstitute
-    ) { dockerImageName ->
-      options.container
-        .useContainerFn(dockerImageName)
-        .withDatabaseName(options.databaseName)
-        .withUsername(options.username)
-        .withPassword(options.password)
-        .withReuse(stove.keepDependenciesRunning)
-        .let { c -> c as StoveMySqlContainer }
-        .apply(options.container.containerFn)
-    }
+fun WithDsl.mysql(key: SystemKey, configure: @StoveDsl ChaosSetupScope.() -> MySqlOptions): Stove =
+  configureMySql(key, configure)
+
+private fun WithDsl.configureMySql(key: SystemKey?, configure: ChaosSetupScope.() -> MySqlOptions): Stove {
+  val scope = ChaosSetupScope()
+  val options = configure(scope)
+  val runtime = options.createRuntime(stove.keepDependenciesRunning)
+  if (key == null) stove.withMySql(options, runtime) else stove.withMySql(key, options, runtime)
+  if (scope.chaosEnabled) {
+    val system = if (key == null) stove.mysql() else stove.mysql(key)
+    system.enableChaosRouting()
   }
-  return stove.withMySql(options, runtime)
+  return stove
 }
 
-fun WithDsl.mysql(
-  key: SystemKey,
-  configure: () -> MySqlOptions
-): Stove {
-  val options = configure()
-
-  val runtime: SystemRuntime = if (options is ProvidedMySqlOptions) {
-    ProvidedRuntime
-  } else {
-    withProvidedRegistry(
-      options.container.imageWithTag,
-      options.container.registry,
-      options.container.compatibleSubstitute
-    ) { dockerImageName ->
-      options.container
-        .useContainerFn(dockerImageName)
-        .withDatabaseName(options.databaseName)
-        .withUsername(options.username)
-        .withPassword(options.password)
-        .withReuse(stove.keepDependenciesRunning)
-        .let { c -> c as StoveMySqlContainer }
-        .apply(options.container.containerFn)
-    }
+private fun MySqlOptions.createRuntime(keepDependenciesRunning: Boolean): SystemRuntime {
+  if (this is ProvidedMySqlOptions) return ProvidedRuntime
+  return withProvidedRegistry(
+    container.imageWithTag,
+    container.registry,
+    container.compatibleSubstitute
+  ) { dockerImageName ->
+    container
+      .useContainerFn(dockerImageName)
+      .withDatabaseName(databaseName)
+      .withUsername(username)
+      .withPassword(password)
+      .withReuse(keepDependenciesRunning)
+      .let { c -> c as StoveMySqlContainer }
+      .apply(container.containerFn)
   }
-  return stove.withMySql(key, options, runtime)
 }
 
 suspend fun ValidationDsl.mysql(validation: @StoveDsl suspend MySqlSystem.() -> Unit): Unit =
-  validation(this.stove.mysql())
+  withSystemValidation(this.stove.mysql(), validation)
 
 suspend fun ValidationDsl.mysql(key: SystemKey, validation: @StoveDsl suspend MySqlSystem.() -> Unit): Unit =
-  validation(this.stove.mysql(key))
+  withSystemValidation(this.stove.mysql(key), validation)

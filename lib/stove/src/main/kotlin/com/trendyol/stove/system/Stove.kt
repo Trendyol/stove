@@ -1,7 +1,6 @@
 package com.trendyol.stove.system
 
 import arrow.core.*
-import com.trendyol.stove.functional.*
 import com.trendyol.stove.reporting.*
 import com.trendyol.stove.system.Stove.Companion.instance
 import com.trendyol.stove.system.abstractions.*
@@ -86,7 +85,9 @@ class Stove(
     configure(optionsDsl)
   }
 
-  private var cleanup: MutableList<(suspend () -> Unit)> = mutableListOf()
+  private val cleanup = mutableListOf<AutoCloseable>()
+  private val closed = java.util.concurrent.atomic.AtomicBoolean(false)
+  private var applicationStartAttempted = false
 
   @PublishedApi
   internal val activeSystems: MutableMap<KClass<*>, PluggedSystem> = mutableMapOf()
@@ -94,7 +95,7 @@ class Stove(
   @PublishedApi
   internal val keyedSystems: MutableMap<Pair<KClass<*>, SystemKey>, PluggedSystem> = mutableMapOf()
 
-  private lateinit var applicationUnderTest: ApplicationUnderTest<*>
+  private lateinit var applicationRunner: ApplicationUnderTest<*>
   private val logger: Logger = LoggerFactory.getLogger(javaClass)
 
   @PublishedApi
@@ -246,7 +247,7 @@ class Stove(
    * Usually a spring or generic application that can be hosted
    */
   fun applicationUnderTest(applicationUnderTest: ApplicationUnderTest<*>): Stove {
-    this.applicationUnderTest = applicationUnderTest
+    this.applicationRunner = applicationUnderTest
     return this
   }
 
@@ -258,38 +259,46 @@ class Stove(
   private lateinit var applicationUnderTestContext: Any
 
   /**
-   * Runs the entire dependency tree that implements [RunnableSystemWithContext] since only the [RunnableSystemWithContext] can be run.
-   * Note that all the dependencies will run as parallel.
-   * It will invoke the runnable methods of [RunnableSystemWithContext]s with the order:
-   * - [RunnableSystemWithContext.beforeRun]
-   * - [RunnableSystemWithContext.run]
-   * - [RunnableSystemWithContext.afterRun]
+   * Starts each lifecycle phase in parallel, then exposes dependency configuration to the application.
+   * A failed startup rolls back resources, including a partially started application.
    */
   override suspend fun run() {
-    coroutineScope {
-      val allSystems = allRegisteredSystems()
-
-      allSystems.filterIsInstance<BeforeRunAware>()
-        .map { async(context = Dispatchers.IO) { it.beforeRun() } }.awaitAll()
-
-      allSystems.filterIsInstance<RunAware>()
-        .map { async(context = Dispatchers.IO) { it.run() } }.awaitAll()
-
-      val dependencyConfigurations =
-        allSystems
-          .filterIsInstance<ExposesConfiguration>()
-          .flatMap { it.configuration() }
-
-      applicationUnderTestContext = applicationUnderTest.start(dependencyConfigurations)
-
-      allSystems.filterIsInstance<AfterRunAware>()
-        .map { async(context = Dispatchers.IO) { it.afterRun() } }.awaitAll()
-
-      // Cleanup is handled by registerForDispose — no duplication here
-      cleanup.add { applicationUnderTest.stop() }
+    check(!closed.get()) { "Stove has been closed" }
+    check(this::applicationRunner.isInitialized) { "Register an application runner before starting Stove" }
+    try {
+      startRegisteredSystems()
+      instance = this
+    } catch (failure: Throwable) {
+      rollbackStartup(failure)
+      throw failure
     }
+  }
 
-    instance = this
+  private suspend fun startRegisteredSystems(): Unit = coroutineScope {
+    val systems = allRegisteredSystems()
+    systems.filterIsInstance<BeforeRunAware>().runInParallel { it.beforeRun() }
+    systems.filterIsInstance<RunAware>().runInParallel { it.run() }
+    startApplication(systems)
+    systems.filterIsInstance<AfterRunAware>().runInParallel { it.afterRun() }
+  }
+
+  private suspend fun <T> Iterable<T>.runInParallel(action: suspend (T) -> Unit): Unit = coroutineScope {
+    map { system -> async(Dispatchers.IO) { action(system) } }.awaitAll()
+  }
+
+  private suspend fun startApplication(systems: Collection<PluggedSystem>) {
+    val configurations = systems.filterIsInstance<ExposesConfiguration>().flatMap { it.configuration() }
+    // Own shutdown before user startup: startup and afterRun may partially succeed then fail.
+    applicationStartAttempted = true
+    applicationUnderTestContext = applicationRunner.start(configurations)
+  }
+
+  private suspend fun rollbackStartup(failure: Throwable): Unit = withContext(NonCancellable) {
+    try {
+      shutdown()
+    } catch (cleanupFailure: Throwable) {
+      if (cleanupFailure !== failure) failure.addSuppressed(cleanupFailure)
+    }
   }
 
   /**
@@ -362,25 +371,38 @@ class Stove(
     keyedSystems.getOrNone(T::class to key).map { it as T }
 
   fun <T : AutoCloseable> registerForDispose(closeable: T): T {
-    cleanup.add { closeable.close() }
+    check(!closed.get()) { "Cannot register resources on a closed Stove" }
+    cleanup.add(closeable)
     return closeable
   }
 
   @Suppress("UNCHECKED_CAST", "unused")
   fun <TContext> applicationUnderTestContext(): TContext = applicationUnderTestContext as TContext
 
-  override fun close(): Unit = runBlocking {
-    Try {
-      if (options.dumpReportOnStop && options.reportingEnabled) {
-        // Only dump report if there are failures
-        val report = reporter.dumpIfFailed(options.defaultRenderer)
-        if (report.isNotEmpty()) {
-          logger.info("=== Stove Test Report (Failures Detected) ===")
-          logger.info(report)
-        }
-      }
-      cleanup.forEach { it() }
-    }.recover { logger.warn("got an error while stopping Stove: ${it.message}") }
+  override fun close(): Unit = runBlocking { shutdown() }
+
+  private suspend fun shutdown() {
+    if (!closed.compareAndSet(false, true)) return
+    closeAll(takeShutdownActions()) { it() }
+  }
+
+  private fun takeShutdownActions(): List<suspend () -> Unit> = buildList {
+    val resources = cleanup.filterIsInstance<ApplicationResource>()
+    resources.forEach { resource -> add { resource.beforeApplicationStop() } }
+    if (applicationStartAttempted) {
+      applicationStartAttempted = false
+      add { applicationRunner.stop() }
+    }
+    resources.asReversed().forEach { resource -> add { resource.close() } }
+    cleanup.asReversed().filterNot { it is ApplicationResource }.forEach { resource -> add { resource.close() } }
+    cleanup.clear()
+    add { dumpFailureReport() }
+  }
+
+  private fun dumpFailureReport() {
+    if (!options.dumpReportOnStop || !options.reportingEnabled) return
+    val report = reporter.dumpIfFailed(options.defaultRenderer)
+    if (report.isNotEmpty()) logger.info("=== Stove Test Report (Failures Detected) ===\n$report")
   }
 }
 

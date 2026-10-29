@@ -3,6 +3,7 @@
 package com.trendyol.stove.mssql
 
 import arrow.core.getOrElse
+import com.trendyol.stove.chaos.*
 import com.trendyol.stove.containers.*
 import com.trendyol.stove.database.migrations.*
 import com.trendyol.stove.rdbms.*
@@ -230,68 +231,49 @@ internal fun Stove.mssql(key: SystemKey): MsSqlSystem =
  * }
  * ```
  */
-fun WithDsl.mssql(
-  configure: () -> MsSqlOptions
-): Stove {
-  val options = configure()
+fun WithDsl.mssql(configure: @StoveDsl ChaosSetupScope.() -> MsSqlOptions): Stove =
+  configureMsSql(null, configure)
 
-  val runtime: SystemRuntime = if (options is ProvidedMsSqlOptions) {
-    ProvidedRuntime
-  } else {
-    withProvidedRegistry(
-      options.container.imageWithTag,
-      options.container.registry,
-      options.container.compatibleSubstitute
-    ) { dockerImageName ->
-      options.container
-        .useContainerFn(dockerImageName)
-        .acceptLicense()
-        .withEnv("MSSQL_USER", options.userName)
-        .withEnv("MSSQL_SA_PASSWORD", options.password)
-        .withEnv("MSSQL_DB", options.databaseName)
-        .withPassword(options.password)
-        .withReuse(stove.keepDependenciesRunning)
-        .let { c -> c as StoveMsSqlContainer }
-        .apply(options.container.containerFn)
-    }
+fun WithDsl.mssql(key: SystemKey, configure: @StoveDsl ChaosSetupScope.() -> MsSqlOptions): Stove =
+  configureMsSql(key, configure)
+
+private fun WithDsl.configureMsSql(key: SystemKey?, configure: ChaosSetupScope.() -> MsSqlOptions): Stove {
+  val scope = ChaosSetupScope()
+  val options = configure(scope)
+  val runtime = options.createRuntime(stove.keepDependenciesRunning)
+  if (key == null) stove.withMsSql(options, runtime) else stove.withMsSql(key, options, runtime)
+  if (scope.chaosEnabled) {
+    val system = if (key == null) stove.mssql() else stove.mssql(key)
+    system.enableChaosRouting()
   }
-  return stove.withMsSql(options, runtime)
+  return stove
 }
 
-fun WithDsl.mssql(
-  key: SystemKey,
-  configure: () -> MsSqlOptions
-): Stove {
-  val options = configure()
-
-  val runtime: SystemRuntime = if (options is ProvidedMsSqlOptions) {
-    ProvidedRuntime
-  } else {
-    withProvidedRegistry(
-      options.container.imageWithTag,
-      options.container.registry,
-      options.container.compatibleSubstitute
-    ) { dockerImageName ->
-      options.container
-        .useContainerFn(dockerImageName)
-        .acceptLicense()
-        .withEnv("MSSQL_USER", options.userName)
-        .withEnv("MSSQL_SA_PASSWORD", options.password)
-        .withEnv("MSSQL_DB", options.databaseName)
-        .withPassword(options.password)
-        .withReuse(stove.keepDependenciesRunning)
-        .let { c -> c as StoveMsSqlContainer }
-        .apply(options.container.containerFn)
-    }
+private fun MsSqlOptions.createRuntime(keepDependenciesRunning: Boolean): SystemRuntime {
+  if (this is ProvidedMsSqlOptions) return ProvidedRuntime
+  return withProvidedRegistry(
+    container.imageWithTag,
+    container.registry,
+    container.compatibleSubstitute
+  ) { dockerImageName ->
+    container
+      .useContainerFn(dockerImageName)
+      .acceptLicense()
+      .withEnv("MSSQL_USER", userName)
+      .withEnv("MSSQL_SA_PASSWORD", password)
+      .withEnv("MSSQL_DB", databaseName)
+      .withPassword(password)
+      .withReuse(keepDependenciesRunning)
+      .let { c -> c as StoveMsSqlContainer }
+      .apply(container.containerFn)
   }
-  return stove.withMsSql(key, options, runtime)
 }
 
 suspend fun ValidationDsl.mssql(
   validation: @StoveDsl suspend MsSqlSystem.() -> Unit
-): Unit = validation(this.stove.mssql())
+): Unit = withSystemValidation(this.stove.mssql(), validation)
 
 suspend fun ValidationDsl.mssql(
   key: SystemKey,
   validation: @StoveDsl suspend MsSqlSystem.() -> Unit
-): Unit = validation(this.stove.mssql(key))
+): Unit = withSystemValidation(this.stove.mssql(key), validation)

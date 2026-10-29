@@ -2,6 +2,12 @@
 
 Use these notes when the project's resolved Stove version and failure signature match. Check dependency resolution before changing versions.
 
+## Unreleased database setup and chaos migration
+
+For receiver-based setup callbacks, removed zero-argument registration overloads, and managed database chaos, use
+[the focused migration guide](setup-chaos-migration.md). These changes are unreleased after `0.27.6`; verify the resolved
+artifact before migrating.
+
 ## Known runtime pitfalls (0.25.x)
 
 Stove 0.25+ compiles against kotlinx-coroutines 1.11 and Ktor 3.5. Two failure signatures to recognize (full details in [0.25.0 release notes](https://github.com/Trendyol/stove/blob/main/docs/release-notes/0.25.0.md)):

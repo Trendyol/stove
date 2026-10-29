@@ -1,6 +1,7 @@
 package com.trendyol.stove.mongodb
 
 import arrow.core.getOrElse
+import com.trendyol.stove.chaos.*
 import com.trendyol.stove.containers.*
 import com.trendyol.stove.system.*
 import com.trendyol.stove.system.abstractions.*
@@ -101,58 +102,51 @@ internal fun Stove.mongodb(key: SystemKey): MongodbSystem =
  * }
  * ```
  */
-fun WithDsl.mongodb(
-  configure: () -> MongodbSystemOptions
-): Stove {
-  val options = configure()
 
-  val runtime: SystemRuntime = if (options is ProvidedMongodbSystemOptions) {
-    ProvidedRuntime
-  } else {
-    withProvidedRegistry(
-      options.container.imageWithTag,
-      options.container.registry,
-      options.container.compatibleSubstitute
-    ) { dockerImageName ->
-      options.container
-        .useContainerFn(dockerImageName)
-        .withReuse(stove.keepDependenciesRunning)
-        .let { c -> c as StoveMongoContainer }
-        .apply(options.container.containerFn)
-    }
+/**
+ * Registers MongoDB. enableChaos() routes the application through one managed TCP endpoint and
+ * forces directConnection=true. SRV, multiple seeds, load balancing and TLS are unsupported.
+ * Use the exposed connectionString or replicaSetUrl; rebuilding a URI from host/port loses direct mode.
+ */
+fun WithDsl.mongodb(configure: @StoveDsl ChaosSetupScope.() -> MongodbSystemOptions): Stove =
+  configureMongodb(null, configure)
+
+fun WithDsl.mongodb(key: SystemKey, configure: @StoveDsl ChaosSetupScope.() -> MongodbSystemOptions): Stove =
+  configureMongodb(key, configure)
+
+private fun WithDsl.configureMongodb(key: SystemKey?, configure: ChaosSetupScope.() -> MongodbSystemOptions): Stove {
+  val scope = ChaosSetupScope()
+  val options = configure(scope)
+  if (scope.chaosEnabled && options is ProvidedMongodbSystemOptions) MongodbChaosAdapter.endpoint(options.config)
+  val runtime = options.createRuntime(stove.keepDependenciesRunning)
+  if (key == null) stove.withMongodb(options, runtime) else stove.withMongodb(key, options, runtime)
+  if (scope.chaosEnabled) {
+    val system = if (key == null) stove.mongodb() else stove.mongodb(key)
+    system.enableChaosRouting()
   }
-  return stove.withMongodb(options, runtime)
+  return stove
 }
 
-fun WithDsl.mongodb(
-  key: SystemKey,
-  configure: () -> MongodbSystemOptions
-): Stove {
-  val options = configure()
-
-  val runtime: SystemRuntime = if (options is ProvidedMongodbSystemOptions) {
-    ProvidedRuntime
-  } else {
-    withProvidedRegistry(
-      options.container.imageWithTag,
-      options.container.registry,
-      options.container.compatibleSubstitute
-    ) { dockerImageName ->
-      options.container
-        .useContainerFn(dockerImageName)
-        .withReuse(stove.keepDependenciesRunning)
-        .let { c -> c as StoveMongoContainer }
-        .apply(options.container.containerFn)
-    }
+private fun MongodbSystemOptions.createRuntime(keepDependenciesRunning: Boolean): SystemRuntime {
+  if (this is ProvidedMongodbSystemOptions) return ProvidedRuntime
+  return withProvidedRegistry(
+    container.imageWithTag,
+    container.registry,
+    container.compatibleSubstitute
+  ) { dockerImageName ->
+    container
+      .useContainerFn(dockerImageName)
+      .withReuse(keepDependenciesRunning)
+      .let { c -> c as StoveMongoContainer }
+      .apply(container.containerFn)
   }
-  return stove.withMongodb(key, options, runtime)
 }
 
 suspend fun ValidationDsl.mongodb(
   validation: @MongoDsl suspend MongodbSystem.() -> Unit
-): Unit = validation(this.stove.mongodb())
+): Unit = withSystemValidation(this.stove.mongodb(), validation)
 
 suspend fun ValidationDsl.mongodb(
   key: SystemKey,
   validation: @MongoDsl suspend MongodbSystem.() -> Unit
-): Unit = validation(this.stove.mongodb(key))
+): Unit = withSystemValidation(this.stove.mongodb(key), validation)

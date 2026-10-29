@@ -1,3 +1,67 @@
+public abstract interface class com/trendyol/stove/chaos/ChaosCapableSystem : com/trendyol/stove/system/abstractions/PluggedSystem {
+}
+
+public final class com/trendyol/stove/chaos/ChaosCapableSystem$DefaultImpls {
+	public static fun executeWithReuseCheck (Lcom/trendyol/stove/chaos/ChaosCapableSystem;Lkotlin/jvm/functions/Function1;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static fun then (Lcom/trendyol/stove/chaos/ChaosCapableSystem;)Lcom/trendyol/stove/system/Stove;
+}
+
+public final class com/trendyol/stove/chaos/ChaosDslKt {
+	public static final fun applicationConfiguration (Lcom/trendyol/stove/chaos/ChaosCapableSystem;Ljava/lang/Object;Lcom/trendyol/stove/chaos/ChaosEndpointAdapter;)Ljava/lang/Object;
+	public static final fun duringFault (Lcom/trendyol/stove/chaos/ChaosCapableSystem;Lcom/trendyol/stove/chaos/NetworkFault;Lkotlin/jvm/functions/Function2;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static synthetic fun duringFault$default (Lcom/trendyol/stove/chaos/ChaosCapableSystem;Lcom/trendyol/stove/chaos/NetworkFault;Lkotlin/jvm/functions/Function2;Lkotlin/coroutines/Continuation;ILjava/lang/Object;)Ljava/lang/Object;
+	public static final fun enableChaosRouting (Lcom/trendyol/stove/chaos/ChaosCapableSystem;)V
+	public static final fun withSystemValidation (Lcom/trendyol/stove/chaos/ChaosCapableSystem;Lkotlin/jvm/functions/Function2;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+}
+
+public abstract interface class com/trendyol/stove/chaos/ChaosEndpointAdapter {
+	public abstract fun applicationConfiguration (Ljava/lang/Object;Lcom/trendyol/stove/chaos/TcpEndpoint;)Ljava/lang/Object;
+	public abstract fun endpoint (Ljava/lang/Object;)Lcom/trendyol/stove/chaos/TcpEndpoint;
+}
+
+public final class com/trendyol/stove/chaos/ChaosSetupScope {
+	public fun <init> ()V
+	public final fun enableChaos ()V
+	public final fun getChaosEnabled ()Z
+}
+
+public abstract interface class com/trendyol/stove/chaos/NetworkFault {
+}
+
+public final class com/trendyol/stove/chaos/NetworkFault$Latency : com/trendyol/stove/chaos/NetworkFault {
+	public synthetic fun <init> (JLcom/trendyol/stove/chaos/TrafficDirection;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public synthetic fun <init> (JLcom/trendyol/stove/chaos/TrafficDirection;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1-UwyO8pc ()J
+	public final fun component2 ()Lcom/trendyol/stove/chaos/TrafficDirection;
+	public final fun copy-VtjQ1oo (JLcom/trendyol/stove/chaos/TrafficDirection;)Lcom/trendyol/stove/chaos/NetworkFault$Latency;
+	public static synthetic fun copy-VtjQ1oo$default (Lcom/trendyol/stove/chaos/NetworkFault$Latency;JLcom/trendyol/stove/chaos/TrafficDirection;ILjava/lang/Object;)Lcom/trendyol/stove/chaos/NetworkFault$Latency;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getDirection ()Lcom/trendyol/stove/chaos/TrafficDirection;
+	public final fun getDuration-UwyO8pc ()J
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/trendyol/stove/chaos/NetworkFault$Stall : com/trendyol/stove/chaos/NetworkFault {
+	public static final field INSTANCE Lcom/trendyol/stove/chaos/NetworkFault$Stall;
+	public fun equals (Ljava/lang/Object;)Z
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/trendyol/stove/chaos/NetworkFault$Unavailable : com/trendyol/stove/chaos/NetworkFault {
+	public static final field INSTANCE Lcom/trendyol/stove/chaos/NetworkFault$Unavailable;
+	public fun equals (Ljava/lang/Object;)Z
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/trendyol/stove/chaos/NetworkFaultKt {
+	public static final fun latency-VtjQ1oo (JLcom/trendyol/stove/chaos/TrafficDirection;)Lcom/trendyol/stove/chaos/NetworkFault;
+	public static synthetic fun latency-VtjQ1oo$default (JLcom/trendyol/stove/chaos/TrafficDirection;ILjava/lang/Object;)Lcom/trendyol/stove/chaos/NetworkFault;
+	public static final fun stall ()Lcom/trendyol/stove/chaos/NetworkFault;
+}
+
 public final class com/trendyol/stove/chaos/NetworkPartitionKt {
 	public static final fun withNetworkPartition ([Lcom/trendyol/stove/chaos/NetworkPartitionTarget;Lkotlin/jvm/functions/Function1;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 }
@@ -32,6 +96,15 @@ public final class com/trendyol/stove/chaos/TcpEndpoint {
 	public fun hashCode ()I
 	public fun toString ()Ljava/lang/String;
 	public final fun uri (Ljava/lang/String;)Ljava/net/URI;
+}
+
+public final class com/trendyol/stove/chaos/TrafficDirection : java/lang/Enum {
+	public static final field Both Lcom/trendyol/stove/chaos/TrafficDirection;
+	public static final field Requests Lcom/trendyol/stove/chaos/TrafficDirection;
+	public static final field Responses Lcom/trendyol/stove/chaos/TrafficDirection;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public static fun valueOf (Ljava/lang/String;)Lcom/trendyol/stove/chaos/TrafficDirection;
+	public static fun values ()[Lcom/trendyol/stove/chaos/TrafficDirection;
 }
 
 public abstract interface class com/trendyol/stove/containers/ContainerOptions {
@@ -1259,6 +1332,11 @@ public final class com/trendyol/stove/system/ReportingDsl {
 	public final fun failureRenderer (Lcom/trendyol/stove/reporting/ReportRenderer;)Lcom/trendyol/stove/system/StoveOptionsDsl;
 }
 
+public final class com/trendyol/stove/system/ResourceCleanupKt {
+	public static final fun closeAll (Ljava/lang/Iterable;Lkotlin/jvm/functions/Function2;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static final fun closeAll ([Lkotlin/jvm/functions/Function1;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+}
+
 public final class com/trendyol/stove/system/Stove : com/trendyol/stove/system/abstractions/ReadyStove, java/lang/AutoCloseable {
 	public static final field Companion Lcom/trendyol/stove/system/Stove$Companion;
 	public fun <init> ()V
@@ -1386,6 +1464,15 @@ public abstract interface class com/trendyol/stove/system/abstractions/AfterRunA
 
 public abstract interface class com/trendyol/stove/system/abstractions/AfterRunAwareWithContext {
 	public abstract fun afterRun (Ljava/lang/Object;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+}
+
+public abstract interface class com/trendyol/stove/system/abstractions/ApplicationResource : com/trendyol/stove/system/abstractions/PluggedSystem {
+	public abstract fun beforeApplicationStop (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+}
+
+public final class com/trendyol/stove/system/abstractions/ApplicationResource$DefaultImpls {
+	public static fun executeWithReuseCheck (Lcom/trendyol/stove/system/abstractions/ApplicationResource;Lkotlin/jvm/functions/Function1;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static fun then (Lcom/trendyol/stove/system/abstractions/ApplicationResource;)Lcom/trendyol/stove/system/Stove;
 }
 
 public abstract interface class com/trendyol/stove/system/abstractions/ApplicationUnderTest {

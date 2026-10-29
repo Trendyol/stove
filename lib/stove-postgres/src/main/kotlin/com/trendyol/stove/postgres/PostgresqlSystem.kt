@@ -2,12 +2,14 @@
 
 package com.trendyol.stove.postgres
 
+import com.trendyol.stove.chaos.*
 import com.trendyol.stove.functional.*
 import com.trendyol.stove.rdbms.*
 import com.trendyol.stove.reporting.Reports
 import com.trendyol.stove.system.Stove
 import com.trendyol.stove.system.abstractions.*
 import com.trendyol.stove.system.annotations.StoveDsl
+import com.trendyol.stove.system.closeAll
 import kotlinx.coroutines.runBlocking
 import kotliquery.*
 import org.slf4j.*
@@ -152,7 +154,7 @@ import org.slf4j.*
 class PostgresqlSystem internal constructor(
   override val stove: Stove,
   private val postgresContext: PostgresqlContext
-) : PluggedSystem,
+) : ChaosCapableSystem,
   RunAware,
   ExposesConfiguration,
   Reports {
@@ -175,17 +177,15 @@ class PostgresqlSystem internal constructor(
   override suspend fun stop(): Unit = whenContainer { it.stop() }
 
   override fun close(): Unit = runBlocking {
-    Try {
-      if (::sqlOperations.isInitialized) {
-        postgresContext.options.cleanup(sqlOperations)
-        sqlOperations.close()
-      }
-      executeWithReuseCheck { stop() }
-    }.recover { logger.warn("PostgreSQL stop failed", it) }
+    closeAll(
+      { if (::sqlOperations.isInitialized) postgresContext.options.cleanup(sqlOperations) },
+      { if (::sqlOperations.isInitialized) sqlOperations.close() },
+      { executeWithReuseCheck { stop() } }
+    )
   }
 
   override fun configuration(): List<String> =
-    postgresContext.options.configureExposedConfiguration(exposedConfiguration)
+    postgresContext.options.configureExposedConfiguration(applicationConfiguration(exposedConfiguration, RelationalDatabaseChaosAdapter))
 
   suspend inline fun <reified T : Any> shouldQuery(
     query: String,

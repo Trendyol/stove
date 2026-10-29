@@ -1,11 +1,14 @@
 package com.trendyol.stove.mssql
 
+import com.trendyol.stove.chaos.duringFault
 import com.trendyol.stove.database.migrations.*
 import com.trendyol.stove.extensions.kotest.StoveKotestExtension
 import com.trendyol.stove.functional.*
+import com.trendyol.stove.rdbms.RelationalDatabaseExposedConfiguration
 import com.trendyol.stove.system.Stove
 import com.trendyol.stove.system.abstractions.ApplicationUnderTest
 import com.trendyol.stove.system.stove
+import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.config.AbstractProjectConfig
 import io.kotest.core.extensions.Extension
 import io.kotest.core.spec.style.ShouldSpec
@@ -14,10 +17,16 @@ import kotliquery.param
 import org.slf4j.*
 import org.testcontainers.mssqlserver.MSSQLServerContainer
 import org.testcontainers.utility.DockerImageName
+import java.sql.Connection
+import java.sql.DriverManager
+import java.sql.SQLException
+import java.util.Properties
 
 // ============================================================================
 // Shared components
 // ============================================================================
+
+internal lateinit var applicationDatabaseConfiguration: RelationalDatabaseExposedConfiguration
 
 class NoOpApplication : ApplicationUnderTest<Unit> {
   override suspend fun start(configurations: List<String>) = Unit
@@ -103,14 +112,20 @@ class ContainerMsSqlStrategy : MsSqlTestStrategy {
       ) {
         withStartupAttempts(3)
       },
-      configureExposedConfiguration = { _ -> listOf() }
+      configureExposedConfiguration = { configuration ->
+        applicationDatabaseConfiguration = configuration
+        emptyList()
+      }
     ).migrations {
       register<InitialMigration>()
     }
 
     Stove()
       .with {
-        mssql { options }
+        mssql {
+          enableChaos()
+          options
+        }
         applicationUnderTest(NoOpApplication())
       }.run()
   }
@@ -159,14 +174,20 @@ class ProvidedMsSqlStrategy : MsSqlTestStrategy {
           logger.info("Running cleanup on provided instance")
           Try { sqlOps.execute("DROP TABLE IF EXISTS Person") }
         },
-        configureExposedConfiguration = { _ -> listOf() }
+        configureExposedConfiguration = { configuration ->
+          applicationDatabaseConfiguration = configuration
+          emptyList()
+        }
       ).migrations {
         register<InitialMigration>()
       }
 
     Stove()
       .with {
-        mssql { options }
+        mssql {
+          enableChaos()
+          options
+        }
         applicationUnderTest(NoOpApplication())
       }.run()
   }
@@ -199,6 +220,24 @@ class StoveConfig : AbstractProjectConfig() {
 
 class MssqlSystemTests :
   ShouldSpec({
+    should("faults application JDBC traffic while direct assertions remain available and recovers") {
+      stove {
+        mssql {
+          applicationConnection().use { applicationConnection ->
+            applicationConnection.query() shouldBe 1
+            duringFault {
+              shouldThrow<SQLException> { applicationConnection.query() }
+              shouldThrow<SQLException> { applicationConnection().use { it.query() } }
+              mssql {
+                shouldQuery("SELECT 1", mapper = { it.int(1) }) { it shouldBe listOf(1) }
+              }
+            }
+          }
+          applicationConnection().use { it.query() } shouldBe 1
+        }
+      }
+    }
+
     should("work") {
       stove {
         mssql {
@@ -316,3 +355,24 @@ class MssqlSystemTests :
       }
     }
   })
+
+// Native JDBC connections model the application route; direct assertions stay on Stove's SQL DSL.
+private fun applicationConnection(): Connection {
+  val configuration = applicationDatabaseConfiguration
+  val properties = Properties().apply {
+    setProperty("user", configuration.username)
+    setProperty("password", configuration.password)
+    setProperty("loginTimeout", "2")
+    setProperty("socketTimeout", "2000")
+    setProperty("connectRetryCount", "0")
+  }
+  return DriverManager.getConnection(configuration.jdbcUrl, properties)
+}
+
+private fun Connection.query(): Int = createStatement().use { statement ->
+  statement.queryTimeout = 2
+  statement.executeQuery("SELECT 1").use { result ->
+    check(result.next())
+    result.getInt(1)
+  }
+}
