@@ -44,10 +44,16 @@ sealed interface DashboardIngestion {
  *
  * @param appName Application name shown in the dashboard
  * @param metadata Key-value pairs attached to the run (e.g. team, pipeline id) for filtering in the dashboard
+ * @param externalProfiling Native profiler settings exposed to process/container environment mappers.
  * @param ingestion Event transport. Defaults to plaintext gRPC at `localhost:4041`.
  */
 data class DashboardSystemOptions(
   val appName: String,
   val metadata: Map<String, String> = emptyMap(),
-  val ingestion: DashboardIngestion = DashboardIngestion.Grpc()
-) : SystemOptions
+  val ingestion: DashboardIngestion = DashboardIngestion.Grpc(),
+  val externalProfiling: DashboardExternalProfilingOptions? = null
+) : SystemOptions {
+  init {
+    externalProfiling?.let { requireValidProfilingServiceName(it.serviceName ?: appName) }
+  }
+}

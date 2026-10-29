@@ -28,6 +28,10 @@ import java.util.concurrent.atomic.AtomicInteger
 import kotlin.time.Duration.Companion.milliseconds
 
 class DashboardSystemTest : FunSpec({
+  test("external profiling configuration is absent by default") {
+    DashboardSystem(Stove(), DashboardSystemOptions("test-api")).configuration() shouldBe emptyList()
+  }
+
   test("lifecycle: registers as listener, emits events, unregisters on stop") {
     val received = CopyOnWriteArrayList<DashboardEvent>()
     val server = startMockServer(received, port = 0)
@@ -38,7 +42,8 @@ class DashboardSystemTest : FunSpec({
       val options = DashboardSystemOptions(
         appName = "test-api",
         metadata = mapOf("team" to "checkout", "gitlab.pipeline_id" to "42"),
-        ingestion = DashboardIngestion.Grpc(port = port)
+        ingestion = DashboardIngestion.Grpc(port = port),
+        externalProfiling = DashboardExternalProfilingOptions("https://stove.example.com", profileTypes = listOf("cpu", "inuse_space"))
       )
       val system = DashboardSystem(stove, options)
 
@@ -73,7 +78,15 @@ class DashboardSystemTest : FunSpec({
         }
       }
       types.contains("RunStarted") shouldBe true
-      received.first { it.hasRunStarted() }.runStarted.appName shouldBe "test-api"
+      val started = received.first { it.hasRunStarted() }
+      system.configuration() shouldBe listOf(
+        "stove.profiling.serverUrl=https://stove.example.com",
+        "stove.profiling.runId=${started.runId}",
+        "stove.profiling.serviceName=test-api",
+        "stove.profiling.uploadIntervalSeconds=10",
+        "stove.profiling.profileTypes=cpu,inuse_space"
+      )
+      started.runStarted.appName shouldBe "test-api"
       received.first { it.hasRunStarted() }.runStarted.stoveVersion shouldBe StoveCompatibilityVersion.VALUE
       received.first { it.hasRunStarted() }.runStarted.metadataMap shouldBe mapOf(
         "team" to "checkout",

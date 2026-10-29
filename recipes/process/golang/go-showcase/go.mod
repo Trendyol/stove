@@ -9,6 +9,7 @@ require (
 	github.com/lib/pq v1.12.3
 	github.com/segmentio/kafka-go v0.4.51
 	github.com/trendyol/stove/go/stove-kafka v0.0.0-20260622074357-4c0623ac06bf
+	github.com/trendyol/stove/go/stove-profiler v0.28.0
 	github.com/twmb/franz-go v1.22.2
 	go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp v0.72.0
 	go.opentelemetry.io/otel v1.47.0
@@ -25,6 +26,8 @@ require (
 	github.com/felixge/httpsnoop v1.1.0 // indirect
 	github.com/go-logr/logr v1.4.4 // indirect
 	github.com/go-logr/stdr v1.2.2 // indirect
+	github.com/grafana/pyroscope-go v1.4.3 // indirect
+	github.com/grafana/pyroscope-go/godeltaprof v0.1.11 // indirect
 	github.com/grpc-ecosystem/grpc-gateway/v2 v2.30.0 // indirect
 	github.com/hashicorp/go-uuid v1.0.3 // indirect
 	github.com/jcmturner/aescts/v2 v2.0.0 // indirect
@@ -50,3 +53,6 @@ require (
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20260928230214-8a89bd6388cc // indirect
 	google.golang.org/protobuf v1.36.12 // indirect
 )
+
+// Use the unreleased module from this checkout.
+replace github.com/trendyol/stove/go/stove-profiler => ../../../../go/stove-profiler

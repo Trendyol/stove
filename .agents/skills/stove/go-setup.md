@@ -6,13 +6,9 @@ This skill focuses on **process mode** (`stove-process` / `goApp`) — fastest l
 
 The same `StoveConfig.kt` can serve both modes by branching on a system property like `-Daut.mode=process|container` (see the showcase recipe).
 
-## Profiling boundary
+## Native profiling
 
-Gradle's `stoveTracing.profiling` profiles the Kotlin test JVM, not the Go AUT.
-Stove 0.28.0 (upcoming) accepts JVM JFR only, not Go pprof. Do not configure a Go
-Pyroscope SDK against Stove and claim native collection works. Use Go profiling
-tools separately today; see [profiling.md](profiling.md) for current support and
-[tracing.md](tracing.md) for application span collection.
+Stove 0.28.0 (upcoming) supports native Go profiling through `go/stove-profiler` and dashboard-exposed run configuration. Follow [profiling.md](profiling.md#native-go-application) for the wrapper, process/container environment mappings, graceful shutdown, and HTTPS/authentication. `stoveTracing.profiling` configures the Kotlin test JVM's Java agent; use the Go wrapper for the Go AUT. See [tracing.md](tracing.md) for application spans.
 
 ## Setup Checklist
 

@@ -108,6 +108,6 @@ Source: `lib/stove-tracing/`, `plugins/stove-tracing-gradle-plugin/`.
 
 For 0.28.0 (upcoming), the same Gradle extension supports opt-in Pyroscope Java
 profiling. Follow [profiling.md](profiling.md) for configuration, HTTPS, lifecycle,
-IntelliJ execution, and Drill Down. The plugin profiles the test JVM only; Go
-pprof and other native formats are not accepted by Stove Server yet. Do not infer
-native profiling support from the presence of Gradle or the tracing SDK.
+IntelliJ execution, and Drill Down. The plugin profiles the test JVM only. Native Go profiling uses the separate
+`go/stove-profiler` wrapper and dashboard environment mappings described in that guide.
+Other native runtime formats remain unsupported.

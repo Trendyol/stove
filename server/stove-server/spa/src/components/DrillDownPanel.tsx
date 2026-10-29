@@ -146,14 +146,16 @@ export function DrillDownPanel({
               </p>
               <details>
                 <summary>Profiling setup</summary>
+                <p>JVM applications running inside the test process:</p>
                 <pre>
                   {
                     "stoveTracing {\n  profiling {\n    enabled.set(true)\n    allocations.set(true)\n  }\n}"
                   }
                 </pre>
                 <p>
-                  Run tests through Gradle with the Stove dashboard integration. If profiling is
-                  already enabled, check the test output for upload errors.
+                  Run JVM tests through Gradle with the Stove dashboard integration. For Go, start
+                  stove-profiler in the application and map the dashboard’s external profiling
+                  configuration into its environment. Check application output for upload errors.
                 </p>
               </details>
             </>

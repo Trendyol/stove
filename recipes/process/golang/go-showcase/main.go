@@ -11,6 +11,7 @@ import (
 	"time"
 
 	stovekafka "github.com/trendyol/stove/go/stove-kafka"
+	stoveprofiler "github.com/trendyol/stove/go/stove-profiler"
 	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
 )
 
@@ -25,6 +26,11 @@ func main() {
 	// Ignore SIGPIPE so log writes to a closed stdout pipe don't kill the process.
 	// This ensures clean shutdown (and coverage flush) when run under a process manager.
 	signal.Ignore(syscall.SIGPIPE)
+
+	profiler, err := stoveprofiler.StartFromEnv()
+	if err != nil {
+		log.Fatalf("failed to start Stove profiling: %v", err)
+	}
 
 	ctx := context.Background()
 
@@ -67,6 +73,8 @@ func main() {
 		log.Fatalf("failed to init kafka: %v", err)
 	}
 	defer stopKafka()
+	// Flush profiles before dependency cleanup, which can wait on stopped brokers.
+	defer profiler.Close()
 
 	mux := http.NewServeMux()
 	registerRoutes(mux, db, producer)

@@ -540,13 +540,13 @@ The acceptance suite verifies the same ingestion, filtering, retention, administ
 | Cancelled CI run remains running | After 1 hour without newly committed ingestion, the next sweep deletes the run and its tests and evidence. Check Admin’s idle timeout and worker health if it remains running. |
 | Disk filling up | Set `--retention-runs-per-app` (or `STOVE_RETENTION_RUNS_PER_APP`) to limit completed runs per app |
 
-## Continuous JVM profiling
+## Continuous profiling
 
-In **0.28.0 (upcoming)**, Stove Server receives Pyroscope Java JFR recordings and
+In **0.28.0 (upcoming)**, Stove Server receives Pyroscope Java JFR and native Go pprof recordings and
 provides **Drill Down** for CPU and memory investigation, with no separate
 profiling backend. Enable collection in the tracing Gradle plugin and keep the
-normal dashboard integration. The plugin profiles the test JVM; Go and other
-non-JVM application profiles are not supported yet.
+normal dashboard integration. The plugin profiles the test JVM; Go applications use `go/stove-profiler`
+and dashboard-exposed run configuration.
 
 See [Profiling and Drill Down](../observability/profiling.md) for the complete
 setup, HTTPS configuration, language support, recording lifecycle, memory-leak

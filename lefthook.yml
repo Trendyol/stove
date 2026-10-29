@@ -57,6 +57,10 @@ pre-commit:
 
     - name: go
       glob:
+        - 'go/stove-profiler/**/*.go'
+        - 'go/stove-profiler/go.{mod,sum}'
+        - 'server/stove-server/profiling-bridge/**/*.go'
+        - 'server/stove-server/profiling-bridge/go.{mod,sum}'
         - 'go/stove-kafka/**/*.go'
         - 'go/stove-kafka/go.{mod,sum}'
         - 'recipes/process/golang/go-showcase/**/*.go'

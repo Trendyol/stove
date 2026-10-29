@@ -364,3 +364,133 @@ async fn mcp_bounds_large_hotspots_and_rejects_oversized_metadata() {
       .contains("metadata exceeds the MCP response budget")
   );
 }
+
+#[tokio::test]
+async fn native_go_sdk_flush_reaches_drill_down_for_exact_run() {
+  let server = TestServer::start().await;
+  server.seed_run("go-profiles", "go-showcase");
+  server.seed_run("other-go-run", "go-showcase");
+  let url = server.base_url.clone();
+  let output = tokio::task::spawn_blocking(move || {
+    std::process::Command::new("go")
+      .args(["run", "./internal/testapp"])
+      .current_dir(concat!(
+        env!("CARGO_MANIFEST_DIR"),
+        "/../../go/stove-profiler"
+      ))
+      .env("STOVE_PROFILING_SERVER_URL", url)
+      .env("STOVE_RUN_ID", "go-profiles")
+      .env("STOVE_PROFILING_SERVICE_NAME", "go-showcase")
+      .env("STOVE_PROFILING_INTERVAL_SECONDS", "3600")
+      .env(
+        "STOVE_PROFILING_TYPES",
+        "cpu,alloc_space,inuse_space,goroutines",
+      )
+      .env_remove("PYROSCOPE_ADHOC_SERVER_ADDRESS")
+      .output()
+      .unwrap()
+  })
+  .await
+  .unwrap();
+  assert!(
+    output.status.success(),
+    "{}",
+    String::from_utf8_lossy(&output.stderr)
+  );
+  let profiles = server.get_json("/runs/go-profiles/profiles").await;
+  let series = profiles["series"].as_array().unwrap();
+  for metric in [
+    "go:cpu",
+    "go:alloc_space",
+    "go:inuse_space",
+    "go:goroutines",
+  ] {
+    assert!(
+      series
+        .iter()
+        .any(|s| s["metric"] == metric && s["total"].as_i64().unwrap() > 0),
+      "missing {metric}: {profiles}\n{}",
+      String::from_utf8_lossy(&output.stderr)
+    );
+  }
+  for s in series {
+    let rates = s["sample_rates"].as_array().unwrap();
+    match s["metric"].as_str().unwrap() {
+      "go:cpu" | "go:samples" => assert_eq!(rates, &[json!(100)]),
+      _ => assert!(
+        rates.is_empty(),
+        "non-CPU metric has a synthetic frequency: {s}"
+      ),
+    }
+  }
+  assert!(
+    series
+      .iter()
+      .flat_map(|s| s["hotspots"].as_array().unwrap())
+      .any(|h| h["frame"]["name"].as_str().unwrap().contains("main.main")),
+    "{profiles}"
+  );
+  assert!(
+    server
+      .repo
+      .profile_chunks("other-go-run")
+      .unwrap()
+      .is_empty()
+  );
+  let mcp = tool(
+    &server,
+    "stove_profiles",
+    json!({"run_id":"go-profiles","metric":"go:cpu"}),
+  )
+  .await;
+  assert_eq!(
+    mcp["result"]["structuredContent"]["series"][0]["metric"], "go:cpu",
+    "{mcp}"
+  );
+  for c in server.repo.profile_chunks("go-profiles").unwrap() {
+    assert_eq!(c.service, "go-showcase");
+    assert!(c.until_ms >= c.from_ms);
+    assert!(c.until_ms > 1_700_000_000_000 && c.until_ms < 10_000_000_000_000);
+  }
+}
+
+#[tokio::test]
+async fn go_snapshots_are_latest_per_metric_and_instance_including_empty_snapshots() {
+  let server = TestServer::start().await;
+  server.seed_run("go-snapshots", "checkout");
+  let make = |id: &str, instance: &str, end: i64, metric: &str, value: i64| {
+    let mut c = chunk("go-snapshots", id, instance, end, 0);
+    c.payload = serde_json::to_vec(&json!({"sample_rate":0,"profiles":[{
+      "metric":metric,"unit":"bytes","samples":if value == 0 {json!([])} else {json!([{
+        "frames":[{"name":"main.work","file":"main.go","line":42}],"value":value,"labels":{}
+      }])}
+    }]}))
+    .unwrap();
+    c
+  };
+  for c in [
+    make("heap-old", "a", 1000, "go:inuse_space", 100),
+    make("heap-new", "a", 2000, "go:inuse_space", 20),
+    make("heap-other-instance", "b", 1000, "go:inuse_space", 30),
+    make("alloc-old", "a", 1000, "go:alloc_space", 10),
+    make("alloc-new", "a", 2000, "go:alloc_space", 20),
+    make("cpu-newer", "a", 3000, "go:cpu", 1),
+  ] {
+    server.repo.save_profile(&c).unwrap();
+  }
+  let total = |metric: &str| {
+    let r = report(&server.repo, "go-snapshots", &ProfileQuery::default()).unwrap();
+    r.series
+      .iter()
+      .find(|s| s.metric == metric)
+      .map(|s| s.total)
+      .unwrap_or(0)
+  };
+  assert_eq!(total("go:inuse_space"), 50);
+  assert_eq!(total("go:alloc_space"), 30);
+  server
+    .repo
+    .save_profile(&make("empty", "a", 4000, "go:inuse_space", 0))
+    .unwrap();
+  assert_eq!(total("go:inuse_space"), 30);
+}

@@ -6,9 +6,29 @@ Use this guide to configure continuous profiles or investigate CPU/allocation ho
 
 `stoveTracing.profiling` attaches Pyroscope **Java** agent 2.9.2 to selected Gradle `Test` JVMs. An in-process JVM application is included, along with test code and background work. A Go, Python, Node.js, Rust, separate JVM, container, or deployed application is not automatically profiled by attaching that agent to the harness.
 
-Stove Server accepts Pyroscope Java **JFR only**. It does not accept Go pprof, Pyroscope Push, or OTLP Profiles. For a Go request, explain both boundaries: Gradle configures the harness JVM, and native Go uploads need an ingestion implementation that is not present yet. Do not invent a `goApp` profiling option or present a Go Pyroscope SDK as sufficient. Existing Go traces, dashboard evidence, and MCP triage remain supported. Native profiles can be collected and inspected separately using Go's tooling.
+Stove Server accepts Pyroscope Java JFR and the native Go SDK's delta pprof multipart uploads. Pyroscope Push RPC, arbitrary cumulative heap/lock pprof files, OTLP Profiles, and other runtimes are unsupported. A separate JVM still requires custom agent/lifecycle integration. Exact run identity can be exposed by `DashboardExternalProfilingOptions`; never substitute the latest run.
 
-A separate JVM can use the JFR contract only with custom agent/lifecycle integration. The exact dashboard run ID is required, but `DashboardSystem` currently keeps it private and runners do not propagate profiling identity. Do not use the latest run as a substitute or claim automatic support by adding a server URL.
+## Native Go application
+
+Use `github.com/trendyol/stove/go/stove-profiler` (0.28.0 upcoming, Go >=1.26.2), which wraps `pyroscope-go` 1.4.3. Before publication use a matching checkout/local `replace`. In `main`, call `stoveprofiler.StartFromEnv()`, handle configuration errors, and defer its nil-safe, idempotent `Close()`. The wrapper is disabled when `STOVE_PROFILING_SERVER_URL` is absent. Gradle's Java profiling plugin is unnecessary for collecting Go profiles.
+
+Add `externalProfiling = DashboardExternalProfilingOptions(serverUrl = url, profileTypes = listOf("cpu", "alloc_space", "inuse_space", "goroutines"))` to `DashboardSystemOptions`, with dashboard event ingestion configured for the same server. Defaults: service is dashboard `appName`, interval 10 seconds, types CPU only. Put dashboard before the AUT runner. Map its exposed configuration using the existing process/container `envMapper`:
+
+| Configuration key | Environment variable |
+|---|---|
+| `stove.profiling.serverUrl` | `STOVE_PROFILING_SERVER_URL` |
+| `stove.profiling.runId` | `STOVE_RUN_ID` |
+| `stove.profiling.serviceName` | `STOVE_PROFILING_SERVICE_NAME` |
+| `stove.profiling.uploadIntervalSeconds` | `STOVE_PROFILING_INTERVAL_SECONDS` |
+| `stove.profiling.profileTypes` | `STOVE_PROFILING_TYPES` |
+
+Run IDs and service names must be printable ASCII without surrounding whitespace, at most 256 bytes. Set an explicit profiling service name when the dashboard app name does not meet that contract. The wrapper generates an instance ID and protects `X-Stove-*` headers. Preserve exact run identity. URLs must be reachable from the application; container localhost is normally not the host. A provided/deployed app needs explicit lifecycle/identity integration. See the repository's `recipes/process/golang/go-showcase` for process and container wiring and `docs/observability/profiling.md#go-developers` for complete configuration.
+
+Supported types are CPU, alloc_objects/alloc_space, inuse_objects/inuse_space, goroutines, mutex_count/mutex_duration, block_count/block_duration. CPU is always included because the SDK's final flush needs its collector. Do not run a second Pyroscope/CPU profiler in that process. `PYROSCOPE_ADHOC_SERVER_ADDRESS` must be unset. Interval is 1–3600 seconds. Allocation/lock values are deltas; heap/goroutine snapshots use the newest selected recording per service/instance/metric, including empty snapshots. Heap capture depends on natural GC; the wrapper disables forced GC. Block/mutex sampling requires app-selected runtime sampling settings, which the wrapper does not change.
+
+Ensure graceful shutdown reaches `Close()` before potentially blocking dependency cleanup; register its defer last (Go runs defers in reverse order), or close explicitly after draining requests. os.Exit/log.Fatal/SIGKILL bypass defers. Allow enough runner shutdown time for queued uploads. Delivery is best effort, logged on failure, with up to three attempts per upload and a five-second total deadline. The server accepts final uploads to a completed retained run. Refresh after teardown. Do not claim no profiles means no activity or that in-use heap proves a leak.
+
+Go can configure headers and an approved HTTP client through `StartFromEnv(func(c *stoveprofiler.Config) { ... })` or `Start(Config{...})` for gateway tokens, CA trust, or mTLS. Redirects are refused. JVM dashboard event ingestion still needs its own supported authentication path. The SDK sends `spyName=gospy`, epoch-nanosecond from/until, a gzip pprof `profile` part, and `sample_type_config`. Shared ingress must allow `/ingest`, identity headers, and 16 MiB uploads. REST/MCP/Drill Down reuse the same query model, with `go:*` metrics. OTel trace/span labels are not automatically attached to Go profiles; explicit runtime/pprof labels are required for label-based correlation.
 
 ## Configure the existing JVM test setup
 
@@ -72,6 +92,6 @@ Verify from the actual runner: health route, Gradle test execution, dashboard ru
 
 Check in this order as applicable: correct runtime/format; selected Gradle task and Java-agent attachment; normal dashboard startup; same server/storage for run events and profiles; upload/teardown logs; reachable `/ingest` route, TLS trust, headers and body size; platform support or a competing profiler. A 503 can mean the run-start event has not arrived or both conversion slots are busy. Persistent 503 needs diagnosis, not unbounded retries.
 
-The server retains at most 256 chunks / 64 MiB compressed per run and decodes at most 64 MiB per query. Retention may remove older evidence. Two conversions can run concurrently; payload limits are not a hard memory cap for the parser. The embedded Go `jfr-parser` is part of the server binary, not a downstream service and not Go application profiling support.
+The server retains at most 256 chunks / 64 MiB compressed per run and decodes at most 64 MiB per query. Retention may remove older evidence. Two conversions can run concurrently; payload limits are not a hard memory cap for the parser. The embedded Go `jfr-parser` is part of the server binary, not a downstream service; the same archive also decodes Go pprof.
 
 Full user guide and wire contract: [Profiling and Drill Down](https://trendyol.github.io/stove/observability/profiling/) or `docs/observability/profiling.md` in a matching Stove checkout. Source anchors: `StoveProfilingExtension`, `ProfilingTaskConfigurator`, `DashboardProfiling`, `FlushingProfileScheduler`, `server/stove-server/src/profiling/`.

@@ -87,9 +87,6 @@ The Kotlin test side keeps the same shape. The AUT runner, config mapping, and l
 
 ## Profiling support
 
-Stove 0.28.0 (upcoming) adds **Drill Down** for JVM profiles. Applying
-`stoveTracing.profiling` to a Go test project profiles the Kotlin test JVM, not the
-Go binary. Stove currently accepts JFR only; Go pprof uploads are not supported.
-Use Go's native profiling tools for the application today. See
-[Go developers](../observability/profiling.md#go-developers) for the exact boundary
-and the integration needed for future Go support.
+Stove 0.28.0 (upcoming) adds native Go profiling through `go/stove-profiler`, a wrapper around Grafana's Go SDK. Configure `DashboardExternalProfilingOptions`, map the exposed settings into the Go process/container, and call `stoveprofiler.StartFromEnv()` with a deferred `Close()` in the application. Profiles reach the existing Stove Server and appear in **Drill Down** and MCP.
+
+The Gradle `stoveTracing.profiling` plugin configures the JVM agent; Go profiling uses the native wrapper. See [Go developers](../observability/profiling.md#go-developers) for the complete setup, HTTPS/authentication, graceful shutdown, supported metrics, and interpretation.

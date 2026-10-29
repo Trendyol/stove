@@ -27,6 +27,7 @@ import com.trendyol.stove.reporting.SpanEventListener
 import com.trendyol.stove.reporting.SpanListenerRegistry
 import com.trendyol.stove.reporting.StoveTestContext
 import com.trendyol.stove.system.Stove
+import com.trendyol.stove.system.abstractions.ExposesConfiguration
 import com.trendyol.stove.system.abstractions.PluggedSystem
 import com.trendyol.stove.system.abstractions.RunAware
 import com.trendyol.stove.tracing.SpanInfo
@@ -54,6 +55,7 @@ class DashboardSystem(
   private val options: DashboardSystemOptions
 ) : PluggedSystem,
   RunAware,
+  ExposesConfiguration,
   ReportEventListener,
   SpanEventListener,
   MockInteractionListener,
@@ -74,6 +76,16 @@ class DashboardSystem(
   private val failureSnapshotTaken = ConcurrentHashMap.newKeySet<String>()
   private var mockDiagnosticListenersRegistered = false
   private val acceptingEvents = AtomicBoolean(false)
+
+  override fun configuration(): List<String> = options.externalProfiling?.let { profiling ->
+    listOf(
+      "stove.profiling.serverUrl=${profiling.serverUrl}",
+      "stove.profiling.runId=$runId",
+      "stove.profiling.serviceName=${profiling.serviceName ?: options.appName}",
+      "stove.profiling.uploadIntervalSeconds=${profiling.uploadIntervalSeconds}",
+      "stove.profiling.profileTypes=${profiling.profileTypes.joinToString(",")}"
+    )
+  } ?: emptyList()
 
   override suspend fun run() {
     emitter = DashboardEmitter(options.ingestion)

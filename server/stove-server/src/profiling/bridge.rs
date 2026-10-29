@@ -11,6 +11,12 @@ unsafe extern "C" {
     until: c_longlong,
     rate: c_longlong,
   ) -> *mut c_char;
+  fn StovePprofConvert(
+    data: *const c_void,
+    size: c_int,
+    config: *const c_void,
+    config_size: c_int,
+  ) -> *mut c_char;
   fn StoveProfileFree(output: *mut c_void);
 }
 #[derive(Deserialize)]
@@ -40,14 +46,34 @@ pub(super) fn convert(
       rate,
     )
   };
+  decode(raw, rate, "JFR")
+}
+
+pub(super) fn convert_pprof(
+  data: &[u8],
+  config: &[u8],
+  rate: i64,
+) -> crate::error::Result<Recording> {
+  let raw = unsafe {
+    StovePprofConvert(
+      data.as_ptr().cast(),
+      c_int::try_from(data.len()).map_err(|_| invalid("pprof input too large"))?,
+      config.as_ptr().cast(),
+      c_int::try_from(config.len()).map_err(|_| invalid("Config input too large"))?,
+    )
+  };
+  decode(raw, rate, "pprof")
+}
+
+fn decode(raw: *mut c_char, rate: i64, format: &str) -> crate::error::Result<Recording> {
   if raw.is_null() {
-    return Err(invalid("JFR converter returned no data"));
+    return Err(invalid("Profile converter returned no data"));
   }
   let result = unsafe { serde_json::from_slice::<Output>(CStr::from_ptr(raw).to_bytes()) };
   unsafe { StoveProfileFree(raw.cast()) };
   let out = result?;
   if let Some(error) = out.error {
-    return Err(invalid(format!("JFR conversion failed: {error}")));
+    return Err(invalid(format!("{format} conversion failed: {error}")));
   }
   Ok(Recording {
     frame_table: out.frame_table,

@@ -1,4 +1,4 @@
-//! Run-scoped continuous profiles. The embedded converter uses Pyroscope's JFR contracts.
+//! Run-scoped continuous profiles. The embedded converter uses Pyroscope's JFR and Go pprof contracts.
 mod bridge;
 pub(crate) mod http;
 mod limits;

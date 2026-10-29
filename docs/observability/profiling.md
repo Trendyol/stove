@@ -2,7 +2,7 @@
 
 **Available in 0.28.0 (upcoming).** Use matching Stove libraries, tracing Gradle plugin, and Stove Server builds that include profiling. These instructions describe the upcoming release; 0.27.x does not include this feature.
 
-Stove collects continuous JVM profiles during end-to-end tests and shows them in **Drill Down**. CPU, allocation, surviving-object, and lock samples help locate methods worth investigating before a performance problem reaches production. The existing Stove Server receives, converts, stores, and queries the recordings. Downstream users do not need to deploy Pyroscope or another profiling backend.
+Stove collects continuous JVM and Go profiles during end-to-end tests and shows them in **Drill Down**. CPU, allocation, surviving-object, and lock samples help locate methods worth investigating before a performance problem reaches production. The existing Stove Server receives, converts, stores, and queries the recordings. Downstream users do not need to deploy Pyroscope or another profiling backend.
 
 ## Choose the right evidence
 
@@ -24,16 +24,102 @@ Having Gradle in a project does not make the application a JVM process. `stoveTr
 |---|---|---|
 | Spring Boot, Ktor, Micronaut, or Quarkus running inside the test JVM | Application, test harness, and other work in that JVM | Automatic setup below |
 | JVM app in a separate process, container, or deployed environment | Test JVM only | Custom Java-agent setup with JFR upload and explicit Stove run/instance association; no automatic runner integration |
-| Go via `goApp`, `processApp`, `containerApp`, or `providedApplication` | Kotlin/JVM test harness only | Go pprof ingestion is not supported yet |
+| Go via `goApp`, `processApp`, `containerApp`, or `providedApplication` | Kotlin/JVM test harness only | Native `stove-profiler` integration below |
 | Python, Node.js, Rust, or another non-JVM runtime | Kotlin/JVM test harness only | Native profile formats are not supported yet |
 
 ### Go developers
 
-Configuring `stoveTracing { profiling { enabled.set(true) } }` is **not enough to profile the Go application**. Even when Gradle builds and launches the binary, that binary has its own Go runtime. Stove currently accepts Pyroscope Java's `format=jfr` uploads only; a Go Pyroscope SDK or `net/http/pprof` endpoint cannot feed Drill Down directly. The Go library embedded in Stove Server parses JVM recordings; it does not collect Go profiles.
+Stove 0.28.0 (upcoming) supports native Go profiles through the small [`go/stove-profiler`](https://github.com/Trendyol/stove/tree/main/go/stove-profiler) module, following the `stove-kafka` integration pattern. It wraps Grafana `pyroscope-go` **1.4.3**, pushes directly to Stove Server, and is inactive when no profiling URL is configured. `stoveTracing.profiling` remains the Java-agent configuration; it is unnecessary for profiling a Go binary.
 
-Today, continue using [Go tracing](../other-languages/go.md) for application spans, dashboard evidence, and MCP investigation. For native CPU/heap analysis, collect a pprof file from the Go process and inspect it with Go's tooling, for example `go tool pprof ./build/app cpu.pprof` when those are your binary and captured profile paths. Those files remain outside Stove's Drill Down and `stove_profiles` results. Enabling JVM profiling can still be useful for diagnosing the Kotlin harness, but label the service accordingly.
+After 0.28.0 is published, install `github.com/trendyol/stove/go/stove-profiler@v0.28.0`. Before release, use the matching checkout with a local Go `replace`, as the showcase does. The module requires Go 1.26.2 or newer.
 
-A future Go integration needs both a supported pprof ingestion contract in Stove Server and lifecycle wiring that supplies the Go process with the exact Stove run ID, a stable instance ID, and a reachable upload endpoint. The Go process would initialize its native profiler and flush it during graceful shutdown. This is a compatibility gap, not an upload-frequency setting. There is no supported Go-to-Stove profiling configuration to copy yet.
+Initialize it once in the Go application's `main` and close it after the server and workers shut down:
+
+```go
+import stoveprofiler "github.com/trendyol/stove/go/stove-profiler"
+
+profiler, err := stoveprofiler.StartFromEnv()
+if err != nil {
+    log.Fatalf("start Stove profiler: %v", err)
+}
+defer profiler.Close() // nil-safe; flushes the partial interval
+```
+
+In the Kotlin harness, configure the dashboard before the process/container runner:
+
+```kotlin
+import com.trendyol.stove.dashboard.DashboardExternalProfilingOptions
+import com.trendyol.stove.dashboard.DashboardIngestion
+import com.trendyol.stove.dashboard.DashboardSystemOptions
+import com.trendyol.stove.dashboard.dashboard
+import com.trendyol.stove.process.ProcessTarget
+import com.trendyol.stove.process.envMapper
+import com.trendyol.stove.process.goApp
+
+val serverUrl = System.getenv("STOVE_SERVER_URL") ?: "http://localhost:4040"
+Stove().with {
+    dashboard {
+        DashboardSystemOptions(
+            appName = "checkout",
+            ingestion = DashboardIngestion.Http(serverUrl),
+            externalProfiling = DashboardExternalProfilingOptions(
+                serverUrl = serverUrl,
+                profileTypes = listOf("cpu", "alloc_space", "inuse_space", "goroutines")
+            )
+        )
+    }
+    goApp(
+        target = ProcessTarget.Server(port = 8080, portEnvVar = "APP_PORT"),
+        envProvider = envMapper {
+            "stove.profiling.serverUrl" to "STOVE_PROFILING_SERVER_URL"
+            "stove.profiling.runId" to "STOVE_RUN_ID"
+            "stove.profiling.serviceName" to "STOVE_PROFILING_SERVICE_NAME"
+            "stove.profiling.uploadIntervalSeconds" to "STOVE_PROFILING_INTERVAL_SECONDS"
+            "stove.profiling.profileTypes" to "STOVE_PROFILING_TYPES"
+            // Add the application's existing database, Kafka, and other mappings.
+        }
+    )
+}.run()
+```
+
+Use the same mappings with `containerApp` and its `com.trendyol.stove.system.application.envMapper`. The URL must be reachable from the application runtime; container `localhost` normally points to the container itself. The showcase uses host networking. For a shared deployment, both base URLs can be `https://stove-server.mars.trendyol.com`. A pre-existing deployed application needs explicit lifecycle and exact-run configuration; Stove does not remotely attach a profiler or guess the latest run.
+
+| Environment variable | Meaning/default |
+|---|---|
+| `STOVE_PROFILING_SERVER_URL` | HTTP(S) base URL, optional path prefix; absent means disabled |
+| `STOVE_RUN_ID` | Required when enabled; exact dashboard run ID supplied by the mapper |
+| `STOVE_PROFILING_SERVICE_NAME` | Required when enabled; defaults to dashboard `appName` in exposed configuration |
+| `STOVE_PROFILING_INTERVAL_SECONDS` | Upload interval, default 10, accepted range 1–3600 seconds |
+| `STOVE_PROFILING_TYPES` | Comma-separated SDK types, default `cpu` |
+
+`DashboardExternalProfilingOptions` exposes `serverUrl`, optional `serviceName`, `uploadIntervalSeconds`, and `profileTypes`. It does not inherit the Gradle Java profiler destination. Go run IDs and service names must be printable ASCII without surrounding whitespace, at most 256 bytes. An explicit service name can differ from the dashboard application name. Each Go profiler instance generates its own stable instance ID; callers cannot override `X-Stove-*` headers. `PYROSCOPE_ADHOC_SERVER_ADDRESS` must be unset because the SDK would otherwise replace the configured destination.
+
+Supported types: `cpu`, `alloc_objects`, `alloc_space`, `inuse_objects`, `inuse_space`, `goroutines`, `mutex_count`, `mutex_duration`, `block_count`, `block_duration`. CPU is always included, because the SDK's final flush requires its CPU collector. Only one Stove profiler may run per process; do not also start another CPU profiler, Pyroscope session, or CPU pprof recording. The wrapper cannot detect independently started profilers.
+
+Allocation and contention profiles contain interval deltas. In-use heap and goroutine profiles are snapshots: Stove uses the latest selected recording **per service, instance, and metric**, then combines instances. CPU uploads do not erase a separately uploaded heap snapshot. An empty newer snapshot suppresses the older value. Selecting any heap profile can produce all four heap metrics because the SDK captures them together. Heap evidence is sampled and GC-dependent, not retained size or proof of a leak. The wrapper sets `DisableGCRuns=true`; a short workload without a natural GC may have no heap samples. It never forces GC. Mutex/block profiling additionally requires the application to choose appropriate `runtime.SetMutexProfileFraction` / `runtime.SetBlockProfileRate` settings; Stove does not mutate those global sampling controls.
+
+`Close()` is idempotent and flushes before stopping. Upload delivery is best effort, with failures reported through the logger; network failures are not returned by `Close`. Graceful SIGTERM/SIGINT handling must let `main` return. `os.Exit`, `log.Fatal`, SIGKILL, and runner shutdown timeouts can bypass or interrupt the flush. The `goApp` runner currently allows five seconds for graceful shutdown. Use `processApp` with a larger `ProcessApplicationOptions.gracefulShutdownTimeout` when uploads need more time; set `containerApp(gracefulShutdownTimeout = ...)` likewise. Container runners send Docker’s stop signal and wait before removal. Allow enough shutdown time for collection plus queued uploads; each upload has a five-second total deadline and at most three attempts for transport failures or HTTP 429/502/503/504. Stove accepts late uploads while the exact completed run is retained, so application shutdown can finish after the dashboard run-ended event. Refresh Drill Down after teardown for final evidence.
+
+Flush profiles before closing dependencies that might block during shutdown. Go executes defers in reverse order: register `defer profiler.Close()` after dependency cleanup defers, or call it explicitly after draining requests and before closing clients. The Go showcase uses this order so Kafka cleanup cannot consume the profiler's shutdown grace period.
+
+For machine authentication or a private CA, use a Go configuration callback:
+
+```go
+profiler, err := stoveprofiler.StartFromEnv(func(c *stoveprofiler.Config) {
+    c.Headers = map[string]string{"Authorization": "Bearer " + os.Getenv("STOVE_UPLOAD_TOKEN")}
+    c.HTTPClient = approvedHTTPClient // trust store, mTLS, or authentication transport
+})
+```
+
+The callback runs only when enabled. The supplied HTTP client is copied; redirects are refused to keep run metadata and credentials at the configured destination. TLS certificate and hostname verification remain enabled. Browser SSO and MCP authentication do not authenticate uploads. JVM dashboard event ingestion still has its own authentication limitations, even if the Go profiler can authenticate. `Start(Config{...})` is also available for explicit configuration.
+
+Select the application/run in **Drill Down**, or query `stove_profiles` / `stove_diagnose` through MCP. Go series have `go:*` metric names and source filenames/lines when present in pprof. Profiles are whole-process samples, including background work; OTel spans do not automatically add trace/span labels to Go profiles. Use `runtime/pprof` labels explicitly when correlation is needed. Test-window selection includes entire overlapping recordings, not exact per-test attribution.
+
+#### Go upload contract
+
+The server accepts the pinned Go SDK's multipart push contract on `POST /ingest`: `spyName=gospy`, `format` omitted or `pprof`, `name`, and `from`/`until` as **epoch nanoseconds** (unlike Java's epoch seconds). `profile` contains a gzip-compressed pprof protobuf; `sample_type_config` carries the SDK's units, display aliases, and delta/snapshot semantics. Unknown fields and null entries are rejected; allocation/contention metrics require delta metadata. `sampleRate=0` means unspecified. Stove displays sampling frequencies only for Go CPU metrics; the SDK’s synthetic heap sample rate is not a collection frequency. The same three `X-Stove-*` headers, ingress routes, 16 MiB upload limit, retention, and query budgets apply. Repeating the same upload is idempotent. The Go wrapper repairs equal/reversed final snapshot windows caused by SDK interval rounding before retrying; ordinary SDK windows retain their original timestamps.
+
+The embedded converter uses Grafana's generated `google.v1.Profile` protobuf, validates references and supported sample types, and reuses the JFR normalization/storage pipeline. It supports the SDK's delta uploads, not arbitrary cumulative heap/lock files, a pull-based `net/http/pprof` endpoint, Pyroscope Push RPC, or OTLP Profiles. No additional backend, service, or schema is needed.
 
 ## Configure an in-process JVM application
 
@@ -311,7 +397,7 @@ The supported endpoint is Pyroscope Java's `POST /ingest?format=jfr&name=...&fro
 
 | Field | Contract |
 |---|---|
-| `format` | Must be `jfr`; pprof, Pyroscope Push, and OTLP Profiles are not implemented |
+| `format` | Must be `jfr` for Java; see the separate Go upload contract above |
 | `name` | Application/profile name; used for service fallback |
 | `from`, `until` | Epoch seconds; nonnegative, ordered, at most one hour apart |
 | `sampleRate` | Optional, defaults to 100; accepted range 1–100,000 |
@@ -323,7 +409,7 @@ The supported endpoint is Pyroscope Java's `POST /ingest?format=jfr&name=...&fro
 
 The Java integration supplies these headers automatically. Unknown or duplicate multipart fields are rejected. Repeated uploads of the same recording and identity are idempotent. An unknown run or exhausted conversion slots produces 503 so the agent can retry; invalid formats do not become supported through retries.
 
-For a separate JVM, providing only a server URL is insufficient: the uploader must implement this contract and bind to the exact dashboard run. The current `DashboardSystem` keeps its run ID internally, and runners do not automatically propagate profiling identity to an external process. Treat external JVM integration as custom work, not a supported one-line agent recipe. Do not guess a run ID from the latest run of an application.
+For a separate JVM, providing only a server URL is insufficient: the uploader must implement this contract and bind to the exact dashboard run. `DashboardExternalProfilingOptions` exposes the exact run identity to runner environment mappers, but Java agent attachment and lifecycle still require custom integration. Treat external JVM integration as custom work, not a supported one-line agent recipe. Do not guess a run ID from the latest run of an application.
 
 ### Storage and resource limits
 
@@ -334,7 +420,7 @@ Profiles use the server's configured SQLite or PostgreSQL database. Run retentio
 | Upload body | 16 MiB |
 | Each decoded multipart part | 32 MiB |
 | Normalized recording | 32 MiB before compression; 8 MiB compressed |
-| Concurrent JFR conversions | 2 |
+| Concurrent profile conversions | 2 |
 | Retained per run | 256 newest chunks and 64 MiB of compressed profiles |
 | Query decoding | 64 MiB, newest first |
 | REST response | 32 series, 20 hotspots and 200 stacks per series |
@@ -349,7 +435,7 @@ Normalized recordings share frame definitions across stacks and metrics to avoid
 |---|---|
 | No recordings from IntelliJ | Delegate to the configured Gradle test task; the native runner bypasses Java-agent attachment |
 | Short run shows nothing until completion | Wait for graceful teardown and its final flush; a hard kill loses the pending interval |
-| Go application is absent | JVM agent attachment does not profile Go, and the server does not accept pprof yet |
+| Go application is absent | Check the Go wrapper, exact-run environment mappings, reachable URL, and graceful flush |
 | Empty selected test window | Use **Show entire run**; recordings may not overlap the selected test or may have been evicted |
 | Profiles still go to localhost | Set `profiling.serverUrl`; it does not inherit the dashboard ingestion URL |
 | Run exists but uploads fail | Check the test logs, proxy `/ingest` routing, headers, TLS trust, body limits, and server version |

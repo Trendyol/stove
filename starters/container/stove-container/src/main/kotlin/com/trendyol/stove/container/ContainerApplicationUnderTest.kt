@@ -16,7 +16,6 @@ import com.trendyol.stove.system.application.EnvProvider
 import com.trendyol.stove.system.application.toConfigurationMap
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
-import kotlinx.coroutines.withTimeoutOrNull
 import org.slf4j.LoggerFactory
 import org.testcontainers.containers.GenericContainer
 import org.testcontainers.containers.output.Slf4jLogConsumer
@@ -118,14 +117,24 @@ internal class ContainerApplicationUnderTest(
 
   override suspend fun stop() {
     val container = runningContainer.getOrNull() ?: return
-    val gracefullyStopped = withContext(Dispatchers.IO) {
-      withTimeoutOrNull(gracefulShutdownTimeout) { container.stop() } != null
+    try {
+      withContext(Dispatchers.IO) {
+        // GenericContainer.stop() removes the container without an application
+        // shutdown grace period. Ask Docker to signal the app and wait first.
+        container.containerId?.let { id ->
+          runCatching {
+            val seconds = kotlin.math.ceil(gracefulShutdownTimeout.inWholeMilliseconds / 1000.0)
+              .toInt().coerceAtLeast(1)
+            container.dockerClient.stopContainerCmd(id).withTimeout(seconds).exec()
+          }.onFailure {
+            logger.warn("Graceful container shutdown failed; removing container", it)
+          }
+        }
+        container.stop()
+      }
+    } finally {
+      runningContainer = None
     }
-    if (!gracefullyStopped) {
-      logger.warn("Container did not stop in time, force-closing")
-      withContext(Dispatchers.IO) { container.close() }
-    }
-    runningContainer = None
   }
 
   private fun resolveEnv(configurationMap: Map<String, String>): Map<String, String> {
