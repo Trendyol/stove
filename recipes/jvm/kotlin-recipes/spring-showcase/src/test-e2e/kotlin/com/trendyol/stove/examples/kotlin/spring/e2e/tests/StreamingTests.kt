@@ -1,6 +1,7 @@
 package com.trendyol.stove.examples.kotlin.spring.e2e.tests
 
 import com.trendyol.stove.examples.kotlin.spring.ExampleData
+import com.trendyol.stove.examples.kotlin.spring.e2e.setup.APP_PORT
 import com.trendyol.stove.http.http
 import com.trendyol.stove.serialization.StoveSerde
 import com.trendyol.stove.serialization.StoveSerde.Companion.deserialize
@@ -27,7 +28,7 @@ class StreamingTests :
         http {
           streamClient()
             .prepareGet {
-              url("http://localhost:8024/api/streaming/json")
+              url("http://localhost:$APP_PORT/api/streaming/json")
               parameter("load", 100)
               parameter("delay", 1)
               contentType(ContentType.parse("application/x-ndjson"))

@@ -18,7 +18,7 @@ import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
 import kotlin.time.Duration.Companion.seconds
 
-private const val WS_PORT = 9877
+private val WS_PORT = PortFinder.findAvailablePort()
 
 /**
  * Application under test that runs a simple WebSocket echo server.

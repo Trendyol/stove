@@ -8,6 +8,7 @@ import com.trendyol.stove.kafka.*
 import com.trendyol.stove.ktor.*
 import com.trendyol.stove.mongodb.*
 import com.trendyol.stove.serialization.StoveSerde
+import com.trendyol.stove.system.PortFinder
 import com.trendyol.stove.system.Stove
 import com.trendyol.stove.wiremock.*
 import io.kotest.core.config.AbstractProjectConfig
@@ -17,19 +18,24 @@ import org.koin.dsl.module
 private const val DATABASE = "stove-kotlin-ktor"
 
 class StoveConfig : AbstractProjectConfig() {
+  private val appPort = PortFinder.findAvailablePort()
+
   override suspend fun beforeProject() {
     Stove()
       .with {
         httpClient {
           HttpClientSystemOptions(
-            baseUrl = "http://localhost:8081",
+            baseUrl = "http://localhost:$appPort",
             contentConverter = JacksonConverter(JacksonConfiguration.default)
           )
         }
         bridge()
         wiremock {
           WireMockSystemOptions(
-            port = 9090
+            port = 0,
+            configureExposedConfiguration = { cfg ->
+              listOf("external-apis.category.url=${cfg.baseUrl}")
+            }
           )
         }
         kafka {
@@ -66,6 +72,7 @@ class StoveConfig : AbstractProjectConfig() {
             )
           },
           withParameters = listOf(
+            "server.port=$appPort",
             "server.name=${Thread.currentThread().name}"
           )
         )

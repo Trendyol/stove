@@ -30,6 +30,21 @@ class TcpChaosProxyTest :
       }
     }
 
+    test("partition and shutdown tolerate connections finishing concurrently") {
+      EchoServer().use { echoServer ->
+        repeat(100) {
+          TcpChaosProxy("echo-$it").use { proxy ->
+            proxy.start(echoServer.endpoint)
+            roundTrip(proxy.endpoint, "before") shouldBe "before"
+            // Returning a response does not wait for the proxy's pump threads to remove the connection.
+            proxy.partition()
+            proxy.heal()
+            roundTrip(proxy.endpoint, "after") shouldBe "after"
+          }
+        }
+      }
+    }
+
     test("start is idempotent only for the configured target") {
       EchoServer().use { first ->
         EchoServer().use { second ->

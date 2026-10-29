@@ -58,6 +58,8 @@ class TcpChaosProxy(
   NetworkPartitionTarget {
   private val running = AtomicBoolean(false)
   private val partitioned = AtomicBoolean(false)
+
+  // Iterate directly: toList() can read size == 1 just before a pump removes that connection.
   private val connections = ConcurrentHashMap.newKeySet<Connection>()
   private val executor = Executors.newCachedThreadPool(DaemonThreadFactory("$name-chaos-proxy"))
   private val lifecycleLock = ReentrantLock()
@@ -93,7 +95,7 @@ class TcpChaosProxy(
 
   override fun partition() {
     partitioned.set(true)
-    connections.toList().forEach(Connection::close)
+    connections.forEach(Connection::close)
   }
 
   override fun heal() {
@@ -164,7 +166,7 @@ class TcpChaosProxy(
       if (!running.getAndSet(false)) return
       partitioned.set(true)
       server.close()
-      connections.toList().forEach(Connection::close)
+      connections.forEach(Connection::close)
       executor.shutdownNow()
       true
     }

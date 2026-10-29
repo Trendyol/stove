@@ -8,6 +8,7 @@ import com.trendyol.stove.micronaut.micronaut
 import com.trendyol.stove.postgres.PostgresqlOptions
 import com.trendyol.stove.postgres.postgresql
 import com.trendyol.stove.recipes.micronaut.Application
+import com.trendyol.stove.system.PortFinder
 import com.trendyol.stove.system.Stove
 import com.trendyol.stove.tracing.tracing
 import com.trendyol.stove.wiremock.WireMockSystemOptions
@@ -21,7 +22,7 @@ import io.kotest.core.extensions.Extension
  * Demonstrates HTTP, PostgreSQL (r2dbc), WireMock, tracing and the Micronaut bridge (`using<T>`).
  */
 class StoveConfig : AbstractProjectConfig() {
-  private val appPort = 8092
+  private val appPort = PortFinder.findAvailablePort()
 
   override val extensions: List<Extension> = listOf(StoveKotestExtension())
 

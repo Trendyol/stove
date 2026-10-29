@@ -18,10 +18,14 @@ class StreamsConfig {
   @Value("\${kafka.interceptorClasses}")
   val interceptorClass = emptyList<String>()
 
+  @Value("\${spring.kafka.streams.state-dir:/tmp/kafka-streams}")
+  val stateDirectory: String = ""
+
   @Bean(name = [KafkaStreamsDefaultConfiguration.DEFAULT_STREAMS_CONFIG_BEAN_NAME])
   fun kStreamsConfig(): KafkaStreamsConfiguration {
     val props: MutableMap<String, Any?> = HashMap()
     props[APPLICATION_ID_CONFIG] = "stove.example"
+    props[STATE_DIR_CONFIG] = stateDirectory
     props[BOOTSTRAP_SERVERS_CONFIG] = bootstrapServers
     props[DEFAULT_KEY_SERDE_CLASS_CONFIG] = Serdes.String().javaClass.name
     props[DEFAULT_VALUE_SERDE_CLASS_CONFIG] = Serdes.String().javaClass.name

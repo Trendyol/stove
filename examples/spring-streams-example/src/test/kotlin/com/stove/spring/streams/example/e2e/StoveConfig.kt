@@ -14,9 +14,11 @@ import io.kotest.core.config.AbstractProjectConfig
 import io.kotest.core.extensions.Extension
 import org.apache.kafka.clients.admin.NewTopic
 import stove.spring.streams.example.run
+import kotlin.io.path.createTempDirectory
 
 class StoveConfig : AbstractProjectConfig() {
   private val appPort = PortFinder.findAvailablePort()
+  private val streamsStateDirectory = createTempDirectory("stove-streams-").toFile()
 
   override val extensions: List<Extension> = listOf(StoveKotestExtension())
 
@@ -51,6 +53,7 @@ class StoveConfig : AbstractProjectConfig() {
         },
         withParameters = listOf(
           "server.port=$appPort",
+          "spring.kafka.streams.state-dir=${streamsStateDirectory.absolutePath}",
           "logging.level.root=info",
           "logging.level.org.springframework.web=info",
           "spring.profiles.active=default",
@@ -79,5 +82,11 @@ class StoveConfig : AbstractProjectConfig() {
       }
     }
 
-  override suspend fun afterProject(): Unit = Stove.stop()
+  override suspend fun afterProject() {
+    try {
+      Stove.stop()
+    } finally {
+      streamsStateDirectory.deleteRecursively()
+    }
+  }
 }

@@ -177,6 +177,34 @@ Replace the test module with the one you changed. To discover Gradle projects,
 run `mise exec -- ./gradlew projects`. Gradle test reports are written under each
 module's `build/reports/tests/` directory.
 
+### Parallel test execution
+
+The root JVM build and standalone JVM recipes run projects in parallel locally
+and in CI, with four Gradle workers by default. Use `--max-workers=N` to adjust
+the limit to available CPU, memory, and Docker capacity. Each test task uses one
+fork and its own `build/tmp/<task>/tmp` directory for JVM temporary files and
+Stove state. Keep Kotest specs and test cases, and JUnit tests, sequential within
+that JVM: suites share the Stove singleton, mocks, system properties, and data.
+
+Testcontainers assigns host ports to each container. Recipe application and
+bridge ports are selected dynamically, and WireMock binds port zero and passes
+its actual URL to the application. The tracing Gradle plugin assigns a port per
+test task, so do not increase `maxParallelForks` for instrumented tasks: their
+forks would inherit the same tracing endpoint.
+
+A free-port lookup releases its socket before the application starts; it reduces
+collisions but cannot guarantee that another process will not take that port.
+Prefer binding port zero and reading the actual bound port whenever the server
+API supports it. Do not enable container reuse or point parallel suites at the
+same provided database unless their data and cleanup are isolated.
+
+Run concurrent builds in separate checkouts or worktrees. Two Gradle invocations
+in the same checkout can still share generated files, test reports, and coverage
+outputs. The Go process/container recipe keeps its Kafka-library runs ordered
+because they share build and coverage artifacts; dynamic ports let it coexist
+with other suites. Its container mode still requires Docker host networking.
+
+
 Useful root commands:
 
 ```sh

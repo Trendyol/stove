@@ -7,6 +7,7 @@ import com.trendyol.stove.kafka.*
 import com.trendyol.stove.postgres.*
 import com.trendyol.stove.serialization.StoveSerde
 import com.trendyol.stove.spring.*
+import com.trendyol.stove.system.PortFinder
 import com.trendyol.stove.system.Stove
 import com.trendyol.stove.wiremock.*
 import io.kotest.core.config.AbstractProjectConfig
@@ -14,8 +15,10 @@ import io.ktor.serialization.jackson.*
 import org.springframework.kafka.support.serializer.JsonSerializer
 
 class Stove : AbstractProjectConfig() {
+  private val appPort = PortFinder.findAvailablePort()
+
   init {
-    stoveKafkaBridgePortDefault = "50052"
+    stoveKafkaBridgePortDefault = PortFinder.findAvailablePortAsString()
     System.setProperty(STOVE_KAFKA_BRIDGE_PORT, stoveKafkaBridgePortDefault)
   }
 
@@ -24,7 +27,7 @@ class Stove : AbstractProjectConfig() {
       .with {
         httpClient {
           HttpClientSystemOptions(
-            baseUrl = "http://localhost:8080",
+            baseUrl = "http://localhost:$appPort",
             contentConverter = JacksonConverter(JacksonConfiguration.defaultObjectMapper())
           )
         }
@@ -32,7 +35,10 @@ class Stove : AbstractProjectConfig() {
         bridge()
         wiremock {
           WireMockSystemOptions(
-            port = 9091,
+            port = 0,
+            configureExposedConfiguration = { cfg ->
+              listOf("external-apis.category.url=${cfg.baseUrl}")
+            },
             serde = StoveSerde.jackson.anyByteArraySerde(JacksonConfiguration.defaultObjectMapper())
           )
         }
@@ -71,7 +77,7 @@ class Stove : AbstractProjectConfig() {
             ExampleSpringBootApp.run(parameters) {
             }
           },
-          withParameters = listOf()
+          withParameters = listOf("server.port=$appPort")
         )
       }.run()
   }

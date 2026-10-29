@@ -19,10 +19,6 @@ application {
 
 graalvmNative.toolchainDetection = false
 
-tasks.e2eTest {
-  enabled = runningLocally
-}
-
 dependencies {
   annotationProcessor(platform(libs.micronaut.platform))
   annotationProcessor(libs.micronaut.inject.java)

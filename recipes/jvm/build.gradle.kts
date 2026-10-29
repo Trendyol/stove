@@ -70,6 +70,15 @@ subprojects {
   }
 
   tasks {
+    withType<Test>().configureEach {
+      // Suites share Stove and mutable fixtures inside a JVM; parallelize projects instead.
+      maxParallelForks = 1
+      doFirst {
+        val isolatedTemp = temporaryDir.resolve("tmp").apply { mkdirs() }
+        systemProperty("java.io.tmpdir", isolatedTemp.absolutePath)
+      }
+    }
+
     if (JavaVersion.current().isCompatibleWith(JavaVersion.toVersion("25"))) {
       withType<io.gitlab.arturbosch.detekt.Detekt>().configureEach {
         enabled = false

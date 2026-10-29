@@ -134,6 +134,14 @@ subprojects.of("lib", "spring", "examples", "ktor", "quarkus", "micronaut", "con
   }
 
   tasks {
+    withType<Test>().configureEach {
+      // Suites share Stove and mutable fixtures inside a JVM; parallelize projects instead.
+      maxParallelForks = 1
+      doFirst {
+        val isolatedTemp = temporaryDir.resolve("tmp").apply { mkdirs() }
+        systemProperty("java.io.tmpdir", isolatedTemp.absolutePath)
+      }
+    }
 
     test {
       useJUnitPlatform()

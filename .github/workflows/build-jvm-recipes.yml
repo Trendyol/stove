@@ -48,7 +48,7 @@ jobs:
           ./recipes/jvm/gradlew -p recipes/jvm build e2eTest \
             --build-cache \
             --no-daemon \
-            -Dorg.gradle.parallel=true
+            --parallel
 
       # Upload test results
       - name: Upload test results

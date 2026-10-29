@@ -20,7 +20,8 @@ kotlin {
 }
 
 tasks.e2eTest {
-  enabled = runningLocally
+  // Quarkus bootstraps a nested Gradle model; all build plugins require JDK 25.
+  javaLauncher.set(javaToolchains.launcherFor { languageVersion.set(JavaLanguageVersion.of(25)) })
 }
 
 dependencies {
