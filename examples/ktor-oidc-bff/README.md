@@ -837,6 +837,8 @@ A resource API deployed across pods needs a separate shared atomic `ProofReplayS
 
 The default tests start NAV through `stove-oidc`; Docker is unnecessary. `StoveConfig` injects discovery's issuer URL before starting the application. Three managed Stove HTTP systems represent the BFF, identity provider, and resource API. The tests explicitly follow redirects and cookies through Stove's response APIs.
 
+JVM test tasks (`test`, `postgresE2eTest`, and `keycloakE2eTest`) enable CPU and allocation profiling through `stoveTracing`. Start the local Stove Server with `stove`, then open `http://localhost:4040` and select **Profiles · whole run** for `ktor-oidc-bff`. Dashboard events use the default gRPC port `4041`. The native test tasks do not attach the Java profiling agent.
+
 Test sources under `src/test/kotlin/stove/ktor/bff` are organized by responsibility:
 
 - [StoveConfig.kt](src/test/kotlin/stove/ktor/bff/StoveConfig.kt) configures the provider, HTTP clients, and application runner.

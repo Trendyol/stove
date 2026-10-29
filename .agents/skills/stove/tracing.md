@@ -103,3 +103,11 @@ For a test that expects a failure, use `shouldHaveFailedSpan("PaymentGateway.cha
 Check the receiver startup log and port first, then the AUT's exporter protocol/address, installed instrumentation, sampling, and propagation. A receiver bind failure is logged and tests can continue without spans. If spans arrive under another trace, inspect `getAllTraceVisualizations()` and trace headers rather than repeatedly increasing timeouts.
 
 Source: `lib/stove-tracing/`, `plugins/stove-tracing-gradle-plugin/`.
+
+## Continuous profiling
+
+For 0.28.0 (upcoming), the same Gradle extension supports opt-in Pyroscope Java
+profiling. Follow [profiling.md](profiling.md) for configuration, HTTPS, lifecycle,
+IntelliJ execution, and Drill Down. The plugin profiles the test JVM only; Go
+pprof and other native formats are not accepted by Stove Server yet. Do not infer
+native profiling support from the presence of Gradle or the tracing SDK.

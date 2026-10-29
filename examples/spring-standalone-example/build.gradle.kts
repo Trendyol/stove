@@ -44,6 +44,11 @@ dependencies {
 stoveTracing {
   serviceName.set("spring-standalone-example")
   otelAgentVersion.set(libs.versions.opentelemetry.instrumentation.get())
+  profiling {
+    enabled.set(true)
+    agentVersion.set(libs.versions.pyroscope.get())
+    allocations.set(true)
+  }
 }
 
 application { mainClass.set("stove.spring.standalone.example.ExampleAppKt") }

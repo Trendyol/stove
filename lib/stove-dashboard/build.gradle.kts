@@ -31,6 +31,8 @@ tasks.named("sourcesJar") {
 }
 
 dependencies {
+  compileOnly(libs.pyroscope.agent)
+  testImplementation(libs.pyroscope.agent)
   api(projects.lib.stove)
   api(projects.lib.stoveDashboardApi)
   implementation(libs.io.grpc.netty)

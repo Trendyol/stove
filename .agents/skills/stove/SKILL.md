@@ -1,6 +1,6 @@
 ---
 name: stove
-description: Use when configuring, writing, or debugging Stove end-to-end tests; choosing JVM, process, container, or provided-application runners; wiring Stove systems and OIDC authentication; enabling tracing, dashboard, or MCP; or extending Stove with custom systems.
+description: Use when configuring, writing, or debugging Stove end-to-end tests; choosing JVM, process, container, or provided-application runners; wiring Stove systems and OIDC authentication; enabling tracing, profiling, dashboard, or MCP; or extending Stove with custom systems.
 ---
 
 # Stove Skill Router
@@ -41,6 +41,7 @@ Native access is correct when it is the documented API contract: Redis currently
 | Go or other non-JVM process mode | [other-languages.md](other-languages.md), then [go-setup.md](go-setup.md) for Go |
 | Docker-image AUT / Testcontainers runner | [container.md](container.md) |
 | OpenTelemetry setup, Gradle plugin wiring, and trace assertions | [tracing.md](tracing.md), then [gradle-config.md](gradle-config.md) for task wiring |
+| Continuous profiling, Drill Down, CPU/allocation analysis, or profiling runtime support | [profiling.md](profiling.md) |
 | Dashboard metadata, shared server, PostgreSQL, retention, or administration | [dashboard.md](dashboard.md) |
 | Agent queries and failed-run triage over MCP | [mcp.md](mcp.md) |
 | New Stove system implementation | [custom-systems.md](custom-systems.md) |

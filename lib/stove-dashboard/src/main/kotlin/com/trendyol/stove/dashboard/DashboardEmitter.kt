@@ -15,6 +15,8 @@ import kotlinx.coroutines.withTimeoutOrNull
 import org.slf4j.LoggerFactory
 import java.util.UUID
 import java.util.concurrent.atomic.AtomicBoolean
+import java.util.concurrent.locks.ReentrantLock
+import kotlin.concurrent.withLock
 import kotlin.time.Duration.Companion.milliseconds
 
 private const val DEFAULT_MAX_FAILURES = 5
@@ -52,13 +54,13 @@ class DashboardEmitter internal constructor(
   private val closed = AtomicBoolean(false)
   private var consecutiveFailures = 0
   private var rejectionLogged = false
+  private val emitLock = ReentrantLock()
   private val sequenceByRun = mutableMapOf<String, Long>()
   private val drainJob: Job = scope.launch { drainLoop() }
 
   /** Non-blocking emit. Drops the event only if the emitter is disabled or closed. */
-  @Synchronized
-  fun tryEmit(event: DashboardEvent) {
-    if (disabled.get() || closed.get()) return
+  fun tryEmit(event: DashboardEvent): Unit = emitLock.withLock {
+    if (disabled.get() || closed.get()) return@withLock
     val sequence = sequenceByRun.getOrDefault(event.runId, 0) + 1
     sequenceByRun[event.runId] = sequence
     val identifiedEvent = event.toBuilder()

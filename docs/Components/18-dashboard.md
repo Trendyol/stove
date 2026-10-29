@@ -329,6 +329,8 @@ With `DashboardIngestion.Http`, each event is sent as a protobuf-encoded `Dashbo
 
 The server exposes its HTTP API documentation at `/swagger-ui` and its OpenAPI document at `/api-docs/openapi.json`. The ingestion request and response are binary protobuf payloads; the shared `.proto` files in `stove-dashboard-api` remain the authoritative message schema.
 
+For profiling on the same deployment, configure `stoveTracing.profiling.serverUrl` separately. Its multipart `POST /ingest` uses the HTTP port too. See [shared profiling deployment](../observability/profiling.md#shared-stove-server-over-https) for a common CI setting, path prefixes, required headers, upload limits, Java certificate trust, authentication limitations, and verification steps.
+
 ## What you see
 
 <div class="stove-catalog">
@@ -537,3 +539,15 @@ The acceptance suite verifies the same ingestion, filtering, retention, administ
 | "gRPC disabled" warning | Expected if the server started after tests; restart in correct order |
 | Cancelled CI run remains running | After 1 hour without newly committed ingestion, the next sweep deletes the run and its tests and evidence. Check Admin’s idle timeout and worker health if it remains running. |
 | Disk filling up | Set `--retention-runs-per-app` (or `STOVE_RETENTION_RUNS_PER_APP`) to limit completed runs per app |
+
+## Continuous JVM profiling
+
+In **0.28.0 (upcoming)**, Stove Server receives Pyroscope Java JFR recordings and
+provides **Drill Down** for CPU and memory investigation, with no separate
+profiling backend. Enable collection in the tracing Gradle plugin and keep the
+normal dashboard integration. The plugin profiles the test JVM; Go and other
+non-JVM application profiles are not supported yet.
+
+See [Profiling and Drill Down](../observability/profiling.md) for the complete
+setup, HTTPS configuration, language support, recording lifecycle, memory-leak
+interpretation, MCP workflow, ingestion contract, and resource limits.

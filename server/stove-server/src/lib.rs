@@ -18,6 +18,7 @@ pub mod ingest;
 pub(crate) mod mcp;
 pub(crate) mod metrics;
 pub(crate) mod navigation;
+pub mod profiling;
 pub mod run_expiry;
 pub mod skills;
 pub mod sse;

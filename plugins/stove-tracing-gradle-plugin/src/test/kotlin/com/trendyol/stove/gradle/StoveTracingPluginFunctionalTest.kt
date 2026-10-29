@@ -70,6 +70,7 @@ class StoveTracingPluginFunctionalTest : FunSpec({
               val ext = project.extensions.getByType(${StoveTracingExtension::class.qualifiedName}::class.java)
               println("serviceName=${'$'}{ext.serviceName.get()}")
               println("enabled=${'$'}{ext.enabled.get()}")
+              println("profilingEnabled=${'$'}{ext.profiling.enabled.get()}")
               println("protocol=${'$'}{ext.protocol.get()}")
               println("otelAgentVersion=${'$'}{ext.otelAgentVersion.get()}")
           }
@@ -87,6 +88,7 @@ class StoveTracingPluginFunctionalTest : FunSpec({
     result.output shouldContain "serviceName=stove-traced-app"
     result.output shouldContain "enabled=true"
     result.output shouldContain "protocol=grpc"
+    result.output shouldContain "profilingEnabled=false"
     result.output shouldContain "otelAgentVersion=2.24.0"
   }
 
@@ -118,4 +120,45 @@ class StoveTracingPluginFunctionalTest : FunSpec({
 
     result.output shouldContain "Stove tracing is disabled"
   }
+  test("profiling attaches to selected test JVMs independently of tracing and reuses configuration cache") {
+    projectDir.resolve("build.gradle.kts").writeText(
+      """
+      plugins { java; id("com.trendyol.stove.tracing") }
+      repositories { mavenCentral() }
+      dependencies { testImplementation("junit:junit:4.13.2") }
+      stoveTracing {
+        enabled.set(false)
+        serviceName.set("profile-service")
+        testTaskNames.set(listOf("test"))
+        profiling {
+          enabled.set(true)
+          allocations.set(true)
+          uploadIntervalSeconds.set(2)
+        }
+      }
+      """.trimIndent()
+    )
+    val source = projectDir.resolve("src/test/java/ProfileConfigTest.java")
+    source.parentFile.mkdirs()
+    source.writeText(
+      """
+      public class ProfileConfigTest {
+        @org.junit.Test public void agentIsInstalledButWaitsForRunIdentity() throws Exception {
+          org.junit.Assert.assertEquals("true", System.getProperty("stove.profiling.enabled"));
+          org.junit.Assert.assertEquals("profile-service", System.getProperty("stove.profiling.service"));
+          org.junit.Assert.assertEquals("512k", System.getProperty("stove.profiling.alloc"));
+          org.junit.Assert.assertEquals("2", System.getProperty("stove.profiling.interval"));
+          org.junit.Assert.assertEquals("false", System.getProperty("pyroscope.agent.enabled"));
+          Class<?> agent = Class.forName("io.pyroscope.javaagent.PyroscopeAgent");
+          org.junit.Assert.assertEquals(false, agent.getMethod("isStarted").invoke(null));
+        }
+      }
+      """.trimIndent()
+    )
+    val runner = GradleRunner.create().withPluginClasspath().withProjectDir(projectDir)
+      .withArguments("test", "--configuration-cache", "--rerun-tasks")
+    runner.build()
+    runner.build().output shouldContain "Reusing configuration cache"
+  }
+
 })

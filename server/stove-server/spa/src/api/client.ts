@@ -77,6 +77,8 @@ async function readResponse<T>(
 }
 
 export const api = {
+  profiles: (runId: string, parameters: URLSearchParams, signal?: AbortSignal) =>
+    get(`/runs/${encodePath(runId)}/profiles?${parameters}`, schema.isProfileReport, signal),
   getAgentSetup: (endpoint: string, signal?: AbortSignal) =>
     get(`/agent-setup?${new URLSearchParams({ endpoint })}`, schema.isAgentSetupResponse, signal),
   getTopFilter: (signal?: AbortSignal) => get("/top-filter", schema.isTopFilterCatalog, signal),

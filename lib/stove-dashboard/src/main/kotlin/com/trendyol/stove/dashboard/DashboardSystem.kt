@@ -63,6 +63,7 @@ class DashboardSystem(
   private val jsonMapper = ObjectMapper()
   private val runId = UUID.randomUUID().toString()
   private lateinit var emitter: DashboardEmitter
+  private var profiling: AutoCloseable? = null
   private var startTime: Instant = Instant.now()
   private var totalTests = 0
   private var passedTests = 0
@@ -92,6 +93,11 @@ class DashboardSystem(
           .build()
       }
     )
+    if (System.getProperty("stove.profiling.enabled").toBoolean()) {
+      runCatching { DashboardProfiling(runId, options.appName) }
+        .onSuccess { profiling = it }
+        .onFailure { logger.warn("Stove profiling could not start; check the tracing plugin and platform support", it) }
+    }
     acceptingEvents.set(true)
     stove.addReportListener(this)
     registerSpanListener()
@@ -262,6 +268,9 @@ class DashboardSystem(
       if (!::emitter.isInitialized || !acceptingEvents.compareAndSet(true, false)) return
       stove.removeReportListener(this)
       removeMockDiagnosticListeners()
+      runCatching { profiling?.close() }
+        .onFailure { logger.warn("Stove profiling could not flush", it) }
+      profiling = null
       finalizeOpenTests()
       val duration = Duration.between(startTime, Instant.now()).toMillis()
       emitter.tryEmit(

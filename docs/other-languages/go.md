@@ -47,7 +47,7 @@ Rule of thumb: start with **process mode** for fast feedback, add **container mo
   <div class="stove-ribbon-item">
     <div class="icon">🛰️</div>
     <strong>Distributed tracing</strong>
-    <p>Spans from Go appear in the same trace tree as the test. <code>stoveTracing</code> Gradle plugin starts the OTLP receiver.</p>
+    <p>Spans from Go appear in the same trace tree as the test. Initialize the Go OTel SDK and enable Stove’s span receiver in the test setup.</p>
   </div>
   <div class="stove-ribbon-item">
     <div class="icon">📊</div>
@@ -84,3 +84,12 @@ Same shape, swap the Go-specific parts.
 | Kafka assertions | `stove-kafka` bridge | *(bridge needed)* | *(bridge needed)* | *(bridge needed)* |
 
 The Kotlin test side keeps the same shape. The AUT runner, config mapping, and language-specific instrumentation are the parts that differ.
+
+## Profiling support
+
+Stove 0.28.0 (upcoming) adds **Drill Down** for JVM profiles. Applying
+`stoveTracing.profiling` to a Go test project profiles the Kotlin test JVM, not the
+Go binary. Stove currently accepts JFR only; Go pprof uploads are not supported.
+Use Go's native profiling tools for the application today. See
+[Go developers](../observability/profiling.md#go-developers) for the exact boundary
+and the integration needed for future Go support.

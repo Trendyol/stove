@@ -1,5 +1,7 @@
 package stove.ktor.bff
 
+import com.trendyol.stove.dashboard.DashboardSystemOptions
+import com.trendyol.stove.dashboard.dashboard
 import com.trendyol.stove.extensions.kotest.StoveKotestExtension
 import com.trendyol.stove.http.*
 import com.trendyol.stove.ktor.KtorApplicationUnderTest
@@ -65,6 +67,7 @@ class StoveConfig : AbstractProjectConfig() {
 
       val executable = System.getProperty("bff.native.executable", "")
       val bff = if (executable.isEmpty()) {
+        dashboard { DashboardSystemOptions(appName = "ktor-oidc-bff") }
         KtorApplicationUnderTest(
           stove = stove,
           runner = { startBff(it) },

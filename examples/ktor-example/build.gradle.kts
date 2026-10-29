@@ -21,6 +21,11 @@ application {
 stoveTracing {
   serviceName.set("ktor-example")
   otelAgentVersion.set(libs.versions.opentelemetry.instrumentation.get())
+  profiling {
+    enabled.set(true)
+    agentVersion.set(libs.versions.pyroscope.get())
+    allocations.set(true)
+  }
 }
 
 dependencies {

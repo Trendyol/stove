@@ -1,11 +1,23 @@
 plugins {
   application
+  id("com.trendyol.stove.tracing")
   alias(libs.plugins.kotlinx.serialization)
   id("org.graalvm.buildtools.native")
 }
 
 application {
   mainClass.set("stove.ktor.bff.ApplicationKt")
+}
+
+stoveTracing {
+  enabled.set(false)
+  serviceName.set("ktor-oidc-bff")
+  testTaskNames.set(listOf("test", "postgresE2eTest", "keycloakE2eTest"))
+  profiling {
+    enabled.set(true)
+    agentVersion.set(libs.versions.pyroscope.get())
+    allocations.set(true)
+  }
 }
 
 val indexSessionMigrations = tasks.register("indexSessionMigrations") {
@@ -48,6 +60,7 @@ dependencies {
   testImplementation(libs.ktor.server.test.host)
   testImplementation(libs.ktor.client.mock)
   testImplementation(projects.lib.stoveOidc)
+  testImplementation(projects.lib.stoveDashboard)
   testImplementation(projects.lib.stovePostgres)
   testImplementation(projects.lib.stoveHttp)
   testImplementation(projects.starters.ktor.stoveKtor)

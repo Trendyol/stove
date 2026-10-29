@@ -2,6 +2,9 @@
 
 Use this guide when configuring run metadata, operating a shared Stove server, choosing SQLite or PostgreSQL, setting retention, filtering runs, or administering stored evidence. For agent tool calls after selecting a run, continue with [mcp.md](mcp.md).
 
+For continuous profiling and **Drill Down**, follow [profiling.md](profiling.md).
+Its upload URL is configured independently of dashboard event ingestion.
+
 ## Publish run metadata
 
 Metadata is attached when the dashboard run starts and applies to every test and evidence record in that run:

@@ -9,6 +9,7 @@ mod distributed;
 mod explorer;
 pub(super) mod lifecycle;
 mod monitoring;
+mod profiles;
 mod reads;
 mod top_filter;
 mod writes;

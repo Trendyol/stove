@@ -16,7 +16,19 @@ internal object TestTaskConfigurator {
       description = "OpenTelemetry Java Agent for Stove test tracing"
     }
 
+    val pyroAgentConfig = project.configurations.create("stovePyroscopeAgent") {
+      isTransitive = false
+      isCanBeResolved = true
+      isCanBeConsumed = false
+      description = "Pyroscope Java agent for Stove continuous profiling"
+    }
+
     project.afterEvaluate {
+      val testTasks by lazy { resolveTestTasks(extension) }
+      if (extension.profiling.enabled.get()) {
+        dependencies.add("stovePyroscopeAgent", "io.pyroscope:agent:${extension.profiling.agentVersion.get()}")
+        testTasks.forEach { ProfilingTaskConfigurator.configure(it, pyroAgentConfig, extension) }
+      }
       if (!extension.enabled.get()) {
         logger.info("Stove tracing is disabled, skipping configuration")
         return@afterEvaluate
@@ -29,7 +41,6 @@ internal object TestTaskConfigurator {
         "io.opentelemetry.javaagent:opentelemetry-javaagent:${extension.otelAgentVersion.get()}"
       )
 
-      val testTasks = resolveTestTasks(extension)
       testTasks.forEach { testTask ->
         configureTestTask(testTask, otelAgentConfig, extension)
       }

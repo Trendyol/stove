@@ -85,6 +85,7 @@ nav:
     - When a Test Fails: observability/when-it-fails.md
     - Reporting: Components/13-reporting.md
     - Tracing: Components/15-tracing.md
+    - Profiling / Drill Down: observability/profiling.md
     - Dashboard: Components/18-dashboard.md
     - MCP: Components/21-mcp.md
   - Concepts:
@@ -103,6 +104,7 @@ nav:
       - "Execution Tracing in 0.21.0": blog/tracing-0.21.0.md
   - Release Notes:
       - Overview: release-notes/index.md
+      - "0.28.0 (upcoming)": release-notes/0.28.0.md
       - "0.27.x": release-notes/0.27.x.md
       - "0.26.0": release-notes/0.26.0.md
       - "0.25.0": release-notes/0.25.0.md

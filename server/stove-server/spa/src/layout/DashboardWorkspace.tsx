@@ -1,6 +1,7 @@
-import { useLayoutEffect, useRef } from "react";
+import { useLayoutEffect, useRef, useState } from "react";
 import type { AppSummary, Run, Test } from "../api/types";
 import { ConnectAgentButton } from "../components/agent-connection/AgentConnectionProvider";
+import { DrillDownPanel } from "../components/DrillDownPanel";
 import type { TopFilterPickerProps } from "../components/TopFilterPicker";
 import {
   PhoneNavigationProvider,
@@ -55,6 +56,8 @@ function DashboardWorkspaceContent({
   onMetadataFilterChange,
   onSelectTest,
 }: DashboardWorkspaceProps) {
+  const [profilesRun, setProfilesRun] = useState<string>();
+  const showProfiles = profilesRun !== undefined && profilesRun === latestRun?.id;
   const phone = usePhoneNavigation();
   const isPhone = useIsPhone();
   const workspaceRef = useRef<HTMLDivElement>(null);
@@ -89,14 +92,32 @@ function DashboardWorkspaceContent({
         run={latestRun}
         tests={tests}
         selectedTestId={selectedTest?.id}
+        profilesSelected={showProfiles}
+        onSelectProfiles={() => {
+          setProfilesRun(latestRun?.id);
+          if (isPhone) phone?.go({ level: "test" });
+        }}
         onSelectTest={(testId) => {
+          setProfilesRun(undefined);
           onSelectTest(testId);
           if (isPhone) phone?.go({ level: "test", testId });
         }}
       />
-      {latestRun && selectedTest ? (
+      {latestRun && showProfiles && (
+        <DrillDownPanel
+          key={latestRun.id}
+          run={latestRun}
+          tests={tests}
+          onClose={() => {
+            setProfilesRun(undefined);
+            if (isPhone) phone?.go({ level: "tests" });
+          }}
+        />
+      )}
+      {!showProfiles && latestRun && selectedTest && (
         <TestDetail runId={latestRun.id} test={selectedTest} liveConnected={liveConnected} />
-      ) : (
+      )}
+      {!showProfiles && !(latestRun && selectedTest) && (
         <WorkspaceEmpty
           waitingForFirstRun={apps.length === 0}
           filtered={topFilter.value !== null}

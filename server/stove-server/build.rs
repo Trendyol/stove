@@ -2,6 +2,7 @@ use std::path::Path;
 use std::process::Command;
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
+  build_profiling_bridge();
   // ── Proto codegen ──────────────────────────────────────────────
   println!(
     "cargo:rerun-if-changed=../../lib/stove-dashboard-api/src/main/proto/stove/dashboard/v1/dashboard_events.proto"
@@ -80,4 +81,53 @@ fn run_npm(dir: &Path, args: &[&str]) {
     .status()
     .unwrap_or_else(|e| panic!("Failed to run npm {}: {e}", args.join(" ")));
   assert!(status.success(), "npm {} failed", args.join(" "));
+}
+
+fn build_profiling_bridge() {
+  println!("cargo:rerun-if-changed=profiling-bridge");
+  println!("cargo:rerun-if-env-changed=GO");
+  let target = std::env::var("TARGET").unwrap();
+  let goos = if target.contains("apple-darwin") {
+    "darwin"
+  } else if target.contains("linux") {
+    "linux"
+  } else {
+    panic!("profiling bridge supports Linux and macOS")
+  };
+  let goarch = if target.starts_with("aarch64") {
+    "arm64"
+  } else if target.starts_with("x86_64") {
+    "amd64"
+  } else {
+    panic!("unsupported profiling architecture: {target}")
+  };
+  let out = std::path::PathBuf::from(std::env::var("OUT_DIR").unwrap());
+  let status = Command::new(std::env::var("GO").unwrap_or_else(|_| "go".into()))
+    .current_dir("profiling-bridge")
+    .env("GOOS", goos)
+    .env("GOARCH", goarch)
+    .env("CGO_ENABLED", "1")
+    .args([
+      "build",
+      "-mod=readonly",
+      "-trimpath",
+      "-buildmode=c-archive",
+      "-o",
+    ])
+    .arg(out.join("libstove_profiles.a"))
+    .arg(".")
+    .status()
+    .expect("Go is required to build the embedded JFR converter");
+  assert!(status.success(), "profiling bridge build failed");
+  println!("cargo:rustc-link-search=native={}", out.display());
+  println!("cargo:rustc-link-lib=static=stove_profiles");
+  if goos == "darwin" {
+    println!("cargo:rustc-link-lib=framework=CoreFoundation");
+    println!("cargo:rustc-link-lib=framework=Security");
+    println!("cargo:rustc-link-lib=resolv");
+  } else {
+    println!("cargo:rustc-link-lib=pthread");
+    println!("cargo:rustc-link-lib=dl");
+    println!("cargo:rustc-link-lib=m");
+  }
 }

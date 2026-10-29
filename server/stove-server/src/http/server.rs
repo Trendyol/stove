@@ -53,6 +53,7 @@ pub fn create_router_with_public_url(
       "/api/v1",
       run_routes().merge(mock_routes()).merge(admin_routes()),
     )
+    .merge(crate::profiling::routes())
     .merge(super::openapi::router())
     .fallback(super::routes::static_handler)
     .layer(CorsLayer::permissive())

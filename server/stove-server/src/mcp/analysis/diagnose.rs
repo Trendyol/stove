@@ -56,6 +56,7 @@ impl Analyzer {
       "run_metadata": preview_field(Some(&json!(run.metadata).to_string()), budget.string_chars),
       "navigation": reference(&run.id, None, None),
       "data_freshness": if partial {"partial"} else {"complete"},
+      "profiling": self.profile_summary(&run.id, &crate::profiling::ProfileQuery::default())?,
       "diagnoses": diagnoses, "matching_tests": tests.len(),
       "omitted_tests": remaining, "next_tool_call": next,
       "pagination": "Follow next_tool_call until null. Pages stay in this run. If data_freshness is partial, repeat from the first page after the run completes; pages are not a database snapshot.",

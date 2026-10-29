@@ -12,6 +12,7 @@ pub(super) mod distributed;
 pub(super) mod explorer;
 pub(super) mod lifecycle;
 mod monitoring;
+mod profiles;
 pub(super) mod reads;
 mod top_filter;
 pub(super) mod writes;

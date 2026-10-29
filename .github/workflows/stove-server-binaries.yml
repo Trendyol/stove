@@ -68,6 +68,7 @@ jobs:
           mkdir -p staging
           cp "target/${{ matrix.target }}/release/stove" staging/
           cp "${GITHUB_WORKSPACE}/LICENSE" staging/
+          cp profiling-bridge/THIRD_PARTY_NOTICES staging/
           tar czf "${ARCHIVE}" -C staging .
           shasum -a 256 "${ARCHIVE}" > "${ARCHIVE}.sha256"
 

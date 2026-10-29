@@ -29,11 +29,12 @@ pub(crate) enum ToolName {
   Trace,
   Snapshot,
   Interactions,
+  Profiles,
   RawEvidence,
 }
 
 impl ToolName {
-  pub(crate) const ALL: [Self; 10] = [
+  pub(crate) const ALL: [Self; 11] = [
     Self::Apps,
     Self::Runs,
     Self::Failures,
@@ -43,6 +44,7 @@ impl ToolName {
     Self::Trace,
     Self::Snapshot,
     Self::Interactions,
+    Self::Profiles,
     Self::RawEvidence,
   ];
 
@@ -57,6 +59,7 @@ impl ToolName {
       Self::Trace => "stove_trace",
       Self::Snapshot => "stove_snapshot",
       Self::Interactions => "stove_interactions",
+      Self::Profiles => "stove_profiles",
       Self::RawEvidence => "stove_raw_evidence",
     }
   }
@@ -68,6 +71,13 @@ impl ToolName {
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub(crate) enum ArgName {
+  Service,
+  Instance,
+  Metric,
+  FromMs,
+  UntilMs,
+  SpanId,
+  BaselineRunId,
   AfterTestId,
   AppName,
   Budget,
@@ -89,6 +99,13 @@ pub(crate) enum ArgName {
 impl ArgName {
   pub(crate) const fn as_str(self) -> &'static str {
     match self {
+      Self::Service => "service",
+      Self::Instance => "instance",
+      Self::Metric => "metric",
+      Self::FromMs => "from_ms",
+      Self::UntilMs => "until_ms",
+      Self::SpanId => "span_id",
+      Self::BaselineRunId => "baseline_run_id",
       Self::AfterTestId => "after_test_id",
       Self::AppName => "app_name",
       Self::Budget => "budget",
