@@ -51,7 +51,7 @@ application {
   mainClass.set("stove.quarkus.example.QuarkusMainApp")
 }
 
-val ensureJavaMainClassesDir by tasks.registering(EnsureDirectoryTask::class) {
+val ensureJavaMainClassesDir = tasks.register<EnsureDirectoryTask>("ensureJavaMainClassesDir") {
   outputDirectory.set(layout.buildDirectory.dir("classes/java/main"))
 }
 
