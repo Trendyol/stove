@@ -5,10 +5,10 @@ import java.sql.Connection
 import javax.sql.DataSource
 
 /** Supplies a SQL session's connection and records failure-tolerant cleanup without opening a database. */
-class JdbcCloseFailureFixture {
+class JdbcCloseFailureFixture(val closeFailure: RuntimeException = IllegalStateException("connection close failed")) {
   val events: MutableList<String> = mutableListOf()
   val cleanupFailure: IllegalStateException = IllegalStateException("cleanup failed")
-  val closeFailure: IllegalStateException = IllegalStateException("connection close failed")
+  val closeAttempted: Boolean get() = closed
   private var closed = false
 
   private val connection = Proxy.newProxyInstance(

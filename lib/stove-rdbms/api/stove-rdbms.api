@@ -7,6 +7,14 @@ public final class com/trendyol/stove/rdbms/NativeSqlOperations : java/lang/Auto
 	public static synthetic fun select$default (Lcom/trendyol/stove/rdbms/NativeSqlOperations;Ljava/lang/String;Ljava/util/List;Lkotlin/jvm/functions/Function1;ILjava/lang/Object;)Ljava/util/List;
 }
 
+public final class com/trendyol/stove/rdbms/RelationalDatabaseChaosAdapter : com/trendyol/stove/chaos/ChaosEndpointAdapter {
+	public static final field INSTANCE Lcom/trendyol/stove/rdbms/RelationalDatabaseChaosAdapter;
+	public fun applicationConfiguration (Lcom/trendyol/stove/rdbms/RelationalDatabaseExposedConfiguration;Lcom/trendyol/stove/chaos/TcpEndpoint;)Lcom/trendyol/stove/rdbms/RelationalDatabaseExposedConfiguration;
+	public synthetic fun applicationConfiguration (Ljava/lang/Object;Lcom/trendyol/stove/chaos/TcpEndpoint;)Ljava/lang/Object;
+	public fun endpoint (Lcom/trendyol/stove/rdbms/RelationalDatabaseExposedConfiguration;)Lcom/trendyol/stove/chaos/TcpEndpoint;
+	public synthetic fun endpoint (Ljava/lang/Object;)Lcom/trendyol/stove/chaos/TcpEndpoint;
+}
+
 public abstract class com/trendyol/stove/rdbms/RelationalDatabaseContext {
 	public fun <init> (Lcom/trendyol/stove/system/abstractions/SystemRuntime;Lkotlin/jvm/functions/Function1;)V
 	public final fun getConfigureExposedConfiguration ()Lkotlin/jvm/functions/Function1;

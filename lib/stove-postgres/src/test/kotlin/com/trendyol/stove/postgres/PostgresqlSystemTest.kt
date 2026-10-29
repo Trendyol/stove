@@ -1,11 +1,16 @@
 package com.trendyol.stove.postgres
 
+import com.trendyol.stove.chaos.duringFault
 import com.trendyol.stove.system.stove
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.ints.shouldBeGreaterThan
 import io.kotest.matchers.shouldBe
 import kotliquery.param
+import java.sql.Connection
+import java.sql.DriverManager
+import java.sql.SQLException
+import java.util.Properties
 
 /**
  * PostgreSQL system tests that run against both container-based and provided instances.
@@ -23,6 +28,23 @@ import kotliquery.param
 class PostgresqlSystemTests :
   FunSpec({
     blockingTest = true
+    test("faults application JDBC traffic while direct assertions remain available and recovers") {
+      stove {
+        postgresql {
+          applicationConnection().use { applicationConnection ->
+            applicationConnection.query() shouldBe 1
+            duringFault {
+              shouldThrow<SQLException> { applicationConnection.query() }
+              shouldThrow<SQLException> { applicationConnection().use { it.query() } }
+              postgresql {
+                shouldQuery("SELECT 1", mapper = { it.int(1) }) { it shouldBe listOf(1) }
+              }
+            }
+          }
+          applicationConnection().use { it.query() } shouldBe 1
+        }
+      }
+    }
 
     data class IdAndDescription(
       val id: Long,
@@ -266,5 +288,25 @@ private suspend fun withValidationUsers(scenario: suspend PostgresqlSystem.() ->
         shouldExecute("DROP TABLE ValidationUsers")
       }
     }
+  }
+}
+
+// Native JDBC connections model the application route; direct assertions stay on Stove's SQL DSL.
+private fun applicationConnection(): Connection {
+  val configuration = applicationDatabaseConfiguration
+  val properties = Properties().apply {
+    setProperty("user", configuration.username)
+    setProperty("password", configuration.password)
+    setProperty("connectTimeout", "2")
+    setProperty("socketTimeout", "2")
+  }
+  return DriverManager.getConnection(configuration.jdbcUrl, properties)
+}
+
+private fun Connection.query(): Int = createStatement().use { statement ->
+  statement.queryTimeout = 2
+  statement.executeQuery("SELECT 1").use { result ->
+    check(result.next())
+    result.getInt(1)
   }
 }

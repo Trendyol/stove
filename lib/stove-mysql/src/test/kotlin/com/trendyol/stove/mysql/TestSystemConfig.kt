@@ -17,6 +17,8 @@ import org.testcontainers.containers.MySQLContainer
 // Shared components
 // ============================================================================
 
+internal lateinit var applicationDatabaseConfiguration: RelationalDatabaseExposedConfiguration
+
 class NoOpApplication : ApplicationUnderTest<Unit> {
   override suspend fun start(configurations: List<String>) = Unit
 
@@ -90,7 +92,10 @@ class ContainerMySqlStrategy : MySqlTestStrategy {
 
     Stove()
       .with {
-        mysql { options }
+        mysql {
+          enableChaos()
+          options
+        }
         applicationUnderTest(NoOpApplication())
       }.run()
   }
@@ -143,7 +148,10 @@ class ProvidedMySqlStrategy : MySqlTestStrategy {
 
     Stove()
       .with {
-        mysql { options }
+        mysql {
+          enableChaos()
+          options
+        }
         applicationUnderTest(NoOpApplication())
       }.run()
   }
@@ -170,15 +178,14 @@ class StoveConfig : ConcurrentProjectConfig(concurrentTests = true) {
 }
 
 // Written once during project startup, before any concurrent tests run.
-private lateinit var sqlConfiguration: RelationalDatabaseExposedConfiguration
 
 private fun captureSqlConfiguration(config: RelationalDatabaseExposedConfiguration): List<String> {
-  sqlConfiguration = config
+  applicationDatabaseConfiguration = config
   return emptyList()
 }
 
 internal suspend fun ValidationDsl.isolatedMysql(scenario: suspend MySqlSystem.() -> Unit) {
-  val config = sqlConfiguration
+  val config = stove.mysql().exposedConfiguration
   val options = MySqlOptions.provided(
     jdbcUrl = config.jdbcUrl,
     host = config.host,

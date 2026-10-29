@@ -16,6 +16,8 @@ import org.testcontainers.postgresql.PostgreSQLContainer
 // Shared components
 // ============================================================================
 
+internal lateinit var applicationDatabaseConfiguration: RelationalDatabaseExposedConfiguration
+
 class NoOpApplication : ApplicationUnderTest<Unit> {
   override suspend fun start(configurations: List<String>) = Unit
 
@@ -84,7 +86,10 @@ class ContainerPostgresStrategy : PostgresTestStrategy {
 
     Stove()
       .with {
-        postgresql { options }
+        postgresql {
+          enableChaos()
+          options
+        }
         applicationUnderTest(NoOpApplication())
       }.run()
   }
@@ -138,7 +143,10 @@ class ProvidedPostgresStrategy : PostgresTestStrategy {
 
     Stove()
       .with {
-        postgresql { options }
+        postgresql {
+          enableChaos()
+          options
+        }
         applicationUnderTest(NoOpApplication())
       }.run()
   }
@@ -166,15 +174,14 @@ class StoveConfig : ConcurrentProjectConfig(concurrentTests = true) {
 }
 
 // Written once during project startup, before any concurrent tests run.
-private lateinit var sqlConfiguration: RelationalDatabaseExposedConfiguration
 
 private fun captureSqlConfiguration(config: RelationalDatabaseExposedConfiguration): List<String> {
-  sqlConfiguration = config
+  applicationDatabaseConfiguration = config
   return emptyList()
 }
 
 internal suspend fun ValidationDsl.isolatedPostgresql(scenario: suspend PostgresqlSystem.() -> Unit) {
-  val config = sqlConfiguration
+  val config = stove.postgresql().exposedConfiguration
   val options = PostgresqlOptions.provided(
     jdbcUrl = config.jdbcUrl,
     host = config.host,

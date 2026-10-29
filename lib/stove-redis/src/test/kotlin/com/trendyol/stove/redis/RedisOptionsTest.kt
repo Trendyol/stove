@@ -1,5 +1,6 @@
 package com.trendyol.stove.redis
 
+import com.trendyol.stove.chaos.TcpEndpoint
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
@@ -40,6 +41,12 @@ class RedisOptionsTest :
       options.providedConfig.database shouldBe "5"
       options.providedConfig.password shouldBe "pass"
       options.runMigrationsForProvided shouldBe true
+    }
+
+    test("provided IPv6 options produce a valid single-server URI for chaos routing") {
+      val options = RedisOptions.provided("::1", 6379, "password", configureExposedConfiguration = { emptyList() })
+      options.providedConfig.redisUri shouldBe "redis://[::1]:6379"
+      RedisChaosAdapter.endpoint(options.providedConfig) shouldBe TcpEndpoint("::1", 6379)
     }
 
     test("ProvidedRedisOptions should expose correct properties") {

@@ -4,6 +4,7 @@ import com.mongodb.*
 import com.mongodb.client.model.Filters.eq
 import com.mongodb.kotlin.client.coroutine.MongoClient
 import com.mongodb.kotlin.client.coroutine.MongoCollection
+import com.trendyol.stove.chaos.*
 import com.trendyol.stove.containers.StoveContainerInspectInformation
 import com.trendyol.stove.functional.*
 import com.trendyol.stove.reporting.Reports
@@ -153,7 +154,7 @@ import org.slf4j.*
 class MongodbSystem internal constructor(
   override val stove: Stove,
   val context: MongodbContext
-) : PluggedSystem,
+) : ChaosCapableSystem,
   RunAware,
   ExposesConfiguration,
   Reports {
@@ -174,18 +175,15 @@ class MongodbSystem internal constructor(
 
   override suspend fun stop(): Unit = whenContainer { it.stop() }
 
-  override fun configuration(): List<String> = context.options.configureExposedConfiguration(exposedConfiguration)
+  override fun configuration(): List<String> =
+    context.options.configureExposedConfiguration(applicationConfiguration(exposedConfiguration, MongodbChaosAdapter))
 
   override fun close(): Unit = runBlocking {
-    Try {
-      closeAll(
-        { if (::mongoClient.isInitialized) context.options.cleanup(mongoClient) },
-        { if (::mongoClient.isInitialized) mongoClient.close() },
-        { executeWithReuseCheck { stop() } }
-      )
-    }.recover {
-      logger.warn("Closing mongodb got an error: $it")
-    }
+    closeAll(
+      { if (::mongoClient.isInitialized) context.options.cleanup(mongoClient) },
+      { if (::mongoClient.isInitialized) mongoClient.close() },
+      { executeWithReuseCheck { stop() } }
+    )
   }
 
   suspend inline fun <reified T : Any> shouldQuery(

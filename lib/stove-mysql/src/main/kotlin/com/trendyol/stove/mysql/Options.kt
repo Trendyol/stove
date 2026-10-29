@@ -3,6 +3,7 @@
 package com.trendyol.stove.mysql
 
 import arrow.core.getOrElse
+import com.trendyol.stove.chaos.*
 import com.trendyol.stove.containers.*
 import com.trendyol.stove.database.migrations.*
 import com.trendyol.stove.rdbms.*
@@ -205,23 +206,22 @@ internal fun Stove.mysql(key: SystemKey): MySqlSystem =
  * }
  * ```
  */
-fun WithDsl.mysql(
-  configure: () -> MySqlOptions
-): Stove {
-  val options = configure()
+fun WithDsl.mysql(configure: @StoveDsl ChaosSetupScope.() -> MySqlOptions): Stove =
+  configureMySql(null, configure)
 
+fun WithDsl.mysql(key: SystemKey, configure: @StoveDsl ChaosSetupScope.() -> MySqlOptions): Stove =
+  configureMySql(key, configure)
+
+private fun WithDsl.configureMySql(key: SystemKey?, configure: ChaosSetupScope.() -> MySqlOptions): Stove {
+  val scope = ChaosSetupScope()
+  val options = configure(scope)
   val runtime = options.createRuntime(stove.keepDependenciesRunning)
-  return stove.withMySql(options, runtime)
-}
-
-fun WithDsl.mysql(
-  key: SystemKey,
-  configure: () -> MySqlOptions
-): Stove {
-  val options = configure()
-
-  val runtime = options.createRuntime(stove.keepDependenciesRunning)
-  return stove.withMySql(key, options, runtime)
+  if (key == null) stove.withMySql(options, runtime) else stove.withMySql(key, options, runtime)
+  if (scope.chaosEnabled) {
+    val system = if (key == null) stove.mysql() else stove.mysql(key)
+    system.enableChaosRouting()
+  }
+  return stove
 }
 
 private fun MySqlOptions.createRuntime(keepDependenciesRunning: Boolean): SystemRuntime {
@@ -243,7 +243,7 @@ private fun MySqlOptions.createRuntime(keepDependenciesRunning: Boolean): System
 }
 
 suspend fun ValidationDsl.mysql(validation: @StoveDsl suspend MySqlSystem.() -> Unit): Unit =
-  validation(this.stove.mysql())
+  withSystemValidation(this.stove.mysql(), validation)
 
 suspend fun ValidationDsl.mysql(key: SystemKey, validation: @StoveDsl suspend MySqlSystem.() -> Unit): Unit =
-  validation(this.stove.mysql(key))
+  withSystemValidation(this.stove.mysql(key), validation)

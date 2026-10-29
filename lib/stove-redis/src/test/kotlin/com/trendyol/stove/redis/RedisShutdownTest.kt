@@ -3,6 +3,7 @@ package com.trendyol.stove.redis
 import com.trendyol.stove.redis.RedisSystem.Companion.client
 import com.trendyol.stove.system.Stove
 import com.trendyol.stove.system.abstractions.ProvidedRuntime
+import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
 
@@ -31,11 +32,11 @@ class RedisShutdownTest : FunSpec({
         system.run()
         // Redis exposes the native client as its managed API; no connection is opened here.
         val executor = system.client().resources.eventExecutorGroup()
-        system.close()
+        shouldThrow<IllegalStateException> { system.close() }
         cleanupCalled shouldBe true
         executor.isTerminated shouldBe true
       } finally {
-        system.close()
+        shouldThrow<IllegalStateException> { system.close() }
       }
     }
   }

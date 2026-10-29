@@ -17,7 +17,7 @@ suspend fun <T> closeAll(resources: Iterable<T>, close: suspend (T) -> Unit) {
       } catch (failure: Throwable) {
         if (primary == null) {
           primary = failure
-        } else {
+        } else if (primary !== failure) {
           primary.addSuppressed(failure)
         }
       }

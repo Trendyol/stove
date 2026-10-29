@@ -1,6 +1,7 @@
 dependencies {
   testImplementation(testFixtures(projects.lib.stove))
   api(projects.lib.stoveRdbms)
+  testImplementation(testFixtures(projects.lib.stove))
   api(libs.testcontainers.postgres)
   api(libs.postgresql)
   testImplementation(project(":test-extensions:stove-extensions-kotest"))

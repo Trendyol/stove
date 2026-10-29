@@ -2,6 +2,7 @@
 
 package com.trendyol.stove.mssql
 
+import com.trendyol.stove.chaos.*
 import com.trendyol.stove.functional.*
 import com.trendyol.stove.rdbms.*
 import com.trendyol.stove.reporting.Reports
@@ -17,7 +18,7 @@ import org.slf4j.*
 class MsSqlSystem internal constructor(
   override val stove: Stove,
   private val mssqlContext: MsSqlContext
-) : PluggedSystem,
+) : ChaosCapableSystem,
   RunAware,
   ExposesConfiguration,
   Reports {
@@ -26,7 +27,8 @@ class MsSqlSystem internal constructor(
 
   override val reportSystemName: String = "MSSQL" + (mssqlContext.keyName?.let { " [$it]" } ?: "")
 
-  private lateinit var exposedConfiguration: RelationalDatabaseExposedConfiguration
+  internal lateinit var exposedConfiguration: RelationalDatabaseExposedConfiguration
+    private set
   private val logger: Logger = LoggerFactory.getLogger(javaClass)
   private val state: StateStorage<RelationalDatabaseExposedConfiguration> =
     stove.createStateStorage<RelationalDatabaseExposedConfiguration, MsSqlSystem>(mssqlContext.keyName)
@@ -40,19 +42,15 @@ class MsSqlSystem internal constructor(
   override suspend fun stop(): Unit = whenContainer { it.stop() }
 
   override fun close(): Unit = runBlocking {
-    Try {
-      closeAll(
-        { if (::sqlOperations.isInitialized) mssqlContext.options.cleanup(sqlOperations) },
-        { if (::sqlOperations.isInitialized) sqlOperations.close() },
-        { executeWithReuseCheck { stop() } }
-      )
-    }.recover {
-      logger.warn("got an error while stopping the MSSQL system")
-    }.let { }
+    closeAll(
+      { if (::sqlOperations.isInitialized) mssqlContext.options.cleanup(sqlOperations) },
+      { if (::sqlOperations.isInitialized) sqlOperations.close() },
+      { executeWithReuseCheck { stop() } }
+    )
   }
 
   override fun configuration(): List<String> =
-    mssqlContext.options.configureExposedConfiguration(exposedConfiguration)
+    mssqlContext.options.configureExposedConfiguration(applicationConfiguration(exposedConfiguration, RelationalDatabaseChaosAdapter))
 
   suspend inline fun <reified T : Any> shouldQuery(
     query: String,

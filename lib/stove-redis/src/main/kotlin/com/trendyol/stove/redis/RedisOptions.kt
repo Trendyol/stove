@@ -4,6 +4,7 @@ package com.trendyol.stove.redis
 
 import arrow.core.getOrElse
 import com.redis.testcontainers.RedisContainer
+import com.trendyol.stove.chaos.*
 import com.trendyol.stove.containers.*
 import com.trendyol.stove.database.migrations.*
 import com.trendyol.stove.system.*
@@ -93,7 +94,7 @@ open class RedisOptions(
       config = RedisExposedConfiguration(
         host = host,
         port = port,
-        redisUri = "redis://$host:$port",
+        redisUri = TcpEndpoint(host, port).uri("redis").toString(),
         database = database.toString(),
         password = password
       ),
@@ -181,23 +182,22 @@ data class RedisContext(
  * }
  * ```
  */
-fun WithDsl.redis(
-  configure: () -> RedisOptions
-): Stove {
-  val options = configure()
+fun WithDsl.redis(configure: @StoveDsl ChaosSetupScope.() -> RedisOptions): Stove =
+  configureRedis(null, configure)
 
+fun WithDsl.redis(key: SystemKey, configure: @StoveDsl ChaosSetupScope.() -> RedisOptions): Stove =
+  configureRedis(key, configure)
+
+private fun WithDsl.configureRedis(key: SystemKey?, configure: ChaosSetupScope.() -> RedisOptions): Stove {
+  val scope = ChaosSetupScope()
+  val options = configure(scope)
   val runtime = options.createRuntime(stove.keepDependenciesRunning)
-  return stove.withRedis(options, runtime)
-}
-
-fun WithDsl.redis(
-  key: SystemKey,
-  configure: () -> RedisOptions
-): Stove {
-  val options = configure()
-
-  val runtime = options.createRuntime(stove.keepDependenciesRunning)
-  return stove.withRedis(key, options, runtime)
+  if (key == null) stove.withRedis(options, runtime) else stove.withRedis(key, options, runtime)
+  if (scope.chaosEnabled) {
+    val system = if (key == null) stove.redis() else stove.redis(key)
+    system.enableChaosRouting()
+  }
+  return stove
 }
 
 private fun RedisOptions.createRuntime(keepDependenciesRunning: Boolean): SystemRuntime {
@@ -216,9 +216,12 @@ private fun RedisOptions.createRuntime(keepDependenciesRunning: Boolean): System
   }
 }
 
-suspend fun ValidationDsl.redis(validation: suspend RedisSystem.() -> Unit): Unit = validation(this.stove.redis())
+suspend fun ValidationDsl.redis(validation: suspend RedisSystem.() -> Unit): Unit = withSystemValidation(this.stove.redis(), validation)
 
-suspend fun ValidationDsl.redis(key: SystemKey, validation: suspend RedisSystem.() -> Unit): Unit = validation(this.stove.redis(key))
+suspend fun ValidationDsl.redis(key: SystemKey, validation: suspend RedisSystem.() -> Unit): Unit = withSystemValidation(
+  this.stove.redis(key),
+  validation
+)
 
 internal fun Stove.redis(): RedisSystem =
   getOrNone<RedisSystem>().getOrElse {

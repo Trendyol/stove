@@ -2,6 +2,7 @@
 
 package com.trendyol.stove.mysql
 
+import com.trendyol.stove.chaos.*
 import com.trendyol.stove.functional.*
 import com.trendyol.stove.rdbms.*
 import com.trendyol.stove.reporting.Reports
@@ -20,7 +21,7 @@ import org.slf4j.*
 class MySqlSystem internal constructor(
   override val stove: Stove,
   private val mysqlContext: MySqlContext
-) : PluggedSystem,
+) : ChaosCapableSystem,
   RunAware,
   ExposesConfiguration,
   Reports {
@@ -29,7 +30,8 @@ class MySqlSystem internal constructor(
 
   override val reportSystemName: String = "MySQL" + (mysqlContext.keyName?.let { " [$it]" } ?: "")
 
-  private lateinit var exposedConfiguration: RelationalDatabaseExposedConfiguration
+  internal lateinit var exposedConfiguration: RelationalDatabaseExposedConfiguration
+    private set
   private val logger: Logger = LoggerFactory.getLogger(javaClass)
   private val state: StateStorage<RelationalDatabaseExposedConfiguration> =
     stove.createStateStorage<RelationalDatabaseExposedConfiguration, MySqlSystem>(mysqlContext.keyName)
@@ -43,17 +45,15 @@ class MySqlSystem internal constructor(
   override suspend fun stop(): Unit = whenContainer { it.stop() }
 
   override fun close(): Unit = runBlocking {
-    Try {
-      closeAll(
-        { if (::sqlOperations.isInitialized) mysqlContext.options.cleanup(sqlOperations) },
-        { if (::sqlOperations.isInitialized) sqlOperations.close() },
-        { executeWithReuseCheck { stop() } }
-      )
-    }.recover { logger.warn("MySQL stop failed", it) }
+    closeAll(
+      { if (::sqlOperations.isInitialized) mysqlContext.options.cleanup(sqlOperations) },
+      { if (::sqlOperations.isInitialized) sqlOperations.close() },
+      { executeWithReuseCheck { stop() } }
+    )
   }
 
   override fun configuration(): List<String> =
-    mysqlContext.options.configureExposedConfiguration(exposedConfiguration)
+    mysqlContext.options.configureExposedConfiguration(applicationConfiguration(exposedConfiguration, RelationalDatabaseChaosAdapter))
 
   suspend inline fun <reified T : Any> shouldQuery(
     query: String,

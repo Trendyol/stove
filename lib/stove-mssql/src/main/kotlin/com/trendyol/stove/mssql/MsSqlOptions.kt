@@ -3,6 +3,7 @@
 package com.trendyol.stove.mssql
 
 import arrow.core.getOrElse
+import com.trendyol.stove.chaos.*
 import com.trendyol.stove.containers.*
 import com.trendyol.stove.database.migrations.*
 import com.trendyol.stove.rdbms.*
@@ -230,23 +231,22 @@ internal fun Stove.mssql(key: SystemKey): MsSqlSystem =
  * }
  * ```
  */
-fun WithDsl.mssql(
-  configure: () -> MsSqlOptions
-): Stove {
-  val options = configure()
+fun WithDsl.mssql(configure: @StoveDsl ChaosSetupScope.() -> MsSqlOptions): Stove =
+  configureMsSql(null, configure)
 
+fun WithDsl.mssql(key: SystemKey, configure: @StoveDsl ChaosSetupScope.() -> MsSqlOptions): Stove =
+  configureMsSql(key, configure)
+
+private fun WithDsl.configureMsSql(key: SystemKey?, configure: ChaosSetupScope.() -> MsSqlOptions): Stove {
+  val scope = ChaosSetupScope()
+  val options = configure(scope)
   val runtime = options.createRuntime(stove.keepDependenciesRunning)
-  return stove.withMsSql(options, runtime)
-}
-
-fun WithDsl.mssql(
-  key: SystemKey,
-  configure: () -> MsSqlOptions
-): Stove {
-  val options = configure()
-
-  val runtime = options.createRuntime(stove.keepDependenciesRunning)
-  return stove.withMsSql(key, options, runtime)
+  if (key == null) stove.withMsSql(options, runtime) else stove.withMsSql(key, options, runtime)
+  if (scope.chaosEnabled) {
+    val system = if (key == null) stove.mssql() else stove.mssql(key)
+    system.enableChaosRouting()
+  }
+  return stove
 }
 
 private fun MsSqlOptions.createRuntime(keepDependenciesRunning: Boolean): SystemRuntime {
@@ -271,9 +271,9 @@ private fun MsSqlOptions.createRuntime(keepDependenciesRunning: Boolean): System
 
 suspend fun ValidationDsl.mssql(
   validation: @StoveDsl suspend MsSqlSystem.() -> Unit
-): Unit = validation(this.stove.mssql())
+): Unit = withSystemValidation(this.stove.mssql(), validation)
 
 suspend fun ValidationDsl.mssql(
   key: SystemKey,
   validation: @StoveDsl suspend MsSqlSystem.() -> Unit
-): Unit = validation(this.stove.mssql(key))
+): Unit = withSystemValidation(this.stove.mssql(key), validation)

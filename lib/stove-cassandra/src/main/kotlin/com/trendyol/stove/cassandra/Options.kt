@@ -3,6 +3,7 @@
 package com.trendyol.stove.cassandra
 
 import arrow.core.getOrElse
+import com.trendyol.stove.chaos.*
 import com.trendyol.stove.containers.*
 import com.trendyol.stove.system.*
 import com.trendyol.stove.system.abstractions.*
@@ -95,23 +96,31 @@ internal fun Stove.cassandra(key: SystemKey): CassandraSystem =
  * }
  * ```
  */
-fun WithDsl.cassandra(
-  configure: () -> CassandraSystemOptions
-): Stove {
-  val options = configure()
 
+/**
+ * Enables application-link faults for a dedicated single-node container when enableChaos() is called.
+ * The application must use the exposed contact point as its only seed. Cluster discovery, topology
+ * changes, provided clusters and alternate contact points are unsupported.
+ */
+fun WithDsl.cassandra(configure: @StoveDsl ChaosSetupScope.() -> CassandraSystemOptions): Stove =
+  configureCassandra(null, configure)
+
+fun WithDsl.cassandra(key: SystemKey, configure: @StoveDsl ChaosSetupScope.() -> CassandraSystemOptions): Stove =
+  configureCassandra(key, configure)
+
+private fun WithDsl.configureCassandra(key: SystemKey?, configure: ChaosSetupScope.() -> CassandraSystemOptions): Stove {
+  val scope = ChaosSetupScope()
+  val options = configure(scope)
+  require(!scope.chaosEnabled || options !is ProvidedCassandraSystemOptions) {
+    "Cassandra chaos supports only a dedicated single-node container; provided clusters can advertise unproxied peers"
+  }
   val runtime = options.createRuntime(stove.keepDependenciesRunning)
-  return stove.withCassandra(options, runtime)
-}
-
-fun WithDsl.cassandra(
-  key: SystemKey,
-  configure: () -> CassandraSystemOptions
-): Stove {
-  val options = configure()
-
-  val runtime = options.createRuntime(stove.keepDependenciesRunning)
-  return stove.withCassandra(key, options, runtime)
+  if (key == null) stove.withCassandra(options, runtime) else stove.withCassandra(key, options, runtime)
+  if (scope.chaosEnabled) {
+    val system = if (key == null) stove.cassandra() else stove.cassandra(key)
+    system.enableChaosRouting()
+  }
+  return stove
 }
 
 private fun CassandraSystemOptions.createRuntime(keepDependenciesRunning: Boolean): SystemRuntime {
@@ -131,9 +140,9 @@ private fun CassandraSystemOptions.createRuntime(keepDependenciesRunning: Boolea
 
 suspend fun ValidationDsl.cassandra(
   validation: @CassandraDsl suspend CassandraSystem.() -> Unit
-): Unit = validation(this.stove.cassandra())
+): Unit = withSystemValidation(this.stove.cassandra(), validation)
 
 suspend fun ValidationDsl.cassandra(
   key: SystemKey,
   validation: @CassandraDsl suspend CassandraSystem.() -> Unit
-): Unit = validation(this.stove.cassandra(key))
+): Unit = withSystemValidation(this.stove.cassandra(key), validation)

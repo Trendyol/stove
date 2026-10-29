@@ -3,6 +3,7 @@
 package com.trendyol.stove.postgres
 
 import arrow.core.getOrElse
+import com.trendyol.stove.chaos.*
 import com.trendyol.stove.containers.*
 import com.trendyol.stove.database.migrations.*
 import com.trendyol.stove.rdbms.*
@@ -202,23 +203,22 @@ internal fun Stove.postgresql(key: SystemKey): PostgresqlSystem =
  * }
  * ```
  */
-fun WithDsl.postgresql(
-  configure: () -> PostgresqlOptions
-): Stove {
-  val options = configure()
+fun WithDsl.postgresql(configure: @StoveDsl ChaosSetupScope.() -> PostgresqlOptions): Stove =
+  configurePostgresql(null, configure)
 
+fun WithDsl.postgresql(key: SystemKey, configure: @StoveDsl ChaosSetupScope.() -> PostgresqlOptions): Stove =
+  configurePostgresql(key, configure)
+
+private fun WithDsl.configurePostgresql(key: SystemKey?, configure: ChaosSetupScope.() -> PostgresqlOptions): Stove {
+  val scope = ChaosSetupScope()
+  val options = configure(scope)
   val runtime = options.createRuntime(stove.keepDependenciesRunning)
-  return stove.withPostgresql(options, runtime)
-}
-
-fun WithDsl.postgresql(
-  key: SystemKey,
-  configure: () -> PostgresqlOptions
-): Stove {
-  val options = configure()
-
-  val runtime = options.createRuntime(stove.keepDependenciesRunning)
-  return stove.withPostgresql(key, options, runtime)
+  if (key == null) stove.withPostgresql(options, runtime) else stove.withPostgresql(key, options, runtime)
+  if (scope.chaosEnabled) {
+    val system = if (key == null) stove.postgresql() else stove.postgresql(key)
+    system.enableChaosRouting()
+  }
+  return stove
 }
 
 private fun PostgresqlOptions.createRuntime(keepDependenciesRunning: Boolean): SystemRuntime {
@@ -240,7 +240,7 @@ private fun PostgresqlOptions.createRuntime(keepDependenciesRunning: Boolean): S
 }
 
 suspend fun ValidationDsl.postgresql(validation: @StoveDsl suspend PostgresqlSystem.() -> Unit): Unit =
-  validation(this.stove.postgresql())
+  withSystemValidation(this.stove.postgresql(), validation)
 
 suspend fun ValidationDsl.postgresql(key: SystemKey, validation: @StoveDsl suspend PostgresqlSystem.() -> Unit): Unit =
-  validation(this.stove.postgresql(key))
+  withSystemValidation(this.stove.postgresql(key), validation)

@@ -6,6 +6,7 @@ import com.datastax.oss.driver.api.core.CqlSession
 import com.datastax.oss.driver.api.core.config.DefaultDriverOption
 import com.datastax.oss.driver.api.core.config.DriverConfigLoader
 import com.datastax.oss.driver.api.core.cql.*
+import com.trendyol.stove.chaos.*
 import com.trendyol.stove.functional.*
 import com.trendyol.stove.reporting.Reports
 import com.trendyol.stove.system.Stove
@@ -112,7 +113,7 @@ internal fun CassandraSystemOptions.createDriverConfigLoader(): DriverConfigLoad
 class CassandraSystem internal constructor(
   override val stove: Stove,
   private val context: CassandraContext
-) : PluggedSystem,
+) : ChaosCapableSystem,
   RunAware,
   ExposesConfiguration,
   Reports {
@@ -134,18 +135,19 @@ class CassandraSystem internal constructor(
 
   override suspend fun stop(): Unit = whenContainer { it.stop() }
 
-  override fun configuration(): List<String> = context.options.configureExposedConfiguration(exposedConfiguration)
+  override fun configuration(): List<String> = context.options.configureExposedConfiguration(
+    applicationConfiguration(exposedConfiguration, CassandraChaosAdapter(::hasSingleNode))
+  )
+
+  private fun hasSingleNode(): Boolean =
+    cqlSession.metadata.nodes.size == 1 && cqlSession.execute("SELECT peer FROM system.peers").all().isEmpty()
 
   override fun close(): Unit = runBlocking {
-    Try {
-      closeAll(
-        { if (::cqlSession.isInitialized) context.options.cleanup(cqlSession) },
-        { if (::cqlSession.isInitialized) cqlSession.close() }
-      )
-    }.recover { logger.warn("Cassandra cleanup failed", it) }
-    Try {
-      closeAll({ executeWithReuseCheck { stop() } })
-    }.recover { logger.warn("Cassandra stop failed", it) }
+    closeAll(
+      { if (::cqlSession.isInitialized) context.options.cleanup(cqlSession) },
+      { if (::cqlSession.isInitialized) cqlSession.close() },
+      { executeWithReuseCheck { stop() } }
+    )
   }
 
   /**
