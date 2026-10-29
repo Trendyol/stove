@@ -101,7 +101,12 @@ subprojects.of("lib", "spring", "examples", "ktor", "quarkus", "micronaut", "con
 
   spotless {
     kotlin {
-      target("src/**/*.kt")
+      target(
+        fileTree("src") {
+          include("**/*.kt")
+          exclude("**/build/**", "**/generated/**", "**/out/**")
+        }
+      )
       ktlint(libs.ktlint.cli.get().version)
         .setEditorConfigPath(rootProject.layout.projectDirectory.file(".editorconfig"))
         .editorConfigOverride(
@@ -110,7 +115,6 @@ subprojects.of("lib", "spring", "examples", "ktor", "quarkus", "micronaut", "con
             "ktlint_standard_class-signature" to "disabled"
           )
         )
-      targetExclude("build/**", "**/build/**", "generated/**", "**/generated/**", "out/**", "**/out/**")
       targetExcludeIfContentContains("generated")
       targetExcludeIfContentContainsRegex("generated.*")
     }
@@ -125,7 +129,6 @@ subprojects.of("lib", "spring", "examples", "ktor", "quarkus", "micronaut", "con
             "ktlint_standard_class-signature" to "disabled"
           )
         )
-      targetExclude("build/**", "**/build/**", "generated/**", "**/generated/**", "out/**", "**/out/**")
     }
   }
   the<IdeaModel>().apply {

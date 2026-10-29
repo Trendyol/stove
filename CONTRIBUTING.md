@@ -189,8 +189,9 @@ The `com.trendyol.stove.test-conventions` plugin in
 test JVM limits, and temporary-directory isolation for both builds. It is a
 separate included build so recipes can keep using the published tracing plugin.
 
-In the root build, a Gradle shared service allows up to `budget` concurrent test
-JVMs, bounded by Gradle workers. This prioritizes module concurrency because most
+In the root build, a Gradle shared service allows up to `budget` concurrent
+convention-managed test JVMs, bounded by Gradle workers. The tracing Gradle
+plugin tests use their own build configuration and can run alongside these. This prioritizes module concurrency because most
 suites still run sequentially inside their JVM. For example, four available CPUs
 give three concurrent test JVMs; eighteen CPUs give fourteen. With enough Gradle
 workers, each JVM receives one slot by default, so Kotest specs and tests run
@@ -210,7 +211,14 @@ allocation with `-Pstove.test.parallelModules=N`. For a focused module run, use
 `--max-workers=N` remains an upper bound on Gradle workers. IDE test runs use the
 same 80% CPU rule for their single JVM.
 
-Each test task uses one fork and its own `build/tmp/<task>/tmp` directory for
+Adapter test variants are independent dependencies of `check`, so the default,
+provided, and Kafka embedded modes can overlap. Use
+`mise exec -- ./gradlew :lib:stove-kafka:check --parallel` to run every Kafka
+mode; `:lib:stove-kafka:test` runs only the default mode. The other adapters
+with a provided mode follow the same convention. Full `build` and coverage
+commands still include every mode.
+
+Each convention-managed test task uses one fork and its own `build/tmp/<task>/tmp` directory for
 JVM temporary files and Stove state. Audited suites opt into Kotest concurrency:
 
 - `lib/stove` runs specs concurrently. Specs that change the global Stove

@@ -1,6 +1,5 @@
 package stove.ktor.bff.fixtures
 
-import com.trendyol.stove.system.PortFinder
 import io.ktor.client.HttpClient
 import io.ktor.client.plugins.HttpTimeout
 import io.ktor.http.*
@@ -28,17 +27,16 @@ class GatewayStreamFixture(
 ) : AutoCloseable {
   val state = StreamingApiState()
   val invalidations = AtomicInteger()
-  private val upstreamPort = PortFinder.findAvailablePort()
-  private val upstream = embeddedServer(CIO, host = "127.0.0.1", port = upstreamPort) { gatewayStreamingApi(state) }.start(wait = false)
-  private val bffPort = PortFinder.findAvailablePort()
-  val origin = "http://127.0.0.1:$bffPort"
-  private val bff = embeddedServer(CIO, host = "127.0.0.1", port = bffPort) {
+  private val upstream = embeddedServer(CIO, host = "127.0.0.1", port = 0) { gatewayStreamingApi(state) }.start(wait = false)
+  private val upstreamOrigin = upstream.loopbackOrigin()
+  private val bff = embeddedServer(CIO, host = "127.0.0.1", port = 0) {
     streamingBff(
-      routes = streamingRoutes("http://127.0.0.1:$upstreamPort", limit),
+      routes = streamingRoutes(upstreamOrigin, limit),
       credentials = OidcGatewayAccess(binding, { "access" }, { invalidations.incrementAndGet() }),
       configure = configure
     )
   }.start(wait = false)
+  val origin = bff.loopbackOrigin()
   val client = HttpClient(ClientCIO) {
     install(HttpTimeout) { requestTimeoutMillis = 5_000 }
   }

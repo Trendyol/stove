@@ -1,21 +1,18 @@
 package stove.ktor.bff.fixtures
 
-import com.trendyol.stove.system.PortFinder
-import io.ktor.client.HttpClient
-import io.ktor.client.call.body
-import io.ktor.client.plugins.HttpTimeout
-import io.ktor.client.plugins.websocket.ClientWebSocketSession
+import io.ktor.client.*
+import io.ktor.client.call.*
+import io.ktor.client.plugins.*
+import io.ktor.client.plugins.websocket.*
 import io.ktor.client.request.*
-import io.ktor.client.statement.*
 import io.ktor.http.*
 import io.ktor.server.application.*
-import io.ktor.server.cio.CIO
-import io.ktor.server.engine.embeddedServer
-import io.ktor.server.plugins.statuspages.StatusPages
+import io.ktor.server.cio.*
+import io.ktor.server.engine.*
+import io.ktor.server.plugins.statuspages.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
 import kotlinx.coroutines.*
-import stove.ktor.bff.auth.*
 import stove.ktor.bff.gateway.*
 import stove.ktor.bff.resourceapi.*
 import stove.ktor.gateway.*
@@ -32,13 +29,12 @@ class GatewayProtocolFixture(
 ) : AutoCloseable {
   val state = ProtocolApiState()
   val revoked = CompletableDeferred<Unit>()
-  private val upstreamPort = PortFinder.findAvailablePort()
-  private val upstream = embeddedServer(CIO, host = "127.0.0.1", port = upstreamPort) { gatewayProtocolApi(state) }.start(false)
-  private val port = PortFinder.findAvailablePort()
-  val origin = "http://127.0.0.1:$port"
-  private val gateway = embeddedServer(CIO, host = "127.0.0.1", port = port) {
+  private val upstream = embeddedServer(CIO, host = "127.0.0.1", port = 0) { gatewayProtocolApi(state) }.start(false)
+  private val upstreamOrigin = upstream.loopbackOrigin()
+  val browserOrigin = "https://browser.example"
+  private val gateway = embeddedServer(CIO, host = "127.0.0.1", port = 0) {
     install(Gateway) {
-      webSocketOrigins = setOf(origin)
+      webSocketOrigins = setOf(browserOrigin)
       access = {
         object : GatewayAccess {
           override suspend fun awaitRevocation() {
@@ -52,7 +48,7 @@ class GatewayProtocolFixture(
       }
       hooks = GatewayHooks().apply(configure)
       routes = gatewayRoutes {
-        service("protocols", "http://127.0.0.1:$upstreamPort") {
+        service("protocols", upstreamOrigin) {
           route("/events/**") {
             timeout = 250.milliseconds
             responseLimitBytes = 32
@@ -97,6 +93,7 @@ class GatewayProtocolFixture(
     }
     routing { gateway() }
   }.start(false)
+  val origin = gateway.loopbackOrigin()
   val client = HttpClient(ClientCIO) {
     install(ClientWebSockets) {
       channels {
@@ -109,7 +106,7 @@ class GatewayProtocolFixture(
 
   suspend fun socket(path: String = "/sockets/echo", test: suspend ClientWebSocketSession.() -> Unit) {
     client.prepareGet(origin.replace("http:", "ws:") + path) {
-      header(HttpHeaders.Origin, origin)
+      header(HttpHeaders.Origin, browserOrigin)
       header(HttpHeaders.SecWebSocketProtocol, "orders.v1")
     }.execute { response ->
       check(response.status == HttpStatusCode.SwitchingProtocols) { "Upgrade failed: ${response.status}" }
@@ -122,7 +119,7 @@ class GatewayProtocolFixture(
     }
   }
 
-  suspend fun handshake(path: String, headers: Map<String, String> = mapOf(HttpHeaders.Origin to origin)): HttpStatusCode =
+  suspend fun handshake(path: String, headers: Map<String, String> = mapOf(HttpHeaders.Origin to browserOrigin)): HttpStatusCode =
     client.prepareGet(origin.replace("http:", "ws:") + path) {
       headers.forEach { (name, value) -> header(name, value) }
     }.execute { it.status }

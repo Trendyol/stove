@@ -24,6 +24,7 @@ class KafkaConsumerConfiguration(
     factory.setConcurrency(1)
     factory.consumerFactory = consumerFactory
     factory.containerProperties.isDeliveryAttemptHeader = true
+    factory.containerProperties.ackMode = ContainerProperties.AckMode.RECORD
     val errorHandler = DefaultErrorHandler(
       DeadLetterPublishingRecoverer(kafkaTemplate),
       FixedBackOff(0, 0)
@@ -41,6 +42,7 @@ class KafkaConsumerConfiguration(
     val factory = ConcurrentKafkaListenerContainerFactory<String, String>()
     factory.setConcurrency(1)
     factory.containerProperties.isDeliveryAttemptHeader = true
+    factory.containerProperties.ackMode = ContainerProperties.AckMode.RECORD
     factory.consumerFactory = consumerRetryFactory
     val errorHandler = DefaultErrorHandler(
       DeadLetterPublishingRecoverer(kafkaTemplate),

@@ -16,7 +16,6 @@ class DefaultConsumerSettings(
   val kafkaProperties: KafkaProperties
 ) : ConsumerSettings {
   companion object {
-    const val AUTO_COMMIT_INTERVAL = 5L
     const val SESSION_TIMEOUT = 120L
     const val MAX_POLL_INTERVAL = 5L
   }
@@ -46,8 +45,7 @@ class DefaultConsumerSettings(
     props[JsonDeserializer.REMOVE_TYPE_INFO_HEADERS] = false
     props[JsonDeserializer.VALUE_DEFAULT_TYPE] = Any::class.java
     props[ConsumerConfig.AUTO_OFFSET_RESET_CONFIG] = kafkaProperties.offset
-    props[ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG] = true
-    props[ConsumerConfig.AUTO_COMMIT_INTERVAL_MS_CONFIG] = ofSeconds(AUTO_COMMIT_INTERVAL)
+    props[ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG] = false
     props[ConsumerConfig.SESSION_TIMEOUT_MS_CONFIG] = ofSeconds(SESSION_TIMEOUT)
     props[ConsumerConfig.HEARTBEAT_INTERVAL_MS_CONFIG] = ofSeconds(kafkaProperties.heartbeatInSeconds.toLong())
     props[ConsumerConfig.MAX_POLL_INTERVAL_MS_CONFIG] = ofMinutes(MAX_POLL_INTERVAL)

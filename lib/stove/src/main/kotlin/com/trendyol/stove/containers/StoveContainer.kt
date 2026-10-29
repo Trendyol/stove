@@ -1,11 +1,11 @@
 package com.trendyol.stove.containers
 
-import arrow.core.*
 import com.github.dockerjava.api.DockerClient
 import com.github.dockerjava.api.async.ResultCallback
 import com.github.dockerjava.api.model.*
 import com.trendyol.stove.system.abstractions.SystemRuntime
 import org.testcontainers.DockerClientFactory
+import org.testcontainers.containers.ContainerState
 import org.testcontainers.utility.DockerImageName
 import java.io.ByteArrayOutputStream
 import java.util.concurrent.*
@@ -88,12 +88,18 @@ interface StoveContainer : SystemRuntime {
   val imageNameAccess: DockerImageName
 
   val containerIdAccess: String
-    get() = dockerClientAccess.value
-      .listContainersCmd()
-      .exec()
-      .firstOrNone { it.image == imageNameAccess.asCanonicalNameString() }
-      .getOrElse { error("Container with image ${imageNameAccess.asCanonicalNameString()} not found") }
-      .id
+    get() {
+      (this as? ContainerState)?.containerId?.let { return it }
+
+      // Reuse can restore Stove state without starting this Testcontainers instance.
+      val image = imageNameAccess.asCanonicalNameString()
+      val candidates = dockerClientAccess.value.listContainersCmd().exec().filter { it.image == image }
+      check(candidates.isNotEmpty()) { "Container with image $image not found" }
+      check(candidates.size == 1) {
+        "Multiple running containers use image $image; override containerIdAccess with the intended container ID"
+      }
+      return candidates.single().id
+    }
 
   val dockerClientAccess: Lazy<DockerClient>
     get() = lazy { DockerClientFactory.lazyClient() }
