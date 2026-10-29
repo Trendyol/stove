@@ -3,7 +3,7 @@
 ARG STOVE_VERSION=dev
 ARG BINARY_SOURCE=rust-builder
 
-FROM node:24-bookworm-slim AS node-toolchain
+FROM node:26-bookworm-slim AS node-toolchain
 
 FROM rust:1-bookworm AS rust-builder
 
