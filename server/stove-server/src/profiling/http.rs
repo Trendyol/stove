@@ -96,6 +96,17 @@ impl UploadFormat {
   }
 }
 
+fn encode_hex(bytes: impl AsRef<[u8]>) -> String {
+  const HEX: &[u8; 16] = b"0123456789abcdef";
+  let bytes = bytes.as_ref();
+  let mut encoded = String::with_capacity(bytes.len() * 2);
+  for byte in bytes {
+    encoded.push(char::from(HEX[usize::from(byte >> 4)]));
+    encoded.push(char::from(HEX[usize::from(byte & 0x0f)]));
+  }
+  encoded
+}
+
 fn header(headers: &HeaderMap, key: &str) -> Result<String> {
   let value = headers
     .get(key)
@@ -196,7 +207,8 @@ impl ProfileUpload {
     if format == UploadFormat::GoPprof {
       hash.update(b"go-pprof");
     }
-    let id = format!("{:x}", hash.finalize());
+    // digest 0.11 dropped LowerHex on the SHA-256 output; keep the same lowercase encoding.
+    let id = encode_hex(hash.finalize());
     let recording = match format {
       UploadFormat::GoPprof => super::bridge::convert_pprof(&data, &metadata, rate)?,
       UploadFormat::Jfr => super::bridge::convert(&data, &metadata, q.from, q.until, rate)?,
@@ -261,6 +273,16 @@ pub async fn get_profiles(
 #[cfg(test)]
 mod tests {
   use super::*;
+
+  #[test]
+  fn profile_identity_uses_lowercase_sha256_hex() {
+    let mut hash = Sha256::new();
+    hash.update(b"abc");
+    assert_eq!(
+      encode_hex(hash.finalize()),
+      "ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad"
+    );
+  }
 
   #[test]
   fn an_invalid_explicit_service_does_not_fall_back_to_the_app_name() {

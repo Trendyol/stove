@@ -4,7 +4,7 @@ go 1.27.3
 
 require (
 	github.com/grafana/jfr-parser v0.19.0
-	github.com/grafana/pyroscope/api v1.5.0
+	github.com/grafana/pyroscope/api v1.6.0
 )
 
 require (
