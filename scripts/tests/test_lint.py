@@ -48,7 +48,8 @@ sys.exit(1 if name == os.environ.get("LINT_FAIL_TOOL") else 0)
             tool.parent.mkdir(parents=True, exist_ok=True)
             tool.write_text(recorder)
             tool.chmod(0o755)
-        for name in ["server/stove-server/spa", "go/stove-kafka",
+        for name in ["server/stove-server/spa", "go/stove-kafka", "go/stove-profiler",
+                     "server/stove-server/profiling-bridge",
                      "recipes/process/golang/go-showcase"]:
             (self.root / name).mkdir(parents=True, exist_ok=True)
         (self.root / ".gitignore").write_text("tools/\ncommands.jsonl\n")

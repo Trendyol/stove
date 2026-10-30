@@ -62,3 +62,6 @@ export type EvidenceTarget = components["schemas"]["EvidenceTarget"];
 export type AgentSetupResponse = components["schemas"]["AgentSetupResponse"];
 export type AgentSetupProvider = components["schemas"]["AgentSetupProvider"];
 export type AgentSetupScope = components["schemas"]["AgentSetupScope"];
+
+export type ProfileReport = components["schemas"]["ProfileReport"];
+export type ProfileSeries = components["schemas"]["Series"];

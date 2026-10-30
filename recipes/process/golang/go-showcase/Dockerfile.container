@@ -1,14 +1,16 @@
 FROM golang:1.27.3@sha256:2920bb124f1a2e12a1d39f0cab756ae0068441ee1da7655dec7f5e374944095b AS build
 
-WORKDIR /workspace
-COPY go.mod go.sum ./
+WORKDIR /workspace/recipes/process/golang/go-showcase
+COPY go/stove-profiler /workspace/go/stove-profiler
+COPY recipes/process/golang/go-showcase/go.mod recipes/process/golang/go-showcase/go.sum ./
 RUN go mod download
-COPY *.go ./
+COPY recipes/process/golang/go-showcase/*.go ./
 
 ARG GO_BUILD_FLAGS=""
 RUN CGO_ENABLED=0 GOOS=linux go build ${GO_BUILD_FLAGS} -o /out/go-showcase .
 
 FROM alpine:3.24
+RUN apk add --no-cache ca-certificates
 WORKDIR /app
 COPY --from=build /out/go-showcase /app/go-showcase
 

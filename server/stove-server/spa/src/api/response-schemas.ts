@@ -19,6 +19,8 @@ import type {
   MetaResponse,
   MockInteraction,
   MockWarning,
+  ProfileReport,
+  ProfileSeries,
   PurgePreview,
   PurgeResult,
   Snapshot,
@@ -196,4 +198,47 @@ const isAgentSetupProvider = object<AgentSetupProvider>({
 export const isAgentSetupResponse = object<AgentSetupResponse>({
   endpoint: isString,
   providers: arrayOf(isAgentSetupProvider),
+});
+
+const isProfileFrame = object<ProfileSeries["hotspots"][number]["frame"]>({
+  name: isString,
+  file: isString,
+  line: isNumber,
+});
+const isProfileSeries = object<ProfileSeries>({
+  service: isString,
+  metric: isString,
+  unit: isString,
+  total: isNumber,
+  sample_records: isNumber,
+  from_ms: isNumber,
+  until_ms: isNumber,
+  sample_rates: arrayOf(isNumber),
+  profile_ids: isStringArray,
+  hotspots: arrayOf(
+    object<ProfileSeries["hotspots"][number]>({
+      frame: isProfileFrame,
+      self_value: isNumber,
+      inclusive_value: isNumber,
+      self_percent: isNumber,
+    }),
+  ),
+  stacks: arrayOf(
+    object<ProfileSeries["stacks"][number]>({ frames: arrayOf(isProfileFrame), value: isNumber }),
+  ),
+  omitted_stack_value: isNumber,
+  findings: arrayOf(
+    object<ProfileSeries["findings"][number]>({
+      kind: isString,
+      evidence: isString,
+      suggestion: isString,
+    }),
+  ),
+});
+export const isProfileReport = object<ProfileReport>({
+  run_id: isString,
+  app_name: isString,
+  series: arrayOf(isProfileSeries),
+  truncated: isBoolean,
+  interpretation: isString,
 });

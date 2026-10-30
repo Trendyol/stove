@@ -34,6 +34,7 @@ tasks.register<Exec>("buildGoApp") {
   args.addAll(listOf("-o", goBinary.absolutePath, "."))
   commandLine(args)
   inputs.files(fileTree(".") { include("*.go", "go.mod", "go.sum") })
+  inputs.files(fileTree("../../../../go/stove-profiler") { include("**/*.go", "go.mod", "go.sum") })
   inputs.property("goExecutable", goExecutable)
   outputs.file(goBinary)
 }
@@ -52,11 +53,12 @@ tasks.register<Exec>("buildContainerImage") {
     goShowcaseContainerImage,
     "--build-arg",
     "GO_BUILD_FLAGS=$buildFlags",
-    projectDir.absolutePath
+    projectDir.resolve("../../../..").absolutePath
   )
   inputs.file(project.file("Dockerfile.container"))
-  inputs.file(project.file(".dockerignore"))
+  inputs.file(project.file("Dockerfile.container.dockerignore"))
   inputs.files(fileTree(".") { include("*.go", "go.mod", "go.sum") })
+  inputs.files(fileTree("../../../../go/stove-profiler") { include("**/*.go", "go.mod", "go.sum") })
   inputs.property("coverageEnabled", coverageEnabled)
   outputs.upToDateWhen { false }
 }
@@ -82,10 +84,10 @@ sourceSets {
   }
 }
 
-val stovetestsImplementation by configurations.getting {
+configurations.getByName("stovetestsImplementation") {
   extendsFrom(configurations.testImplementation.get())
 }
-configurations["stovetestsRuntimeOnly"].extendsFrom(configurations.runtimeOnly.get())
+configurations.getByName("stovetestsRuntimeOnly").extendsFrom(configurations.runtimeOnly.get())
 
 idea {
   module {
@@ -102,6 +104,7 @@ val kafkaE2eTasks = kafkaLibraries.mapIndexed { index, lib ->
     description = "Runs e2e tests with the $lib Kafka library."
     group = "verification"
     dependsOn("buildGoApp")
+    inputs.file(goBinary)
     testClassesDirs = sourceSets[stoveTests].output.classesDirs
     classpath = sourceSets[stoveTests].runtimeClasspath
     useJUnitPlatform()
@@ -131,6 +134,8 @@ val containerE2eTask = tasks.register<Test>("e2eTest-container") {
   description = "Runs container-based e2e tests with sarama Kafka library."
   group = "verification"
   dependsOn("buildContainerImage")
+  inputs.files(fileTree(".") { include("*.go", "go.mod", "go.sum", "Dockerfile.container*") })
+  inputs.files(fileTree("../../../../go/stove-profiler") { include("**/*.go", "go.mod", "go.sum") })
   mustRunAfter(kafkaE2eTasks)
   finalizedBy(removeContainerImageTask)
   testClassesDirs = sourceSets[stoveTests].output.classesDirs

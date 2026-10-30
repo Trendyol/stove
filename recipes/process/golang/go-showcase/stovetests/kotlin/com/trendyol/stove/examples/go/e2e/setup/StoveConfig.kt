@@ -2,6 +2,8 @@ package com.trendyol.stove.examples.go.e2e.setup
 
 import com.trendyol.stove.container.ContainerTarget
 import com.trendyol.stove.container.containerApp
+import com.trendyol.stove.dashboard.DashboardExternalProfilingOptions
+import com.trendyol.stove.dashboard.DashboardIngestion
 import com.trendyol.stove.dashboard.DashboardSystemOptions
 import com.trendyol.stove.dashboard.dashboard
 import com.trendyol.stove.extensions.kotest.StoveKotestExtension
@@ -49,7 +51,15 @@ class StoveConfig : AbstractProjectConfig() {
         }
 
         dashboard {
-          DashboardSystemOptions(appName = "go-showcase")
+          val serverUrl = System.getenv("STOVE_SERVER_URL") ?: "http://localhost:4040"
+          DashboardSystemOptions(
+            appName = "go-showcase",
+            ingestion = DashboardIngestion.Http(serverUrl),
+            externalProfiling = DashboardExternalProfilingOptions(
+              serverUrl = serverUrl,
+              profileTypes = listOf("cpu", "alloc_space", "inuse_space", "goroutines")
+            )
+          )
         }
 
         tracing {
@@ -91,6 +101,11 @@ class StoveConfig : AbstractProjectConfig() {
               "database.username" to "DB_USER"
               "database.password" to "DB_PASS"
               "kafka.bootstrapServers" to "KAFKA_BROKERS"
+              "stove.profiling.serverUrl" to "STOVE_PROFILING_SERVER_URL"
+              "stove.profiling.runId" to "STOVE_RUN_ID"
+              "stove.profiling.serviceName" to "STOVE_PROFILING_SERVICE_NAME"
+              "stove.profiling.uploadIntervalSeconds" to "STOVE_PROFILING_INTERVAL_SECONDS"
+              "stove.profiling.profileTypes" to "STOVE_PROFILING_TYPES"
               env("OTEL_EXPORTER_OTLP_ENDPOINT", "localhost:$OTLP_PORT")
               env("KAFKA_LIBRARY", kafkaLibrary)
               env("STOVE_KAFKA_BRIDGE_PORT", stoveKafkaBridgePortDefault)
@@ -117,6 +132,11 @@ class StoveConfig : AbstractProjectConfig() {
                 "database.username" to "DB_USER"
                 "database.password" to "DB_PASS"
                 "kafka.bootstrapServers" to "KAFKA_BROKERS"
+                "stove.profiling.serverUrl" to "STOVE_PROFILING_SERVER_URL"
+                "stove.profiling.runId" to "STOVE_RUN_ID"
+                "stove.profiling.serviceName" to "STOVE_PROFILING_SERVICE_NAME"
+                "stove.profiling.uploadIntervalSeconds" to "STOVE_PROFILING_INTERVAL_SECONDS"
+                "stove.profiling.profileTypes" to "STOVE_PROFILING_TYPES"
                 env("OTEL_EXPORTER_OTLP_ENDPOINT", "localhost:$OTLP_PORT")
                 env("KAFKA_LIBRARY", kafkaLibrary)
                 env("STOVE_KAFKA_BRIDGE_PORT", stoveKafkaBridgePortDefault)

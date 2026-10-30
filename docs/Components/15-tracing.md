@@ -159,3 +159,10 @@ For non-JVM AUTs, the plugin still boots the OTLP receiver. Process and containe
 | Span tree too noisy | Use `filterSpans { ... }` to drop health checks and trivial spans |
 | Different agent version needed | Pin via `otelAgentVersion.set("...")` |
 | Custom OTel SDK in app conflicts | The plugin's agent takes precedence; remove the in-app SDK or use SDK-only mode (advanced) |
+
+## Profiling alongside tracing
+
+The same `stoveTracing` extension supports opt-in Pyroscope JVM profiling through
+its `profiling { ... }` block. Profiles are sent directly to Stove Server and
+scoped by the dashboard run ID. See [Profiling and Drill Down](../observability/profiling.md)
+for configuration, supported JVM scope, costs, and memory interpretation.

@@ -16,6 +16,7 @@ pub(super) mod evidence;
 mod failures;
 mod interactions;
 mod navigation;
+mod profiles;
 mod raw_evidence;
 mod runs;
 mod snapshot;
@@ -51,6 +52,7 @@ impl Analyzer {
   pub(crate) fn call_tool(&self, tool: ToolName, arguments: Value) -> Result<Value, String> {
     crate::mcp::tools::validate_arguments(tool, &arguments)?;
     let mut result = match tool {
+      ToolName::Profiles => self.profiles(arguments),
       ToolName::Apps => self.apps(arguments),
       ToolName::Runs => self.runs(arguments),
       ToolName::Failures => self.failures(arguments),

@@ -78,35 +78,29 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.BOT_REPO_TOKEN }}
 
-      - name: Tag Go stove-kafka module
+      - name: Tag Go modules
         run: |
           set -euo pipefail
           version="${{ env.JRELEASER_PROJECT_VERSION }}"
-          module_dir="go/stove-kafka"
-          # Tag format for a module in a subdirectory is "<subdir>/vX.Y.Z" for every
-          # major version — the prefix is the directory, not the module path.
-          tag="${module_dir}/v${version}"
-
-          # Go's major-version rule: from v2 onward the module path itself must carry a
-          # "/vN" suffix (github.com/.../stove-kafka/v2). If the released major version is
-          # >= 2 but go.mod does not declare the matching suffix, the tag would resolve to
-          # an unbuildable module — fail loudly instead of publishing a broken tag.
           major="${version%%.*}"
-          module_path="$(awk '/^module /{print $2; exit}' "${module_dir}/go.mod")"
-          if [ "${major}" -ge 2 ]; then
-            case "${module_path}" in
-              */v"${major}") : ;;
-              *)
-                echo "::error::Releasing v${version} but ${module_dir}/go.mod declares '${module_path}'." \
-                     "For major version ${major}, the module path must end with '/v${major}'." \
-                     "Update the module path and importers before tagging."
-                exit 1
-                ;;
-            esac
-          fi
-
-          git tag "${tag}"
-          git push origin "${tag}"
+          tags=()
+          # Validate every module before creating or pushing any module tag.
+          for module_dir in go/stove-kafka go/stove-profiler; do
+            module_path="$(awk '/^module /{print $2; exit}' "${module_dir}/go.mod")"
+            if [ "${major}" -ge 2 ]; then
+              case "${module_path}" in
+                */v"${major}") : ;;
+                *) echo "::error::${module_dir} must declare a /v${major} module path"; exit 1 ;;
+              esac
+            fi
+            tag="${module_dir}/v${version}"
+            if git rev-parse --verify --quiet "refs/tags/${tag}"; then
+              echo "::error::Tag ${tag} already exists"; exit 1
+            fi
+            tags+=("${tag}")
+          done
+          for tag in "${tags[@]}"; do git tag "${tag}"; done
+          git push --atomic origin "${tags[@]}"
         env:
           GITHUB_TOKEN: ${{ secrets.BOT_REPO_TOKEN }}
 

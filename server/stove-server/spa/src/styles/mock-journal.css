@@ -42,14 +42,6 @@
   transition: transform 140ms ease;
 }
 
-.ambient-toggle input:checked + span {
-  background: var(--stove-violet);
-}
-
-.ambient-toggle input:checked + span::after {
-  transform: translateX(11px);
-}
-
 .ambient-toggle strong {
   min-width: 17px;
   border-radius: 999px;
@@ -154,10 +146,6 @@
   transition: transform 140ms ease;
 }
 
-.warning-ribbon-toggle[aria-expanded="true"] svg {
-  transform: rotate(90deg);
-}
-
 .warning-ribbon-list {
   display: grid;
   min-width: 0;
@@ -207,29 +195,11 @@
   text-transform: uppercase;
 }
 
-.warning-ribbon-item-heading > strong,
-.warning-ribbon-list button > p {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
 .warning-ribbon-item-heading > strong {
   color: var(--stove-text);
   font-family: var(--font-mono);
   font-size: 10px;
   font-weight: 500;
-}
-
-.warning-ribbon-list button > p {
-  margin: 0;
-  color: var(--stove-text-muted);
-  font-size: 10px;
-}
-
-.warning-ribbon-list button > svg {
-  flex-shrink: 0;
-  color: var(--stove-amber);
 }
 
 .mock-ledger-toolbar {
@@ -282,41 +252,6 @@
 
 .mock-ledger-request {
   min-width: 0;
-}
-
-.mock-ledger-request > span:first-child {
-  display: flex;
-  align-items: center;
-  gap: 5px;
-}
-
-.mock-ledger-request > span:first-child code {
-  border-radius: 5px;
-  background: var(--stove-blue-soft);
-  padding: 3px 5px;
-  color: var(--stove-blue);
-  font-family: var(--font-mono);
-  font-size: 8px;
-  font-weight: 700;
-}
-
-.mock-ledger-request > span:first-child em {
-  color: var(--stove-text-muted);
-  font-size: 9px;
-  font-style: normal;
-  text-transform: uppercase;
-}
-
-.mock-ledger-request > span:first-child b {
-  border: 1px solid color-mix(in srgb, var(--stove-violet) 28%, var(--stove-border));
-  border-radius: 999px;
-  background: color-mix(in srgb, var(--stove-violet) 8%, transparent);
-  padding: 2px 5px;
-  color: var(--stove-violet);
-  font-size: 7px;
-  font-weight: 600;
-  letter-spacing: 0.05em;
-  text-transform: uppercase;
 }
 
 .mock-ledger-request > strong {
@@ -403,18 +338,6 @@
   white-space: nowrap;
 }
 
-.mock-ledger-status.is-matched strong {
-  color: var(--stove-green);
-}
-
-.mock-ledger-status.is-issue strong {
-  color: var(--stove-amber);
-}
-
-.mock-ledger-status.is-unmatched strong {
-  color: var(--stove-red);
-}
-
 .mock-ledger-status small {
   color: var(--stove-text-muted);
   font-family: var(--font-mono);
@@ -485,17 +408,6 @@
   background: var(--stove-ember);
 }
 
-.inspector-tabs button span {
-  min-width: 16px;
-  border-radius: 999px;
-  background: var(--stove-red-bg);
-  padding: 2px 4px;
-  color: var(--stove-red);
-  font-family: var(--font-mono);
-  font-size: 7px;
-  text-align: center;
-}
-
 .inspector-overview-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -528,19 +440,6 @@
   font-size: 11px;
   font-weight: 550;
   white-space: nowrap;
-}
-
-.inspector-datum > strong.is-mono {
-  font-family: var(--font-mono);
-  font-size: 9px;
-}
-
-.inspector-datum.is-warn > strong {
-  color: var(--stove-amber);
-}
-
-.inspector-datum.is-bad > strong {
-  color: var(--stove-red);
 }
 
 .inspector-scenario {
@@ -669,6 +568,108 @@
 .diagnostic-block.is-warning {
   border-color: color-mix(in srgb, var(--stove-amber) 25%, var(--stove-border));
   background: var(--stove-amber-bg);
+}
+
+/* Component details and states follow the base element rules. */
+.warning-ribbon-item-heading > strong,
+.warning-ribbon-list button > p {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.warning-ribbon-list button > p {
+  margin: 0;
+  color: var(--stove-text-muted);
+  font-size: 10px;
+}
+
+.warning-ribbon-list button > svg {
+  flex-shrink: 0;
+  color: var(--stove-amber);
+}
+
+.warning-ribbon-toggle[aria-expanded="true"] svg {
+  transform: rotate(90deg);
+}
+
+.inspector-tabs button span {
+  min-width: 16px;
+  border-radius: 999px;
+  background: var(--stove-red-bg);
+  padding: 2px 4px;
+  color: var(--stove-red);
+  font-family: var(--font-mono);
+  font-size: 7px;
+  text-align: center;
+}
+
+.mock-ledger-request > span:first-child {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.mock-ledger-request > span:first-child code {
+  border-radius: 5px;
+  background: var(--stove-blue-soft);
+  padding: 3px 5px;
+  color: var(--stove-blue);
+  font-family: var(--font-mono);
+  font-size: 8px;
+  font-weight: 700;
+}
+
+.mock-ledger-request > span:first-child em {
+  color: var(--stove-text-muted);
+  font-size: 9px;
+  font-style: normal;
+  text-transform: uppercase;
+}
+
+.mock-ledger-request > span:first-child b {
+  border: 1px solid color-mix(in srgb, var(--stove-violet) 28%, var(--stove-border));
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--stove-violet) 8%, transparent);
+  padding: 2px 5px;
+  color: var(--stove-violet);
+  font-size: 7px;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.ambient-toggle input:checked + span {
+  background: var(--stove-violet);
+}
+
+.ambient-toggle input:checked + span::after {
+  transform: translateX(11px);
+}
+
+.mock-ledger-status.is-matched strong {
+  color: var(--stove-green);
+}
+
+.mock-ledger-status.is-issue strong {
+  color: var(--stove-amber);
+}
+
+.mock-ledger-status.is-unmatched strong {
+  color: var(--stove-red);
+}
+
+.inspector-datum > strong.is-mono {
+  font-family: var(--font-mono);
+  font-size: 9px;
+}
+
+.inspector-datum.is-warn > strong {
+  color: var(--stove-amber);
+}
+
+.inspector-datum.is-bad > strong {
+  color: var(--stove-red);
 }
 
 .diagnostic-block.is-warning > strong {

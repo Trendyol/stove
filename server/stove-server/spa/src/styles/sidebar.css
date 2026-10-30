@@ -345,21 +345,6 @@
   font-size: 11px;
 }
 
-.stove-metadata-facet legend span {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.stove-metadata-facet legend strong {
-  flex: none;
-  color: var(--stove-blue);
-  font-size: 11px;
-  font-weight: 650;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
-}
-
 .stove-metadata-values {
   display: flex;
   flex-wrap: wrap;
@@ -482,30 +467,11 @@
   background: var(--stove-card);
 }
 
-.stove-run-progress > div span {
-  display: block;
-  height: 100%;
-  border-radius: inherit;
-  background: linear-gradient(90deg, var(--stove-ember), var(--stove-green));
-  box-shadow: 0 0 12px color-mix(in srgb, var(--stove-green) 30%, transparent);
-  transition: width 300ms ease;
-}
-
 .stove-run-progress p {
   display: flex;
   margin: 7px 0 0;
   color: var(--stove-text-muted);
   font-size: 12px;
-}
-
-.stove-run-progress p strong {
-  margin-right: 4px;
-  color: var(--stove-text-secondary);
-}
-
-.stove-run-progress p span {
-  margin-left: auto;
-  font-family: var(--font-mono);
 }
 
 .stove-run-stats {
@@ -529,13 +495,6 @@
   font-size: 15px;
   font-weight: 600;
   line-height: 1;
-}
-
-.stove-run-stats > div > span {
-  display: block;
-  margin-top: 5px;
-  color: var(--stove-text-muted);
-  font-size: 11px;
 }
 
 .stove-test-filters {
@@ -905,4 +864,46 @@
   display: flex;
   gap: 8px;
   align-items: baseline;
+}
+
+.stove-run-progress > div span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, var(--stove-ember), var(--stove-green));
+  box-shadow: 0 0 12px color-mix(in srgb, var(--stove-green) 30%, transparent);
+  transition: width 300ms ease;
+}
+
+.stove-run-progress p strong {
+  margin-right: 4px;
+  color: var(--stove-text-secondary);
+}
+
+.stove-run-progress p span {
+  margin-left: auto;
+  font-family: var(--font-mono);
+}
+
+.stove-run-stats > div > span {
+  display: block;
+  margin-top: 5px;
+  color: var(--stove-text-muted);
+  font-size: 11px;
+}
+
+/* Facet legend details follow the base text rules. */
+.stove-metadata-facet legend span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.stove-metadata-facet legend strong {
+  flex: none;
+  color: var(--stove-blue);
+  font-size: 11px;
+  font-weight: 650;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
 }

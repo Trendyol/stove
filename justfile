@@ -53,13 +53,15 @@ format-recipes:
 lint-go:
     #!/bin/sh
     set -eu
-    unformatted=$(gofmt -l go/stove-kafka recipes/process/golang/go-showcase)
+    unformatted=$(gofmt -l go/stove-kafka go/stove-profiler server/stove-server/profiling-bridge recipes/process/golang/go-showcase)
     if [ -n "$unformatted" ]; then
         printf 'Go files need formatting:\n%s\n' "$unformatted"
         exit 1
     fi
     (cd go/stove-kafka && go vet ./...)
+    (cd go/stove-profiler && go vet ./... && go test -race ./...)
+    (cd server/stove-server/profiling-bridge && go test ./...)
     (cd recipes/process/golang/go-showcase && go vet ./...)
 
 format-go:
-    gofmt -w go/stove-kafka recipes/process/golang/go-showcase
+    gofmt -w go/stove-kafka go/stove-profiler server/stove-server/profiling-bridge recipes/process/golang/go-showcase

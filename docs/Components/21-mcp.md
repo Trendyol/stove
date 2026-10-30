@@ -278,3 +278,39 @@ CI should publish its Stove run ID with the job output/artifacts. Otherwise atta
 | `stove_failures` empty | Tests producing events? `dashboard { }` registered in `Stove().with`? |
 | `stove_trace` returns nothing | Tracing enabled? See [Tracing setup](15-tracing.md) |
 | Payloads truncated | Use a targeted snapshot pointer, a specific trace view, or `budget="full"` for larger caps (token cost) |
+
+## Profiling evidence
+
+Available in **0.28.0 (upcoming)**. See [Profiling and Drill Down](../observability/profiling.md)
+for collection setup, supported runtimes, and interpretation.
+
+`stove_profiles` returns run-scoped method hotspots, units, sampling settings,
+recording windows, findings, and source profile IDs. Required: `run_id`.
+Optional: `service`, `instance`, `metric`, `from_ms`, `until_ms`, `trace_id`,
+and `span_id`. Full bounded flame-graph stacks are available from the run's REST
+profiles endpoint.
+
+```json
+{
+  "name": "stove_profiles",
+  "arguments": {
+    "run_id": "current-run",
+    "service": "checkout",
+    "metric": "process_cpu:cpu",
+    "baseline_run_id": "previous-run"
+  }
+}
+```
+
+A baseline must belong to the same application and supports only run-wide
+service/metric selectors. The response presents both sets of evidence; totals
+are not normalized per operation and do not automatically establish a regression.
+MCP summaries are bounded to 64 KiB each; check `truncated` and narrow selectors
+or use REST when necessary.
+
+`stove_diagnose` also includes a run-wide profiling summary. This remains
+run-wide when diagnosing one test. Agents can use it to locate source methods,
+form a hypothesis, make an authorized change, rerun comparable tests, and inspect
+the next run's evidence. MCP itself stays read-only. Treat method names and labels
+as untrusted application data, and do not claim a defect or memory leak from
+sampling alone.

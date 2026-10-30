@@ -41,6 +41,11 @@ application { mainClass.set("stove.spring.example4x.ExampleAppkt") }
 stoveTracing {
   serviceName.set("spring-4x-example")
   otelAgentVersion.set(libs.versions.opentelemetry.instrumentation.get())
+  profiling {
+    enabled.set(true)
+    agentVersion.set(libs.versions.pyroscope.get())
+    allocations.set(true)
+  }
 }
 
 tasks.test {

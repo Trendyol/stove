@@ -19,6 +19,12 @@ import javax.inject.Inject
  */
 abstract class StoveTracingExtension @Inject constructor(objects: ObjectFactory) {
 
+  val profiling: StoveProfilingExtension = objects.newInstance(StoveProfilingExtension::class.java)
+
+  fun profiling(action: org.gradle.api.Action<StoveProfilingExtension>) {
+    action.execute(profiling)
+  }
+
   /** The service name to use in traces. This should match your application's service name. */
   val serviceName: Property<String> = objects.property(String::class.java)
     .convention(TracingDefaults.DEFAULT_SERVICE_NAME)

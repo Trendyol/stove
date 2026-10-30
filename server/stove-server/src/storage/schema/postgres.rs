@@ -171,3 +171,16 @@ diesel::allow_tables_to_appear_in_same_query!(
   live_events,
   dashboard_event_inbox,
 );
+
+diesel::table! {
+profiles (id) {
+id -> Text,
+run_id -> Text,
+service -> Text,
+instance -> Text,
+from_ms -> BigInt,
+until_ms -> BigInt,
+payload -> Binary,
+byte_size -> BigInt,
+}
+}

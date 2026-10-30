@@ -5,6 +5,7 @@ on:
     branches: [main]
     paths:
       - 'server/stove-server/**'
+      - 'go/stove-profiler/**'
       - 'lib/stove-dashboard-api/src/main/proto/**'
       - 'gradle.properties'
       - '.github/workflows/stove-server-ci.yml'
@@ -13,6 +14,7 @@ on:
     branches: [main]
     paths:
       - 'server/stove-server/**'
+      - 'go/stove-profiler/**'
       - 'lib/stove-dashboard-api/src/main/proto/**'
       - 'gradle.properties'
       - '.github/workflows/stove-server-ci.yml'
@@ -69,8 +71,13 @@ jobs:
       - name: Clippy
         run: cargo clippy --all-targets --locked -- -D warnings
 
+      - name: Native Go profiler and converters
+        run: |
+          (cd ../../go/stove-profiler && go test -race ./...)
+          (cd profiling-bridge && go test ./...)
+
       - name: Run tests
-        run: cargo test --locked --lib --test api_e2e --test mcp_e2e --test top_filter --test logging_cli --test skills_cli
+        run: cargo test --locked --lib --test api_e2e --test mcp_e2e --test profiling_e2e --test top_filter --test logging_cli --test skills_cli
 
       - name: Run server acceptance tests
         run: cargo test --locked --test acceptance

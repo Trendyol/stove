@@ -4,6 +4,7 @@ import dev.aga.gradle.versioncatalogs.Generator.generate
 import dev.aga.gradle.versioncatalogs.GeneratorConfig
 
 rootProject.name = "go-showcase"
+val stoveVersion = providers.gradleProperty("stoveVersion").getOrElse("0.28.0")
 val useMavenLocal = providers.gradleProperty("useMavenLocal").map(String::toBoolean).getOrElse(false)
 
 pluginManagement {
@@ -34,14 +35,10 @@ dependencyResolutionManagement {
   versionCatalogs {
     create("libs") {
       from(files("../../../../gradle/libs.versions.toml"))
+      version("stove", stoveVersion)
     }
     generate("stoveLibs") {
-      from {
-        toml {
-          libraryAliases = listOf("stove-bom")
-          file = file("../../../../gradle/libs.versions.toml")
-        }
-      }
+      from("com.trendyol:stove-bom:$stoveVersion")
       using {
         aliasPrefixGenerator = GeneratorConfig.NO_PREFIX
       }

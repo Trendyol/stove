@@ -5,12 +5,20 @@ on:
     branches: [main]
     paths:
       - 'recipes/process/**'
+      - 'go/stove-profiler/**'
+      - 'lib/stove-dashboard/**'
+      - 'starters/container/stove-container/**'
+      - 'gradle.properties'
       - 'gradle/libs.versions.toml'
       - '.github/workflows/build-process-recipes.yml'
   pull_request:
     branches: [main]
     paths:
       - 'recipes/process/**'
+      - 'go/stove-profiler/**'
+      - 'lib/stove-dashboard/**'
+      - 'starters/container/stove-container/**'
+      - 'gradle.properties'
       - 'gradle/libs.versions.toml'
       - '.github/workflows/build-process-recipes.yml'
 
@@ -34,6 +42,18 @@ jobs:
       - uses: actions/setup-java@v6
         with:
           distribution: temurin
+          java-version: 17
+      - run: echo "STOVE_JDK17=$JAVA_HOME" >> "$GITHUB_ENV"
+
+      - uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: 21
+      - run: echo "STOVE_JDK21=$JAVA_HOME" >> "$GITHUB_ENV"
+
+      - uses: actions/setup-java@v6
+        with:
+          distribution: temurin
           java-version: 25
 
       - uses: actions/setup-go@v7
@@ -48,6 +68,17 @@ jobs:
           cache-read-only: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name != github.repository }}
           cache-encryption-key: ${{ secrets.GRADLE_CACHE_ENCRYPTION_KEY }}
 
+      - name: Publish matching Stove APIs locally
+        run: |
+          ./gradlew --no-daemon \
+            :lib:stove-bom:publishToMavenLocal :lib:stove:publishToMavenLocal \
+            :lib:stove-dashboard:publishToMavenLocal :lib:stove-dashboard-api:publishToMavenLocal \
+            :lib:stove-http:publishToMavenLocal :lib:stove-kafka:publishToMavenLocal \
+            :lib:stove-postgres:publishToMavenLocal :lib:stove-rdbms:publishToMavenLocal \
+            :lib:stove-tracing:publishToMavenLocal :starters:process:stove-process:publishToMavenLocal \
+            :starters:container:stove-container:publishToMavenLocal \
+            :test-extensions:stove-extensions-kotest:publishToMavenLocal
+
       - name: Run process and container E2E tests
         env:
           GOTOOLCHAIN: auto
@@ -55,8 +86,9 @@ jobs:
           GO_EXECUTABLE="$(command -v go)"
           export GO_EXECUTABLE
           "$GO_EXECUTABLE" version
+          stove_recipe_version="$(awk -F= '/^version=/{print $2; exit}' gradle.properties)"
           ./recipes/process/golang/go-showcase/gradlew -p recipes/process/golang/go-showcase \
-            e2eTest e2eTest-container --build-cache --no-daemon
+            e2eTest e2eTest-container -PuseMavenLocal=true -PstoveVersion="$stove_recipe_version" --build-cache --no-daemon
 
       # Upload test results
       - name: Upload test results

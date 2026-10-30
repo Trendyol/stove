@@ -1,4 +1,6 @@
 [versions]
+pyroscope = "2.9.2"
+pyroscopeOtelExtension = "2.1.4"
 nav-oidc = "6.1.4"
 keycloak-testcontainers = "4.4.0"
 keycloak-admin = "26.0.12"
@@ -266,6 +268,9 @@ opentelemetry-instrumentation-annotations = { module = "io.opentelemetry.instrum
 opentelemetry-javaagent = { module = "io.opentelemetry.javaagent:opentelemetry-javaagent", version.ref = "opentelemetry-instrumentation" }
 opentelemetry-exporter-otlp = { module = "io.opentelemetry:opentelemetry-exporter-otlp", version.ref = "opentelemetry" }
 opentelemetry-proto = { module = "io.opentelemetry.proto:opentelemetry-proto", version = "1.9.0-alpha" }
+
+# Pyroscope
+pyroscope-agent = { module = "io.pyroscope:agent", version.ref = "pyroscope" }
 
 # ByteBuddy
 bytebuddy = { module = "net.bytebuddy:byte-buddy", version.ref = "bytebuddy" }

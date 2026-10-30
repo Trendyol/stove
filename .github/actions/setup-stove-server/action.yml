@@ -18,6 +18,11 @@ runs:
         cache: npm
         cache-dependency-path: server/stove-server/spa/package-lock.json
 
+    - uses: actions/setup-go@v6
+      with:
+        go-version-file: server/stove-server/profiling-bridge/go.mod
+        cache-dependency-path: server/stove-server/profiling-bridge/go.sum
+
     - uses: dtolnay/rust-toolchain@stable
       with:
         targets: ${{ inputs.targets }}

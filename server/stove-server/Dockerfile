@@ -3,12 +3,16 @@
 ARG STOVE_VERSION=dev
 ARG BINARY_SOURCE=rust-builder
 
+FROM golang:1.27-bookworm AS go-toolchain
+
 FROM node:26-bookworm-slim AS node-toolchain
 
 FROM rust:1-bookworm AS rust-builder
 
 # Source builds bundle the checked-in API types; CI verifies their freshness.
 COPY --from=node-toolchain /usr/local/ /usr/local/
+COPY --from=go-toolchain /usr/local/go /usr/local/go
+ENV PATH="/usr/local/go/bin:${PATH}"
 
 ARG STOVE_VERSION
 RUN apt-get update \

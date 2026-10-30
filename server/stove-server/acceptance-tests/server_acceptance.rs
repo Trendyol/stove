@@ -1429,3 +1429,40 @@ async fn two_pods_delete_once_and_share_notifications_and_idle_settings() -> Res
   );
   Ok(())
 }
+
+#[tokio::test]
+async fn postgres_profiles_are_idempotent_bounded_shared_and_purged_with_runs() -> Result<()> {
+  let database = PostgresTestDatabase::start().await?;
+  let url = database.url.clone();
+  tokio::task::spawn_blocking(move || -> Result<()> {
+    let repo = stove::storage::repository::Repository::connect_postgres(&url, 0)?;
+    repo.save_run_start("profile-run", "checkout", "2026-01-01T00:00:00Z", &[])?;
+    let mut chunk = stove::profiling::StoredChunk {
+      id: "initial".into(),
+      run_id: "profile-run".into(),
+      service: "checkout".into(),
+      instance: "jvm".into(),
+      from_ms: 0,
+      until_ms: 1000,
+      payload: vec![0; 512 * 1024],
+    };
+    repo.save_profile(&chunk)?;
+    repo.save_profile(&chunk)?;
+    assert_eq!(repo.profile_chunks("profile-run")?.len(), 1);
+    for index in 1..130 {
+      chunk.id = format!("chunk-{index}");
+      chunk.until_ms = index * 1000;
+      repo.save_profile(&chunk)?;
+    }
+    let second = stove::storage::repository::Repository::connect_postgres(&url, 0)?;
+    let chunks = second.profile_chunks("profile-run")?;
+    assert_eq!(chunks.len(), 128, "64 MiB byte budget is enforced");
+    assert!(chunks.iter().all(|c| c.until_ms >= 2000));
+    second.purge_runs(&["profile-run".into()], true)?;
+    assert!(repo.profile_chunks("profile-run")?.is_empty());
+    assert!(repo.save_profile(&chunk).is_err());
+    Ok(())
+  })
+  .await??;
+  Ok(())
+}

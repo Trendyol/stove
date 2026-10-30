@@ -27,6 +27,7 @@ import com.trendyol.stove.reporting.SpanEventListener
 import com.trendyol.stove.reporting.SpanListenerRegistry
 import com.trendyol.stove.reporting.StoveTestContext
 import com.trendyol.stove.system.Stove
+import com.trendyol.stove.system.abstractions.ExposesConfiguration
 import com.trendyol.stove.system.abstractions.PluggedSystem
 import com.trendyol.stove.system.abstractions.RunAware
 import com.trendyol.stove.tracing.SpanInfo
@@ -54,6 +55,7 @@ class DashboardSystem(
   private val options: DashboardSystemOptions
 ) : PluggedSystem,
   RunAware,
+  ExposesConfiguration,
   ReportEventListener,
   SpanEventListener,
   MockInteractionListener,
@@ -63,6 +65,7 @@ class DashboardSystem(
   private val jsonMapper = ObjectMapper()
   private val runId = UUID.randomUUID().toString()
   private lateinit var emitter: DashboardEmitter
+  private var profiling: AutoCloseable? = null
   private var startTime: Instant = Instant.now()
   private var totalTests = 0
   private var passedTests = 0
@@ -73,6 +76,16 @@ class DashboardSystem(
   private val failureSnapshotTaken = ConcurrentHashMap.newKeySet<String>()
   private var mockDiagnosticListenersRegistered = false
   private val acceptingEvents = AtomicBoolean(false)
+
+  override fun configuration(): List<String> = options.externalProfiling?.let { profiling ->
+    listOf(
+      "stove.profiling.serverUrl=${profiling.serverUrl}",
+      "stove.profiling.runId=$runId",
+      "stove.profiling.serviceName=${profiling.serviceName ?: options.appName}",
+      "stove.profiling.uploadIntervalSeconds=${profiling.uploadIntervalSeconds}",
+      "stove.profiling.profileTypes=${profiling.profileTypes.joinToString(",")}"
+    )
+  } ?: emptyList()
 
   override suspend fun run() {
     emitter = DashboardEmitter(options.ingestion)
@@ -92,6 +105,11 @@ class DashboardSystem(
           .build()
       }
     )
+    if (System.getProperty("stove.profiling.enabled").toBoolean()) {
+      runCatching { DashboardProfiling(runId, options.appName) }
+        .onSuccess { profiling = it }
+        .onFailure { logger.warn("Stove profiling could not start; check the tracing plugin and platform support", it) }
+    }
     acceptingEvents.set(true)
     stove.addReportListener(this)
     registerSpanListener()
@@ -262,6 +280,9 @@ class DashboardSystem(
       if (!::emitter.isInitialized || !acceptingEvents.compareAndSet(true, false)) return
       stove.removeReportListener(this)
       removeMockDiagnosticListeners()
+      runCatching { profiling?.close() }
+        .onFailure { logger.warn("Stove profiling could not flush", it) }
+      profiling = null
       finalizeOpenTests()
       val duration = Duration.between(startTime, Instant.now()).toMillis()
       emitter.tryEmit(

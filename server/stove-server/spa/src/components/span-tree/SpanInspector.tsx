@@ -1,5 +1,6 @@
 import { useEffect, useRef } from "react";
 import type { Span } from "../../api/types";
+import { useDrillDownNavigation } from "../../hooks/useDrillDownNavigation";
 import { formatNanosDuration } from "../../utils/format";
 import { parseAttrs } from "../../utils/json";
 import { getResultTone } from "../../utils/result";
@@ -11,6 +12,7 @@ interface SpanInspectorProps {
 }
 
 export function SpanInspector({ span, onClose }: SpanInspectorProps) {
+  const openDrillDown = useDrillDownNavigation();
   const closeButtonRef = useRef<HTMLButtonElement>(null);
   const spanId = span?.span_id;
 
@@ -33,7 +35,9 @@ export function SpanInspector({ span, onClose }: SpanInspectorProps) {
 
   if (!span) return null;
 
-  const attributes = Object.entries(parseAttrs(span.attributes));
+  const attrs = parseAttrs(span.attributes);
+  const profileId = attrs["pyroscope.profile.id"];
+  const attributes = Object.entries(attrs);
   const tone = getResultTone(span.status);
   return (
     <div className="evidence-dialog-layer">
@@ -65,6 +69,23 @@ export function SpanInspector({ span, onClose }: SpanInspectorProps) {
           </button>
         </header>
         <EvidenceActions />
+        {openDrillDown && (
+          <div className="evidence-link-actions">
+            <button
+              type="button"
+              onClick={() => {
+                openDrillDown(span.run_id, {
+                  traceId: span.trace_id,
+                  spanId: profileId || undefined,
+                  name: span.operation_name,
+                });
+                onClose();
+              }}
+            >
+              Drill Down · {profileId ? "this span" : "this trace"}
+            </button>
+          </div>
+        )}
         <div className="inspector-status-line">
           <span className={`is-${tone}`}>{span.status}</span>
           <span>{formatNanosDuration(span.start_time_nanos, span.end_time_nanos)}</span>

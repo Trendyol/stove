@@ -31,6 +31,8 @@ vendored-postgres = [
 
 [dependencies]
 base64 = "0.23"
+flate2 = "1"
+sha2 = "0.10"
 # Async runtime
 tokio = { version = "1", features = ["full"] }
 
@@ -41,7 +43,7 @@ prost = "0.14"
 prost-types = "0.14"
 
 # HTTP server (serves REST API + SPA to browser)
-axum = { version = "0.8", features = ["json"] }
+axum = { version = "0.8", features = ["json", "multipart"] }
 tower-http = { version = "0.7", features = ["cors"] }
 utoipa = "6"
 utoipa-swagger-ui = { version = "10", features = ["axum", "vendored"] }

@@ -17,6 +17,7 @@ mod lifecycle;
 mod mapping;
 mod monitoring;
 mod postgres_backend;
+mod profiles;
 mod reads;
 mod sqlite_backend;
 mod top_filter;

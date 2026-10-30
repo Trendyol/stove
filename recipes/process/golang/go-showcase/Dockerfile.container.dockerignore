@@ -1,0 +1,11 @@
+*
+!go/
+!go/stove-profiler/
+!go/stove-profiler/**
+!recipes/
+!recipes/process/
+!recipes/process/golang/
+!recipes/process/golang/go-showcase/
+!recipes/process/golang/go-showcase/*.go
+!recipes/process/golang/go-showcase/go.mod
+!recipes/process/golang/go-showcase/go.sum

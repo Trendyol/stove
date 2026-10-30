@@ -8,11 +8,37 @@ import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.string.shouldContain
 import org.testcontainers.containers.GenericContainer
+import org.testcontainers.containers.wait.strategy.Wait
 import org.testcontainers.utility.DockerImageName
 import kotlin.time.Duration.Companion.milliseconds
 
 class ContainerApplicationUnderTestTest :
   FunSpec({
+    test("graceful stop lets the application flush before container removal") {
+      var finalLogs = ""
+      val container = object : GenericContainer<Nothing>(DockerImageName.parse("alpine:3.24")) {
+        override fun stop() {
+          finalLogs = logs
+          super.stop()
+        }
+      }
+      container.waitingFor(Wait.forLogMessage(".*ready.*", 1))
+      val aut = ContainerApplicationUnderTest(
+        image = "alpine:3.24",
+        command = listOf("sh", "-c", "trap 'echo flushed; exit 0' TERM; echo ready; while :; do sleep 1; done"),
+        target = ContainerTarget.Worker(readiness = ReadinessStrategy.FixedDelay(1.milliseconds)),
+        containerFactory = { container },
+        launchConfigurationObserver = { _, _ -> }
+      )
+      try {
+        aut.start(emptyList())
+        aut.stop()
+        finalLogs shouldContain "flushed"
+      } finally {
+        aut.stop()
+      }
+    }
+
     test("builds command and env map including server port") {
       val fakeContainer = FakeContainer()
       var capturedCommand: List<String> = emptyList()

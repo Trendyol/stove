@@ -1,6 +1,6 @@
 {
   "name": "stove",
-  "version": "0.27.6",
+  "version": "0.28.0",
   "description": "Configure Stove end-to-end tests and investigate failures with recorded evidence.",
   "author": {
     "name": "Trendyol"

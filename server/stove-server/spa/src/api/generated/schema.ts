@@ -359,6 +359,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/runs/{run_id}/profiles": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["get_profiles"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/runs/{run_id}/tests": {
         parameters: {
             query?: never;
@@ -674,6 +690,11 @@ export interface components {
             kind: "warning";
             value: components["schemas"]["MockWarning"];
         };
+        Finding: {
+            evidence: string;
+            kind: string;
+            suggestion: string;
+        };
         FocusedEvidence: {
             context_limit: number;
             entries: components["schemas"]["Entry"][];
@@ -683,6 +704,12 @@ export interface components {
             spans: components["schemas"]["Span"][];
             target: components["schemas"]["EvidenceTarget"];
             warnings: components["schemas"]["MockWarning"][];
+        };
+        Frame: {
+            file: string;
+            /** Format: int64 */
+            line: number;
+            name: string;
         };
         HealthCheck: {
             healthy: boolean;
@@ -695,6 +722,15 @@ export interface components {
             checks: components["schemas"]["HealthCheck"][];
             healthy: boolean;
             stove_server_version: string;
+        };
+        Hotspot: {
+            frame: components["schemas"]["Frame"];
+            /** Format: int64 */
+            inclusive_value: number;
+            /** Format: double */
+            self_percent: number;
+            /** Format: int64 */
+            self_value: number;
         };
         IdleTimeoutRequest: {
             /**
@@ -939,6 +975,13 @@ export interface components {
             test_id: string | null;
             timestamp: string;
         };
+        ProfileReport: {
+            app_name: string;
+            interpretation: string;
+            run_id: string;
+            series: components["schemas"]["Series"][];
+            truncated: boolean;
+        };
         PurgePreview: {
             evidence: components["schemas"]["EvidenceCounts"];
             run_count: number;
@@ -992,6 +1035,25 @@ export interface components {
          * @enum {string}
          */
         RunStatus: "RUNNING" | "PASSED" | "FAILED";
+        Series: {
+            findings: components["schemas"]["Finding"][];
+            /** Format: int64 */
+            from_ms: number;
+            hotspots: components["schemas"]["Hotspot"][];
+            metric: string;
+            /** Format: int64 */
+            omitted_stack_value: number;
+            profile_ids: string[];
+            sample_rates: number[];
+            sample_records: number;
+            service: string;
+            stacks: components["schemas"]["Stack"][];
+            /** Format: int64 */
+            total: number;
+            unit: string;
+            /** Format: int64 */
+            until_ms: number;
+        };
         /** @description A system snapshot captured during a test. */
         Snapshot: {
             captured_at: string | null;
@@ -1033,6 +1095,11 @@ export interface components {
          * @enum {string}
          */
         SpanStatus: "OK" | "ERROR" | "UNSET";
+        Stack: {
+            frames: components["schemas"]["Frame"][];
+            /** Format: int64 */
+            value: number;
+        };
         StorageStats: {
             backend: string;
             evidence: components["schemas"]["EvidenceCounts"];
@@ -1665,6 +1732,36 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["MockWarning"][];
+                };
+            };
+        };
+    };
+    get_profiles: {
+        parameters: {
+            query?: {
+                from_ms?: number;
+                instance?: string;
+                metric?: string;
+                service?: string;
+                span_id?: string;
+                trace_id?: string;
+                until_ms?: number;
+            };
+            header?: never;
+            path: {
+                /** @description Exact Stove run */
+                run_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProfileReport"];
                 };
             };
         };

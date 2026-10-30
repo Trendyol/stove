@@ -167,3 +167,16 @@ diesel::table! {
     setting_value -> Text,
   }
 }
+
+diesel::table! {
+profiles (id) {
+id -> Text,
+run_id -> Text,
+service -> Text,
+instance -> Text,
+from_ms -> BigInt,
+until_ms -> BigInt,
+payload -> Binary,
+byte_size -> BigInt,
+}
+}

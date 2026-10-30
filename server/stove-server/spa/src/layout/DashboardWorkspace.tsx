@@ -1,7 +1,12 @@
-import { useLayoutEffect, useRef } from "react";
+import { useLayoutEffect, useRef, useState } from "react";
 import type { AppSummary, Run, Test } from "../api/types";
 import { ConnectAgentButton } from "../components/agent-connection/AgentConnectionProvider";
+import { DrillDownPanel } from "../components/DrillDownPanel";
 import type { TopFilterPickerProps } from "../components/TopFilterPicker";
+import {
+  DrillDownNavigationProvider,
+  type ProfileCorrelation,
+} from "../hooks/useDrillDownNavigation";
 import {
   PhoneNavigationProvider,
   useIsPhone,
@@ -55,6 +60,9 @@ function DashboardWorkspaceContent({
   onMetadataFilterChange,
   onSelectTest,
 }: DashboardWorkspaceProps) {
+  const [profilesRun, setProfilesRun] = useState<string>();
+  const [correlation, setCorrelation] = useState<ProfileCorrelation>();
+  const showProfiles = profilesRun !== undefined && profilesRun === latestRun?.id;
   const phone = usePhoneNavigation();
   const isPhone = useIsPhone();
   const workspaceRef = useRef<HTMLDivElement>(null);
@@ -73,36 +81,66 @@ function DashboardWorkspaceContent({
     lastLevel.current = phone?.level;
   }, [isPhone, phone?.level, phone?.testId, selectedTest?.id, onSelectTest]);
   return (
-    <div ref={workspaceRef} className="stove-workspace" data-phone-screen={phone?.level}>
-      <Sidebar
-        topFilter={topFilter}
-        apps={apps}
-        mismatchedApps={mismatchedApps}
-        selectedApp={activeApp}
-        onSelectApp={onSelectApp}
-        runs={runs}
-        availableRuns={allRuns}
-        selectedRunId={selectedRunId}
-        onSelectRun={onSelectRun}
-        metadataFilter={metadataFilter}
-        onMetadataFilterChange={onMetadataFilterChange}
-        run={latestRun}
-        tests={tests}
-        selectedTestId={selectedTest?.id}
-        onSelectTest={(testId) => {
-          onSelectTest(testId);
-          if (isPhone) phone?.go({ level: "test", testId });
-        }}
-      />
-      {latestRun && selectedTest ? (
-        <TestDetail runId={latestRun.id} test={selectedTest} liveConnected={liveConnected} />
-      ) : (
-        <WorkspaceEmpty
-          waitingForFirstRun={apps.length === 0}
-          filtered={topFilter.value !== null}
+    <DrillDownNavigationProvider
+      value={(runId, selection) => {
+        if (runId !== latestRun?.id) return;
+        setCorrelation(selection);
+        setProfilesRun(runId);
+        if (isPhone) phone?.go({ level: "test" });
+      }}
+    >
+      <div ref={workspaceRef} className="stove-workspace" data-phone-screen={phone?.level}>
+        <Sidebar
+          topFilter={topFilter}
+          apps={apps}
+          mismatchedApps={mismatchedApps}
+          selectedApp={activeApp}
+          onSelectApp={onSelectApp}
+          runs={runs}
+          availableRuns={allRuns}
+          selectedRunId={selectedRunId}
+          onSelectRun={onSelectRun}
+          metadataFilter={metadataFilter}
+          onMetadataFilterChange={onMetadataFilterChange}
+          run={latestRun}
+          tests={tests}
+          selectedTestId={selectedTest?.id}
+          profilesSelected={showProfiles}
+          onSelectProfiles={() => {
+            setCorrelation(undefined);
+            setProfilesRun(latestRun?.id);
+            if (isPhone) phone?.go({ level: "test" });
+          }}
+          onSelectTest={(testId) => {
+            setProfilesRun(undefined);
+            onSelectTest(testId);
+            if (isPhone) phone?.go({ level: "test", testId });
+          }}
         />
-      )}
-    </div>
+        {latestRun && showProfiles && (
+          <DrillDownPanel
+            key={latestRun.id}
+            run={latestRun}
+            tests={tests}
+            correlation={correlation}
+            onClearCorrelation={() => setCorrelation(undefined)}
+            onClose={() => {
+              setProfilesRun(undefined);
+              if (isPhone) phone?.go({ level: "tests" });
+            }}
+          />
+        )}
+        {!showProfiles && latestRun && selectedTest && (
+          <TestDetail runId={latestRun.id} test={selectedTest} liveConnected={liveConnected} />
+        )}
+        {!showProfiles && !(latestRun && selectedTest) && (
+          <WorkspaceEmpty
+            waitingForFirstRun={apps.length === 0}
+            filtered={topFilter.value !== null}
+          />
+        )}
+      </div>
+    </DrillDownNavigationProvider>
   );
 }
 

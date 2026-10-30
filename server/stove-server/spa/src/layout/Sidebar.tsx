@@ -27,6 +27,8 @@ interface SidebarProps {
   tests: Test[];
   selectedTestId: string | undefined;
   onSelectTest: (testId: string) => void;
+  onSelectProfiles?: () => void;
+  profilesSelected?: boolean;
 }
 
 export function Sidebar({
@@ -45,6 +47,8 @@ export function Sidebar({
   tests,
   selectedTestId,
   onSelectTest,
+  onSelectProfiles,
+  profilesSelected,
 }: SidebarProps) {
   const [filter, setFilter] = useState<FilterValue>("all");
   const [search, setSearch] = useState("");
@@ -82,6 +86,16 @@ export function Sidebar({
           />
         )}
       </div>
+      {run && onSelectProfiles && (
+        <button
+          type="button"
+          className="profiles-nav stove-focus-ring"
+          aria-pressed={profilesSelected}
+          onClick={onSelectProfiles}
+        >
+          Drill Down · whole run
+        </button>
+      )}
       <TestFilters
         filter={filter}
         onFilterChange={setFilter}

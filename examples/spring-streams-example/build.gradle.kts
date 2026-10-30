@@ -82,4 +82,9 @@ configurations.matching { it.name == "detekt" }.all {
 stoveTracing {
   serviceName.set("spring-streams-example")
   otelAgentVersion.set(libs.versions.opentelemetry.instrumentation.get())
+  profiling {
+    enabled.set(true)
+    agentVersion.set(libs.versions.pyroscope.get())
+    allocations.set(true)
+  }
 }
