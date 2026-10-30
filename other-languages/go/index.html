@@ -1228,6 +1228,17 @@
   
 </li>
       
+        <li class="md-nav__item">
+  <a href="#profiling-support" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Profiling support
+      
+    </span>
+  </a>
+  
+</li>
+      
     </ul>
   
 </nav>
@@ -2193,6 +2204,8 @@
       
         
       
+        
+      
     
     
     
@@ -2309,6 +2322,34 @@
     
   
     Tracing
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../observability/profiling/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Profiling / Drill Down
   
 
     
@@ -2947,6 +2988,8 @@
       
         
       
+        
+      
     
     
     
@@ -2999,6 +3042,34 @@
           </label>
           <ul class="md-nav__list" data-md-scrollfix>
             
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../release-notes/0.28.0/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    0.28.0 (upcoming)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
               
             
               
@@ -3375,6 +3446,17 @@
   
 </li>
       
+        <li class="md-nav__item">
+  <a href="#profiling-support" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Profiling support
+      
+    </span>
+  </a>
+  
+</li>
+      
     </ul>
   
 </nav>
@@ -3503,7 +3585,7 @@ Process mode runs the Go binary for fast iteration. Container mode runs a Docker
   <div class="stove-ribbon-item">
     <div class="icon">🛰️</div>
     <strong>Distributed tracing</strong>
-    <p>Spans from Go appear in the same trace tree as the test. <code>stoveTracing</code> Gradle plugin starts the OTLP receiver.</p>
+    <p>Spans from Go appear in the same trace tree as the test. Initialize the Go OTel SDK and enable Stove’s span receiver in the test setup.</p>
   </div>
   <div class="stove-ribbon-item">
     <div class="icon">📊</div>
@@ -3578,6 +3660,9 @@ Process mode runs the Go binary for fast iteration. Container mode runs a Docker
 </tbody>
 </table>
 <p>The Kotlin test side keeps the same shape. The AUT runner, config mapping, and language-specific instrumentation are the parts that differ.</p>
+<h2 id="profiling-support">Profiling support<a class="headerlink" href="#profiling-support" title="Permanent link">&para;</a></h2>
+<p>Stove 0.28.0 (upcoming) adds native Go profiling through <code>go/stove-profiler</code>, a wrapper around Grafana's Go SDK. Configure <code>DashboardExternalProfilingOptions</code>, map the exposed settings into the Go process/container, and call <code>stoveprofiler.StartFromEnv()</code> with a deferred <code>Close()</code> in the application. Profiles reach the existing Stove Server and appear in <strong>Drill Down</strong> and MCP.</p>
+<p>The Gradle <code>stoveTracing.profiling</code> plugin configures the JVM agent; Go profiling uses the native wrapper. See <a href="../../observability/profiling/#go-developers">Go developers</a> for the complete setup, HTTPS/authentication, graceful shutdown, supported metrics, and interpretation.</p>
 
 
 

@@ -11,7 +11,7 @@
       
       
       
-        <link rel="prev" href="../15-tracing/">
+        <link rel="prev" href="../../observability/profiling/">
       
       
         <link rel="next" href="../21-mcp/">
@@ -2105,6 +2105,8 @@
       
         
       
+        
+      
     
     
     
@@ -2224,6 +2226,34 @@
     
   
     Tracing
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../observability/profiling/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Profiling / Drill Down
   
 
     
@@ -2613,6 +2643,17 @@
     <span class="md-ellipsis">
       
         Troubleshooting
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#continuous-profiling" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Continuous profiling
       
     </span>
   </a>
@@ -3225,6 +3266,8 @@
       
         
       
+        
+      
     
     
     
@@ -3277,6 +3320,34 @@
           </label>
           <ul class="md-nav__list" data-md-scrollfix>
             
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../release-notes/0.28.0/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    0.28.0 (upcoming)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
               
             
               
@@ -3936,6 +4007,17 @@
   
 </li>
       
+        <li class="md-nav__item">
+  <a href="#continuous-profiling" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Continuous profiling
+      
+    </span>
+  </a>
+  
+</li>
+      
     </ul>
   
 </nav>
@@ -4243,6 +4325,7 @@ Install <code>stove-server</code>, run <code>stove</code>, add <code>dashboard {
 </span></code></pre></div>
 <p>With <code>DashboardIngestion.Http</code>, each event is sent as a protobuf-encoded <code>DashboardEvent</code> in the body of <code>POST &lt;baseUrl&gt;/api/v1/events</code> (<code>Content-Type: application/x-protobuf</code>) and acknowledged with a protobuf <code>EventAck</code>. The base URL may include the gateway path prefix but must not include <code>/api/v1/events</code>, a query, or a fragment. Queueing, retry, and auto-disable semantics are identical to the default <code>DashboardIngestion.Grpc</code> transport, and the server applies the same validation, deduplication, and live broadcast pipeline to both.</p>
 <p>The server exposes its HTTP API documentation at <code>/swagger-ui</code> and its OpenAPI document at <code>/api-docs/openapi.json</code>. The ingestion request and response are binary protobuf payloads; the shared <code>.proto</code> files in <code>stove-dashboard-api</code> remain the authoritative message schema.</p>
+<p>For profiling on the same deployment, configure <code>stoveTracing.profiling.serverUrl</code> separately. Its multipart <code>POST /ingest</code> uses the HTTP port too. See <a href="../../observability/profiling/#shared-stove-server-over-https">shared profiling deployment</a> for a common CI setting, path prefixes, required headers, upload limits, Java certificate trust, authentication limitations, and verification steps.</p>
 <h2 id="what-you-see">What you see<a class="headerlink" href="#what-you-see" title="Permanent link">&para;</a></h2>
 <div class="stove-catalog">
   <div class="stove-sys-card">
@@ -4563,6 +4646,15 @@ Install <code>stove-server</code>, run <code>stove</code>, add <code>dashboard {
 </tr>
 </tbody>
 </table>
+<h2 id="continuous-profiling">Continuous profiling<a class="headerlink" href="#continuous-profiling" title="Permanent link">&para;</a></h2>
+<p>In <strong>0.28.0 (upcoming)</strong>, Stove Server receives Pyroscope Java JFR and native Go pprof recordings and
+provides <strong>Drill Down</strong> for CPU and memory investigation, with no separate
+profiling backend. Enable collection in the tracing Gradle plugin and keep the
+normal dashboard integration. The plugin profiles the test JVM; Go applications use <code>go/stove-profiler</code>
+and dashboard-exposed run configuration.</p>
+<p>See <a href="../../observability/profiling/">Profiling and Drill Down</a> for the complete
+setup, HTTPS configuration, language support, recording lifecycle, memory-leak
+interpretation, MCP workflow, ingestion contract, and resource limits.</p>
 
 
 
@@ -4600,7 +4692,7 @@ Install <code>stove-server</code>, run <code>stove</code>, add <code>dashboard {
       <nav class="md-footer__inner md-grid" aria-label="Footer" >
         
           
-          <a href="../15-tracing/" class="md-footer__link md-footer__link--prev" aria-label="Previous: Tracing">
+          <a href="../../observability/profiling/" class="md-footer__link md-footer__link--prev" aria-label="Previous: Profiling / Drill Down">
             <div class="md-footer__button md-icon">
               
               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
@@ -4610,7 +4702,7 @@ Install <code>stove-server</code>, run <code>stove</code>, add <code>dashboard {
                 Previous
               </span>
               <div class="md-ellipsis">
-                Tracing
+                Profiling / Drill Down
               </div>
             </div>
           </a>

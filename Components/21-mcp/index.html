@@ -2105,6 +2105,8 @@
       
         
       
+        
+      
     
     
     
@@ -2224,6 +2226,34 @@
     
   
     Tracing
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../observability/profiling/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Profiling / Drill Down
   
 
     
@@ -2435,6 +2465,17 @@
     <span class="md-ellipsis">
       
         Troubleshooting
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#profiling-evidence" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Profiling evidence
       
     </span>
   </a>
@@ -3019,6 +3060,8 @@
       
         
       
+        
+      
     
     
     
@@ -3071,6 +3114,34 @@
           </label>
           <ul class="md-nav__list" data-md-scrollfix>
             
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../release-notes/0.28.0/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    0.28.0 (upcoming)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
               
             
               
@@ -3524,6 +3595,17 @@
   
 </li>
       
+        <li class="md-nav__item">
+  <a href="#profiling-evidence" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Profiling evidence
+      
+    </span>
+  </a>
+  
+</li>
+      
     </ul>
   
 </nav>
@@ -3882,6 +3964,35 @@ Start <code>stove</code>. Point your agent at the MCP endpoint. Agents call <cod
 </tr>
 </tbody>
 </table>
+<h2 id="profiling-evidence">Profiling evidence<a class="headerlink" href="#profiling-evidence" title="Permanent link">&para;</a></h2>
+<p>Available in <strong>0.28.0 (upcoming)</strong>. See <a href="../../observability/profiling/">Profiling and Drill Down</a>
+for collection setup, supported runtimes, and interpretation.</p>
+<p><code>stove_profiles</code> returns run-scoped method hotspots, units, sampling settings,
+recording windows, findings, and source profile IDs. Required: <code>run_id</code>.
+Optional: <code>service</code>, <code>instance</code>, <code>metric</code>, <code>from_ms</code>, <code>until_ms</code>, <code>trace_id</code>,
+and <code>span_id</code>. Full bounded flame-graph stacks are available from the run's REST
+profiles endpoint.</p>
+<div class="language-json highlight"><pre><span></span><code><span id="__span-12-1"><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a><span class="p">{</span>
+</span><span id="__span-12-2"><a id="__codelineno-12-2" name="__codelineno-12-2" href="#__codelineno-12-2"></a><span class="w">  </span><span class="nt">"name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"stove_profiles"</span><span class="p">,</span>
+</span><span id="__span-12-3"><a id="__codelineno-12-3" name="__codelineno-12-3" href="#__codelineno-12-3"></a><span class="w">  </span><span class="nt">"arguments"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+</span><span id="__span-12-4"><a id="__codelineno-12-4" name="__codelineno-12-4" href="#__codelineno-12-4"></a><span class="w">    </span><span class="nt">"run_id"</span><span class="p">:</span><span class="w"> </span><span class="s2">"current-run"</span><span class="p">,</span>
+</span><span id="__span-12-5"><a id="__codelineno-12-5" name="__codelineno-12-5" href="#__codelineno-12-5"></a><span class="w">    </span><span class="nt">"service"</span><span class="p">:</span><span class="w"> </span><span class="s2">"checkout"</span><span class="p">,</span>
+</span><span id="__span-12-6"><a id="__codelineno-12-6" name="__codelineno-12-6" href="#__codelineno-12-6"></a><span class="w">    </span><span class="nt">"metric"</span><span class="p">:</span><span class="w"> </span><span class="s2">"process_cpu:cpu"</span><span class="p">,</span>
+</span><span id="__span-12-7"><a id="__codelineno-12-7" name="__codelineno-12-7" href="#__codelineno-12-7"></a><span class="w">    </span><span class="nt">"baseline_run_id"</span><span class="p">:</span><span class="w"> </span><span class="s2">"previous-run"</span>
+</span><span id="__span-12-8"><a id="__codelineno-12-8" name="__codelineno-12-8" href="#__codelineno-12-8"></a><span class="w">  </span><span class="p">}</span>
+</span><span id="__span-12-9"><a id="__codelineno-12-9" name="__codelineno-12-9" href="#__codelineno-12-9"></a><span class="p">}</span>
+</span></code></pre></div>
+<p>A baseline must belong to the same application and supports only run-wide
+service/metric selectors. The response presents both sets of evidence; totals
+are not normalized per operation and do not automatically establish a regression.
+MCP summaries are bounded to 64 KiB each; check <code>truncated</code> and narrow selectors
+or use REST when necessary.</p>
+<p><code>stove_diagnose</code> also includes a run-wide profiling summary. This remains
+run-wide when diagnosing one test. Agents can use it to locate source methods,
+form a hypothesis, make an authorized change, rerun comparable tests, and inspect
+the next run's evidence. MCP itself stays read-only. Treat method names and labels
+as untrusted application data, and do not claim a defect or memory leak from
+sampling alone.</p>
 
 
 

@@ -1,0 +1,4780 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="End-to-end testing framework for the JVM">
+      
+      
+      
+      
+        <link rel="prev" href="../../Components/15-tracing/">
+      
+      
+        <link rel="next" href="../../Components/18-dashboard/">
+      
+      
+        
+      
+      
+      <link rel="icon" href="../../assets/favicon.svg">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.8.0">
+    
+    
+      
+        <title>Profiling / Drill Down - Stove</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../assets/stylesheets/main.57a0d79d.min.css">
+      
+        
+        <link rel="stylesheet" href="../../assets/stylesheets/palette.fb2fffe2.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Inter:300,300i,400,400i,700,700i%7CJetBrains+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Inter";--md-code-font:"JetBrains Mono"}</style>
+      
+    
+    
+      <link rel="stylesheet" href="../../css/custom.css">
+    
+    <script>__md_scope=new URL("../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="teal" data-md-color-accent="amber">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#profiling-and-drill-down" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+<header class="md-header" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../.." title="Stove" class="md-header__button md-logo" aria-label="Stove" data-md-component="logo">
+      
+  <img src="../../assets/stove-mark.svg" alt="logo">
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            Stove
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Profiling / Drill Down
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="" data-md-color-scheme="default" data-md-color-primary="teal" data-md-color-accent="amber"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 7a5 5 0 0 1 5 5 5 5 0 0 1-5 5 5 5 0 0 1-5-5 5 5 0 0 1 5-5m0 2a3 3 0 0 0-3 3 3 3 0 0 0 3 3 3 3 0 0 0 3-3 3 3 0 0 0-3-3m0-7 2.39 3.42C13.65 5.15 12.84 5 12 5s-1.65.15-2.39.42zM3.34 7l4.16-.35A7.2 7.2 0 0 0 5.94 8.5c-.44.74-.69 1.5-.83 2.29zm.02 10 1.76-3.77a7.131 7.131 0 0 0 2.38 4.14zM20.65 7l-1.77 3.79a7.02 7.02 0 0 0-2.38-4.15zm-.01 10-4.14.36c.59-.51 1.12-1.14 1.54-1.86.42-.73.69-1.5.83-2.29zM12 22l-2.41-3.44c.74.27 1.55.44 2.41.44.82 0 1.63-.17 2.37-.44z"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="" data-md-color-scheme="slate" data-md-color-primary="teal" data-md-color-accent="amber"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="m17.75 4.09-2.53 1.94.91 3.06-2.63-1.81-2.63 1.81.91-3.06-2.53-1.94L12.44 4l1.06-3 1.06 3zm3.5 6.91-1.64 1.25.59 1.98-1.7-1.17-1.7 1.17.59-1.98L15.75 11l2.06-.05L18.5 9l.69 1.95zm-2.28 4.95c.83-.08 1.72 1.1 1.19 1.85-.32.45-.66.87-1.08 1.27C15.17 23 8.84 23 4.94 19.07c-3.91-3.9-3.91-10.24 0-14.14.4-.4.82-.76 1.27-1.08.75-.53 1.93.36 1.85 1.19-.27 2.86.69 5.83 2.89 8.02a9.96 9.96 0 0 0 8.02 2.89m-1.64 2.02a12.08 12.08 0 0 1-7.8-3.47c-2.17-2.19-3.33-5-3.49-7.82-2.81 3.14-2.7 7.96.31 10.98 3.02 3.01 7.84 3.12 10.98.31"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+          <a href="javascript:void(0)" class="md-search__icon md-icon" title="Share" aria-label="Share" data-clipboard data-clipboard-text="" data-md-component="search-share" tabindex="-1">
+            
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M18 16.08c-.76 0-1.44.3-1.96.77L8.91 12.7c.05-.23.09-.46.09-.7s-.04-.47-.09-.7l7.05-4.11c.54.5 1.25.81 2.04.81a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3c0 .24.04.47.09.7L8.04 9.81C7.5 9.31 6.79 9 6 9a3 3 0 0 0-3 3 3 3 0 0 0 3 3c.79 0 1.5-.31 2.04-.81l7.12 4.15c-.05.21-.08.43-.08.66 0 1.61 1.31 2.91 2.92 2.91s2.92-1.3 2.92-2.91A2.92 2.92 0 0 0 18 16.08"/></svg>
+          </a>
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/trendyol/stove" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+  </div>
+  <div class="md-source__repository">
+    trendyol/stove
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+            
+<nav class="md-tabs" aria-label="Tabs" data-md-component="tabs">
+  <div class="md-grid">
+    <ul class="md-tabs__list">
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../.." class="md-tabs__link">
+        
+  
+  
+    
+  
+  Home
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="https://trendyol.github.io/stove/dashboard-demo/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Try the dashboard
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../wizard/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Start
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../frameworks/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  JVM Frameworks
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../other-languages/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Polyglot
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../Components/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Systems
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+    
+  
+  
+    
+    
+      <li class="md-tabs__item md-tabs__item--active">
+        <a href="../when-it-fails/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Observability
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../Components/10-bridge/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Concepts
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../best-practices/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Reference
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../recipes/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Recipes
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../blog/polyglot-0.24.0/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Blog
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../release-notes/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Release Notes
+
+        </a>
+      </li>
+    
+  
+
+      
+    </ul>
+  </div>
+</nav>
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+  
+
+
+<nav class="md-nav md-nav--primary md-nav--lifted" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../.." title="Stove" class="md-nav__button md-logo" aria-label="Stove" data-md-component="logo">
+      
+  <img src="../../assets/stove-mark.svg" alt="logo">
+
+    </a>
+    Stove
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/trendyol/stove" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+  </div>
+  <div class="md-source__repository">
+    trendyol/stove
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../.." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="https://trendyol.github.io/stove/dashboard-demo/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Try the dashboard
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Start
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Start
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../wizard/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Setup Wizard
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../cookbook/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Cookbook
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../playground/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Playground
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../getting-started/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Getting Started
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../agent-setup/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Agent Skills and Plugins
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../../frameworks/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    JVM Frameworks
+  
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_4" id="__nav_4_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    JVM Frameworks
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../frameworks/spring-boot/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Spring Boot
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../frameworks/ktor/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Ktor
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../frameworks/micronaut/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Micronaut
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../frameworks/quarkus/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Quarkus
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../../other-languages/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Polyglot
+  
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_5" id="__nav_5_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Polyglot
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5_2" >
+        
+          
+          <label class="md-nav__link" for="__nav_5_2" id="__nav_5_2_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Go
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_5_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Go
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../other-languages/go/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../other-languages/go-process/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Process Mode
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../other-languages/go-container/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Container Mode
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../Components/22-container/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Container AUT (any language)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../Components/19-provided-application/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Provided Application (deployed)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../../Components/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Systems
+  
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_6" id="__nav_6_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_6_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_6">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Systems
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6_2" >
+        
+          
+          <label class="md-nav__link" for="__nav_6_2" id="__nav_6_2_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Databases
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_6_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_6_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Databases
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../Components/06-postgresql/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    PostgreSQL
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../Components/16-mysql/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    MySQL
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../Components/08-mssql/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    MSSQL
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../Components/07-mongodb/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    MongoDB
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../Components/01-couchbase/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Couchbase
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../Components/17-cassandra/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Cassandra
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../Components/09-redis/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Redis
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../Components/03-elasticsearch/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Elasticsearch
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_6_3" id="__nav_6_3_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Messaging
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_6_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_6_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Messaging
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../Components/02-kafka/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Kafka
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_6_4" id="__nav_6_4_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Network
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_6_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_6_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Network
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../Components/05-http/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    HTTP Client
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../Components/12-grpc/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    gRPC
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6_5" >
+        
+          
+          <label class="md-nav__link" for="__nav_6_5" id="__nav_6_5_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Mocks
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_6_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_6_5">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Mocks
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../Components/04-wiremock/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    WireMock
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../Components/14-grpc-mock/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    gRPC Mock
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../Components/23-oidc/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    OIDC
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../Components/20-multiple-systems/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Multiple Systems
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../Components/11-provided-instances/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Provided Instances
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+        
+        
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_7" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_7" id="__nav_7_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Observability
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_7_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_7">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Observability
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../when-it-fails/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    When a Test Fails
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../Components/13-reporting/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Reporting
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../Components/15-tracing/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Tracing
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Profiling / Drill Down
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Profiling / Drill Down
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#choose-the-right-evidence" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Choose the right evidence
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#language-and-runner-support" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Language and runner support
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Language and runner support">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#go-developers" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Go developers
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Go developers">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#go-upload-contract" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Go upload contract
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#configure-an-in-process-jvm-application" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Configure an in-process JVM application
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Configure an in-process JVM application">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#running-from-intellij-and-ci" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Running from IntelliJ and CI
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#configuration-reference" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Configuration reference
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#jvm-trace-to-profile-correlation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        JVM trace-to-profile correlation
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#shared-stove-server-over-https" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Shared Stove Server over HTTPS
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Shared Stove Server over HTTPS">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#use-one-deployment-setting-in-local-runs-and-ci" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Use one deployment setting in local runs and CI
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#routes-ports-and-gateway-prefixes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Routes, ports, and gateway prefixes
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#upload-limits-timeouts-and-retries" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Upload limits, timeouts, and retries
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#tls-and-authentication" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        TLS and authentication
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#verify-a-shared-deployment" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Verify a shared deployment
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#explore-drill-down" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Explore Drill Down
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#memory-leaks-and-early-findings" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Memory leaks and early findings
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#agent-investigation-through-mcp" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Agent investigation through MCP
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#how-collection-works" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        How collection works
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="How collection works">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#ingestion-contract" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Ingestion contract
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#storage-and-resource-limits" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Storage and resource limits
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#troubleshooting" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Troubleshooting
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../Components/18-dashboard/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Dashboard
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../Components/21-mcp/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    MCP
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_8" >
+        
+          
+          <label class="md-nav__link" for="__nav_8" id="__nav_8_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Concepts
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_8_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_8">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Concepts
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../Components/10-bridge/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Bridge
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../chaos-testing/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Chaos Testing
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../writing-custom-systems/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Writing Custom Systems
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_9" >
+        
+          
+          <label class="md-nav__link" for="__nav_9" id="__nav_9_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Reference
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_9_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_9">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Reference
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../best-practices/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Best Practices
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../troubleshooting/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Troubleshooting
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_10" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../../recipes/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Recipes
+  
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_10" id="__nav_10_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_10_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_10">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Recipes
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../recipes/order-flow/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Order Placement Flow
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_11" >
+        
+          
+          <label class="md-nav__link" for="__nav_11" id="__nav_11_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Blog
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_11_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_11">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Blog
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../blog/polyglot-0.24.0/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Polyglot Stove in 0.24.0
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../blog/dashboard-0.23.0/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Stove Dashboard in 0.23.0
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../blog/tracing-0.21.0/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Execution Tracing in 0.21.0
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_12" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../../release-notes/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Release Notes
+  
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_12" id="__nav_12_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_12_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_12">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Release Notes
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../release-notes/0.28.0/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    0.28.0 (upcoming)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../release-notes/0.27.x/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    0.27.x
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../release-notes/0.26.0/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    0.26.0
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../release-notes/0.25.0/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    0.25.0
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../release-notes/0.24.0/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    0.24.0
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../release-notes/0.23.0/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    0.23.0
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../release-notes/0.22.2/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    0.22.2
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../release-notes/0.21.2/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    0.21.2
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../release-notes/0.21.0/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    0.21.0
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../release-notes/0.20.0/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    0.20.0
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../release-notes/0.19.0/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    0.19.0
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../release-notes/0.15.0/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    0.15.0
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#choose-the-right-evidence" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Choose the right evidence
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#language-and-runner-support" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Language and runner support
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Language and runner support">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#go-developers" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Go developers
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Go developers">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#go-upload-contract" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Go upload contract
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#configure-an-in-process-jvm-application" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Configure an in-process JVM application
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Configure an in-process JVM application">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#running-from-intellij-and-ci" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Running from IntelliJ and CI
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#configuration-reference" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Configuration reference
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#jvm-trace-to-profile-correlation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        JVM trace-to-profile correlation
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#shared-stove-server-over-https" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Shared Stove Server over HTTPS
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Shared Stove Server over HTTPS">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#use-one-deployment-setting-in-local-runs-and-ci" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Use one deployment setting in local runs and CI
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#routes-ports-and-gateway-prefixes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Routes, ports, and gateway prefixes
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#upload-limits-timeouts-and-retries" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Upload limits, timeouts, and retries
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#tls-and-authentication" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        TLS and authentication
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#verify-a-shared-deployment" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Verify a shared deployment
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#explore-drill-down" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Explore Drill Down
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#memory-leaks-and-early-findings" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Memory leaks and early findings
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#agent-investigation-through-mcp" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Agent investigation through MCP
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#how-collection-works" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        How collection works
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="How collection works">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#ingestion-contract" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Ingestion contract
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#storage-and-resource-limits" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Storage and resource limits
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#troubleshooting" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Troubleshooting
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+                
+
+
+
+  
+
+
+  <nav class="md-path" aria-label="Navigation" >
+    <ol class="md-path__list">
+      
+        
+  
+  
+    <li class="md-path__item">
+      <a href="../.." class="md-path__link">
+        
+  <span class="md-ellipsis">
+    Home
+  </span>
+
+      </a>
+    </li>
+  
+
+      
+      
+        
+  
+  
+    
+    
+      <li class="md-path__item">
+        <a href="../when-it-fails/" class="md-path__link">
+          
+  <span class="md-ellipsis">
+    Observability
+  </span>
+
+        </a>
+      </li>
+    
+  
+
+      
+    </ol>
+  </nav>
+
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+  
+
+
+<h1 id="profiling-and-drill-down">Profiling and Drill Down<a class="headerlink" href="#profiling-and-drill-down" title="Permanent link">&para;</a></h1>
+<p><strong>Available in 0.28.0 (upcoming).</strong> Use matching Stove libraries, tracing Gradle plugin, and Stove Server builds that include profiling. These instructions describe the upcoming release; 0.27.x does not include this feature.</p>
+<p>Stove collects continuous JVM and Go profiles during end-to-end tests and shows them in <strong>Drill Down</strong>. CPU, allocation, surviving-object, and lock samples help locate methods worth investigating before a performance problem reaches production. The existing Stove Server receives, converts, stores, and queries the recordings. Downstream users do not need to deploy Pyroscope or another profiling backend.</p>
+<h2 id="choose-the-right-evidence">Choose the right evidence<a class="headerlink" href="#choose-the-right-evidence" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>Evidence</th>
+<th>Question it helps answer</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><a href="../../Components/15-tracing/">Traces</a></td>
+<td>Which instrumented operations ran, in what order, and how long did they take?</td>
+</tr>
+<tr>
+<td>CPU profiles</td>
+<td>Where did sampled CPU time accumulate, including work without spans?</td>
+</tr>
+<tr>
+<td>Allocation profiles</td>
+<td>Which allocation stacks generated memory pressure?</td>
+</tr>
+<tr>
+<td>Live-allocation profiles</td>
+<td>Where were sampled objects that survived collection allocated?</td>
+</tr>
+<tr>
+<td>Lock profiles</td>
+<td>Where did sampled lock waits accumulate?</td>
+</tr>
+</tbody>
+</table>
+<p>Profiles are sampled evidence. A hot method is an investigation starting point; a high share alone does not establish a defect. Test setup, framework code, JIT compilation, background threads, and the test harness can all contribute.</p>
+<h2 id="language-and-runner-support">Language and runner support<a class="headerlink" href="#language-and-runner-support" title="Permanent link">&para;</a></h2>
+<p>Having Gradle in a project does not make the application a JVM process. <code>stoveTracing.profiling</code> installs the <strong>Pyroscope Java agent in the selected Gradle test JVMs</strong>. It does not attach to child processes or discover applications in containers.</p>
+<table>
+<thead>
+<tr>
+<th>Application under test</th>
+<th>What the plugin profiles</th>
+<th>Application profiling in Stove 0.28.0</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Spring Boot, Ktor, Micronaut, or Quarkus running inside the test JVM</td>
+<td>Application, test harness, and other work in that JVM</td>
+<td>Automatic setup below</td>
+</tr>
+<tr>
+<td>JVM app in a separate process, container, or deployed environment</td>
+<td>Test JVM only</td>
+<td>Custom Java-agent setup with JFR upload and explicit Stove run/instance association; no automatic runner integration</td>
+</tr>
+<tr>
+<td>Go via <code>goApp</code>, <code>processApp</code>, <code>containerApp</code>, or <code>providedApplication</code></td>
+<td>Kotlin/JVM test harness only</td>
+<td>Native <code>stove-profiler</code> integration below</td>
+</tr>
+<tr>
+<td>Python, Node.js, Rust, or another non-JVM runtime</td>
+<td>Kotlin/JVM test harness only</td>
+<td>Native profile formats are not supported yet</td>
+</tr>
+</tbody>
+</table>
+<h3 id="go-developers">Go developers<a class="headerlink" href="#go-developers" title="Permanent link">&para;</a></h3>
+<p>Stove 0.28.0 (upcoming) supports native Go profiles through the small <a href="https://github.com/Trendyol/stove/tree/main/go/stove-profiler"><code>go/stove-profiler</code></a> module, following the <code>stove-kafka</code> integration pattern. It wraps Grafana <code>pyroscope-go</code> <strong>1.4.3</strong>, pushes directly to Stove Server, and is inactive when no profiling URL is configured. <code>stoveTracing.profiling</code> remains the Java-agent configuration; it is unnecessary for profiling a Go binary.</p>
+<p>After 0.28.0 is published, install <code>github.com/trendyol/stove/go/stove-profiler@v0.28.0</code>. Before release, use the matching checkout with a local Go <code>replace</code>, as the showcase does. The module requires Go 1.26.2 or newer.</p>
+<p>Initialize it once in the Go application's <code>main</code> and close it after the server and workers shut down:</p>
+<div class="language-go highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="kn">import</span><span class="w"> </span><span class="nx">stoveprofiler</span><span class="w"> </span><span class="s">"github.com/trendyol/stove/go/stove-profiler"</span>
+</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>
+</span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="nx">profiler</span><span class="p">,</span><span class="w"> </span><span class="nx">err</span><span class="w"> </span><span class="o">:=</span><span class="w"> </span><span class="nx">stoveprofiler</span><span class="p">.</span><span class="nx">StartFromEnv</span><span class="p">()</span>
+</span><span id="__span-0-4"><a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="k">if</span><span class="w"> </span><span class="nx">err</span><span class="w"> </span><span class="o">!=</span><span class="w"> </span><span class="kc">nil</span><span class="w"> </span><span class="p">{</span>
+</span><span id="__span-0-5"><a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a><span class="w">    </span><span class="nx">log</span><span class="p">.</span><span class="nx">Fatalf</span><span class="p">(</span><span class="s">"start Stove profiler: %v"</span><span class="p">,</span><span class="w"> </span><span class="nx">err</span><span class="p">)</span>
+</span><span id="__span-0-6"><a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a><span class="p">}</span>
+</span><span id="__span-0-7"><a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a><span class="k">defer</span><span class="w"> </span><span class="nx">profiler</span><span class="p">.</span><span class="nx">Close</span><span class="p">()</span><span class="w"> </span><span class="c1">// nil-safe; flushes the partial interval</span>
+</span></code></pre></div>
+<p>In the Kotlin harness, configure the dashboard before the process/container runner:</p>
+<div class="language-kotlin highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="k">import</span><span class="w"> </span><span class="nn">com.trendyol.stove.dashboard.DashboardExternalProfilingOptions</span>
+</span><span id="__span-1-2"><a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="k">import</span><span class="w"> </span><span class="nn">com.trendyol.stove.dashboard.DashboardIngestion</span>
+</span><span id="__span-1-3"><a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a><span class="k">import</span><span class="w"> </span><span class="nn">com.trendyol.stove.dashboard.DashboardSystemOptions</span>
+</span><span id="__span-1-4"><a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a><span class="k">import</span><span class="w"> </span><span class="nn">com.trendyol.stove.dashboard.dashboard</span>
+</span><span id="__span-1-5"><a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a><span class="k">import</span><span class="w"> </span><span class="nn">com.trendyol.stove.process.ProcessTarget</span>
+</span><span id="__span-1-6"><a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a><span class="k">import</span><span class="w"> </span><span class="nn">com.trendyol.stove.process.envMapper</span>
+</span><span id="__span-1-7"><a id="__codelineno-1-7" name="__codelineno-1-7" href="#__codelineno-1-7"></a><span class="k">import</span><span class="w"> </span><span class="nn">com.trendyol.stove.process.goApp</span>
+</span><span id="__span-1-8"><a id="__codelineno-1-8" name="__codelineno-1-8" href="#__codelineno-1-8"></a>
+</span><span id="__span-1-9"><a id="__codelineno-1-9" name="__codelineno-1-9" href="#__codelineno-1-9"></a><span class="kd">val</span><span class="w"> </span><span class="nv">serverUrl</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">System</span><span class="p">.</span><span class="na">getenv</span><span class="p">(</span><span class="s">"STOVE_SERVER_URL"</span><span class="p">)</span><span class="w"> </span><span class="o">?:</span><span class="w"> </span><span class="s">"http://localhost:4040"</span>
+</span><span id="__span-1-10"><a id="__codelineno-1-10" name="__codelineno-1-10" href="#__codelineno-1-10"></a><span class="n">Stove</span><span class="p">().</span><span class="na">with</span><span class="w"> </span><span class="p">{</span>
+</span><span id="__span-1-11"><a id="__codelineno-1-11" name="__codelineno-1-11" href="#__codelineno-1-11"></a><span class="w">    </span><span class="n">dashboard</span><span class="w"> </span><span class="p">{</span>
+</span><span id="__span-1-12"><a id="__codelineno-1-12" name="__codelineno-1-12" href="#__codelineno-1-12"></a><span class="w">        </span><span class="n">DashboardSystemOptions</span><span class="p">(</span>
+</span><span id="__span-1-13"><a id="__codelineno-1-13" name="__codelineno-1-13" href="#__codelineno-1-13"></a><span class="w">            </span><span class="n">appName</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">"checkout"</span><span class="p">,</span>
+</span><span id="__span-1-14"><a id="__codelineno-1-14" name="__codelineno-1-14" href="#__codelineno-1-14"></a><span class="w">            </span><span class="n">ingestion</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">DashboardIngestion</span><span class="p">.</span><span class="na">Http</span><span class="p">(</span><span class="n">serverUrl</span><span class="p">),</span>
+</span><span id="__span-1-15"><a id="__codelineno-1-15" name="__codelineno-1-15" href="#__codelineno-1-15"></a><span class="w">            </span><span class="n">externalProfiling</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">DashboardExternalProfilingOptions</span><span class="p">(</span>
+</span><span id="__span-1-16"><a id="__codelineno-1-16" name="__codelineno-1-16" href="#__codelineno-1-16"></a><span class="w">                </span><span class="n">serverUrl</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">serverUrl</span><span class="p">,</span>
+</span><span id="__span-1-17"><a id="__codelineno-1-17" name="__codelineno-1-17" href="#__codelineno-1-17"></a><span class="w">                </span><span class="n">profileTypes</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">listOf</span><span class="p">(</span><span class="s">"cpu"</span><span class="p">,</span><span class="w"> </span><span class="s">"alloc_space"</span><span class="p">,</span><span class="w"> </span><span class="s">"inuse_space"</span><span class="p">,</span><span class="w"> </span><span class="s">"goroutines"</span><span class="p">)</span>
+</span><span id="__span-1-18"><a id="__codelineno-1-18" name="__codelineno-1-18" href="#__codelineno-1-18"></a><span class="w">            </span><span class="p">)</span>
+</span><span id="__span-1-19"><a id="__codelineno-1-19" name="__codelineno-1-19" href="#__codelineno-1-19"></a><span class="w">        </span><span class="p">)</span>
+</span><span id="__span-1-20"><a id="__codelineno-1-20" name="__codelineno-1-20" href="#__codelineno-1-20"></a><span class="w">    </span><span class="p">}</span>
+</span><span id="__span-1-21"><a id="__codelineno-1-21" name="__codelineno-1-21" href="#__codelineno-1-21"></a><span class="w">    </span><span class="n">goApp</span><span class="p">(</span>
+</span><span id="__span-1-22"><a id="__codelineno-1-22" name="__codelineno-1-22" href="#__codelineno-1-22"></a><span class="w">        </span><span class="n">target</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">ProcessTarget</span><span class="p">.</span><span class="na">Server</span><span class="p">(</span><span class="n">port</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">8080</span><span class="p">,</span><span class="w"> </span><span class="n">portEnvVar</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">"APP_PORT"</span><span class="p">),</span>
+</span><span id="__span-1-23"><a id="__codelineno-1-23" name="__codelineno-1-23" href="#__codelineno-1-23"></a><span class="w">        </span><span class="n">envProvider</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">envMapper</span><span class="w"> </span><span class="p">{</span>
+</span><span id="__span-1-24"><a id="__codelineno-1-24" name="__codelineno-1-24" href="#__codelineno-1-24"></a><span class="w">            </span><span class="s">"stove.profiling.serverUrl"</span><span class="w"> </span><span class="n">to</span><span class="w"> </span><span class="s">"STOVE_PROFILING_SERVER_URL"</span>
+</span><span id="__span-1-25"><a id="__codelineno-1-25" name="__codelineno-1-25" href="#__codelineno-1-25"></a><span class="w">            </span><span class="s">"stove.profiling.runId"</span><span class="w"> </span><span class="n">to</span><span class="w"> </span><span class="s">"STOVE_RUN_ID"</span>
+</span><span id="__span-1-26"><a id="__codelineno-1-26" name="__codelineno-1-26" href="#__codelineno-1-26"></a><span class="w">            </span><span class="s">"stove.profiling.serviceName"</span><span class="w"> </span><span class="n">to</span><span class="w"> </span><span class="s">"STOVE_PROFILING_SERVICE_NAME"</span>
+</span><span id="__span-1-27"><a id="__codelineno-1-27" name="__codelineno-1-27" href="#__codelineno-1-27"></a><span class="w">            </span><span class="s">"stove.profiling.uploadIntervalSeconds"</span><span class="w"> </span><span class="n">to</span><span class="w"> </span><span class="s">"STOVE_PROFILING_INTERVAL_SECONDS"</span>
+</span><span id="__span-1-28"><a id="__codelineno-1-28" name="__codelineno-1-28" href="#__codelineno-1-28"></a><span class="w">            </span><span class="s">"stove.profiling.profileTypes"</span><span class="w"> </span><span class="n">to</span><span class="w"> </span><span class="s">"STOVE_PROFILING_TYPES"</span>
+</span><span id="__span-1-29"><a id="__codelineno-1-29" name="__codelineno-1-29" href="#__codelineno-1-29"></a><span class="w">            </span><span class="c1">// Add the application's existing database, Kafka, and other mappings.</span>
+</span><span id="__span-1-30"><a id="__codelineno-1-30" name="__codelineno-1-30" href="#__codelineno-1-30"></a><span class="w">        </span><span class="p">}</span>
+</span><span id="__span-1-31"><a id="__codelineno-1-31" name="__codelineno-1-31" href="#__codelineno-1-31"></a><span class="w">    </span><span class="p">)</span>
+</span><span id="__span-1-32"><a id="__codelineno-1-32" name="__codelineno-1-32" href="#__codelineno-1-32"></a><span class="p">}.</span><span class="na">run</span><span class="p">()</span>
+</span></code></pre></div>
+<p>Use the same mappings with <code>containerApp</code> and its <code>com.trendyol.stove.system.application.envMapper</code>. The URL must be reachable from the application runtime; container <code>localhost</code> normally points to the container itself. The showcase uses host networking. For a shared deployment, both base URLs can be <code>https://stove-server.mars.trendyol.com</code>. A pre-existing deployed application needs explicit lifecycle and exact-run configuration; Stove does not remotely attach a profiler or guess the latest run.</p>
+<table>
+<thead>
+<tr>
+<th>Environment variable</th>
+<th>Meaning/default</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>STOVE_PROFILING_SERVER_URL</code></td>
+<td>HTTP(S) base URL, optional path prefix; absent means disabled</td>
+</tr>
+<tr>
+<td><code>STOVE_RUN_ID</code></td>
+<td>Required when enabled; exact dashboard run ID supplied by the mapper</td>
+</tr>
+<tr>
+<td><code>STOVE_PROFILING_SERVICE_NAME</code></td>
+<td>Required when enabled; defaults to dashboard <code>appName</code> in exposed configuration</td>
+</tr>
+<tr>
+<td><code>STOVE_PROFILING_INTERVAL_SECONDS</code></td>
+<td>Upload interval, default 10, accepted range 1–3600 seconds</td>
+</tr>
+<tr>
+<td><code>STOVE_PROFILING_TYPES</code></td>
+<td>Comma-separated SDK types, default <code>cpu</code></td>
+</tr>
+</tbody>
+</table>
+<p><code>DashboardExternalProfilingOptions</code> exposes <code>serverUrl</code>, optional <code>serviceName</code>, <code>uploadIntervalSeconds</code>, and <code>profileTypes</code>. It does not inherit the Gradle Java profiler destination. Go run IDs and service names must be printable ASCII without surrounding whitespace, at most 256 bytes. An explicit service name can differ from the dashboard application name. Each Go profiler instance generates its own stable instance ID; callers cannot override <code>X-Stove-*</code> headers. <code>PYROSCOPE_ADHOC_SERVER_ADDRESS</code> must be unset because the SDK would otherwise replace the configured destination.</p>
+<p>Supported types: <code>cpu</code>, <code>alloc_objects</code>, <code>alloc_space</code>, <code>inuse_objects</code>, <code>inuse_space</code>, <code>goroutines</code>, <code>mutex_count</code>, <code>mutex_duration</code>, <code>block_count</code>, <code>block_duration</code>. CPU is always included, because the SDK's final flush requires its CPU collector. Only one Stove profiler may run per process; do not also start another CPU profiler, Pyroscope session, or CPU pprof recording. The wrapper cannot detect independently started profilers.</p>
+<p>Allocation and contention profiles contain interval deltas. In-use heap and goroutine profiles are snapshots: Stove uses the latest selected recording <strong>per service, instance, and metric</strong>, then combines instances. CPU uploads do not erase a separately uploaded heap snapshot. An empty newer snapshot suppresses the older value. Selecting any heap profile can produce all four heap metrics because the SDK captures them together. Heap evidence is sampled and GC-dependent, not retained size or proof of a leak. The wrapper sets <code>DisableGCRuns=true</code>; a short workload without a natural GC may have no heap samples. It never forces GC. Mutex/block profiling additionally requires the application to choose appropriate <code>runtime.SetMutexProfileFraction</code> / <code>runtime.SetBlockProfileRate</code> settings; Stove does not mutate those global sampling controls.</p>
+<p><code>Close()</code> is idempotent and flushes before stopping. Upload delivery is best effort, with failures reported through the logger; network failures are not returned by <code>Close</code>. Graceful SIGTERM/SIGINT handling must let <code>main</code> return. <code>os.Exit</code>, <code>log.Fatal</code>, SIGKILL, and runner shutdown timeouts can bypass or interrupt the flush. The <code>goApp</code> runner currently allows five seconds for graceful shutdown. Use <code>processApp</code> with a larger <code>ProcessApplicationOptions.gracefulShutdownTimeout</code> when uploads need more time; set <code>containerApp(gracefulShutdownTimeout = ...)</code> likewise. Container runners send Docker’s stop signal and wait before removal. Allow enough shutdown time for collection plus queued uploads; each upload has a five-second total deadline and at most three attempts for transport failures or HTTP 429/502/503/504. Stove accepts late uploads while the exact completed run is retained, so application shutdown can finish after the dashboard run-ended event. Refresh Drill Down after teardown for final evidence.</p>
+<p>Flush profiles before closing dependencies that might block during shutdown. Go executes defers in reverse order: register <code>defer profiler.Close()</code> after dependency cleanup defers, or call it explicitly after draining requests and before closing clients. The Go showcase uses this order so Kafka cleanup cannot consume the profiler's shutdown grace period.</p>
+<p>For machine authentication or a private CA, use a Go configuration callback:</p>
+<div class="language-go highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="nx">profiler</span><span class="p">,</span><span class="w"> </span><span class="nx">err</span><span class="w"> </span><span class="o">:=</span><span class="w"> </span><span class="nx">stoveprofiler</span><span class="p">.</span><span class="nx">StartFromEnv</span><span class="p">(</span><span class="kd">func</span><span class="p">(</span><span class="nx">c</span><span class="w"> </span><span class="o">*</span><span class="nx">stoveprofiler</span><span class="p">.</span><span class="nx">Config</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+</span><span id="__span-2-2"><a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a><span class="w">    </span><span class="nx">c</span><span class="p">.</span><span class="nx">Headers</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kt">map</span><span class="p">[</span><span class="kt">string</span><span class="p">]</span><span class="kt">string</span><span class="p">{</span><span class="s">"Authorization"</span><span class="p">:</span><span class="w"> </span><span class="s">"Bearer "</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="nx">os</span><span class="p">.</span><span class="nx">Getenv</span><span class="p">(</span><span class="s">"STOVE_UPLOAD_TOKEN"</span><span class="p">)}</span>
+</span><span id="__span-2-3"><a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a><span class="w">    </span><span class="nx">c</span><span class="p">.</span><span class="nx">HTTPClient</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">approvedHTTPClient</span><span class="w"> </span><span class="c1">// trust store, mTLS, or authentication transport</span>
+</span><span id="__span-2-4"><a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a><span class="p">})</span>
+</span></code></pre></div>
+<p>The callback runs only when enabled. The supplied HTTP client is copied; redirects are refused to keep run metadata and credentials at the configured destination. TLS certificate and hostname verification remain enabled. Browser SSO and MCP authentication do not authenticate uploads. JVM dashboard event ingestion still has its own authentication limitations, even if the Go profiler can authenticate. <code>Start(Config{...})</code> is also available for explicit configuration.</p>
+<p>Select the application/run in <strong>Drill Down</strong>, or query <code>stove_profiles</code> / <code>stove_diagnose</code> through MCP. Go series have <code>go:*</code> metric names and source filenames/lines when present in pprof. Profiles are whole-process samples, including background work; OTel spans do not automatically add trace/span labels to Go profiles. Use <code>runtime/pprof</code> labels explicitly when correlation is needed. Test-window selection includes entire overlapping recordings, not exact per-test attribution.</p>
+<h4 id="go-upload-contract">Go upload contract<a class="headerlink" href="#go-upload-contract" title="Permanent link">&para;</a></h4>
+<p>The server accepts the pinned Go SDK's multipart push contract on <code>POST /ingest</code>: <code>spyName=gospy</code>, <code>format</code> omitted or <code>pprof</code>, <code>name</code>, and <code>from</code>/<code>until</code> as <strong>epoch nanoseconds</strong> (unlike Java's epoch seconds). <code>profile</code> contains a gzip-compressed pprof protobuf; <code>sample_type_config</code> carries the SDK's units, display aliases, and delta/snapshot semantics. Unknown fields and null entries are rejected; allocation/contention metrics require delta metadata. <code>sampleRate=0</code> means unspecified. Stove displays sampling frequencies only for Go CPU metrics; the SDK’s synthetic heap sample rate is not a collection frequency. The same three <code>X-Stove-*</code> headers, ingress routes, 16 MiB upload limit, retention, and query budgets apply. Repeating the same upload is idempotent. The Go wrapper repairs equal/reversed final snapshot windows caused by SDK interval rounding before retrying; ordinary SDK windows retain their original timestamps.</p>
+<p>The embedded converter uses Grafana's generated <code>google.v1.Profile</code> protobuf, validates references and supported sample types, and reuses the JFR normalization/storage pipeline. It supports the SDK's delta uploads, not arbitrary cumulative heap/lock files, a pull-based <code>net/http/pprof</code> endpoint, Pyroscope Push RPC, or OTLP Profiles. No additional backend, service, or schema is needed.</p>
+<h2 id="configure-an-in-process-jvm-application">Configure an in-process JVM application<a class="headerlink" href="#configure-an-in-process-jvm-application" title="Permanent link">&para;</a></h2>
+<p>Keep versions in the project's Gradle version catalog. For the upcoming release, the relevant catalog entries are:</p>
+<div class="language-toml highlight"><pre><span></span><code><span id="__span-3-1"><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="k">[versions]</span>
+</span><span id="__span-3-2"><a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a><span class="n">stove</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"0.28.0"</span>
+</span><span id="__span-3-3"><a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a>
+</span><span id="__span-3-4"><a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a><span class="k">[plugins]</span>
+</span><span id="__span-3-5"><a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a><span class="n">stove-tracing</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="n">id</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="s2">"com.trendyol.stove.tracing"</span><span class="p">,</span><span class="w"> </span><span class="n">version</span><span class="p">.</span><span class="n">ref</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="s2">"stove"</span><span class="w"> </span><span class="p">}</span>
+</span></code></pre></div>
+<p>Merge these into the existing sections in <code>gradle/libs.versions.toml</code>. Until 0.28.0 is published, use your locally built artifacts or your team's pre-release build that contains this feature. Keep the server, libraries, and plugin aligned.</p>
+<p>In the test project's <code>build.gradle.kts</code>:</p>
+<div class="language-kotlin highlight"><pre><span></span><code><span id="__span-4-1"><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="n">plugins</span><span class="w"> </span><span class="p">{</span>
+</span><span id="__span-4-2"><a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a><span class="w">    </span><span class="n">alias</span><span class="p">(</span><span class="n">libs</span><span class="p">.</span><span class="na">plugins</span><span class="p">.</span><span class="na">stove</span><span class="p">.</span><span class="na">tracing</span><span class="p">)</span>
+</span><span id="__span-4-3"><a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a><span class="p">}</span>
+</span><span id="__span-4-4"><a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a>
+</span><span id="__span-4-5"><a id="__codelineno-4-5" name="__codelineno-4-5" href="#__codelineno-4-5"></a><span class="n">stoveTracing</span><span class="w"> </span><span class="p">{</span>
+</span><span id="__span-4-6"><a id="__codelineno-4-6" name="__codelineno-4-6" href="#__codelineno-4-6"></a><span class="w">    </span><span class="n">serviceName</span><span class="p">.</span><span class="na">set</span><span class="p">(</span><span class="s">"checkout-api"</span><span class="p">)</span>
+</span><span id="__span-4-7"><a id="__codelineno-4-7" name="__codelineno-4-7" href="#__codelineno-4-7"></a><span class="w">    </span><span class="n">testTaskNames</span><span class="p">.</span><span class="na">set</span><span class="p">(</span><span class="n">listOf</span><span class="p">(</span><span class="s">"e2eTest"</span><span class="p">))</span><span class="w"> </span><span class="c1">// Use your actual Gradle Test task name.</span>
+</span><span id="__span-4-8"><a id="__codelineno-4-8" name="__codelineno-4-8" href="#__codelineno-4-8"></a><span class="w">    </span><span class="n">profiling</span><span class="w"> </span><span class="p">{</span>
+</span><span id="__span-4-9"><a id="__codelineno-4-9" name="__codelineno-4-9" href="#__codelineno-4-9"></a><span class="w">        </span><span class="n">enabled</span><span class="p">.</span><span class="na">set</span><span class="p">(</span><span class="kc">true</span><span class="p">)</span>
+</span><span id="__span-4-10"><a id="__codelineno-4-10" name="__codelineno-4-10" href="#__codelineno-4-10"></a><span class="w">        </span><span class="n">serverUrl</span><span class="p">.</span><span class="na">set</span><span class="p">(</span><span class="s">"http://localhost:4040"</span><span class="p">)</span>
+</span><span id="__span-4-11"><a id="__codelineno-4-11" name="__codelineno-4-11" href="#__codelineno-4-11"></a><span class="w">        </span><span class="n">allocations</span><span class="p">.</span><span class="na">set</span><span class="p">(</span><span class="kc">true</span><span class="p">)</span><span class="w"> </span><span class="c1">// Optional; CPU collection is enabled by default.</span>
+</span><span id="__span-4-12"><a id="__codelineno-4-12" name="__codelineno-4-12" href="#__codelineno-4-12"></a><span class="w">    </span><span class="p">}</span>
+</span><span id="__span-4-13"><a id="__codelineno-4-13" name="__codelineno-4-13" href="#__codelineno-4-13"></a><span class="p">}</span>
+</span></code></pre></div>
+<p>The plugin resolves Pyroscope Java agent <strong>2.9.2</strong>. You do not need to add the agent as an application runtime dependency. In Stove's own build, the agent API uses <code>compileOnly(libs.pyroscope.agent)</code> and <code>testImplementation(libs.pyroscope.agent)</code> from the version catalog; the selected test task supplies the runtime agent.</p>
+<p>Keep the normal <code>stove-dashboard</code> dependency and dashboard registration in the existing Stove setup:</p>
+<div class="language-kotlin highlight"><pre><span></span><code><span id="__span-5-1"><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a><span class="c1">// Inside the existing Stove().with { ... } block, before the application runner:</span>
+</span><span id="__span-5-2"><a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a><span class="n">dashboard</span><span class="w"> </span><span class="p">{</span>
+</span><span id="__span-5-3"><a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a><span class="w">    </span><span class="n">DashboardSystemOptions</span><span class="p">(</span><span class="n">appName</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">"checkout-api"</span><span class="p">)</span>
+</span><span id="__span-5-4"><a id="__codelineno-5-4" name="__codelineno-5-4" href="#__codelineno-5-4"></a><span class="p">}</span>
+</span></code></pre></div>
+<p>Use the project's normal Kotest or JUnit lifecycle and pair Stove startup with <code>Stove.stop()</code>. The dashboard creates the run ID, starts profiling for that run, and flushes the last partial recording before ending it. Do not start a second Pyroscope agent independently in the same JVM; Stove needs ownership of that lifecycle.</p>
+<p>Profiling is independent of <code>stoveTracing.enabled</code>: setting the outer <code>enabled.set(false)</code> disables OTel Java-agent wiring while an enabled <code>profiling</code> block still works. <code>tracing { enableSpanReceiver() }</code> is needed for receiving spans, not for uploading profiles.</p>
+<h3 id="running-from-intellij-and-ci">Running from IntelliJ and CI<a class="headerlink" href="#running-from-intellij-and-ci" title="Permanent link">&para;</a></h3>
+<p>Run the configured Gradle <code>Test</code> task, for example <code>./gradlew :your-project:e2eTest</code>. In IntelliJ, delegate test execution to Gradle, or launch that task from the Gradle tool window. IntelliJ's native <strong>Run Test</strong> runner bypasses the plugin's task wiring and does not attach this agent automatically.</p>
+<p>Recordings upload every ten seconds by default and once more during orderly teardown. A shorter run can therefore appear only after it finishes. A hard process kill cannot perform the final flush. Lowering the interval can improve visibility during a run, but cannot fix missing agent attachment, unsupported formats, or a wrong server address.</p>
+<h3 id="configuration-reference">Configuration reference<a class="headerlink" href="#configuration-reference" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>Profiling option</th>
+<th>Default</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>enabled</code></td>
+<td><code>false</code></td>
+<td>Opt in to JVM profiling</td>
+</tr>
+<tr>
+<td><code>serverUrl</code></td>
+<td><code>http://localhost:4040</code></td>
+<td>HTTP(S) base URL, optionally including a gateway prefix</td>
+</tr>
+<tr>
+<td><code>agentVersion</code></td>
+<td><code>2.9.2</code></td>
+<td>Tested Pyroscope Java agent version</td>
+</tr>
+<tr>
+<td><code>traceCorrelation</code></td>
+<td><code>true</code></td>
+<td>Attach the bundled Pyroscope OTel extension when tracing is also enabled</td>
+</tr>
+<tr>
+<td><code>uploadIntervalSeconds</code></td>
+<td><code>10</code></td>
+<td>Recording/upload interval, 1–3600 seconds</td>
+</tr>
+<tr>
+<td><code>allocations</code></td>
+<td><code>false</code></td>
+<td>Enable allocation sampling</td>
+</tr>
+<tr>
+<td><code>allocationThreshold</code></td>
+<td><code>512k</code></td>
+<td>Allocation sampling threshold passed to the agent</td>
+</tr>
+<tr>
+<td><code>liveAllocations</code></td>
+<td><code>false</code></td>
+<td>Sample surviving allocations; also enables allocation sampling</td>
+</tr>
+<tr>
+<td><code>lockThreshold</code></td>
+<td>empty</td>
+<td>Optional lock wait threshold, for example <code>10ms</code></td>
+</tr>
+</tbody>
+</table>
+<p><code>serviceName</code> and <code>testTaskNames</code> belong to the outer <code>stoveTracing</code> block. An empty task list selects all Gradle <code>Test</code> tasks. Select only the intended tasks when you have unit, integration, and end-to-end suites.</p>
+<p>CPU collection uses async-profiler's ITIMER event. Native support depends on the JVM, OS, and architecture. Unsupported startup is logged without failing the test suite. Allocation, live-object, and lock collection add workload-dependent overhead and are opt-in. Stove does not force garbage collection before dumping profiles.</p>
+<h2 id="jvm-trace-to-profile-correlation">JVM trace-to-profile correlation<a class="headerlink" href="#jvm-trace-to-profile-correlation" title="Permanent link">&para;</a></h2>
+<p>When both tracing and profiling are enabled, <code>stoveTracing</code> automatically loads the Pyroscope OpenTelemetry Java-agent extension <strong>2.1.4</strong>. Keep the existing <code>tracing { enableSpanReceiver() }</code> and dashboard registration. No additional application dependency or backend is needed.</p>
+<p>The official shaded extension is bundled in the Stove Gradle plugin and extracted by <code>stoveExtractPyroscopeExtension</code>. Downstream builds do not need a GitHub repository or direct GitHub access. Stove's source build resolves the versioned GitHub release; <code>gradle/libs.versions.toml</code> pins the version. Maven's <code>io.pyroscope:otel</code> is the library, not this extension. Existing <code>otel.javaagent.extensions</code> entries are preserved.</p>
+<p>Stove sets <code>otel.pyroscope.start.profiling=false</code> and <code>otel.pyroscope.root.span.only=true</code>. The extension supplies correlation context; the dashboard still starts Pyroscope after assigning the run identity, configures the exporter and identity headers, flushes the last recording, and stops collection. Do not start another profiler. The extension bundles an older fallback profiler, but uses Stove's separately attached <strong>2.9.2</strong> agent through the shared API. Overriding <code>agentVersion</code> requires verifying compatibility with this extension.</p>
+<p>The default correlates <strong>local root spans</strong>: spans with no parent or a remote parent, such as an incoming HTTP request. Such spans receive <code>pyroscope.profile.id</code>. JFR samples carry their trace and span context; the embedded parser produces <code>trace_id</code> and <code>profile_id</code> labels. The REST/MCP <code>span_id</code> selector matches that <code>profile_id</code>, using the span's <code>pyroscope.profile.id</code> attribute.</p>
+<p>Open a span in the application's test trace view and choose <strong>Drill Down · this span</strong>. If it has no profile ID, <strong>Drill Down · this trace</strong> searches tagged samples across that trace. The panel shows the scope and offers <strong>Show entire run</strong>. A trace search may include several local root spans; it does not claim samples belong to the selected child span.</p>
+<p>Short operations may receive no samples. Coroutine, reactive, and other asynchronous thread transitions are not guaranteed to retain profiling context; OTel context propagation alone does not prove correct sample attribution. An empty result means no matching samples were found, not that the operation did no work. Refresh after upload or teardown, then inspect the whole run if needed. Allocation/live profiles still do not prove memory leaks.</p>
+<p>To keep profiling without correlation:</p>
+<div class="language-kotlin highlight"><pre><span></span><code><span id="__span-6-1"><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a><span class="n">stoveTracing</span><span class="w"> </span><span class="p">{</span>
+</span><span id="__span-6-2"><a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a><span class="w">    </span><span class="n">profiling</span><span class="w"> </span><span class="p">{</span>
+</span><span id="__span-6-3"><a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a><span class="w">        </span><span class="n">enabled</span><span class="p">.</span><span class="na">set</span><span class="p">(</span><span class="kc">true</span><span class="p">)</span>
+</span><span id="__span-6-4"><a id="__codelineno-6-4" name="__codelineno-6-4" href="#__codelineno-6-4"></a><span class="w">        </span><span class="n">traceCorrelation</span><span class="p">.</span><span class="na">set</span><span class="p">(</span><span class="kc">false</span><span class="p">)</span>
+</span><span id="__span-6-5"><a id="__codelineno-6-5" name="__codelineno-6-5" href="#__codelineno-6-5"></a><span class="w">    </span><span class="p">}</span>
+</span><span id="__span-6-6"><a id="__codelineno-6-6" name="__codelineno-6-6" href="#__codelineno-6-6"></a><span class="p">}</span>
+</span></code></pre></div>
+<p>Setting the outer <code>stoveTracing.enabled=false</code> also omits the OTel agent and extension while preserving profiling. IntelliJ must delegate tests to Gradle for all this wiring; native Run Test bypasses it. This extension applies only to JVM profiling. Go still needs explicit runtime profiling labels.</p>
+<h2 id="shared-stove-server-over-https">Shared Stove Server over HTTPS<a class="headerlink" href="#shared-stove-server-over-https" title="Permanent link">&para;</a></h2>
+<p>Use the same deployment for dashboard events and profiling. The two client settings are currently independent; the profiler does <strong>not</strong> inherit <code>DashboardIngestion.Http</code> automatically.</p>
+<div class="language-kotlin highlight"><pre><span></span><code><span id="__span-7-1"><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a><span class="c1">// build.gradle.kts</span>
+</span><span id="__span-7-2"><a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a><span class="n">stoveTracing</span><span class="w"> </span><span class="p">{</span>
+</span><span id="__span-7-3"><a id="__codelineno-7-3" name="__codelineno-7-3" href="#__codelineno-7-3"></a><span class="w">    </span><span class="n">serviceName</span><span class="p">.</span><span class="na">set</span><span class="p">(</span><span class="s">"checkout-api"</span><span class="p">)</span>
+</span><span id="__span-7-4"><a id="__codelineno-7-4" name="__codelineno-7-4" href="#__codelineno-7-4"></a><span class="w">    </span><span class="n">profiling</span><span class="w"> </span><span class="p">{</span>
+</span><span id="__span-7-5"><a id="__codelineno-7-5" name="__codelineno-7-5" href="#__codelineno-7-5"></a><span class="w">        </span><span class="n">enabled</span><span class="p">.</span><span class="na">set</span><span class="p">(</span><span class="kc">true</span><span class="p">)</span>
+</span><span id="__span-7-6"><a id="__codelineno-7-6" name="__codelineno-7-6" href="#__codelineno-7-6"></a><span class="w">        </span><span class="n">serverUrl</span><span class="p">.</span><span class="na">set</span><span class="p">(</span><span class="s">"https://stove.example.internal"</span><span class="p">)</span>
+</span><span id="__span-7-7"><a id="__codelineno-7-7" name="__codelineno-7-7" href="#__codelineno-7-7"></a><span class="w">    </span><span class="p">}</span>
+</span><span id="__span-7-8"><a id="__codelineno-7-8" name="__codelineno-7-8" href="#__codelineno-7-8"></a><span class="p">}</span>
+</span></code></pre></div>
+<div class="language-kotlin highlight"><pre><span></span><code><span id="__span-8-1"><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a><span class="c1">// Inside the existing Stove setup:</span>
+</span><span id="__span-8-2"><a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a><span class="n">dashboard</span><span class="w"> </span><span class="p">{</span>
+</span><span id="__span-8-3"><a id="__codelineno-8-3" name="__codelineno-8-3" href="#__codelineno-8-3"></a><span class="w">    </span><span class="n">DashboardSystemOptions</span><span class="p">(</span>
+</span><span id="__span-8-4"><a id="__codelineno-8-4" name="__codelineno-8-4" href="#__codelineno-8-4"></a><span class="w">        </span><span class="n">appName</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">"checkout-api"</span><span class="p">,</span>
+</span><span id="__span-8-5"><a id="__codelineno-8-5" name="__codelineno-8-5" href="#__codelineno-8-5"></a><span class="w">        </span><span class="n">ingestion</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">DashboardIngestion</span><span class="p">.</span><span class="na">Http</span><span class="p">(</span><span class="s">"https://stove.example.internal"</span><span class="p">)</span>
+</span><span id="__span-8-6"><a id="__codelineno-8-6" name="__codelineno-8-6" href="#__codelineno-8-6"></a><span class="w">    </span><span class="p">)</span>
+</span><span id="__span-8-7"><a id="__codelineno-8-7" name="__codelineno-8-7" href="#__codelineno-8-7"></a><span class="p">}</span>
+</span></code></pre></div>
+<p>Provide a base URL, not <code>/ingest</code> or <code>/api/v1/events</code>. The clients append their endpoint paths. TLS can terminate at the ingress; the test JVM must trust the presented certificate. For a gateway prefix, use the same prefix in both base URLs and configure the server's <a href="../../Components/18-dashboard/#open-evidence-from-a-report">public URL</a> and gateway routing consistently.</p>
+<p>The ingress must forward <code>POST /ingest</code> with its query parameters and multipart body, preserve <code>X-Stove-Run-Id</code>, <code>X-Stove-Service-Name</code>, and <code>X-Stove-Instance-Id</code>, and allow requests up to the server's 16 MiB upload limit. Dashboard events must reach the same logical storage so the referenced run exists. HTTPS does not change the recording format.</p>
+<h3 id="use-one-deployment-setting-in-local-runs-and-ci">Use one deployment setting in local runs and CI<a class="headerlink" href="#use-one-deployment-setting-in-local-runs-and-ci" title="Permanent link">&para;</a></h3>
+<p>To avoid configuring different destinations accidentally, read one environment variable in both places. <code>STOVE_SERVER_URL</code> below is a project convention explicitly wired by these snippets, not an automatically recognized Stove setting.</p>
+<div class="language-kotlin highlight"><pre><span></span><code><span id="__span-9-1"><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a><span class="c1">// build.gradle.kts; inside the existing stoveTracing configuration:</span>
+</span><span id="__span-9-2"><a id="__codelineno-9-2" name="__codelineno-9-2" href="#__codelineno-9-2"></a><span class="n">stoveTracing</span><span class="w"> </span><span class="p">{</span>
+</span><span id="__span-9-3"><a id="__codelineno-9-3" name="__codelineno-9-3" href="#__codelineno-9-3"></a><span class="w">    </span><span class="n">profiling</span><span class="w"> </span><span class="p">{</span>
+</span><span id="__span-9-4"><a id="__codelineno-9-4" name="__codelineno-9-4" href="#__codelineno-9-4"></a><span class="w">        </span><span class="n">enabled</span><span class="p">.</span><span class="na">set</span><span class="p">(</span><span class="kc">true</span><span class="p">)</span>
+</span><span id="__span-9-5"><a id="__codelineno-9-5" name="__codelineno-9-5" href="#__codelineno-9-5"></a><span class="w">        </span><span class="n">serverUrl</span><span class="p">.</span><span class="na">set</span><span class="p">(</span><span class="n">providers</span><span class="p">.</span><span class="na">environmentVariable</span><span class="p">(</span><span class="s">"STOVE_SERVER_URL"</span><span class="p">))</span>
+</span><span id="__span-9-6"><a id="__codelineno-9-6" name="__codelineno-9-6" href="#__codelineno-9-6"></a><span class="w">    </span><span class="p">}</span>
+</span><span id="__span-9-7"><a id="__codelineno-9-7" name="__codelineno-9-7" href="#__codelineno-9-7"></a><span class="p">}</span>
+</span></code></pre></div>
+<div class="language-kotlin highlight"><pre><span></span><code><span id="__span-10-1"><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a><span class="c1">// Test setup; inside the existing Stove().with { ... } block:</span>
+</span><span id="__span-10-2"><a id="__codelineno-10-2" name="__codelineno-10-2" href="#__codelineno-10-2"></a><span class="n">dashboard</span><span class="w"> </span><span class="p">{</span>
+</span><span id="__span-10-3"><a id="__codelineno-10-3" name="__codelineno-10-3" href="#__codelineno-10-3"></a><span class="w">    </span><span class="n">DashboardSystemOptions</span><span class="p">(</span>
+</span><span id="__span-10-4"><a id="__codelineno-10-4" name="__codelineno-10-4" href="#__codelineno-10-4"></a><span class="w">        </span><span class="n">appName</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">"checkout-api"</span><span class="p">,</span>
+</span><span id="__span-10-5"><a id="__codelineno-10-5" name="__codelineno-10-5" href="#__codelineno-10-5"></a><span class="w">        </span><span class="n">ingestion</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">DashboardIngestion</span><span class="p">.</span><span class="na">Http</span><span class="p">(</span>
+</span><span id="__span-10-6"><a id="__codelineno-10-6" name="__codelineno-10-6" href="#__codelineno-10-6"></a><span class="w">            </span><span class="n">requireNotNull</span><span class="p">(</span><span class="n">System</span><span class="p">.</span><span class="na">getenv</span><span class="p">(</span><span class="s">"STOVE_SERVER_URL"</span><span class="p">))</span><span class="w"> </span><span class="p">{</span>
+</span><span id="__span-10-7"><a id="__codelineno-10-7" name="__codelineno-10-7" href="#__codelineno-10-7"></a><span class="w">                </span><span class="s">"STOVE_SERVER_URL must point to the shared Stove deployment"</span>
+</span><span id="__span-10-8"><a id="__codelineno-10-8" name="__codelineno-10-8" href="#__codelineno-10-8"></a><span class="w">            </span><span class="p">}</span>
+</span><span id="__span-10-9"><a id="__codelineno-10-9" name="__codelineno-10-9" href="#__codelineno-10-9"></a><span class="w">        </span><span class="p">)</span>
+</span><span id="__span-10-10"><a id="__codelineno-10-10" name="__codelineno-10-10" href="#__codelineno-10-10"></a><span class="w">    </span><span class="p">)</span>
+</span><span id="__span-10-11"><a id="__codelineno-10-11" name="__codelineno-10-11" href="#__codelineno-10-11"></a><span class="p">}</span>
+</span></code></pre></div>
+<div class="language-shell highlight"><pre><span></span><code><span id="__span-11-1"><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a><span class="nv">STOVE_SERVER_URL</span><span class="o">=</span>https://stove.example.internal<span class="w"> </span>./gradlew<span class="w"> </span>:your-project:e2eTest
+</span></code></pre></div>
+<p>Set that variable in the CI job or IntelliJ's Gradle run configuration as well. Use a base URL without credentials, query parameters, fragments, or an endpoint suffix. <code>serviceName</code> still belongs in the outer <code>stoveTracing</code> configuration. <code>appName</code> groups dashboard runs; the service name identifies the profiled service within a run. Using the same name for a single application makes navigation easier.</p>
+<h3 id="routes-ports-and-gateway-prefixes">Routes, ports, and gateway prefixes<a class="headerlink" href="#routes-ports-and-gateway-prefixes" title="Permanent link">&para;</a></h3>
+<p>Both HTTP clients use the server's HTTP port, <strong>4040</strong> by default. An ingress typically exposes that port as HTTPS on <strong>443</strong>. Profiles never use the gRPC event port, <strong>4041</strong>. You may keep gRPC for dashboard events and HTTPS for profiles if both reach the same storage; selecting <code>DashboardIngestion.Http</code> is convenient for an HTTPS-only deployment.</p>
+<table>
+<thead>
+<tr>
+<th>Public route</th>
+<th>Request / response</th>
+<th>Used by</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>POST /api/v1/events</code></td>
+<td><code>application/x-protobuf</code> dashboard event; protobuf acknowledgement</td>
+<td>Test dashboard transport</td>
+</tr>
+<tr>
+<td><code>POST /ingest?format=jfr&amp;name=…&amp;from=…&amp;until=…&amp;sampleRate=…</code></td>
+<td><code>multipart/form-data</code> with its boundary, JFR and optional label parts; HTTP 200 on success</td>
+<td>Pyroscope Java uploader</td>
+</tr>
+<tr>
+<td><code>GET /api/v1/runs/{run_id}/profiles</code></td>
+<td>JSON profile report</td>
+<td>Drill Down and API clients</td>
+</tr>
+<tr>
+<td><code>GET /api/v1/health</code></td>
+<td>Server health response</td>
+<td>Deployment verification</td>
+</tr>
+<tr>
+<td><code>GET /api/v1/events/stream</code></td>
+<td>Server-sent events; preserve streaming behavior</td>
+<td>Live dashboard updates</td>
+</tr>
+<tr>
+<td><code>/</code>, UI assets, and other <code>/api/v1/*</code> routes</td>
+<td>Existing dashboard routes</td>
+<td>Browser</td>
+</tr>
+<tr>
+<td><code>/mcp</code></td>
+<td>Existing MCP endpoint</td>
+<td>Agent clients</td>
+</tr>
+</tbody>
+</table>
+<p>Apply any public prefix to <strong>all</strong> of these routes. With a base URL of <code>https://stove.example.internal/observe</code>, uploads go to <code>/observe/ingest</code> and <code>/observe/api/v1/events</code>. Configure the server with:</p>
+<div class="language-toml highlight"><pre><span></span><code><span id="__span-12-1"><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a><span class="n">public_url</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"https://stove.example.internal/observe"</span>
+</span></code></pre></div>
+<p>Stove then serves both prefixed and root routes. The gateway may preserve <code>/observe</code> or strip it exactly once before forwarding to Stove. Keep that rule consistent; do not append the prefix twice. <code>public_url</code> controls server routes and generated links; it does not configure either client, provision TLS, or add authentication. Point clients directly at the final HTTPS address instead of relying on redirects of binary POST requests.</p>
+<p>Forward query values, the multipart boundary, and binary part bytes unchanged. Do not translate uploads into JSON or route <code>/ingest</code> to an OTel receiver. Preserve <code>Content-Type</code> and these headers:</p>
+<table>
+<thead>
+<tr>
+<th>Header</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>X-Stove-Run-Id</code></td>
+<td>Exact dashboard run created by Stove; required, nonblank, at most 256 bytes</td>
+</tr>
+<tr>
+<td><code>X-Stove-Service-Name</code></td>
+<td>Profile service from <code>stoveTracing.serviceName</code>; at most 256 bytes; the server can fall back to the query name</td>
+</tr>
+<tr>
+<td><code>X-Stove-Instance-Id</code></td>
+<td>Stable identifier for this profiler lifecycle, generated by Stove; required, nonblank, at most 256 bytes</td>
+</tr>
+</tbody>
+</table>
+<p>These are association fields, <strong>not authentication credentials</strong>. Gateways must not replace them with a constant or guess a run ID. The run-start event must reach storage before its profile is accepted. Load-balanced replicas must share the same database; independent SQLite databases behind one hostname can produce intermittent missing-run responses. See <a href="../../Components/18-dashboard/#run-multiple-replicas">multiple replicas</a> for the shared PostgreSQL setup.</p>
+<h3 id="upload-limits-timeouts-and-retries">Upload limits, timeouts, and retries<a class="headerlink" href="#upload-limits-timeouts-and-retries" title="Permanent link">&para;</a></h3>
+<p>Allow at least <strong>16 MiB (16,777,216 bytes)</strong> for the complete profile request body, including multipart overhead, at every proxy/WAF hop. For example, the relevant NGINX location can use <code>client_max_body_size 16m;</code>. Equivalent settings differ by ingress controller. A proxy allowing larger requests does not raise Stove's fixed 16 MiB limit. Gzip-compressed parts also remain subject to the server's <a href="#storage-and-resource-limits">decoded and normalized limits</a>.</p>
+<p>The Java integration configures a <strong>5-second profile export timeout</strong> and <strong>two ingestion retries</strong>. Dashboard HTTP events have a separate <strong>5-second connection timeout</strong> and <strong>10-second request timeout</strong>. These are independent of the default 10-second profile upload interval. A long proxy timeout cannot extend the client's deadline; measure upload and conversion latency when diagnosing timeouts. Preserve upstream status codes so the client can recognize failures.</p>
+<p>An unknown run or unavailable conversion slot returns 503; there are two conversion slots per server process. Retries of the same recording are idempotent. Collection and upload are best effort, not a durable delivery queue: exhausted retries, process termination, and failed teardown can leave gaps. Keep normal Stove teardown enabled so it can flush the pending interval. Reducing the interval can reduce individual recording size, but increases upload/conversion frequency.</p>
+<h3 id="tls-and-authentication">TLS and authentication<a class="headerlink" href="#tls-and-authentication" title="Permanent link">&para;</a></h3>
+<p>TLS usually terminates at the existing ingress, which forwards HTTP to Stove on the private network. The test JVM must trust the certificate issuer and the certificate must match the public hostname. A browser or <code>curl</code> succeeding does not prove Java trust is configured: the Gradle test JVM may use a different JDK and trust store from the browser, shell, or Gradle daemon.</p>
+<p>For an internal CA, provision the approved CA chain in the test JDK's trust store, or configure a dedicated trust store on the selected Gradle <code>Test</code> tasks using the JVM properties <code>javax.net.ssl.trustStore</code>, <code>javax.net.ssl.trustStoreType</code>, and, when required, <code>javax.net.ssl.trustStorePassword</code>. Keep any password in the existing CI secret mechanism. Setting properties only on the Gradle daemon does not configure forked test JVMs. Check the Gradle Java toolchain and IntelliJ Gradle JVM when local and CI results differ. Do not disable certificate or hostname verification.</p>
+<p>Stove's endpoints have no built-in authentication or authorization. Keep the deployment behind the existing trusted network/access boundary. Neither <code>stoveTracing.profiling</code> nor <code>DashboardIngestion.Http</code> currently exposes arbitrary authentication headers or a dedicated client-certificate configuration API.</p>
+<table>
+<thead>
+<tr>
+<th>Gateway requirement</th>
+<th>Current integration</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Trusted private connectivity with server-side TLS</td>
+<td>Supported when the test JVM can reach the host and trusts its certificate</td>
+</tr>
+<tr>
+<td>Browser SSO / login redirect</td>
+<td>Browser login does not authenticate either uploader; they do not share browser cookies</td>
+</tr>
+<tr>
+<td>Bearer token, API key, or Basic authentication</td>
+<td>No supported DSL configuration for these credentials; requires additional client integration</td>
+</tr>
+<tr>
+<td>Mutual TLS</td>
+<td>No dedicated Stove DSL support; requires separately provisioned client TLS integration and verification for both transports</td>
+</tr>
+</tbody>
+</table>
+<p>Do not put tokens in query strings or URL credentials, assume Pyroscope environment variables override Stove's programmatic configuration, or remove gateway authentication to make ingestion work. Where machine authentication is required, arrange a supported machine access path with the gateway owner or implement the missing client integration. Configure MCP client authentication separately; it does not configure test uploads.</p>
+<h3 id="verify-a-shared-deployment">Verify a shared deployment<a class="headerlink" href="#verify-a-shared-deployment" title="Permanent link">&para;</a></h3>
+<ol>
+<li>From the same developer machine or CI runner, check <code>curl --fail-with-body https://stove.example.internal/api/v1/health</code> (include the prefix when used). This verifies that route and curl's TLS path, not Java trust or profiling ingestion.</li>
+<li>Run the selected Gradle test task with profiling and dashboard registration enabled. Confirm that the application run appears in the shared dashboard.</li>
+<li>Allow an upload interval or let the suite finish normally. In gateway/server logs, verify <code>POST /ingest</code> reaches the intended route and receives HTTP 200. A successful dashboard event alone does not verify profiles.</li>
+<li>Select that exact run in <strong>Drill Down</strong> and check the service and recording window. An API check can use <code>GET /api/v1/runs/{run_id}/profiles</code> with the actual run ID. HTTP 200 with no series still requires checking recording contents, selectors, and retention.</li>
+</ol>
+<table>
+<thead>
+<tr>
+<th>Observed failure</th>
+<th>What to inspect</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>TLS handshake, PKIX, or hostname error</td>
+<td>Certificate chain, public hostname, and the trust store of the actual test JVM</td>
+</tr>
+<tr>
+<td>301/302/307/308 or an HTML login page</td>
+<td>Final HTTPS URL, path redirects, and machine authentication; HTTP 200 containing login HTML is not an ingestion acknowledgement</td>
+</tr>
+<tr>
+<td>401/403</td>
+<td>Gateway authentication or network policy; the profiling DSL has no token/header option</td>
+</tr>
+<tr>
+<td>404/405 or dashboard HTML from the upload route</td>
+<td>Wrong prefix, missing POST route, stale server version, or SPA fallback routing</td>
+</tr>
+<tr>
+<td>400 from Stove</td>
+<td>Error body: required query/header fields, JFR format, multipart parts, or decoded/normalized size limits</td>
+</tr>
+<tr>
+<td>413, or an oversized-field error</td>
+<td>Body limits at every hop; multipart read failures can also surface as 400 from Stove</td>
+</tr>
+<tr>
+<td>Persistent 503</td>
+<td>Missing run in the target database, conversion saturation, or database availability; correlate with server logs</td>
+</tr>
+<tr>
+<td>502/504 or client timeout</td>
+<td>Gateway upstream reachability, server load, and client deadlines</td>
+</tr>
+<tr>
+<td>Run appears but Drill Down stays empty</td>
+<td>Independent profiler destination, agent attachment, rejected uploads, window filters, retention, or unsupported application runtime</td>
+</tr>
+</tbody>
+</table>
+<p>Use timestamps and run/service/instance IDs to correlate logs. Avoid logging full profile bodies or gateway credentials.</p>
+<h2 id="explore-drill-down">Explore Drill Down<a class="headerlink" href="#explore-drill-down" title="Permanent link">&para;</a></h2>
+<ol>
+<li>Select the application and run, then <strong>Drill Down · whole run</strong>.</li>
+<li>Choose a profile type. CPU is selected first when available; metric cards show totals in readable units. A service selector appears only when the run's returned profiles contain multiple services.</li>
+<li>Keep <strong>Entire run</strong>, or select a test's recording window. The filter includes whole recordings that overlap the test, including other threads and background work; it is not exact per-test attribution.</li>
+<li>Search by method or source file. Matching graph frames are highlighted and the hottest-methods table is filtered.</li>
+<li>Click a frame to zoom. Use <strong>Zoom out</strong>, <strong>Reset zoom</strong>, or <strong>All stacks</strong> to move back. Zoom persists across refreshes while that path remains available.</li>
+<li>Rank the returned hottest methods by <strong>Self cost</strong> or <strong>Including callees</strong>. Select a method to highlight its occurrences in the displayed graph.</li>
+</ol>
+<p>The flame graph places callers at the top and deeper calls below. Width shows sampled cost, and color distinguishes methods; color is not a severity score. Hover or focus a frame to inspect its name, value, total share, and available source location. Narrow frames and very deep levels can be hidden at a given zoom; zoom further to inspect them.</p>
+<p><strong>Self</strong> excludes callees; <strong>Total</strong> includes them. <strong>Stack records</strong> counts aggregated records, not an exact number of method calls. CPU totals across threads can exceed the recording's wall-clock duration. Live runs refresh every five seconds; this is separate from the profiler's upload interval.</p>
+<p><strong>Graph coverage</strong> describes the fraction of the total represented by returned stacks. The API returns at most 200 stacks per series; omitted stack values still contribute to method totals. The table contains at most 20 returned hotspots, so reordering it does not fetch a complete ranking of every method. Check coverage and truncation before treating an empty search as evidence that a method did no work.</p>
+<h2 id="memory-leaks-and-early-findings">Memory leaks and early findings<a class="headerlink" href="#memory-leaks-and-early-findings" title="Permanent link">&para;</a></h2>
+<p>Allocation profiles show allocation pressure. Many short-lived allocations can increase GC work without causing a leak. Live-allocation profiles show sampled surviving objects and their allocation stacks. Stove uses the latest recording <strong>per instance</strong> in the selected window and combines instances, instead of summing repeated live snapshots.</p>
+<p>These profiles are not heap dumps, retained-size measurements, object reference paths, or proof of a memory leak. When survival or allocation patterns look suspicious, inspect the source and compare equivalent workloads, JVM settings, process counts, and recording windows. Use heap/GC evidence to investigate persistent growth and retention paths. A single sampled run cannot establish a leak.</p>
+<p>Hotspot and coverage findings include evidence and suggestions. Use them to identify a concrete hypothesis, change the relevant code, and rerun a comparable scenario. Sampling and warmup differences can move totals; Stove does not automatically declare performance regressions or fail tests based on profile findings.</p>
+<h2 id="agent-investigation-through-mcp">Agent investigation through MCP<a class="headerlink" href="#agent-investigation-through-mcp" title="Permanent link">&para;</a></h2>
+<p>Agents use the existing Stove Server <a href="../../Components/21-mcp/">MCP endpoint</a>. No separate profiling MCP server is required. Select the exact run first, then call:</p>
+<div class="language-json highlight"><pre><span></span><code><span id="__span-13-1"><a id="__codelineno-13-1" name="__codelineno-13-1" href="#__codelineno-13-1"></a><span class="p">{</span>
+</span><span id="__span-13-2"><a id="__codelineno-13-2" name="__codelineno-13-2" href="#__codelineno-13-2"></a><span class="w">  </span><span class="nt">"name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"stove_profiles"</span><span class="p">,</span>
+</span><span id="__span-13-3"><a id="__codelineno-13-3" name="__codelineno-13-3" href="#__codelineno-13-3"></a><span class="w">  </span><span class="nt">"arguments"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+</span><span id="__span-13-4"><a id="__codelineno-13-4" name="__codelineno-13-4" href="#__codelineno-13-4"></a><span class="w">    </span><span class="nt">"run_id"</span><span class="p">:</span><span class="w"> </span><span class="s2">"exact-run-id"</span><span class="p">,</span>
+</span><span id="__span-13-5"><a id="__codelineno-13-5" name="__codelineno-13-5" href="#__codelineno-13-5"></a><span class="w">    </span><span class="nt">"service"</span><span class="p">:</span><span class="w"> </span><span class="s2">"checkout-api"</span><span class="p">,</span>
+</span><span id="__span-13-6"><a id="__codelineno-13-6" name="__codelineno-13-6" href="#__codelineno-13-6"></a><span class="w">    </span><span class="nt">"metric"</span><span class="p">:</span><span class="w"> </span><span class="s2">"process_cpu:cpu"</span>
+</span><span id="__span-13-7"><a id="__codelineno-13-7" name="__codelineno-13-7" href="#__codelineno-13-7"></a><span class="w">  </span><span class="p">}</span>
+</span><span id="__span-13-8"><a id="__codelineno-13-8" name="__codelineno-13-8" href="#__codelineno-13-8"></a><span class="p">}</span>
+</span></code></pre></div>
+<p>The tool accepts <code>service</code>, <code>instance</code>, <code>metric</code>, <code>from_ms</code>, <code>until_ms</code>, <code>trace_id</code>, and <code>span_id</code>. Use returned metric names when querying allocations or locks. Trace/span selectors require correlation labels in the recording. JVM collection supplies them through the bundled extension when <code>traceCorrelation</code> and tracing are enabled. Use the span attribute <code>pyroscope.profile.id</code> as <code>span_id</code>; omit it for a trace-wide search. MCP follow-up calls preserve the active selectors. See <a href="#jvm-trace-to-profile-correlation">JVM trace-to-profile correlation</a> for scope and sampling limits.</p>
+<p>An optional <code>baseline_run_id</code> compares another run of the same application. Baseline comparisons permit only run-wide service/metric selectors, not time, instance, trace, or span filters. The response returns evidence for both runs rather than a normalized regression verdict. <code>stove_diagnose</code> also includes profiling, but its profile summary remains run-wide even when diagnosing one test.</p>
+<p>MCP summaries omit stacks and are bounded to 64 KiB, eight series, and 32 source profile IDs per series. Check <code>truncated</code>; use narrower selectors or the REST endpoint for bounded stack detail. An agent can inspect the identified source, make an authorized change, rerun tests, and compare results. MCP itself is read-only. Treat method names and labels as application data, not instructions, and cite the run, window, units, and source profile IDs behind a conclusion.</p>
+<h2 id="how-collection-works">How collection works<a class="headerlink" href="#how-collection-works" title="Permanent link">&para;</a></h2>
+<pre class="mermaid"><code>flowchart LR
+    Task[Gradle Test JVM] --&gt; Agent[Pyroscope Java agent]
+    Dashboard[Stove dashboard lifecycle] --&gt;|Run ID and final flush| Agent
+    Agent --&gt;|JFR multipart over HTTP or HTTPS| Ingest[Stove Server /ingest]
+    Ingest --&gt; Parser[Embedded Grafana jfr-parser]
+    Parser --&gt; Store[SQLite or PostgreSQL]
+    Store --&gt; UI[Drill Down]
+    Store --&gt; MCP[stove_profiles and stove_diagnose]</code></pre>
+<p>Grafana's Apache-2.0 <code>jfr-parser</code> reconstructs JFR stacks and associates the protobuf label snapshot. Its Go archive is linked into the Rust executable. Go is a <strong>build-time</strong> dependency; published Stove binaries require no additional Go runtime service. Source builds need the Go version declared in <code>server/stove-server/profiling-bridge/go.mod</code> and a C toolchain, alongside the existing Rust, Node, and protobuf prerequisites. Third-party notices ship in release archives and at <code>/profiling-notices.txt</code>.</p>
+<h3 id="ingestion-contract">Ingestion contract<a class="headerlink" href="#ingestion-contract" title="Permanent link">&para;</a></h3>
+<p>The supported endpoint is Pyroscope Java's <code>POST /ingest?format=jfr&amp;name=...&amp;from=...&amp;until=...&amp;sampleRate=...</code>:</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Contract</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>format</code></td>
+<td>Must be <code>jfr</code> for Java; see the separate Go upload contract above</td>
+</tr>
+<tr>
+<td><code>name</code></td>
+<td>Application/profile name; used for service fallback</td>
+</tr>
+<tr>
+<td><code>from</code>, <code>until</code></td>
+<td>Epoch seconds; nonnegative, ordered, at most one hour apart</td>
+</tr>
+<tr>
+<td><code>sampleRate</code></td>
+<td>Optional, defaults to 100; accepted range 1–100,000</td>
+</tr>
+<tr>
+<td><code>X-Stove-Run-Id</code></td>
+<td>Required, exact existing Stove run ID</td>
+</tr>
+<tr>
+<td><code>X-Stove-Instance-Id</code></td>
+<td>Required, stable identity for the profiled process instance</td>
+</tr>
+<tr>
+<td><code>X-Stove-Service-Name</code></td>
+<td>Optional service override</td>
+</tr>
+<tr>
+<td>Multipart <code>jfr</code></td>
+<td>Required JFR bytes, optionally gzip-compressed</td>
+</tr>
+<tr>
+<td>Multipart <code>labels</code></td>
+<td>Optional Pyroscope protobuf label snapshot, optionally gzip-compressed</td>
+</tr>
+</tbody>
+</table>
+<p>The Java integration supplies these headers automatically. Unknown or duplicate multipart fields are rejected. Repeated uploads of the same recording and identity are idempotent. An unknown run or exhausted conversion slots produces 503 so the agent can retry; invalid formats do not become supported through retries.</p>
+<p>For a separate JVM, providing only a server URL is insufficient: the uploader must implement this contract and bind to the exact dashboard run. <code>DashboardExternalProfilingOptions</code> exposes the exact run identity to runner environment mappers, but Java agent attachment and lifecycle still require custom integration. Treat external JVM integration as custom work, not a supported one-line agent recipe. Do not guess a run ID from the latest run of an application.</p>
+<h3 id="storage-and-resource-limits">Storage and resource limits<a class="headerlink" href="#storage-and-resource-limits" title="Permanent link">&para;</a></h3>
+<p>Profiles use the server's configured SQLite or PostgreSQL database. Run retention and purge delete associated profiles.</p>
+<table>
+<thead>
+<tr>
+<th>Boundary</th>
+<th>Limit</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Upload body</td>
+<td>16 MiB</td>
+</tr>
+<tr>
+<td>Each decoded multipart part</td>
+<td>32 MiB</td>
+</tr>
+<tr>
+<td>Normalized recording</td>
+<td>32 MiB before compression; 8 MiB compressed</td>
+</tr>
+<tr>
+<td>Concurrent profile conversions</td>
+<td>2</td>
+</tr>
+<tr>
+<td>Retained per run</td>
+<td>256 newest chunks and 64 MiB of compressed profiles</td>
+</tr>
+<tr>
+<td>Query decoding</td>
+<td>64 MiB, newest first</td>
+</tr>
+<tr>
+<td>REST response</td>
+<td>32 series, 20 hotspots and 200 stacks per series</td>
+</tr>
+</tbody>
+</table>
+<p>Normalized recordings share frame definitions across stacks and metrics to avoid repeating long method names. These limits bound accepted payloads and retained data, not total parser process memory. Include conversion overhead when sizing a shared server.</p>
+<p><code>GET /api/v1/runs/{run_id}/profiles</code> accepts <code>service</code>, <code>instance</code>, <code>metric</code>, <code>from_ms</code>, <code>until_ms</code>, <code>trace_id</code>, and <code>span_id</code>. Query times are <strong>milliseconds</strong>, unlike upload times. Responses expose truncation and omitted stack values. Older recordings may already have been evicted by run-level retention; narrowing a query cannot recover them.</p>
+<h2 id="troubleshooting">Troubleshooting<a class="headerlink" href="#troubleshooting" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>Symptom</th>
+<th>Check</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>No recordings from IntelliJ</td>
+<td>Delegate to the configured Gradle test task; the native runner bypasses Java-agent attachment</td>
+</tr>
+<tr>
+<td>Short run shows nothing until completion</td>
+<td>Wait for graceful teardown and its final flush; a hard kill loses the pending interval</td>
+</tr>
+<tr>
+<td>Go application is absent</td>
+<td>Check the Go wrapper, exact-run environment mappings, reachable URL, and graceful flush</td>
+</tr>
+<tr>
+<td>Empty selected test window</td>
+<td>Use <strong>Show entire run</strong>; recordings may not overlap the selected test or may have been evicted</td>
+</tr>
+<tr>
+<td>Profiles still go to localhost</td>
+<td>Set <code>profiling.serverUrl</code>; it does not inherit the dashboard ingestion URL</td>
+</tr>
+<tr>
+<td>Run exists but uploads fail</td>
+<td>Check the test logs, proxy <code>/ingest</code> routing, headers, TLS trust, body limits, and server version</td>
+</tr>
+<tr>
+<td>Upload returns 503</td>
+<td>Verify the exact run reached the same storage; check conversion load if retries persist</td>
+</tr>
+<tr>
+<td>Native profiler cannot start</td>
+<td>Check JVM/OS/architecture support and whether another profiler already owns this JVM</td>
+</tr>
+<tr>
+<td>Large allocation upload rejected</td>
+<td>Check size/conversion errors; reduce recording size or allocation detail before increasing infrastructure limits</td>
+</tr>
+<tr>
+<td>Missing trace-specific results</td>
+<td>Check correlation labels; use the run-wide view when recordings have no trace/span labels</td>
+</tr>
+</tbody>
+</table>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+  <script>var tabs=__md_get("__tabs");if(Array.isArray(tabs))e:for(var set of document.querySelectorAll(".tabbed-set")){var labels=set.querySelector(".tabbed-labels");for(var tab of tabs)for(var label of labels.getElementsByTagName("label"))if(label.innerText.trim()===tab){var input=document.getElementById(label.htmlFor);input.checked=!0;continue e}}</script>
+
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+    
+      
+      <nav class="md-footer__inner md-grid" aria-label="Footer" >
+        
+          
+          <a href="../../Components/15-tracing/" class="md-footer__link md-footer__link--prev" aria-label="Previous: Tracing">
+            <div class="md-footer__button md-icon">
+              
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+            </div>
+            <div class="md-footer__title">
+              <span class="md-footer__direction">
+                Previous
+              </span>
+              <div class="md-ellipsis">
+                Tracing
+              </div>
+            </div>
+          </a>
+        
+        
+          
+          <a href="../../Components/18-dashboard/" class="md-footer__link md-footer__link--next" aria-label="Next: Dashboard">
+            <div class="md-footer__title">
+              <span class="md-footer__direction">
+                Next
+              </span>
+              <div class="md-ellipsis">
+                Dashboard
+              </div>
+            </div>
+            <div class="md-footer__button md-icon">
+              
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M4 11v2h12l-5.5 5.5 1.42 1.42L19.84 12l-7.92-7.92L10.5 5.5 16 11z"/></svg>
+            </div>
+          </a>
+        
+      </nav>
+    
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+        
+<div class="md-social">
+  
+    
+    
+    
+    
+      
+      
+    
+    <a href="https://github.com/trendyol/stove" target="_blank" rel="noopener" title="github.com" class="md-social__link">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+    </a>
+  
+    
+    
+    
+    
+      
+      
+    
+    <a href="https://trendyol.github.io/" target="_blank" rel="noopener" title="trendyol.github.io" class="md-social__link">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 384 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M64 48c-8.8 0-16 7.2-16 16v384c0 8.8 7.2 16 16 16h80v-80c0-17.7 14.3-32 32-32h32c17.7 0 32 14.3 32 32v80h80c8.8 0 16-7.2 16-16V64c0-8.8-7.2-16-16-16zM0 64C0 28.7 28.7 0 64 0h256c35.3 0 64 28.7 64 64v384c0 35.3-28.7 64-64 64H64c-35.3 0-64-28.7-64-64zm96 48c0-8.8 7.2-16 16-16h32c8.8 0 16 7.2 16 16v32c0 8.8-7.2 16-16 16h-32c-8.8 0-16-7.2-16-16zm144-16h32c8.8 0 16 7.2 16 16v32c0 8.8-7.2 16-16 16h-32c-8.8 0-16-7.2-16-16v-32c0-8.8 7.2-16 16-16M96 240c0-8.8 7.2-16 16-16h32c8.8 0 16 7.2 16 16v32c0 8.8-7.2 16-16 16h-32c-8.8 0-16-7.2-16-16zm144-16h32c8.8 0 16 7.2 16 16v32c0 8.8-7.2 16-16 16h-32c-8.8 0-16-7.2-16-16v-32c0-8.8 7.2-16 16-16"/></svg>
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+      <div class="md-progress" data-md-component="progress" role="progressbar"></div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": ["navigation.instant", "navigation.instant.progress", "navigation.tracking", "navigation.tabs", "navigation.sections", "navigation.indexes", "navigation.top", "navigation.footer", "navigation.path", "search.highlight", "search.share", "search.suggest", "content.code.copy", "content.code.annotate", "content.tabs.link", "content.tooltips", "header.autohide", "toc.follow"], "search": "../../assets/javascripts/workers/search.a7633da7.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../../assets/javascripts/bundle.c21346df.min.js"></script>
+      
+        <script src="../../assets/rough-notation.iife.js"></script>
+      
+        <script src="../../js/rough-notation-mkdocs.js"></script>
+      
+        <script src="https://cdn.jsdelivr.net/npm/alpinejs@3.13.10/dist/cdn.min.js"></script>
+      
+        <script src="../../js/wizard.js"></script>
+      
+        <script src="../../js/prism-init.js"></script>
+      
+        <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/components/prism-core.min.js"></script>
+      
+        <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/components/prism-clike.min.js"></script>
+      
+        <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/components/prism-java.min.js"></script>
+      
+        <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/components/prism-kotlin.min.js"></script>
+      
+        <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/components/prism-properties.min.js"></script>
+      
+        <script src="../../js/kotlin-playground-init.js"></script>
+      
+        <script src="../../js/stove-flow.js"></script>
+      
+    
+  </body>
+</html>
