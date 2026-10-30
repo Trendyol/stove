@@ -111,3 +111,5 @@ profiling. Follow [profiling.md](profiling.md) for configuration, HTTPS, lifecyc
 IntelliJ execution, and Drill Down. The plugin profiles the test JVM only. Native Go profiling uses the separate
 `go/stove-profiler` wrapper and dashboard environment mappings described in that guide.
 Other native runtime formats remain unsupported.
+
+When JVM profiling is enabled alongside tracing, `profiling.traceCorrelation` defaults to true and loads the bundled Pyroscope OTel extension. Stove owns profiler startup/shutdown; do not enable the extension’s automatic startup. See [JVM correlation](profiling.md) for local root span attribution, selector contracts, and async/sampling limits.

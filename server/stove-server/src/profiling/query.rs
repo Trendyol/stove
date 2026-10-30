@@ -8,7 +8,7 @@ use std::collections::{BTreeMap, BTreeSet};
 use std::sync::Arc;
 use utoipa::{IntoParams, ToSchema};
 
-#[derive(Clone, Default, Deserialize, ToSchema, IntoParams)]
+#[derive(Clone, Default, Deserialize, Serialize, ToSchema, IntoParams)]
 #[into_params(parameter_in = Query)]
 #[serde(deny_unknown_fields)]
 pub struct ProfileQuery {

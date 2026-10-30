@@ -494,3 +494,25 @@ async fn go_snapshots_are_latest_per_metric_and_instance_including_empty_snapsho
     .unwrap();
   assert_eq!(total("go:inuse_space"), 30);
 }
+
+#[tokio::test]
+async fn mcp_preserves_correlation_selectors_in_follow_up() {
+  let server = TestServer::start().await;
+  server.seed_run("run", "app");
+  server
+    .repo
+    .save_profile(&chunk("run", "recording", "jvm", 2000, 5))
+    .unwrap();
+  let selectors = json!({"run_id":"run", "trace_id":"trace-1", "span_id":"span-1"});
+  let result = tool(&server, "stove_profiles", selectors.clone()).await;
+  let data = &result["result"]["structuredContent"];
+  assert!(!data["series"].as_array().unwrap().is_empty(), "{result}");
+  assert_eq!(data["detail_tool_call"]["arguments"], selectors);
+  let missing = tool(
+    &server,
+    "stove_profiles",
+    json!({"run_id":"run", "trace_id":"missing"}),
+  )
+  .await;
+  assert_eq!(missing["result"]["structuredContent"]["series"], json!([]));
+}

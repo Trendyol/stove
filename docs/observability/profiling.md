@@ -181,6 +181,7 @@ Recordings upload every ten seconds by default and once more during orderly tear
 | `enabled` | `false` | Opt in to JVM profiling |
 | `serverUrl` | `http://localhost:4040` | HTTP(S) base URL, optionally including a gateway prefix |
 | `agentVersion` | `2.9.2` | Tested Pyroscope Java agent version |
+| `traceCorrelation` | `true` | Attach the bundled Pyroscope OTel extension when tracing is also enabled |
 | `uploadIntervalSeconds` | `10` | Recording/upload interval, 1–3600 seconds |
 | `allocations` | `false` | Enable allocation sampling |
 | `allocationThreshold` | `512k` | Allocation sampling threshold passed to the agent |
@@ -190,6 +191,33 @@ Recordings upload every ten seconds by default and once more during orderly tear
 `serviceName` and `testTaskNames` belong to the outer `stoveTracing` block. An empty task list selects all Gradle `Test` tasks. Select only the intended tasks when you have unit, integration, and end-to-end suites.
 
 CPU collection uses async-profiler's ITIMER event. Native support depends on the JVM, OS, and architecture. Unsupported startup is logged without failing the test suite. Allocation, live-object, and lock collection add workload-dependent overhead and are opt-in. Stove does not force garbage collection before dumping profiles.
+
+## JVM trace-to-profile correlation
+
+When both tracing and profiling are enabled, `stoveTracing` automatically loads the Pyroscope OpenTelemetry Java-agent extension **2.1.4**. Keep the existing `tracing { enableSpanReceiver() }` and dashboard registration. No additional application dependency or backend is needed.
+
+The official shaded extension is bundled in the Stove Gradle plugin and extracted by `stoveExtractPyroscopeExtension`. Downstream builds do not need a GitHub repository or direct GitHub access. Stove's source build resolves the versioned GitHub release; `gradle/libs.versions.toml` pins the version. Maven's `io.pyroscope:otel` is the library, not this extension. Existing `otel.javaagent.extensions` entries are preserved.
+
+Stove sets `otel.pyroscope.start.profiling=false` and `otel.pyroscope.root.span.only=true`. The extension supplies correlation context; the dashboard still starts Pyroscope after assigning the run identity, configures the exporter and identity headers, flushes the last recording, and stops collection. Do not start another profiler. The extension bundles an older fallback profiler, but uses Stove's separately attached **2.9.2** agent through the shared API. Overriding `agentVersion` requires verifying compatibility with this extension.
+
+The default correlates **local root spans**: spans with no parent or a remote parent, such as an incoming HTTP request. Such spans receive `pyroscope.profile.id`. JFR samples carry their trace and span context; the embedded parser produces `trace_id` and `profile_id` labels. The REST/MCP `span_id` selector matches that `profile_id`, using the span's `pyroscope.profile.id` attribute.
+
+Open a span in the application's test trace view and choose **Drill Down · this span**. If it has no profile ID, **Drill Down · this trace** searches tagged samples across that trace. The panel shows the scope and offers **Show entire run**. A trace search may include several local root spans; it does not claim samples belong to the selected child span.
+
+Short operations may receive no samples. Coroutine, reactive, and other asynchronous thread transitions are not guaranteed to retain profiling context; OTel context propagation alone does not prove correct sample attribution. An empty result means no matching samples were found, not that the operation did no work. Refresh after upload or teardown, then inspect the whole run if needed. Allocation/live profiles still do not prove memory leaks.
+
+To keep profiling without correlation:
+
+```kotlin
+stoveTracing {
+    profiling {
+        enabled.set(true)
+        traceCorrelation.set(false)
+    }
+}
+```
+
+Setting the outer `stoveTracing.enabled=false` also omits the OTel agent and extension while preserving profiling. IntelliJ must delegate tests to Gradle for all this wiring; native Run Test bypasses it. This extension applies only to JVM profiling. Go still needs explicit runtime profiling labels.
 
 ## Shared Stove Server over HTTPS
 
@@ -370,7 +398,7 @@ Agents use the existing Stove Server [MCP endpoint](../Components/21-mcp.md). No
 }
 ```
 
-The tool accepts `service`, `instance`, `metric`, `from_ms`, `until_ms`, `trace_id`, and `span_id`. Use returned metric names when querying allocations or locks. Trace/span selectors require correlation labels in the recording; installing the OTel and Pyroscope agents together does not automatically guarantee that correlation.
+The tool accepts `service`, `instance`, `metric`, `from_ms`, `until_ms`, `trace_id`, and `span_id`. Use returned metric names when querying allocations or locks. Trace/span selectors require correlation labels in the recording. JVM collection supplies them through the bundled extension when `traceCorrelation` and tracing are enabled. Use the span attribute `pyroscope.profile.id` as `span_id`; omit it for a trace-wide search. MCP follow-up calls preserve the active selectors. See [JVM trace-to-profile correlation](#jvm-trace-to-profile-correlation) for scope and sampling limits.
 
 An optional `baseline_run_id` compares another run of the same application. Baseline comparisons permit only run-wide service/metric selectors, not time, instance, trace, or span filters. The response returns evidence for both runs rather than a normalized regression verdict. `stove_diagnose` also includes profiling, but its profile summary remains run-wide even when diagnosing one test.
 

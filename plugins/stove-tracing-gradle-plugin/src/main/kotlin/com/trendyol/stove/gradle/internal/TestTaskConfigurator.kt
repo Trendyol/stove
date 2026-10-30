@@ -41,6 +41,13 @@ internal object TestTaskConfigurator {
         "io.opentelemetry.javaagent:opentelemetry-javaagent:${extension.otelAgentVersion.get()}"
       )
 
+      if (extension.profiling.enabled.get() && extension.profiling.traceCorrelation.get()) {
+        val correlation = tasks.register("stoveExtractPyroscopeExtension", ExtractPyroscopeExtension::class.java) {
+          destination.set(layout.buildDirectory.file("stove/profiling/pyroscope-otel-javaagent-extension.jar"))
+        }
+        testTasks.forEach { ProfilingCorrelationConfigurator.configure(it, correlation) }
+      }
+
       testTasks.forEach { testTask ->
         configureTestTask(testTask, otelAgentConfig, extension)
       }

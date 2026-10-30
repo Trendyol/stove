@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { test, afterEach } from "node:test";
 import { JSDOM } from "jsdom";
 import createJiti from "jiti";
-import { run, testRecord } from "./helpers/fixtures.mjs";
+import { run, testRecord, span } from "./helpers/fixtures.mjs";
 
 const dom = new JSDOM("<html><body></body></html>", { url: "http://localhost" });
 Object.assign(globalThis, { window: dom.window, document: dom.window.document,
@@ -23,10 +23,10 @@ function report(value) {
       hotspots: [{frame:frame("Leaf"),self_value:value,inclusive_value:value,self_percent:100}],
       stacks: [{ frames:[frame("Root"),frame("Leaf")],value }], omitted_stack_value:0, findings:[] }] };
 }
-function mount() {
+function mount(props = {}) {
   const client = new QueryClient({ defaultOptions: {queries:{retry:false,gcTime:Infinity}} });
   clients.push(client);
-  return render(h(QueryClientProvider,{client},h(DrillDownPanel,{run,tests:[testRecord],onClose:()=>{}})));
+  return render(h(QueryClientProvider,{client},h(DrillDownPanel,{run,tests:[testRecord],onClose:()=>{},...props})));
 }
 test("profile zoom refreshes with new evidence and test selection requests an overlapping window",async()=>{
   let value=10;
@@ -121,4 +121,45 @@ test("zoom returns to all stacks when a refreshed recording no longer contains t
   fireEvent.click(screen.getByRole("button", { name: "Refresh" }));
   await waitFor(() => assert.ok(screen.getByRole("button", { name: "Other", exact: true })));
   assert.equal(screen.getByRole("button", { name: "Reset zoom" }).disabled, true);
+});
+
+test("span correlation sends exact selectors and empty results can return to the entire run", async () => {
+  const calls = [];
+  api.profiles = async (id, params) => { calls.push([id, new URLSearchParams(params)]); return {...report(0), series: []}; };
+  let cleared = false;
+  const screen = mount({correlation: {traceId: "trace-1", spanId: "span-1", name: "checkout"}, onClearCorrelation: () => {cleared = true;}});
+  await waitFor(() => assert.ok(screen.getByText("No correlated samples found")));
+  assert.equal(calls[0][0], run.id);
+  assert.equal(calls[0][1].get("trace_id"), "trace-1");
+  assert.equal(calls[0][1].get("span_id"), "span-1");
+  assert.equal(calls[0][1].has("from_ms"), false);
+  assert.equal(screen.queryByLabelText("Recording window"), null);
+  fireEvent.click(screen.getByRole("button", {name: "Show entire run"}));
+  assert.equal(cleared, true);
+});
+
+test("trace selection does not invent a profile id for uncorrelated child spans", async () => {
+  const calls = [];
+  api.profiles = async (id, params) => { calls.push(new URLSearchParams(params)); return report(10); };
+  const screen = mount({correlation: {traceId: "trace-2", name: "child"}});
+  await waitFor(() => assert.ok(screen.getByRole("button", {name: "Leaf", exact: true})));
+  assert.equal(calls[0].get("trace_id"), "trace-2");
+  assert.equal(calls[0].has("span_id"), false);
+});
+
+test("span inspector opens the exact run and profile id and falls back to trace scope", async () => {
+  const { SpanInspector } = await jiti.import("../src/components/span-tree/SpanInspector.tsx");
+  const { DrillDownNavigationProvider } = await jiti.import("../src/hooks/useDrillDownNavigation.tsx");
+  const calls = [];
+  let closed = 0;
+  const view = value => h(DrillDownNavigationProvider, {value: (...args) => calls.push(args)},
+    h(SpanInspector, {span: value, onClose: () => closed++}));
+  const screen = render(view({...span, attributes: JSON.stringify({"pyroscope.profile.id": "profile-root"})}));
+  fireEvent.click(screen.getByRole("button", {name: "Drill Down · this span"}));
+  assert.deepEqual(calls[0], [span.run_id, {traceId: span.trace_id, spanId: "profile-root", name: span.operation_name}]);
+  assert.equal(closed, 1);
+  screen.rerender(view({...span, attributes: null}));
+  fireEvent.click(screen.getByRole("button", {name: "Drill Down · this trace"}));
+  assert.equal(calls[1][1].spanId, undefined);
+  assert.equal(calls[1][1].traceId, span.trace_id);
 });

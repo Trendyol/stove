@@ -223,7 +223,7 @@ read [profiling.md](profiling.md) before changing application configuration.
 
 Use `stove_profiles(run_id, service?, metric?, instance?, from_ms?, until_ms?)`
 for method hotspots and sampled costs; exact `trace_id` / `span_id` selectors
-require correlation labels in the recording. Optional `baseline_run_id` compares
+require correlation labels in the recording. JVM tracing plus profiling enables the bundled OTel extension by default. Use `pyroscope.profile.id` from a local root span as `span_id`; for a child without that attribute, use `trace_id` alone. Preserve the exact run and selectors when following up. Short operations and async context gaps can yield no samples; do not claim no work occurred. Go requires explicit profiling labels. Optional `baseline_run_id` compares
 evidence from the same application with run-wide service/metric selectors.
 `stove_diagnose` includes run-wide profiling even when selecting a test.
 Check truncation, windows, units, sampling settings, process count, and workload

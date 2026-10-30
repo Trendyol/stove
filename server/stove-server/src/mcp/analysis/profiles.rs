@@ -81,7 +81,13 @@ impl Analyzer {
       }
     }
     let mut value = serde_json::to_value(report).map_err(|e| e.to_string())?;
-    value["detail_tool_call"] = json!({"name":"stove_profiles","arguments":{"run_id":run_id}});
+    let mut selectors = serde_json::to_value(query).map_err(|e| e.to_string())?;
+    let fields = selectors
+      .as_object_mut()
+      .ok_or("Profile selectors must be an object")?;
+    fields.retain(|_, value| !value.is_null());
+    fields.insert("run_id".into(), json!(run_id));
+    value["detail_tool_call"] = json!({"name":"stove_profiles","arguments":selectors});
     value["stack_detail"] = json!(
       "The run profiles REST endpoint contains the bounded flame graph stacks. profile_ids identify the source recording chunks."
     );

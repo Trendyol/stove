@@ -1,5 +1,6 @@
 [versions]
 pyroscope = "2.9.2"
+pyroscopeOtelExtension = "2.1.4"
 nav-oidc = "6.1.4"
 keycloak-testcontainers = "4.4.0"
 keycloak-admin = "26.0.12"

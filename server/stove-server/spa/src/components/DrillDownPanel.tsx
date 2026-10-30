@@ -2,6 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 import { api } from "../api/client";
 import type { ProfileSeries, Run, Test } from "../api/types";
+import type { ProfileCorrelation } from "../hooks/useDrillDownNavigation";
 import {
   formatProfileValue,
   frameKey,
@@ -17,16 +18,24 @@ export function DrillDownPanel({
   run,
   tests,
   onClose,
+  correlation,
+  onClearCorrelation,
 }: {
   run: Run;
   tests: Test[];
   onClose: () => void;
+  correlation?: ProfileCorrelation;
+  onClearCorrelation?: () => void;
 }) {
   const [service, setService] = useState("");
   const [metric, setMetric] = useState("");
   const [testId, setTestId] = useState("");
-  const testWindow = tests.find((t) => t.id === testId);
+  const testWindow = !correlation && tests.find((t) => t.id === testId);
   const parameters = new URLSearchParams();
+  if (correlation) {
+    parameters.set("trace_id", correlation.traceId);
+    if (correlation.spanId) parameters.set("span_id", correlation.spanId);
+  }
   if (testWindow) {
     parameters.set("from_ms", String(Date.parse(testWindow.started_at)));
     if (testWindow.ended_at) parameters.set("until_ms", String(Date.parse(testWindow.ended_at)));
@@ -44,6 +53,9 @@ export function DrillDownPanel({
     .sort((a, b) => profileOrder(a) - profileOrder(b) || a.metric.localeCompare(b.metric));
   const selected = available.find((s) => s.metric === metric) ?? available[0];
   const live = run.status === "RUNNING";
+  let emptyTitle = "No profiles received yet";
+  if (correlation) emptyTitle = "No correlated samples found";
+  else if (testWindow) emptyTitle = "No recordings overlap this test";
   return (
     <section className="test-detail profiles-panel" aria-label="Drill Down">
       <header className="profiles-header">
@@ -79,17 +91,35 @@ export function DrillDownPanel({
           </label>
         )}
         <div className="profile-window-controls">
-          <label>
-            Recording window
-            <select value={testId} onChange={(e) => setTestId(e.target.value)}>
-              <option value="">Entire run</option>
-              {tests.map((t) => (
-                <option key={t.id} value={t.id}>
-                  {t.test_name}
-                </option>
-              ))}
-            </select>
-          </label>
+          {correlation ? (
+            <div>
+              <strong>
+                {correlation.spanId ? "Span" : "Trace"}: {correlation.name}
+              </strong>
+              <button
+                type="button"
+                className="profile-button"
+                onClick={() => {
+                  setTestId("");
+                  onClearCorrelation?.();
+                }}
+              >
+                Show entire run
+              </button>
+            </div>
+          ) : (
+            <label>
+              Recording window
+              <select value={testId} onChange={(e) => setTestId(e.target.value)}>
+                <option value="">Entire run</option>
+                {tests.map((t) => (
+                  <option key={t.id} value={t.id}>
+                    {t.test_name}
+                  </option>
+                ))}
+              </select>
+            </label>
+          )}
           <div className="profile-refresh">
             <button
               type="button"
@@ -103,6 +133,12 @@ export function DrillDownPanel({
           </div>
         </div>
       </div>
+      {correlation && (
+        <p className="profile-scope-note">
+          Showing samples tagged with this {correlation.spanId ? "local root span" : "trace"}. Short
+          operations may have no samples; asynchronous work may not carry correlation context.
+        </p>
+      )}
       {testWindow && (
         <p className="profile-scope-note">
           Showing recordings that overlap this test, including other threads and background work.
@@ -129,15 +165,23 @@ export function DrillDownPanel({
       {!query.isPending && !query.isError && !selected && (
         <div className="profile-empty">
           <Icon name="activity" />
-          <h2>{testWindow ? "No recordings overlap this test" : "No profiles received yet"}</h2>
-          {testWindow ? (
+          <h2>{emptyTitle}</h2>
+          {correlation && (
+            <p>
+              The recording may not include samples for this operation, or trace correlation was not
+              enabled. Refresh after the next upload, or select Show entire run to explore all
+              profiling evidence.
+            </p>
+          )}
+          {!correlation && testWindow && (
             <>
               <p>Try the entire run to explore all available profiling evidence.</p>
               <button type="button" className="profile-button" onClick={() => setTestId("")}>
                 Show entire run
               </button>
             </>
-          ) : (
+          )}
+          {!correlation && !testWindow && (
             <>
               <p>
                 {live
