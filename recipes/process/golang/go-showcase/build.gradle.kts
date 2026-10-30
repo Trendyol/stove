@@ -84,10 +84,10 @@ sourceSets {
   }
 }
 
-val stovetestsImplementation by configurations.getting {
+configurations.getByName("stovetestsImplementation") {
   extendsFrom(configurations.testImplementation.get())
 }
-configurations["stovetestsRuntimeOnly"].extendsFrom(configurations.runtimeOnly.get())
+configurations.getByName("stovetestsRuntimeOnly").extendsFrom(configurations.runtimeOnly.get())
 
 idea {
   module {

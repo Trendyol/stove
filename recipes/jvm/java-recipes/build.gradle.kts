@@ -12,17 +12,16 @@ subprojects {
   }
   val libs = rootProject.libs
   sourceSets {
-    @Suppress("LocalVariableName", "ktlint:standard:property-naming")
-    val `test-e2e` by creating {
+    create(TestFolders.e2e) {
       compileClasspath += sourceSets.main.get().output
       runtimeClasspath += sourceSets.main.get().output
     }
-
-    val testE2eImplementation by configurations.getting {
-      extendsFrom(configurations.testImplementation.get())
-    }
-    configurations["testE2eRuntimeOnly"].extendsFrom(configurations.runtimeOnly.get())
   }
+
+  configurations.getByName("testE2eImplementation") {
+    extendsFrom(configurations.testImplementation.get())
+  }
+  configurations.getByName("testE2eRuntimeOnly").extendsFrom(configurations.runtimeOnly.get())
 
   idea {
     module {
