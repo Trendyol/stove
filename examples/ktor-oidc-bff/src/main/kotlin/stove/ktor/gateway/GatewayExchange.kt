@@ -5,7 +5,7 @@ import io.ktor.http.content.OutgoingContent
 import io.ktor.server.application.ApplicationCall
 import io.ktor.server.response.respond
 import io.ktor.utils.io.*
-import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.CompletableDeferred
 
 /** Request hooks preserve the incoming stream until they explicitly read or replace it. */
 @GatewayDsl
@@ -43,7 +43,7 @@ class GatewayResponse internal constructor(
   internal val method: HttpMethod,
   internal val representationLength: Long?
 ) {
-  internal fun content(): OutgoingContent = when {
+  internal fun content(completed: CompletableDeferred<Unit>): OutgoingContent = when {
     status == HttpStatusCode.NoContent -> GatewayMetadata(status, headers, null)
 
     status == HttpStatusCode.ResetContent -> GatewayMetadata(status, headers, 0)
@@ -54,7 +54,15 @@ class GatewayResponse internal constructor(
       override val status = this@GatewayResponse.status
       override val headers = this@GatewayResponse.headers
       override val contentLength = body.contentLength
-      override suspend fun writeTo(channel: ByteWriteChannel) = body.writeTo(channel)
+      override suspend fun writeTo(channel: ByteWriteChannel) {
+        try {
+          body.writeTo(channel)
+          completed.complete(Unit)
+        } catch (error: Throwable) {
+          completed.completeExceptionally(error)
+          throw error
+        }
+      }
     }
   }
 }
@@ -68,7 +76,13 @@ suspend fun <T> ApplicationCall.gatewayRequest(
 ): T = application.attributes[RuntimeKey].request(this, uri, method, configure, response)
 
 /** Stream the response before leaving the gatewayRequest block. */
-suspend fun ApplicationCall.respondGateway(response: GatewayResponse) = coroutineScope { respond(response.content()) }
+suspend fun ApplicationCall.respondGateway(response: GatewayResponse) {
+  val completed = CompletableDeferred<Unit>()
+  val content = response.content(completed)
+  respond(content)
+  // Some engines return from respond before their response writer finishes.
+  if (content is OutgoingContent.WriteChannelContent) completed.await()
+}
 
 private class GatewayMetadata(
   override val status: HttpStatusCode,
