@@ -171,16 +171,6 @@
   color: var(--stove-text-heading);
 }
 
-.ledger-filter-group button span {
-  min-width: 17px;
-  border-radius: 999px;
-  background: var(--stove-card);
-  padding: 2px 5px;
-  font-family: var(--font-mono);
-  font-size: 8px;
-  text-align: center;
-}
-
 .ledger-search {
   display: flex;
   width: min(240px, 28vw);
@@ -352,6 +342,10 @@
   border-radius: 999px;
   background: var(--stove-text-muted);
   box-shadow: 0 0 0 1px var(--stove-border-strong);
+}
+
+.evidence-ledger-row > .ledger-rail-point {
+  justify-self: center;
 }
 
 .mock-ledger-row.is-issue > .ledger-rail-point,
@@ -568,18 +562,6 @@
   color: var(--stove-blue);
 }
 
-.ledger-inspector.is-empty strong {
-  color: var(--stove-text-heading);
-  font-size: 12px;
-}
-
-.ledger-inspector.is-empty p {
-  max-width: 280px;
-  margin: 5px 0 0;
-  font-size: 11px;
-  line-height: 1.55;
-}
-
 .ledger-inspector-header {
   display: flex;
   align-items: flex-start;
@@ -697,15 +679,6 @@
 
 .evidence-dialog .ledger-inspector-header {
   padding: 15px 16px 13px;
-}
-
-.evidence-dialog .ledger-inspector-header strong,
-.mock-inspector .ledger-inspector-header strong {
-  margin-top: 0;
-}
-
-.evidence-dialog .ledger-inspector-header strong {
-  font-size: 15px;
 }
 
 .evidence-dialog .ledger-inspector-body {
@@ -863,9 +836,6 @@
   flex-wrap: wrap;
   justify-content: start;
 }
-.evidence-workbench .ledger-filter-group button {
-  font-size: 12px;
-}
 .evidence-split {
   flex: 1;
   min-height: 0;
@@ -914,9 +884,16 @@
 .evidence-ledger-row[data-last="true"]::before {
   bottom: 50%;
 }
-.evidence-ledger-row > .ledger-rail-point {
-  justify-self: center;
+.ledger-filter-group button span {
+  min-width: 17px;
+  border-radius: 999px;
+  background: var(--stove-card);
+  padding: 2px 5px;
+  font-family: var(--font-mono);
+  font-size: 8px;
+  text-align: center;
 }
+
 .evidence-ledger-row .ledger-primary strong {
   font-size: 13px;
 }
@@ -973,10 +950,6 @@
 .evidence-side-inspector .ledger-inspector-nav {
   padding: 12px 16px;
 }
-.evidence-side-inspector .ledger-inspector-nav button,
-.evidence-side-inspector .ledger-inspector-nav span {
-  font-size: 12px;
-}
 .evidence-side-inspector .inspector-status-line {
   flex-wrap: wrap;
 }
@@ -1002,6 +975,38 @@
 .evidence-side-inspector pre {
   overflow-wrap: anywhere;
 }
+/* Component details and states follow the base element rules. */
+
+.ledger-inspector.is-empty strong {
+  color: var(--stove-text-heading);
+  font-size: 12px;
+}
+
+.ledger-inspector.is-empty p {
+  max-width: 280px;
+  margin: 5px 0 0;
+  font-size: 11px;
+  line-height: 1.55;
+}
+
+.evidence-workbench .ledger-filter-group button {
+  font-size: 12px;
+}
+
+.evidence-dialog .ledger-inspector-header strong,
+.mock-inspector .ledger-inspector-header strong {
+  margin-top: 0;
+}
+
+.evidence-side-inspector .ledger-inspector-nav button,
+.evidence-side-inspector .ledger-inspector-nav span {
+  font-size: 12px;
+}
+
+.evidence-dialog .ledger-inspector-header strong {
+  font-size: 15px;
+}
+
 @container (min-width: 760px) {
   .evidence-split {
     overflow: hidden;

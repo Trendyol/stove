@@ -332,8 +332,11 @@
   *,
   *::before,
   *::after {
+    /* biome-ignore lint/complexity/noImportantStyles: Reduced motion must override all component motion styles. */
     animation: none !important;
+    /* biome-ignore lint/complexity/noImportantStyles: Reduced motion must override all component motion styles. */
     transition: none !important;
+    /* biome-ignore lint/complexity/noImportantStyles: Reduced motion must override all component motion styles. */
     scroll-behavior: auto !important;
   }
 }
@@ -364,10 +367,6 @@
   .stove-workspace {
     overflow: hidden;
   }
-  .stove-workspace[data-phone-screen="tests"] > .test-detail,
-  .stove-workspace:not([data-phone-screen="tests"]) > .stove-sidebar {
-    display: none;
-  }
   .stove-workspace > .stove-sidebar {
     height: 100%;
     min-height: 0;
@@ -381,6 +380,10 @@
   .test-detail-body {
     min-height: 0;
     overflow: auto;
+  }
+  .stove-workspace[data-phone-screen="tests"] > .test-detail,
+  .stove-workspace:not([data-phone-screen="tests"]) > .stove-sidebar {
+    display: none;
   }
   .phone-back {
     display: block;
