@@ -42,13 +42,13 @@ jobs:
       - uses: actions/setup-java@v6
         with:
           distribution: temurin
-          java-version: 17
+          java-version: 25
       - run: echo "STOVE_JDK17=$JAVA_HOME" >> "$GITHUB_ENV"
 
       - uses: actions/setup-java@v6
         with:
           distribution: temurin
-          java-version: 21
+          java-version: 25
       - run: echo "STOVE_JDK21=$JAVA_HOME" >> "$GITHUB_ENV"
 
       - uses: actions/setup-java@v6
