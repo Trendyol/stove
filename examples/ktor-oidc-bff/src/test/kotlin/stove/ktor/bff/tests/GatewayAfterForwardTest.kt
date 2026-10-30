@@ -8,6 +8,9 @@ import io.ktor.client.statement.bodyAsText
 import io.ktor.http.*
 import io.ktor.server.response.respondText
 import io.ktor.util.AttributeKey
+import io.ktor.utils.io.*
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.yield
 import stove.ktor.bff.fixtures.*
 import stove.ktor.gateway.*
@@ -151,6 +154,22 @@ class GatewayAfterForwardTest : FunSpec({
       client.get("/api/orders/archive/42") { hookBrowserRequest() }.status shouldBe HttpStatusCode.OK
       client.get("/plain/42") { hookBrowserRequest() }.status shouldBe HttpStatusCode.OK
       after.get() shouldBe 1
+    }
+  }
+
+  test("a delayed replacement stream remains open until the response is written") {
+    gatewayHookTest(configure = {
+      afterForward("/api/orders/**") {
+        val stream = ByteChannel(autoFlush = true)
+        call.application.launch {
+          delay(100)
+          stream.writeStringUtf8("delayed response")
+          stream.flushAndClose()
+        }
+        response.streamBody(stream)
+      }
+    }) { _ ->
+      client.get("/api/orders/42") { hookBrowserRequest() }.bodyAsText() shouldBe "delayed response"
     }
   }
 
