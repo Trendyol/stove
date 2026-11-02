@@ -56,7 +56,15 @@ pub fn create_router_with_public_url(
     .merge(crate::profiling::routes())
     .merge(super::openapi::router())
     .fallback(super::routes::static_handler)
-    .layer(tower_http::compression::CompressionLayer::new())
+    // Run-list reads are multi-megabyte JSON payloads and stay on the request
+    // path, so compression happens on a runtime worker. The default gzip level
+    // tripled the per-response CPU cost and pushed run-list reads past the
+    // load-test p95 budget; the fastest level keeps the wire savings while
+    // staying within noise of the uncompressed latency.
+    .layer(
+      tower_http::compression::CompressionLayer::new()
+        .quality(tower_http::compression::CompressionLevel::Fastest),
+    )
     .layer(CorsLayer::permissive())
     .layer(axum::middleware::from_fn_with_state(
       state.repository.metrics.app.clone(),
