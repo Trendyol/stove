@@ -10,11 +10,15 @@ internal object ProfilingTaskConfigurator {
     require(profiling.uploadIntervalSeconds.get() in 1..3600) { "Profiling upload interval must be 1..3600 seconds" }
     val endpoint = java.net.URI(profiling.serverUrl.get())
     require(endpoint.scheme in listOf("http", "https") && endpoint.host != null) { "Profiling serverUrl must be an HTTP(S) URL" }
+    val service = extension.serviceName.get()
+    require(service.isNotBlank() && service.length <= 256 && service.all { it in ' '..'~' }) {
+      "Profiling service name must be nonblank printable ASCII and at most 256 bytes"
+    }
     val agentPath = agent.singleFile.absolutePath
     val properties = mapOf(
       "stove.profiling.enabled" to "true",
       "stove.profiling.server" to profiling.serverUrl.get(),
-      "stove.profiling.service" to extension.serviceName.get(),
+      "stove.profiling.service" to service,
       "stove.profiling.alloc" to if (profiling.allocations.get() || profiling.liveAllocations.get()) profiling.allocationThreshold.get() else "",
       "stove.profiling.live" to profiling.liveAllocations.get().toString(),
       "stove.profiling.lock" to profiling.lockThreshold.get(),

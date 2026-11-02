@@ -44,7 +44,7 @@ prost-types = "0.14"
 
 # HTTP server (serves REST API + SPA to browser)
 axum = { version = "0.8", features = ["json", "multipart"] }
-tower-http = { version = "0.7", features = ["cors"] }
+tower-http = { version = "0.7", features = ["cors", "compression-gzip"] }
 utoipa = "6"
 utoipa-swagger-ui = { version = "10", features = ["axum", "vendored"] }
 

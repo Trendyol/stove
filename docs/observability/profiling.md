@@ -320,7 +320,7 @@ Allow at least **16 MiB (16,777,216 bytes)** for the complete profile request bo
 
 The Java integration configures a **5-second profile export timeout** and **two ingestion retries**. Dashboard HTTP events have a separate **5-second connection timeout** and **10-second request timeout**. These are independent of the default 10-second profile upload interval. A long proxy timeout cannot extend the client's deadline; measure upload and conversion latency when diagnosing timeouts. Preserve upstream status codes so the client can recognize failures.
 
-An unknown run or unavailable conversion slot returns 503; there are two conversion slots per server process. Retries of the same recording are idempotent. Collection and upload are best effort, not a durable delivery queue: exhausted retries, process termination, and failed teardown can leave gaps. Keep normal Stove teardown enabled so it can flush the pending interval. Reducing the interval can reduce individual recording size, but increases upload/conversion frequency.
+An unknown run or exhausted profiling capacity returns 503. Each server process admits up to 24 profile requests, buffers up to four uploads, and runs two conversions concurrently; requests can wait up to two seconds in total for upload and conversion capacity. Retries of the same recording are idempotent. Collection and upload are best effort, not a durable delivery queue: exhausted retries, process termination, and failed teardown can leave gaps. Keep normal Stove teardown enabled so it can flush the pending interval. Reducing the interval can reduce individual recording size, but increases upload/conversion frequency.
 
 ### TLS and authentication
 
@@ -354,7 +354,7 @@ Do not put tokens in query strings or URL credentials, assume Pyroscope environm
 | 404/405 or dashboard HTML from the upload route | Wrong prefix, missing POST route, stale server version, or SPA fallback routing |
 | 400 from Stove | Error body: required query/header fields, JFR format, multipart parts, or decoded/normalized size limits |
 | 413, or an oversized-field error | Body limits at every hop; multipart read failures can also surface as 400 from Stove |
-| Persistent 503 | Missing run in the target database, conversion saturation, or database availability; correlate with server logs |
+| Persistent 503 | Missing run in the target database, profiling capacity saturation, or database availability; correlate with server logs |
 | 502/504 or client timeout | Gateway upstream reachability, server load, and client deadlines |
 | Run appears but Drill Down stays empty | Independent profiler destination, agent attachment, rejected uploads, window filters, retention, or unsupported application runtime |
 
@@ -435,7 +435,7 @@ The supported endpoint is Pyroscope Java's `POST /ingest?format=jfr&name=...&fro
 | Multipart `jfr` | Required JFR bytes, optionally gzip-compressed |
 | Multipart `labels` | Optional Pyroscope protobuf label snapshot, optionally gzip-compressed |
 
-The Java integration supplies these headers automatically. Unknown or duplicate multipart fields are rejected. Repeated uploads of the same recording and identity are idempotent. An unknown run or exhausted conversion slots produces 503 so the agent can retry; invalid formats do not become supported through retries.
+The Java integration supplies these headers automatically. Unknown or duplicate multipart fields are rejected. Repeated uploads of the same recording and identity are idempotent. An unknown run or exhausted profiling capacity produces 503 so the agent can retry; invalid formats do not become supported through retries.
 
 For a separate JVM, providing only a server URL is insufficient: the uploader must implement this contract and bind to the exact dashboard run. `DashboardExternalProfilingOptions` exposes the exact run identity to runner environment mappers, but Java agent attachment and lifecycle still require custom integration. Treat external JVM integration as custom work, not a supported one-line agent recipe. Do not guess a run ID from the latest run of an application.
 
@@ -448,14 +448,19 @@ Profiles use the server's configured SQLite or PostgreSQL database. Run retentio
 | Upload body | 16 MiB |
 | Each decoded multipart part | 32 MiB |
 | Normalized recording | 32 MiB before compression; 8 MiB compressed |
+| Profiling admission | 24 requests per server process; capacity waits total at most 2 seconds |
 | Concurrent profile conversions | 2 |
-| Retained per run | 256 newest chunks and 64 MiB of compressed profiles |
-| Query decoding | 64 MiB, newest first |
-| REST response | 32 series, 20 hotspots and 200 stacks per series |
+| Buffered uploads | 4; incomplete bodies time out after 30 seconds |
+| Retained per run | 256 newest chunks per service/instance; shared 64 MiB compressed per run |
+| Query decoding | 4096 matching chunks / 64 MiB; streams interleaved, newest first within each stream |
+| REST response | 32 series, 20 hotspots and 200 stacks per series; gzip when accepted |
+| `stove_profiles` MCP response | 64 KiB including baseline, navigation, text fallback and JSON-RPC envelope |
 
-Normalized recordings share frame definitions across stacks and metrics to avoid repeating long method names. These limits bound accepted payloads and retained data, not total parser process memory. Include conversion overhead when sizing a shared server.
+Normalized recordings share frame definitions across stacks and metrics. Identical ordered stacks with identical labels are combined within each metric/unit; values and contributing record counts are preserved. Older recordings remain readable. Sample record counts describe contributing normalized records per metric, not independent observations. These limits bound accepted payloads and retained data, not total parser process memory. Include conversion overhead when sizing a shared server.
 
 `GET /api/v1/runs/{run_id}/profiles` accepts `service`, `instance`, `metric`, `from_ms`, `until_ms`, `trace_id`, and `span_id`. Query times are **milliseconds**, unlike upload times. Responses expose truncation and omitted stack values. Older recordings may already have been evicted by run-level retention; narrowing a query cannot recover them.
+
+JVM capture retries failed restarts on later intervals. Exports run separately with at most one in-flight and one pending snapshot; slow exports can replace a pending snapshot with newer evidence. Shutdown waits up to five seconds for exports, then cancels pending work. Container shutdown bounds the graceful Docker call by the configured grace period and allows a separate five-second removal attempt. Failed removal retains the container handle for a later retry. These deadlines bound caller waits; an unresponsive Docker transport may continue on a bounded daemon worker.
 
 ## Troubleshooting
 
@@ -467,7 +472,7 @@ Normalized recordings share frame definitions across stacks and metrics to avoid
 | Empty selected test window | Use **Show entire run**; recordings may not overlap the selected test or may have been evicted |
 | Profiles still go to localhost | Set `profiling.serverUrl`; it does not inherit the dashboard ingestion URL |
 | Run exists but uploads fail | Check the test logs, proxy `/ingest` routing, headers, TLS trust, body limits, and server version |
-| Upload returns 503 | Verify the exact run reached the same storage; check conversion load if retries persist |
+| Upload returns 503 | Verify the exact run reached the same storage; check upload and conversion load if retries persist |
 | Native profiler cannot start | Check JVM/OS/architecture support and whether another profiler already owns this JVM |
 | Large allocation upload rejected | Check size/conversion errors; reduce recording size or allocation detail before increasing infrastructure limits |
 | Missing trace-specific results | Check correlation labels; use the run-wide view when recordings have no trace/span labels |

@@ -1683,7 +1683,16 @@ async fn sse_endpoint_returns_200_with_event_stream_content_type() {
 async fn sse_stream_pushes_full_events_only_after_their_database_commit() {
   let server = TestServer::start().await;
   let service = Arc::new(DashboardEventServiceImpl::new(server.ingestor.clone()));
-  let mut resp = server.get("/events/stream").await;
+  let mut resp = reqwest::Client::builder()
+    .no_gzip()
+    .build()
+    .unwrap()
+    .get(server.url("/events/stream"))
+    .header("Accept-Encoding", "gzip")
+    .send()
+    .await
+    .unwrap();
+  assert!(resp.headers().get("content-encoding").is_none());
   let mut buffer = String::new();
 
   assert_eq!(resp.status(), StatusCode::OK);
@@ -2211,6 +2220,45 @@ async fn admin_status_and_retention_update_prune_completed_runs_immediately() {
   assert!(server.repo.get_run("run-middle").unwrap().is_some());
   assert!(server.repo.get_run("run-latest").unwrap().is_some());
   assert!(server.repo.get_run("run-active").unwrap().is_some());
+}
+
+#[tokio::test]
+async fn unsatisfiable_accept_encoding_rejects_mutations_before_they_apply() {
+  let server = TestServer::start().await;
+  assert_eq!(
+    server.get_json("/admin/status").await["retention_runs_per_app"],
+    1
+  );
+
+  let response = server
+    .client
+    .put(server.url("/admin/retention"))
+    .header("Accept-Encoding", "br, identity;q=0")
+    .json(&serde_json::json!({ "runs_per_app": 7 }))
+    .send()
+    .await
+    .unwrap();
+  assert_eq!(response.status(), StatusCode::NOT_ACCEPTABLE);
+  // The handler never ran, so the retention setting is unchanged.
+  assert_eq!(
+    server.get_json("/admin/status").await["retention_runs_per_app"],
+    1
+  );
+
+  // Clients that accept gzip still reach the handler and negotiate it.
+  let accepted = server
+    .client
+    .put(server.url("/admin/retention"))
+    .header("Accept-Encoding", "gzip")
+    .json(&serde_json::json!({ "runs_per_app": 7 }))
+    .send()
+    .await
+    .unwrap();
+  assert_eq!(accepted.status(), StatusCode::OK);
+  assert_eq!(
+    server.get_json("/admin/status").await["retention_runs_per_app"],
+    7
+  );
 }
 
 #[tokio::test]

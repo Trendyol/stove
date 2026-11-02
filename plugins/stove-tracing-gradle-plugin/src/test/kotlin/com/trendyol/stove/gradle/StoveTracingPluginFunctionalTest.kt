@@ -122,6 +122,25 @@ class StoveTracingPluginFunctionalTest : FunSpec({
 
     result.output shouldContain "Stove tracing is disabled"
   }
+  test("invalid profiling service is rejected before resolving the agent") {
+    projectDir.resolve("build.gradle.kts").writeText(
+      """
+      plugins { java; id("com.trendyol.stove.tracing") }
+      stoveTracing {
+        enabled.set(false)
+        serviceName.set(" ")
+        profiling { enabled.set(true) }
+      }
+      """.trimIndent()
+    )
+    val result = GradleRunner.create()
+      .withProjectDir(projectDir)
+      .withPluginClasspath()
+      .withArguments("test", "--stacktrace")
+      .buildAndFail()
+    result.output shouldContain "Profiling service name must be nonblank printable ASCII and at most 256 bytes"
+  }
+
   test("profiling attaches to selected test JVMs independently of tracing and reuses configuration cache") {
     projectDir.resolve("build.gradle.kts").writeText(
       """

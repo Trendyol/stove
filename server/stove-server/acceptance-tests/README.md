@@ -50,6 +50,12 @@ budget is 2 seconds. The workload can be tuned with
 `STOVE_LOAD_TEST_RUNS`, `STOVE_LOAD_TEST_REQUESTS`,
 `STOVE_LOAD_TEST_CONCURRENCY`, and `STOVE_LOAD_TEST_P95_MS`.
 
+The test reports p95 and max latency for the aggregate workload and for every
+query kind before asserting, so a failure names the endpoint that regressed. The
+client negotiates gzip like a browser, which makes run-list reads spend server
+CPU on compression; the server compresses at the cheapest gzip level to keep
+that cost off the dashboard read path.
+
 ## MCP failure-evidence benchmark
 
 The standalone harness feeds assertion mismatches, database exceptions, unmatched

@@ -1,4 +1,5 @@
 mod cleanup;
+mod profiles;
 mod recovery;
 
 use std::collections::BTreeMap;
@@ -206,14 +207,14 @@ fn assert_migrations_are_idempotent_and_indexed(database: &TestSchema) {
   let repo = database.repository();
   assert_eq!(repo.get_runs(None).unwrap().len(), 2);
   let mut client = connect_driver(&database.url).unwrap();
-  let version: i64 = client
-    .query_one(
-      "SELECT MAX(version)::BIGINT FROM refinery_schema_history",
-      &[],
-    )
+  let applied_migrations: i64 = client
+    .query_one("SELECT COUNT(*)::BIGINT FROM refinery_schema_history", &[])
     .unwrap()
     .get(0);
-  assert_eq!(version, i64::try_from(migration_count()).unwrap());
+  assert_eq!(
+    applied_migrations,
+    i64::try_from(migration_count()).unwrap()
+  );
   let index_definition: String = client
     .query_one(
       "SELECT indexdef FROM pg_indexes WHERE schemaname = current_schema()

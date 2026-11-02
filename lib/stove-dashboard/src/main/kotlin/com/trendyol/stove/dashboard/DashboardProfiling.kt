@@ -14,7 +14,11 @@ internal class DashboardProfiling(runId: String, appName: String) : AutoCloseabl
   init {
     check(!PyroscopeAgent.isStarted()) { "A profiler is already active in this JVM; Stove requires ownership of its profiling lifecycle" }
   }
-  private val service = System.getProperty("stove.profiling.service", appName)
+  private val service = System.getProperty("stove.profiling.service", appName).also {
+    require(it.isNotBlank() && it.length <= 256 && it.all { char -> char in ' '..'~' }) {
+      "Profiling service name must be nonblank printable ASCII and at most 256 bytes"
+    }
+  }
   private val config = Config.Builder()
     .setAgentEnabled(true)
     .setApplicationName(service)

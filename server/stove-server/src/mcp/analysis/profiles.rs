@@ -1,8 +1,8 @@
 use super::Analyzer;
+use crate::mcp::profile_response::MAX_BYTES as MAX_SUMMARY_BYTES;
 use crate::profiling::{ProfileQuery, ProfileReport};
 use serde_json::{Value, json};
 
-const MAX_SUMMARY_BYTES: usize = 64 * 1024;
 const MAX_SUMMARY_SERIES: usize = 8;
 const MAX_SOURCE_PROFILES: usize = 32;
 

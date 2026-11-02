@@ -145,7 +145,10 @@ fn verify_measurements(
     .iter()
     .map(|measurement| measurement.latency)
     .collect::<Vec<_>>();
-  report_latencies("all", &all_latencies, config.p95_budget_ms)?;
+  // Report every slice before failing so a budget regression names the endpoint
+  // that caused it instead of only the aggregate.
+  let mut violations = Vec::new();
+  report_latencies("all", &all_latencies, config.p95_budget_ms, &mut violations);
   eprintln!(
     "PostgreSQL load test: runs={}, requests={}, concurrency={}, elapsed_ms={}",
     config.runs,
@@ -161,29 +164,48 @@ fn verify_measurements(
       .or_default()
       .push(measurement.latency);
   }
-  for (kind, durations) in by_kind {
-    report_latencies(kind.label(), &durations, config.p95_budget_ms)?;
+  for (kind, durations) in &by_kind {
+    report_latencies(
+      kind.label(),
+      durations,
+      config.p95_budget_ms,
+      &mut violations,
+    );
   }
+  ensure!(
+    violations.is_empty(),
+    "load-test latency budget of {} ms exceeded: {}",
+    config.p95_budget_ms,
+    violations.join("; "),
+  );
   Ok(())
 }
 
-fn report_latencies(kind: &str, durations: &[Duration], budget_ms: u128) -> Result<()> {
+fn report_latencies(
+  kind: &str,
+  durations: &[Duration],
+  budget_ms: u128,
+  violations: &mut Vec<String>,
+) {
+  if durations.is_empty() {
+    return;
+  }
   let mut sorted = durations.to_vec();
   sorted.sort_unstable();
   let p95 = percentile(&sorted, 95);
-  let slowest = sorted.last().context("load test produced no timings")?;
+  let slowest = sorted[sorted.len() - 1];
   eprintln!(
     "  {kind}: requests={}, p95_ms={}, max_ms={}",
     sorted.len(),
     p95.as_millis(),
     slowest.as_millis(),
   );
-  ensure!(
-    p95.as_millis() <= budget_ms,
-    "{kind} p95 latency {} ms exceeded the {budget_ms} ms budget",
-    p95.as_millis(),
-  );
-  Ok(())
+  if p95.as_millis() > budget_ms {
+    violations.push(format!(
+      "{kind} p95 latency {} ms exceeded the {budget_ms} ms budget",
+      p95.as_millis(),
+    ));
+  }
 }
 
 fn verify_query_plans(postgres: &mut postgres::Client) -> Result<()> {

@@ -1,6 +1,7 @@
 mod analysis;
 mod args;
 mod contract;
+mod profile_response;
 mod protocol;
 mod security;
 mod tools;
@@ -76,6 +77,9 @@ fn handle_request(state: AppState, request: JsonRpcRequest) -> Result<Value, Rpc
         RpcError::invalid_params(format!("unknown Stove MCP tool: {}", params.name))
       })?;
       Ok(match analyzer.call_tool(tool, arguments) {
+        Ok(output) if tool == ToolName::Profiles => {
+          profile_response::tool_result(output, request.id.as_ref())
+        }
         Ok(output) => protocol::tool_result(&output),
         Err(message) => protocol::tool_error(&message),
       })

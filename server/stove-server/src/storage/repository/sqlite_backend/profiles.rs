@@ -1,4 +1,4 @@
-use super::super::profiles::{MAX_PROFILE_CHUNKS, expired_profile_ids};
+use super::super::profiles::{PROFILE_IDS_SQL, ProfileId, expired_profile_ids};
 use super::SqliteBackend;
 use crate::error::{AppError, Result};
 use crate::profiling::StoredChunk;
@@ -40,20 +40,23 @@ impl SqliteBackend {
       let rows = profiles::table
         .filter(profiles::run_id.eq(&chunk.run_id))
         .order((profiles::until_ms.desc(), profiles::id.desc()))
-        .select((profiles::id, profiles::byte_size))
-        .load::<(String, i64)>(conn)?;
+        .select((
+          profiles::id,
+          profiles::service,
+          profiles::instance,
+          profiles::byte_size,
+        ))
+        .load::<(String, String, String, i64)>(conn)?;
       let expired = expired_profile_ids(rows);
       diesel::delete(profiles::table.filter(profiles::id.eq_any(expired))).execute(conn)?;
       Ok(())
     })
   }
-  pub fn profile_chunks(&self, run_id: &str) -> Result<Vec<StoredChunk>> {
+  pub fn profile_chunk(&self, id: &str) -> Result<Option<StoredChunk>> {
     let mut db = self.lock_read();
     let conn = db.conn();
     let rows = profiles::table
-      .filter(profiles::run_id.eq(run_id))
-      .order((profiles::until_ms.desc(), profiles::id.desc()))
-      .limit(MAX_PROFILE_CHUNKS)
+      .filter(profiles::id.eq(id))
       .select((
         profiles::id,
         profiles::run_id,
@@ -63,7 +66,33 @@ impl SqliteBackend {
         profiles::until_ms,
         profiles::payload,
       ))
-      .load::<StoredChunk>(conn)?;
+      .first::<StoredChunk>(conn)
+      .optional()?;
     Ok(rows)
+  }
+  pub fn profile_chunk_ids(
+    &self,
+    run_id: &str,
+    query: &crate::profiling::ProfileQuery,
+  ) -> Result<Vec<String>> {
+    use diesel::sql_types::{BigInt, Nullable, Text};
+    let mut db = self.lock_read();
+    let conn = db.conn();
+    Ok(
+      diesel::sql_query(PROFILE_IDS_SQL)
+        .bind::<Text, _>(run_id)
+        .bind::<Nullable<Text>, _>(query.service.as_deref())
+        .bind::<Nullable<Text>, _>(query.instance.as_deref())
+        .bind::<Nullable<BigInt>, _>(query.from_ms)
+        .bind::<Nullable<BigInt>, _>(query.until_ms)
+        .bind::<BigInt, _>(
+          i64::try_from(crate::profiling::limits::MAX_QUERY_CHUNKS + 1)
+            .expect("query limit fits i64"),
+        )
+        .load::<ProfileId>(conn)?
+        .into_iter()
+        .map(|row| row.id)
+        .collect(),
+    )
   }
 }

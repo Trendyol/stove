@@ -47,11 +47,15 @@ pub(crate) fn tool_error(message: &str) -> Value {
 }
 
 pub(crate) fn rpc_result(id: Option<Value>, result: Value) -> Response {
+  (StatusCode::OK, axum::Json(rpc_envelope(id, result))).into_response()
+}
+
+pub(super) fn rpc_envelope(id: Option<Value>, result: Value) -> Value {
   let mut envelope = serde_json::Map::new();
   envelope.insert("jsonrpc".to_string(), Value::String("2.0".to_string()));
   envelope.insert("id".to_string(), id.unwrap_or(Value::Null));
   envelope.insert("result".to_string(), result);
-  (StatusCode::OK, axum::Json(Value::Object(envelope))).into_response()
+  Value::Object(envelope)
 }
 
 pub(crate) fn rpc_error(
