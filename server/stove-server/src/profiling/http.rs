@@ -9,7 +9,10 @@ use axum::{
 use serde::Deserialize;
 use sha2::{Digest, Sha256};
 use std::sync::Arc;
-// Bound incomplete requests independently of CPU-heavy conversion.
+// Admission bounds requests waiting for upload or conversion capacity.
+static ADMITTED_UPLOADS: tokio::sync::Semaphore =
+  tokio::sync::Semaphore::const_new(limits::MAX_ADMITTED_UPLOADS);
+// Bound buffered request bodies independently of CPU-heavy conversion.
 static UPLOADS: tokio::sync::Semaphore =
   tokio::sync::Semaphore::const_new(limits::MAX_CONCURRENT_UPLOADS);
 static CONVERTERS: tokio::sync::Semaphore =
@@ -129,20 +132,27 @@ async fn ingest(
   if state.repository.get_run(&upload.run_id)?.is_none() {
     return Ok(StatusCode::SERVICE_UNAVAILABLE);
   }
-  let Ok(upload_permit) = UPLOADS.try_acquire() else {
+  let Ok(admission_permit) = ADMITTED_UPLOADS.try_acquire() else {
     return Ok(StatusCode::SERVICE_UNAVAILABLE);
   };
+  let wait_started = tokio::time::Instant::now();
+  let Ok(Ok(upload_permit)) = tokio::time::timeout(limits::CAPACITY_WAIT, UPLOADS.acquire()).await
+  else {
+    return Ok(StatusCode::SERVICE_UNAVAILABLE);
+  };
+  let remaining_wait = limits::CAPACITY_WAIT.saturating_sub(wait_started.elapsed());
   let Ok(parts) =
     tokio::time::timeout(limits::UPLOAD_TIMEOUT, read_parts(multipart, upload.format)).await
   else {
     return Ok(StatusCode::REQUEST_TIMEOUT);
   };
   let (data, metadata) = parts?;
-  let Ok(permit) = CONVERTERS.try_acquire() else {
+  let Ok(Ok(permit)) = tokio::time::timeout(remaining_wait, CONVERTERS.acquire()).await else {
     return Ok(StatusCode::SERVICE_UNAVAILABLE);
   };
   let repo = Arc::clone(&state.repository);
   let result = tokio::task::spawn_blocking(move || {
+    let _admission_permit = admission_permit;
     let _upload_permit = upload_permit;
     // Keep the limit even if the HTTP client disconnects during conversion.
     let _permit = permit;

@@ -213,7 +213,59 @@ async fn slow_body(s: &TestServer, run: &str) -> tokio::net::TcpStream {
 #[tokio::test(flavor = "multi_thread", worker_threads = 4)]
 async fn stalled_uploads_leave_conversion_capacity_and_purge_races_retry() {
   let s = TestServer::start().await;
+  s.seed_run("burst", "app");
+  let barrier = std::sync::Arc::new(tokio::sync::Barrier::new(21));
+  let mut requests = tokio::task::JoinSet::new();
+  let body = multipart();
+  for i in 0..20 {
+    let client = s.client.clone();
+    let url = format!(
+      "{}/ingest?name=app&format=jfr&from=1710000000&until=1710000010&sampleRate=100",
+      s.base_url
+    );
+    let barrier = barrier.clone();
+    let body = body.clone();
+    requests.spawn(async move {
+      barrier.wait().await;
+      client
+        .post(url)
+        .timeout(std::time::Duration::from_secs(5))
+        .header("content-type", "multipart/form-data; boundary=stove")
+        .header("x-stove-run-id", "burst")
+        .header("x-stove-service-name", format!("service-{i}"))
+        .header("x-stove-instance-id", "jvm-1")
+        .body(body)
+        .send()
+        .await
+        .unwrap()
+        .status()
+    });
+  }
+  barrier.wait().await;
+  while let Some(result) = requests.join_next().await {
+    assert_eq!(result.unwrap(), 200);
+  }
+  assert_eq!(s.repo.profile_chunks("burst").unwrap().len(), 20);
+
   s.seed_run("upload", "app");
+  // Four incomplete bodies occupy upload slots. A fifth request waits until one
+  // disconnects instead of being rejected immediately.
+  let first = slow_body(&s, "upload").await;
+  let second = slow_body(&s, "upload").await;
+  let third = slow_body(&s, "upload").await;
+  let fourth = slow_body(&s, "upload").await;
+  tokio::time::sleep(std::time::Duration::from_millis(200)).await;
+  let timeout = tokio::time::Instant::now();
+  assert_eq!(upload(&s, "upload", None).await.status(), 503);
+  assert!(timeout.elapsed() >= std::time::Duration::from_millis(1500));
+  let (response, ()) = tokio::join!(upload(&s, "upload", None), async {
+    tokio::time::sleep(std::time::Duration::from_millis(250)).await;
+    drop(first);
+  });
+  assert_eq!(response.status(), 200);
+  drop((second, third, fourth));
+  tokio::time::sleep(std::time::Duration::from_millis(100)).await;
+
   let first = slow_body(&s, "upload").await;
   let second = slow_body(&s, "upload").await;
   tokio::time::sleep(std::time::Duration::from_millis(200)).await;
