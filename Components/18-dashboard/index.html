@@ -2556,6 +2556,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#version-reporting" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Version reporting
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#rest-api" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -3914,6 +3925,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#version-reporting" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Version reporting
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#rest-api" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -4375,6 +4397,51 @@ Install <code>stove-server</code>, run <code>stove</code>, add <code>dashboard {
 <li>If the server is down or unreachable, the emitter auto-disables for the rest of the suite. Tests continue. No flakes.</li>
 <li>Tests never wait on the dashboard.</li>
 </ul>
+<h2 id="version-reporting">Version reporting<a class="headerlink" href="#version-reporting" title="Permanent link">&para;</a></h2>
+<p>Stove reports one exact version: the published coordinate that produced the artifact. It is the
+release version for stable builds (<code>0.28.0</code>) and the snapshot coordinate for snapshot builds
+(<code>1.0.0.566-SNAPSHOT</code>). The same value flows through every surface:</p>
+<table>
+<thead>
+<tr>
+<th>Surface</th>
+<th>Field</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Run and app payloads</td>
+<td><code>stove_version</code></td>
+<td>Published version of the client build that produced the run.</td>
+</tr>
+<tr>
+<td><code>GET /api/v1/meta</code>, <code>GET /api/v1/health</code></td>
+<td><code>stove_server_version</code></td>
+<td>Published version of the running server build.</td>
+</tr>
+<tr>
+<td>OpenAPI document</td>
+<td><code>info.version</code></td>
+<td>Published version of the running server build.</td>
+</tr>
+<tr>
+<td>Dashboard header</td>
+<td><code>__STOVE_VERSION__</code></td>
+<td>Published version of the bundled SPA/server build.</td>
+</tr>
+<tr>
+<td>MCP app/run/failure tools</td>
+<td><code>stove_version</code></td>
+<td>Published version of the run's client build.</td>
+</tr>
+</tbody>
+</table>
+<p>The dashboard compares the numeric parts of these versions. A snapshot coordinate such as
+<code>1.0.0.566-SNAPSHOT</code> is valid, and a client and server from the same build produce no warning.
+A genuinely older runtime (for example <code>0.27.6</code> against <code>0.28.0</code>) still shows the version-mismatch
+banner with dependency-alignment guidance. Runs created before this reporting existed keep their
+stored <code>stove_version</code>; if it is absent, the UI says "not reported" instead of inventing a value.</p>
 <h2 id="rest-api">REST API<a class="headerlink" href="#rest-api" title="Permanent link">&para;</a></h2>
 <p>The server exposes REST endpoints for integration:</p>
 <table>

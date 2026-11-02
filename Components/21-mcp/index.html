@@ -3701,6 +3701,9 @@ Start <code>stove</code>. Point your agent at the MCP endpoint. Agents call <cod
 </span><span id="__span-1-8"><a id="__codelineno-1-8" name="__codelineno-1-8" href="#__codelineno-1-8"></a><span class="w">  </span><span class="p">}</span>
 </span><span id="__span-1-9"><a id="__codelineno-1-9" name="__codelineno-1-9" href="#__codelineno-1-9"></a><span class="p">}</span>
 </span></code></pre></div>
+<p><code>stove_server_version</code> is the exact server build coordinate. Stable installs report a release
+such as <code>0.28.0</code>; snapshot installs report the full snapshot coordinate such as
+<code>1.0.0.566-SNAPSHOT</code>. MCP run and app payloads use the same convention for <code>stove_version</code>.</p>
 <h2 id="connect-an-agent">Connect an agent<a class="headerlink" href="#connect-an-agent" title="Permanent link">&para;</a></h2>
 <p>Install the Stove skill and configure its MCP connection from your application repository:</p>
 <div class="language-bash highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>stove<span class="w"> </span>skills<span class="w"> </span>install<span class="w"> </span>--agent<span class="w"> </span>claude<span class="w"> </span>--configure-mcp
