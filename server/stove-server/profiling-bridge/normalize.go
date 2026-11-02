@@ -23,6 +23,7 @@ type frame struct {
 type sample struct {
 	FrameIDs []int             `json:"frame_ids"`
 	Value    int64             `json:"value"`
+	Count    int64             `json:"count,omitempty"` // Omitted means one contributing record.
 	Labels   map[string]string `json:"labels"`
 }
 type profile struct {
@@ -37,7 +38,7 @@ type output struct {
 }
 
 func normalize(items []jfr.Profile) (out output) {
-	out.Profiles = make([]profile, 0)
+	profiles := newProfileAccumulator()
 	var outputBytes int
 	var records int
 	frameIDs := make(map[frame]int)
@@ -65,11 +66,9 @@ func normalize(items []jfr.Profile) (out output) {
 				locations[l.Id] = append(locations[l.Id], f)
 			}
 		}
-		firstProfile := len(out.Profiles)
+		targets := make([]int, 0, len(p.SampleType))
 		for _, typ := range p.SampleType {
-			out.Profiles = append(out.Profiles, profile{
-				Metric: item.Metric + ":" + str(typ.Type), Unit: str(typ.Unit), Samples: make([]sample, 0),
-			})
+			targets = append(targets, profiles.index(item.Metric+":"+str(typ.Type), str(typ.Unit)))
 		}
 		for _, s := range p.Sample {
 			if !slices.ContainsFunc(s.Value, func(v int64) bool { return v > 0 }) {
@@ -113,6 +112,7 @@ func normalize(items []jfr.Profile) (out output) {
 				}
 				ids = append(ids, id)
 			}
+			key := sampleKey(ids, ls)
 			for idx, value := range s.Value {
 				if idx >= len(p.SampleType) {
 					break
@@ -130,9 +130,13 @@ func normalize(items []jfr.Profile) (out output) {
 				if outputBytes > maxNormalizedBytes || records > maxSampleRecords {
 					return output{Error: "normalized profile exceeds conversion budget"}
 				}
-				out.Profiles[firstProfile+idx].Samples = append(out.Profiles[firstProfile+idx].Samples, record)
+
+				if err := profiles.add(targets[idx], key, record); err != nil {
+					return output{Error: err.Error()}
+				}
 			}
 		}
 	}
+	out.Profiles = profiles.profiles
 	return out
 }

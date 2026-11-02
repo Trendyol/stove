@@ -449,13 +449,17 @@ Profiles use the server's configured SQLite or PostgreSQL database. Run retentio
 | Each decoded multipart part | 32 MiB |
 | Normalized recording | 32 MiB before compression; 8 MiB compressed |
 | Concurrent profile conversions | 2 |
-| Retained per run | 256 newest chunks and 64 MiB of compressed profiles |
-| Query decoding | 64 MiB, newest first |
-| REST response | 32 series, 20 hotspots and 200 stacks per series |
+| Concurrent uploads | 4; incomplete bodies time out after 30 seconds |
+| Retained per run | 256 newest chunks per service/instance; shared 64 MiB compressed per run |
+| Query decoding | 4096 matching chunks / 64 MiB; streams interleaved, newest first within each stream |
+| REST response | 32 series, 20 hotspots and 200 stacks per series; gzip when accepted |
+| `stove_profiles` MCP response | 64 KiB including baseline, navigation, text fallback and JSON-RPC envelope |
 
-Normalized recordings share frame definitions across stacks and metrics to avoid repeating long method names. These limits bound accepted payloads and retained data, not total parser process memory. Include conversion overhead when sizing a shared server.
+Normalized recordings share frame definitions across stacks and metrics. Identical ordered stacks with identical labels are combined within each metric/unit; values and contributing record counts are preserved. Older recordings remain readable. Sample record counts describe contributing normalized records per metric, not independent observations. These limits bound accepted payloads and retained data, not total parser process memory. Include conversion overhead when sizing a shared server.
 
 `GET /api/v1/runs/{run_id}/profiles` accepts `service`, `instance`, `metric`, `from_ms`, `until_ms`, `trace_id`, and `span_id`. Query times are **milliseconds**, unlike upload times. Responses expose truncation and omitted stack values. Older recordings may already have been evicted by run-level retention; narrowing a query cannot recover them.
+
+JVM capture retries failed restarts on later intervals. Exports run separately with at most one in-flight and one pending snapshot; slow exports can replace a pending snapshot with newer evidence. Shutdown waits up to five seconds for exports, then cancels pending work. Container shutdown bounds the graceful Docker call by the configured grace period and allows a separate five-second removal attempt. Failed removal retains the container handle for a later retry. These deadlines bound caller waits; an unresponsive Docker transport may continue on a bounded daemon worker.
 
 ## Troubleshooting
 

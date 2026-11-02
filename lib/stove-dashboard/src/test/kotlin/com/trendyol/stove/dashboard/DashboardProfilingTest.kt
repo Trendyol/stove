@@ -1,6 +1,7 @@
 package com.trendyol.stove.dashboard
 
 import com.sun.net.httpserver.HttpServer
+import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.string.shouldContain
@@ -17,6 +18,72 @@ import java.time.Instant
 import java.util.concurrent.CopyOnWriteArrayList
 
 class DashboardProfilingTest : FunSpec({
+  test("restart failure preserves the captured snapshot and retries on the next tick") {
+    val profiler = FakeProfiler()
+    val snapshots = CopyOnWriteArrayList<Snapshot>()
+    val scheduler = FlushingProfileScheduler(
+      Duration.ofHours(1),
+      object : Exporter {
+        override fun export(snapshot: Snapshot) {
+          snapshots.add(snapshot)
+        }
+        override fun stop() = Unit
+      }
+    )
+    scheduler.start(profiler)
+    profiler.failStart = true
+    scheduler.capture(restart = true)
+    profiler.running shouldBe false
+    profiler.failStart = false
+    scheduler.capture(restart = true)
+    profiler.running shouldBe true
+    scheduler.stop()
+    snapshots.size shouldBe 2
+    profiler.running shouldBe false
+  }
+
+  test("blocked exporter cannot hold the lifecycle lock or delay shutdown indefinitely") {
+    val entered = java.util.concurrent.CountDownLatch(1)
+    val release = java.util.concurrent.CountDownLatch(1)
+    val profiler = FakeProfiler()
+    val scheduler = FlushingProfileScheduler(
+      Duration.ofHours(1),
+      object : Exporter {
+        override fun export(snapshot: Snapshot) {
+          entered.countDown()
+          while (release.count > 0) {
+            try {
+              release.await()
+            } catch (_: InterruptedException) { /* simulate blocked transport */ }
+          }
+        }
+        override fun stop() = Unit
+      },
+      Duration.ofMillis(100)
+    )
+    try {
+      scheduler.start(profiler)
+      scheduler.capture(restart = true)
+      entered.await(2, java.util.concurrent.TimeUnit.SECONDS) shouldBe true
+      val start = System.nanoTime()
+      scheduler.stop()
+      (System.nanoTime() - start < 2_000_000_000) shouldBe true
+      profiler.running shouldBe false
+      scheduler.capture(restart = true)
+      profiler.running shouldBe false
+    } finally {
+      release.countDown()
+      scheduler.stop()
+    }
+  }
+
+  test("invalid service names fail before starting a native profiler") {
+    for (name in listOf(" ", "x".repeat(257), "bad\nname", "café")) {
+      shouldThrow<IllegalArgumentException> { DashboardProfiling("run", name) }
+      io.pyroscope.javaagent.PyroscopeAgent.isStarted() shouldBe false
+    }
+  }
+
   test("shutdown flushes a partial interval once and dump failure does not stop later captures") {
     val profiler = FakeProfiler()
     val snapshots = mutableListOf<Snapshot>()
@@ -75,7 +142,9 @@ class DashboardProfilingTest : FunSpec({
 private class FakeProfiler : ProfilerDelegate {
   var running = false
   var failDump = false
+  var failStart = false
   override fun start() {
+    if (failStart) error("start failed")
     running = true
   }
   override fun stop() {

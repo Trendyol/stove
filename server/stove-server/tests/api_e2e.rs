@@ -1683,7 +1683,16 @@ async fn sse_endpoint_returns_200_with_event_stream_content_type() {
 async fn sse_stream_pushes_full_events_only_after_their_database_commit() {
   let server = TestServer::start().await;
   let service = Arc::new(DashboardEventServiceImpl::new(server.ingestor.clone()));
-  let mut resp = server.get("/events/stream").await;
+  let mut resp = reqwest::Client::builder()
+    .no_gzip()
+    .build()
+    .unwrap()
+    .get(server.url("/events/stream"))
+    .header("Accept-Encoding", "gzip")
+    .send()
+    .await
+    .unwrap();
+  assert!(resp.headers().get("content-encoding").is_none());
   let mut buffer = String::new();
 
   assert_eq!(resp.status(), StatusCode::OK);

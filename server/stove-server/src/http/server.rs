@@ -56,6 +56,7 @@ pub fn create_router_with_public_url(
     .merge(crate::profiling::routes())
     .merge(super::openapi::router())
     .fallback(super::routes::static_handler)
+    .layer(tower_http::compression::CompressionLayer::new())
     .layer(CorsLayer::permissive())
     .layer(axum::middleware::from_fn_with_state(
       state.repository.metrics.app.clone(),

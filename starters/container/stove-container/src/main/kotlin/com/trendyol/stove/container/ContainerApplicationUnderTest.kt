@@ -117,22 +117,7 @@ internal class ContainerApplicationUnderTest(
 
   override suspend fun stop() {
     val container = runningContainer.getOrNull() ?: return
-    try {
-      withContext(Dispatchers.IO) {
-        // GenericContainer.stop() removes the container without an application
-        // shutdown grace period. Ask Docker to signal the app and wait first.
-        container.containerId?.let { id ->
-          runCatching {
-            val seconds = kotlin.math.ceil(gracefulShutdownTimeout.inWholeMilliseconds / 1000.0)
-              .toInt().coerceAtLeast(1)
-            container.dockerClient.stopContainerCmd(id).withTimeout(seconds).exec()
-          }.onFailure {
-            logger.warn("Graceful container shutdown failed; removing container", it)
-          }
-        }
-        container.stop()
-      }
-    } finally {
+    ContainerShutdown.stop(container, gracefulShutdownTimeout) {
       runningContainer = None
     }
   }

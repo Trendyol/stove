@@ -77,6 +77,20 @@ async fn actual_pyroscope_jfr_and_label_contract_is_ingested_idempotently() {
   let recording: stove::profiling::Recording =
     serde_json::from_reader(flate2::read::GzDecoder::new(chunks[0].payload.as_slice())).unwrap();
   assert!(!recording.frame_table.is_empty());
+  let stored_records: usize = recording.profiles.iter().map(|p| p.samples.len()).sum();
+  let contributing_records: usize = recording
+    .profiles
+    .iter()
+    .flat_map(|p| &p.samples)
+    .map(|s| s.count.get())
+    .sum();
+  assert_eq!(stored_records, 95);
+  assert_eq!(contributing_records, 2152);
+  assert!(chunks[0].payload.len() < 2000);
+  eprintln!(
+    "JFR aggregation: {contributing_records} records -> {stored_records} groups, {} compressed bytes",
+    chunks[0].payload.len()
+  );
   assert!(recording.profiles.iter().flat_map(|p| &p.samples).all(|s| {
     s.frames.is_empty()
       && !s.frame_ids.is_empty()
