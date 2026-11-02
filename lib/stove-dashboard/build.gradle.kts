@@ -1,20 +1,15 @@
 import org.jetbrains.kotlin.gradle.dsl.KotlinJvmProjectExtension
 
 val generatedDashboardSourcesDir = layout.buildDirectory.dir("generated/source/stoveVersion/kotlin")
-val stoveCompatibilityVersionValue = providers
-  .fileContents(rootProject.layout.projectDirectory.file("gradle.properties"))
-  .asText
-  .map { gradleProperties ->
-    gradleProperties
-      .lineSequence()
-      .first { it.startsWith("version=") }
-      .substringAfter("version=")
-      .trim()
-  }
+
+// The root project resolves the published coordinate in CI.version: the release
+// version, or `<snapshot>.<build>-SNAPSHOT` for snapshot builds. Report that
+// exact version so a run and the matching server compare as the same build.
+val stoveVersionValue = rootProject.version.toString()
 
 val generateDashboardVersionSource = tasks.register<GenerateDashboardVersionSourceTask>("generateDashboardVersionSource") {
-  description = "Generates a source file containing the Stove version."
-  stoveCompatibilityVersion.set(stoveCompatibilityVersionValue)
+  description = "Generates a source file containing the exact published Stove version."
+  stoveVersion.set(stoveVersionValue)
   outputDir.set(generatedDashboardSourcesDir)
 }
 

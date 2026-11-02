@@ -1,6 +1,9 @@
 import type { AppSummary } from "../api/types";
 
-const RELEASE_VERSION_PATTERN = /^(\d+)\.(\d+)\.(\d+)$/;
+// Published Stove versions are either a release (`0.28.0`) or a snapshot
+// coordinate (`1.0.0.566-SNAPSHOT`). Compare the numeric core so 3-part and
+// 4-part builds are both understood, and ignore pre-release/build suffixes.
+const VERSION_PATTERN = /^(\d+(?:\.\d+)*)(?:[-+].*)?$/;
 const SERVER_UPGRADE_COMMAND = "brew upgrade Trendyol/trendyol-tap/stove";
 
 type VersionMismatchKind = "runtime_older" | "server_older" | "unknown";
@@ -42,7 +45,11 @@ export function compareVersions(
   serverVersion: string,
 ): VersionMismatchKind | null {
   const normalizedRuntime = normalizeVersion(runtimeVersion);
-  if (normalizedRuntime === serverVersion) {
+  const normalizedServer = normalizeVersion(serverVersion);
+  if (!normalizedServer) {
+    return "unknown";
+  }
+  if (normalizedRuntime === normalizedServer) {
     return null;
   }
 
@@ -50,22 +57,23 @@ export function compareVersions(
     return "unknown";
   }
 
-  const runtimeTriplet = parseReleaseVersion(normalizedRuntime);
-  const serverTriplet = parseReleaseVersion(serverVersion);
-  if (!runtimeTriplet || !serverTriplet) {
+  const runtimeParts = parseVersion(normalizedRuntime);
+  const serverParts = parseVersion(normalizedServer);
+  if (!runtimeParts || !serverParts) {
     return "unknown";
   }
 
-  for (let index = 0; index < runtimeTriplet.length; index += 1) {
-    if (runtimeTriplet[index] < serverTriplet[index]) {
-      return "runtime_older";
-    }
-    if (runtimeTriplet[index] > serverTriplet[index]) {
-      return "server_older";
-    }
+  const order = compareVersionParts(runtimeParts, serverParts);
+  if (order < 0) {
+    return "runtime_older";
+  }
+  if (order > 0) {
+    return "server_older";
   }
 
-  return "unknown";
+  // Same numeric core (for example a snapshot and its release base) is not a
+  // mismatch; the pre-release suffix does not change compatibility.
+  return null;
 }
 
 export function summarizeVersionMismatches(
@@ -142,13 +150,29 @@ function normalizeVersion(version: string | null | undefined): string | null {
   return normalized ? normalized : null;
 }
 
-function parseReleaseVersion(version: string): number[] | null {
-  const match = version.match(RELEASE_VERSION_PATTERN);
+function parseVersion(version: string): number[] | null {
+  const match = version.match(VERSION_PATTERN);
   if (!match) {
     return null;
   }
 
-  return match.slice(1).map(Number);
+  return match[1].split(".").map(Number);
+}
+
+function compareVersionParts(left: number[], right: number[]): number {
+  const length = Math.max(left.length, right.length);
+  for (let index = 0; index < length; index += 1) {
+    const leftPart = left[index] ?? 0;
+    const rightPart = right[index] ?? 0;
+    if (leftPart < rightPart) {
+      return -1;
+    }
+    if (leftPart > rightPart) {
+      return 1;
+    }
+  }
+
+  return 0;
 }
 
 function remediationStepsForMismatch(mismatch: VersionMismatch): VersionMismatchRemediationStep[] {
@@ -180,7 +204,7 @@ function mismatchProblem(mismatch: VersionMismatch): string {
     return "The dashboard server is older than the app runtime.";
   }
 
-  return "The app did not report a standard Stove release version.";
+  return "The app did not report a recognizable Stove version.";
 }
 
 function dependencyAlignmentMessage(serverVersion: string): string {

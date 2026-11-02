@@ -35,6 +35,10 @@ Or hit `GET /api/v1/meta` for metadata:
 }
 ```
 
+`stove_server_version` is the exact server build coordinate. Stable installs report a release
+such as `0.28.0`; snapshot installs report the full snapshot coordinate such as
+`1.0.0.566-SNAPSHOT`. MCP run and app payloads use the same convention for `stove_version`.
+
 ## Connect an agent
 
 Install the Stove skill and configure its MCP connection from your application repository:

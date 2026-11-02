@@ -2,6 +2,21 @@
 
 Use these notes when the project's resolved Stove version and failure signature match. Check dependency resolution before changing versions.
 
+## Version reporting
+
+Stove reports the exact published coordinate of the artifact, not a separate "compatibility
+number": `0.28.0` for a release, `1.0.0.566-SNAPSHOT` for a snapshot. Dashboard runs and apps
+expose it as `stove_version`; the server exposes its own as `stove_server_version` in
+`/api/v1/meta`, `/api/v1/health`, and the OpenAPI `info.version`.
+
+Snapshot coordinates are valid for comparison. The dashboard compares numeric components, so a
+client and server from the same build (including the same `-SNAPSHOT`) show no mismatch. An older
+runtime against a newer server (for example `0.27.6` vs `0.28.0`) still warns. If a stored run has
+no version, the UI renders "not reported" rather than guessing one.
+
+When a version-mismatch banner appears, align the Stove BOM and all Stove test dependencies with
+the server build. Do not edit `gradle.properties` to silence the warning.
+
 ## Known runtime pitfalls (0.25.x)
 
 Stove 0.25+ compiles against kotlinx-coroutines 1.11 and Ktor 3.5. Two failure signatures to recognize (full details in [0.25.0 release notes](https://github.com/Trendyol/stove/blob/main/docs/release-notes/0.25.0.md)):

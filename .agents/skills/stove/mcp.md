@@ -40,6 +40,9 @@ curl -s http://localhost:4040/api/v1/meta
 }
 ```
 
+`stove_server_version` is the exact server build coordinate: a release such as `0.28.0` or a
+snapshot such as `1.0.0.566-SNAPSHOT`. MCP run and app payloads use the same convention.
+
 ## MCP client config
 
 The dashboard's **Connect agent** panel generates the setup command for the selected agent and scope, using that server's MCP endpoint. It also provides manual configuration snippets. See the [agent setup guide](https://trendyol.github.io/stove/agent-setup/) for installation and update behavior.

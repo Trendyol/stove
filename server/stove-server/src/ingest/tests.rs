@@ -188,6 +188,31 @@ async fn process_run_started_event() {
 }
 
 #[tokio::test]
+async fn process_run_started_event_persists_a_snapshot_version() {
+  let svc = test_service();
+  svc
+    .ingest(&proto::DashboardEvent {
+      run_id: "run-snapshot".to_string(),
+      event_id: String::new(),
+      sequence: 0,
+      event: Some(proto::dashboard_event::Event::RunStarted(
+        proto::RunStartedEvent {
+          timestamp: Some(ts(1_704_067_200)),
+          app_name: "snapshot-api".to_string(),
+          systems: vec!["HTTP".to_string()],
+          stove_version: "1.0.0.566-SNAPSHOT".to_string(),
+          metadata: std::collections::HashMap::new(),
+        },
+      )),
+    })
+    .unwrap();
+
+  let runs = svc.repository.get_runs(None).unwrap();
+  assert_eq!(runs.len(), 1);
+  assert_eq!(runs[0].stove_version.as_deref(), Some("1.0.0.566-SNAPSHOT"));
+}
+
+#[tokio::test]
 #[allow(clippy::too_many_lines)]
 async fn process_full_lifecycle() {
   let svc = test_service();

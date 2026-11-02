@@ -6,8 +6,9 @@ import org.gradle.api.tasks.OutputDirectory
 import org.gradle.api.tasks.TaskAction
 
 abstract class GenerateDashboardVersionSourceTask : DefaultTask() {
+  /** Exact published Stove version (release or `<snapshot>.<build>-SNAPSHOT`). */
   @get:Input
-  abstract val stoveCompatibilityVersion: Property<String>
+  abstract val stoveVersion: Property<String>
 
   @get:OutputDirectory
   abstract val outputDir: DirectoryProperty
@@ -23,8 +24,9 @@ abstract class GenerateDashboardVersionSourceTask : DefaultTask() {
       """
       package com.trendyol.stove.dashboard
 
+      /** Exact published Stove version used for client/server comparisons. */
       internal object StoveCompatibilityVersion {
-        const val VALUE: String = "${stoveCompatibilityVersion.get()}"
+        const val VALUE: String = "${stoveVersion.get()}"
       }
       """.trimIndent()
     )

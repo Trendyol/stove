@@ -396,6 +396,26 @@ Dashboard is **opt-in** and **non-blocking**:
 - If the server is down or unreachable, the emitter auto-disables for the rest of the suite. Tests continue. No flakes.
 - Tests never wait on the dashboard.
 
+## Version reporting
+
+Stove reports one exact version: the published coordinate that produced the artifact. It is the
+release version for stable builds (`0.28.0`) and the snapshot coordinate for snapshot builds
+(`1.0.0.566-SNAPSHOT`). The same value flows through every surface:
+
+| Surface | Field | Meaning |
+|---|---|---|
+| Run and app payloads | `stove_version` | Published version of the client build that produced the run. |
+| `GET /api/v1/meta`, `GET /api/v1/health` | `stove_server_version` | Published version of the running server build. |
+| OpenAPI document | `info.version` | Published version of the running server build. |
+| Dashboard header | `__STOVE_VERSION__` | Published version of the bundled SPA/server build. |
+| MCP app/run/failure tools | `stove_version` | Published version of the run's client build. |
+
+The dashboard compares the numeric parts of these versions. A snapshot coordinate such as
+`1.0.0.566-SNAPSHOT` is valid, and a client and server from the same build produce no warning.
+A genuinely older runtime (for example `0.27.6` against `0.28.0`) still shows the version-mismatch
+banner with dependency-alignment guidance. Runs created before this reporting existed keep their
+stored `stove_version`; if it is absent, the UI says "not reported" instead of inventing a value.
+
 ## REST API
 
 The server exposes REST endpoints for integration:

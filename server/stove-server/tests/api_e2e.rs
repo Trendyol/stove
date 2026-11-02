@@ -536,6 +536,18 @@ async fn apps_return_latest_run_stove_version() {
   assert_eq!(apps[0]["stove_version"], "0.23.2");
 }
 
+#[tokio::test]
+async fn apps_and_runs_preserve_a_four_part_snapshot_version() {
+  let server = TestServer::start().await;
+  server.seed_run_with_version("run-snapshot", "snapshot-api", "1.0.0.566-SNAPSHOT");
+
+  let apps = server.get_json("/apps").await;
+  assert_eq!(apps[0]["stove_version"], "1.0.0.566-SNAPSHOT");
+
+  let runs = server.get_json("/runs").await;
+  assert_eq!(runs[0]["stove_version"], "1.0.0.566-SNAPSHOT");
+}
+
 // ---------------------------------------------------------------------------
 // GET /api/v1/runs
 // ---------------------------------------------------------------------------

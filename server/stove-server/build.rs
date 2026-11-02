@@ -23,16 +23,23 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
       &["../../lib/stove-dashboard-api/src/main/proto/"],
     )?;
 
-  // ── Version: env override (CI snapshot/next builds) or gradle.properties ──
+  // ── Version: exact published coordinate (snapshot or release) ──
+  // CI/Docker supply STOVE_VERSION. Local builds derive the same value as
+  // build-logic's CI.version(): a SNAPSHOT build is
+  // `<snapshot>.<BUILD_NUMBER>-SNAPSHOT`, otherwise the release is the build.
   println!("cargo:rerun-if-env-changed=STOVE_VERSION");
+  println!("cargo:rerun-if-env-changed=SNAPSHOT");
+  println!("cargo:rerun-if-env-changed=BUILD_NUMBER");
   let version = std::env::var("STOVE_VERSION").unwrap_or_else(|_| {
     let gradle_props = std::fs::read_to_string("../../gradle.properties")
       .expect("Failed to read gradle.properties — is this running from server/stove-server?");
-    gradle_props
-      .lines()
-      .find_map(|line| line.strip_prefix("version="))
-      .expect("No 'version=' line found in gradle.properties")
-      .to_string()
+    if std::env::var("SNAPSHOT").as_deref() == Ok("true") {
+      let snapshot_base = gradle_property(&gradle_props, "snapshot");
+      let build_number = std::env::var("BUILD_NUMBER").unwrap_or_else(|_| "0".to_string());
+      format!("{snapshot_base}.{build_number}-SNAPSHOT")
+    } else {
+      gradle_property(&gradle_props, "version")
+    }
   });
   println!("cargo:rustc-env=STOVE_VERSION={version}");
   println!("cargo:rerun-if-changed=../../gradle.properties");
@@ -41,6 +48,16 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
   build_spa();
 
   Ok(())
+}
+
+fn gradle_property(contents: &str, key: &str) -> String {
+  let prefix = format!("{key}=");
+  contents
+    .lines()
+    .find_map(|line| line.strip_prefix(&prefix))
+    .unwrap_or_else(|| panic!("No '{key}=' line found in gradle.properties"))
+    .trim()
+    .to_string()
 }
 
 /// Build the SPA when `spa/dist/index.html` is missing or SPA sources changed.

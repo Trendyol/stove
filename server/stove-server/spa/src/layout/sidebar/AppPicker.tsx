@@ -9,6 +9,7 @@ interface AppPickerProps {
 
 export function AppPicker({ apps, mismatchedApps, selectedApp, onSelectApp }: AppPickerProps) {
   const mismatchedAppSet = new Set(mismatchedApps);
+  const selectedAppSummary = apps.find((app) => app.app_name === selectedApp);
 
   return (
     <div className="stove-app-picker">
@@ -32,6 +33,14 @@ export function AppPicker({ apps, mismatchedApps, selectedApp, onSelectApp }: Ap
           <path d="m4 6 4 4 4-4z" />
         </svg>
       </div>
+      {selectedAppSummary ? (
+        <p
+          className="stove-app-version"
+          title="Exact Stove version that produced this app's latest run"
+        >
+          Stove {selectedAppSummary.stove_version ?? "version not reported"}
+        </p>
+      ) : null}
     </div>
   );
 }

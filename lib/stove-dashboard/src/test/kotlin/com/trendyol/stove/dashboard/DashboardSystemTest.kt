@@ -28,6 +28,13 @@ import java.util.concurrent.atomic.AtomicInteger
 import kotlin.time.Duration.Companion.milliseconds
 
 class DashboardSystemTest : FunSpec({
+  test("generated version constant reports an exact release or snapshot build") {
+    // The value comes from the published project coordinate; this guards against
+    // silently baking in only the release line (the original 0.28.0 bug).
+    StoveCompatibilityVersion.VALUE.isNotBlank() shouldBe true
+    StoveCompatibilityVersion.VALUE.matches(Regex("""\d+(\.\d+){2,}(?:-[0-9A-Za-z.-]+)?""")) shouldBe true
+  }
+
   test("external profiling configuration is absent by default") {
     DashboardSystem(Stove(), DashboardSystemOptions("test-api")).configuration() shouldBe emptyList()
   }

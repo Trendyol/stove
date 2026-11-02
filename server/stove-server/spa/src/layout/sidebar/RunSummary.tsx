@@ -42,6 +42,8 @@ export function RunSummary({
           <dd>{run.id}</dd>
           <dt>Status</dt>
           <dd>{run.status}</dd>
+          <dt>Stove version</dt>
+          <dd>{run.stove_version ?? "not reported"}</dd>
         </dl>
         {Object.keys(run.metadata).length > 0 ? (
           <section className="stove-run-metadata" aria-label="Run metadata">

@@ -93,6 +93,14 @@
   pointer-events: none;
 }
 
+.stove-app-version {
+  margin: 6px 0 0;
+  overflow-wrap: anywhere;
+  color: var(--stove-text-muted);
+  font-family: var(--font-mono);
+  font-size: 11px;
+}
+
 .stove-run-picker {
   display: grid;
   gap: 6px;

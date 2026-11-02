@@ -16,8 +16,89 @@ test("compareVersions detects exact matches, directional mismatches, and unknown
   assert.equal(compareVersions("0.23.0", "0.23.2"), "runtime_older");
   assert.equal(compareVersions("0.23.3", "0.23.2"), "server_older");
   assert.equal(compareVersions(null, "0.23.2"), "unknown");
-  assert.equal(compareVersions("0.23.2-SNAPSHOT", "0.23.2"), "unknown");
+  assert.equal(compareVersions("0.23.2-SNAPSHOT", "0.23.2"), null);
+  assert.equal(compareVersions("1.0.0.566-SNAPSHOT", "1.0.0.566-SNAPSHOT"), null);
+  assert.equal(compareVersions("1.0.0.565-SNAPSHOT", "1.0.0.566-SNAPSHOT"), "runtime_older");
+  assert.equal(compareVersions("1.0.0.567-SNAPSHOT", "1.0.0.566-SNAPSHOT"), "server_older");
+  assert.equal(compareVersions("0.27.6", "0.28.0"), "runtime_older");
 });
+
+test("summarizeVersionMismatches accepts a same-build 566 snapshot pair", () => {
+  const summary = summarizeVersionMismatches(
+    [
+      {
+        app_name: "ecomm-java",
+        latest_run_id: "run-566",
+        latest_run_started_at: "2024-06-01T10:00:00Z",
+        latest_status: "PASSED",
+        stove_version: "1.0.0.566-SNAPSHOT",
+      },
+    ],
+    "1.0.0.566-SNAPSHOT",
+    "ecomm-java",
+  );
+
+  assert.equal(summary, null);
+});
+
+test("summarizeVersionMismatches still warns for a genuinely older runtime", () => {
+  const summary = summarizeVersionMismatches(
+    [
+      {
+        app_name: "ecomm-java",
+        latest_run_id: "run-old",
+        latest_run_started_at: "2024-06-01T10:00:00Z",
+        latest_status: "PASSED",
+        stove_version: "0.27.6",
+      },
+    ],
+    "0.28.0",
+    "ecomm-java",
+  );
+
+  assert.equal(summary.serverVersion, "0.28.0");
+  assert.equal(summary.mismatches.length, 1);
+  assert.equal(summary.selectedAppMismatch.kind, "runtime_older");
+});
+
+test("summarizeVersionMismatches falls back to release-only version strings", () => {
+  const summary = summarizeVersionMismatches(
+    [
+      {
+        app_name: "release-api",
+        latest_run_id: "run-release",
+        latest_run_started_at: "2024-06-01T10:00:00Z",
+        latest_status: "PASSED",
+        stove_version: "0.28.0",
+      },
+    ],
+    "0.28.0",
+    "release-api",
+  );
+
+  assert.equal(summary, null);
+});
+
+test("summarizeVersionMismatches reports a missing version without crashing", () => {
+  const summary = summarizeVersionMismatches(
+    [
+      {
+        app_name: "legacy-api",
+        latest_run_id: "run-legacy",
+        latest_run_started_at: "2024-06-01T10:00:00Z",
+        latest_status: "PASSED",
+        stove_version: null,
+      },
+    ],
+    "0.28.0",
+    "legacy-api",
+  );
+
+  assert.equal(summary.mismatches.length, 1);
+  assert.equal(summary.selectedAppMismatch.kind, "unknown");
+  assert.equal(summary.selectedAppMismatch.runtimeVersion, null);
+});
+
 
 test("summarizeVersionMismatches returns null when every latest app matches the server", () => {
   const summary = summarizeVersionMismatches(
