@@ -1,3 +1,4 @@
+mod encoding;
 mod openapi;
 pub(crate) mod routes;
 pub mod server;

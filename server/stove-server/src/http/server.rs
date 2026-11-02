@@ -65,6 +65,13 @@ pub fn create_router_with_public_url(
       tower_http::compression::CompressionLayer::new()
         .quality(tower_http::compression::CompressionLevel::Fastest),
     )
+    // The compression layer can only report an unsatisfiable `Accept-Encoding`
+    // after the handler has produced a response, which would apply a mutation
+    // and then report it as failed. Reject those requests before routing, but
+    // inside CORS so browsers can read the rejection.
+    .layer(axum::middleware::from_fn(
+      super::encoding::require_satisfiable_encoding,
+    ))
     .layer(CorsLayer::permissive())
     .layer(axum::middleware::from_fn_with_state(
       state.repository.metrics.app.clone(),

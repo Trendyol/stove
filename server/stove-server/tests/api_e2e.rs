@@ -2223,6 +2223,45 @@ async fn admin_status_and_retention_update_prune_completed_runs_immediately() {
 }
 
 #[tokio::test]
+async fn unsatisfiable_accept_encoding_rejects_mutations_before_they_apply() {
+  let server = TestServer::start().await;
+  assert_eq!(
+    server.get_json("/admin/status").await["retention_runs_per_app"],
+    1
+  );
+
+  let response = server
+    .client
+    .put(server.url("/admin/retention"))
+    .header("Accept-Encoding", "br, identity;q=0")
+    .json(&serde_json::json!({ "runs_per_app": 7 }))
+    .send()
+    .await
+    .unwrap();
+  assert_eq!(response.status(), StatusCode::NOT_ACCEPTABLE);
+  // The handler never ran, so the retention setting is unchanged.
+  assert_eq!(
+    server.get_json("/admin/status").await["retention_runs_per_app"],
+    1
+  );
+
+  // Clients that accept gzip still reach the handler and negotiate it.
+  let accepted = server
+    .client
+    .put(server.url("/admin/retention"))
+    .header("Accept-Encoding", "gzip")
+    .json(&serde_json::json!({ "runs_per_app": 7 }))
+    .send()
+    .await
+    .unwrap();
+  assert_eq!(accepted.status(), StatusCode::OK);
+  assert_eq!(
+    server.get_json("/admin/status").await["retention_runs_per_app"],
+    7
+  );
+}
+
+#[tokio::test]
 async fn admin_database_explorer_exposes_schema_and_executes_queries() {
   let server = TestServer::start().await;
   server.seed_run("explorer-run", "checkout-api");
