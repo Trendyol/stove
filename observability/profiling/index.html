@@ -4351,7 +4351,7 @@
 <h3 id="upload-limits-timeouts-and-retries">Upload limits, timeouts, and retries<a class="headerlink" href="#upload-limits-timeouts-and-retries" title="Permanent link">&para;</a></h3>
 <p>Allow at least <strong>16 MiB (16,777,216 bytes)</strong> for the complete profile request body, including multipart overhead, at every proxy/WAF hop. For example, the relevant NGINX location can use <code>client_max_body_size 16m;</code>. Equivalent settings differ by ingress controller. A proxy allowing larger requests does not raise Stove's fixed 16 MiB limit. Gzip-compressed parts also remain subject to the server's <a href="#storage-and-resource-limits">decoded and normalized limits</a>.</p>
 <p>The Java integration configures a <strong>5-second profile export timeout</strong> and <strong>two ingestion retries</strong>. Dashboard HTTP events have a separate <strong>5-second connection timeout</strong> and <strong>10-second request timeout</strong>. These are independent of the default 10-second profile upload interval. A long proxy timeout cannot extend the client's deadline; measure upload and conversion latency when diagnosing timeouts. Preserve upstream status codes so the client can recognize failures.</p>
-<p>An unknown run or unavailable conversion slot returns 503; there are two conversion slots per server process. Retries of the same recording are idempotent. Collection and upload are best effort, not a durable delivery queue: exhausted retries, process termination, and failed teardown can leave gaps. Keep normal Stove teardown enabled so it can flush the pending interval. Reducing the interval can reduce individual recording size, but increases upload/conversion frequency.</p>
+<p>An unknown run or exhausted profiling capacity returns 503. Each server process admits up to 24 profile requests, buffers up to four uploads, and runs two conversions concurrently; requests can wait up to two seconds in total for upload and conversion capacity. Retries of the same recording are idempotent. Collection and upload are best effort, not a durable delivery queue: exhausted retries, process termination, and failed teardown can leave gaps. Keep normal Stove teardown enabled so it can flush the pending interval. Reducing the interval can reduce individual recording size, but increases upload/conversion frequency.</p>
 <h3 id="tls-and-authentication">TLS and authentication<a class="headerlink" href="#tls-and-authentication" title="Permanent link">&para;</a></h3>
 <p>TLS usually terminates at the existing ingress, which forwards HTTP to Stove on the private network. The test JVM must trust the certificate issuer and the certificate must match the public hostname. A browser or <code>curl</code> succeeding does not prove Java trust is configured: the Gradle test JVM may use a different JDK and trust store from the browser, shell, or Gradle daemon.</p>
 <p>For an internal CA, provision the approved CA chain in the test JDK's trust store, or configure a dedicated trust store on the selected Gradle <code>Test</code> tasks using the JVM properties <code>javax.net.ssl.trustStore</code>, <code>javax.net.ssl.trustStoreType</code>, and, when required, <code>javax.net.ssl.trustStorePassword</code>. Keep any password in the existing CI secret mechanism. Setting properties only on the Gradle daemon does not configure forked test JVMs. Check the Gradle Java toolchain and IntelliJ Gradle JVM when local and CI results differ. Do not disable certificate or hostname verification.</p>
@@ -4424,7 +4424,7 @@
 </tr>
 <tr>
 <td>Persistent 503</td>
-<td>Missing run in the target database, conversion saturation, or database availability; correlate with server logs</td>
+<td>Missing run in the target database, profiling capacity saturation, or database availability; correlate with server logs</td>
 </tr>
 <tr>
 <td>502/504 or client timeout</td>
@@ -4525,7 +4525,7 @@
 </tr>
 </tbody>
 </table>
-<p>The Java integration supplies these headers automatically. Unknown or duplicate multipart fields are rejected. Repeated uploads of the same recording and identity are idempotent. An unknown run or exhausted conversion slots produces 503 so the agent can retry; invalid formats do not become supported through retries.</p>
+<p>The Java integration supplies these headers automatically. Unknown or duplicate multipart fields are rejected. Repeated uploads of the same recording and identity are idempotent. An unknown run or exhausted profiling capacity produces 503 so the agent can retry; invalid formats do not become supported through retries.</p>
 <p>For a separate JVM, providing only a server URL is insufficient: the uploader must implement this contract and bind to the exact dashboard run. <code>DashboardExternalProfilingOptions</code> exposes the exact run identity to runner environment mappers, but Java agent attachment and lifecycle still require custom integration. Treat external JVM integration as custom work, not a supported one-line agent recipe. Do not guess a run ID from the latest run of an application.</p>
 <h3 id="storage-and-resource-limits">Storage and resource limits<a class="headerlink" href="#storage-and-resource-limits" title="Permanent link">&para;</a></h3>
 <p>Profiles use the server's configured SQLite or PostgreSQL database. Run retention and purge delete associated profiles.</p>
@@ -4550,25 +4550,38 @@
 <td>32 MiB before compression; 8 MiB compressed</td>
 </tr>
 <tr>
+<td>Profiling admission</td>
+<td>24 requests per server process; capacity waits total at most 2 seconds</td>
+</tr>
+<tr>
 <td>Concurrent profile conversions</td>
 <td>2</td>
 </tr>
 <tr>
+<td>Buffered uploads</td>
+<td>4; incomplete bodies time out after 30 seconds</td>
+</tr>
+<tr>
 <td>Retained per run</td>
-<td>256 newest chunks and 64 MiB of compressed profiles</td>
+<td>256 newest chunks per service/instance; shared 64 MiB compressed per run</td>
 </tr>
 <tr>
 <td>Query decoding</td>
-<td>64 MiB, newest first</td>
+<td>4096 matching chunks / 64 MiB; streams interleaved, newest first within each stream</td>
 </tr>
 <tr>
 <td>REST response</td>
-<td>32 series, 20 hotspots and 200 stacks per series</td>
+<td>32 series, 20 hotspots and 200 stacks per series; gzip when accepted</td>
+</tr>
+<tr>
+<td><code>stove_profiles</code> MCP response</td>
+<td>64 KiB including baseline, navigation, text fallback and JSON-RPC envelope</td>
 </tr>
 </tbody>
 </table>
-<p>Normalized recordings share frame definitions across stacks and metrics to avoid repeating long method names. These limits bound accepted payloads and retained data, not total parser process memory. Include conversion overhead when sizing a shared server.</p>
+<p>Normalized recordings share frame definitions across stacks and metrics. Identical ordered stacks with identical labels are combined within each metric/unit; values and contributing record counts are preserved. Older recordings remain readable. Sample record counts describe contributing normalized records per metric, not independent observations. These limits bound accepted payloads and retained data, not total parser process memory. Include conversion overhead when sizing a shared server.</p>
 <p><code>GET /api/v1/runs/{run_id}/profiles</code> accepts <code>service</code>, <code>instance</code>, <code>metric</code>, <code>from_ms</code>, <code>until_ms</code>, <code>trace_id</code>, and <code>span_id</code>. Query times are <strong>milliseconds</strong>, unlike upload times. Responses expose truncation and omitted stack values. Older recordings may already have been evicted by run-level retention; narrowing a query cannot recover them.</p>
+<p>JVM capture retries failed restarts on later intervals. Exports run separately with at most one in-flight and one pending snapshot; slow exports can replace a pending snapshot with newer evidence. Shutdown waits up to five seconds for exports, then cancels pending work. Container shutdown bounds the graceful Docker call by the configured grace period and allows a separate five-second removal attempt. Failed removal retains the container handle for a later retry. These deadlines bound caller waits; an unresponsive Docker transport may continue on a bounded daemon worker.</p>
 <h2 id="troubleshooting">Troubleshooting<a class="headerlink" href="#troubleshooting" title="Permanent link">&para;</a></h2>
 <table>
 <thead>
@@ -4604,7 +4617,7 @@
 </tr>
 <tr>
 <td>Upload returns 503</td>
-<td>Verify the exact run reached the same storage; check conversion load if retries persist</td>
+<td>Verify the exact run reached the same storage; check upload and conversion load if retries persist</td>
 </tr>
 <tr>
 <td>Native profiler cannot start</td>
