@@ -6,7 +6,25 @@
     "schedule:earlyMondays"
   ],
   "branchPrefix": "renovate/",
+  "customManagers": [
+    {
+      "customType": "regex",
+      "description": "Track the GitHub release used by the Pyroscope OTel Ivy dependency",
+      "managerFilePatterns": ["/^gradle\\/libs\\.versions\\.toml$/"],
+      "matchStrings": ["(?:^|\\n)pyroscopeOtelExtension\\s*=\\s*\"(?<currentValue>[^\"\\s]+)\""],
+      "datasourceTemplate": "github-releases",
+      "depNameTemplate": "grafana/otel-profiling-java",
+      "extractVersionTemplate": "^v(?<version>.*)$"
+    }
+  ],
   "packageRules": [
+    {
+      "description": "The Pyroscope OTel extension is published on GitHub, not Maven",
+      "matchManagers": ["gradle"],
+      "matchDatasources": ["maven"],
+      "matchPackageNames": ["io.pyroscope:pyroscope-otel-javaagent-extension"],
+      "enabled": false
+    },
     {
       "description": "Keep rusqlite at 0.39.0 until refinery-core supports a newer version",
       "matchManagers": ["cargo"],
