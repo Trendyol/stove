@@ -116,3 +116,12 @@ export const meta = {
   stove_server_version: "0.24.0",
   mcp: { enabled: true, endpoint: "/mcp", scope: "read", transport: "http" },
 };
+
+export function testPage(tests = [], next_cursor = null, total = tests.length) {
+  return { tests, next_cursor, total, remaining: Math.max(0, total - tests.length), summary: {
+    total, passed: tests.filter(t => t.status === "PASSED").length,
+    failed: tests.filter(t => ["FAILED", "ERROR"].includes(t.status)).length,
+    running: tests.filter(t => t.status === "RUNNING").length,
+  } };
+}
+export const testPages = (tests = []) => ({ pages: [testPage(tests)], pageParams: [undefined] });

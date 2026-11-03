@@ -1,4 +1,4 @@
-import type { AdminStatus, AppSummary, PurgePreview, Run } from "../../api/types";
+import type { AdminStatus, AppSummary, PurgePreview, RunMetadataFacet } from "../../api/types";
 import { SelectField } from "../../components/SelectField";
 import type { MetadataFilter } from "../../utils/metadata-filter";
 import { PurgeMetadataFilters } from "./PurgeMetadataFilters";
@@ -61,7 +61,7 @@ interface PurgeCardProps {
   olderThan: string;
   includeRunning: boolean;
   metadata: MetadataFilter;
-  metadataRuns: Run[];
+  metadataFacets: RunMetadataFacet[];
   metadataLoading: boolean;
   metadataError: string | null;
   onMetadataChange: (value: MetadataFilter) => void;
@@ -110,7 +110,7 @@ export function PurgeCard(props: PurgeCardProps) {
       </div>
       <PurgeMetadataFilters
         appName={props.appName}
-        runs={props.metadataRuns}
+        options={props.metadataFacets}
         value={props.metadata}
         loading={props.metadataLoading}
         error={props.metadataError}

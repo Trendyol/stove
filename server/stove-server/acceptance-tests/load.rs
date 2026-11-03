@@ -1,6 +1,6 @@
 pub mod support;
 
-use std::collections::BTreeMap;
+use std::collections::{BTreeMap, HashSet};
 use std::sync::Arc;
 use std::sync::atomic::{AtomicUsize, Ordering};
 use std::time::{Duration, Instant};
@@ -47,17 +47,29 @@ enum QueryKind {
   AdminStatus,
   DashboardSpa,
   McpMetadataFilter,
+  MetadataFacets,
+  MultiValueMetadata,
+  TestPages,
+  McpFailures,
+  McpApps,
+  McpDiagnosis,
 }
 
 impl QueryKind {
   fn for_request(request: usize) -> Self {
-    match request % 6 {
+    match request % 12 {
       0 => Self::RestMetadataFilter,
       1 => Self::DashboardApps,
       2 => Self::DashboardRuns,
       3 => Self::AdminStatus,
       4 => Self::DashboardSpa,
-      _ => Self::McpMetadataFilter,
+      5 => Self::McpMetadataFilter,
+      6 => Self::MetadataFacets,
+      7 => Self::MultiValueMetadata,
+      8 => Self::TestPages,
+      9 => Self::McpFailures,
+      10 => Self::McpApps,
+      _ => Self::McpDiagnosis,
     }
   }
 
@@ -69,6 +81,12 @@ impl QueryKind {
       Self::AdminStatus => "admin_status",
       Self::DashboardSpa => "dashboard_spa",
       Self::McpMetadataFilter => "mcp_metadata_filter",
+      Self::MetadataFacets => "metadata_facets",
+      Self::MultiValueMetadata => "multi_value_metadata",
+      Self::TestPages => "test_pages",
+      Self::McpFailures => "mcp_failures",
+      Self::McpApps => "mcp_apps",
+      Self::McpDiagnosis => "mcp_diagnosis",
     }
   }
 }
@@ -85,8 +103,41 @@ async fn postgres_metadata_queries_and_dashboard_reads_remain_responsive_under_l
   let database = PostgresTestDatabase::start().await?;
   let stove = RunningStove::start_postgres(&database.url, Some(0)).await?;
   seed_and_verify_database(&database, config.runs).await?;
+  verify_all_pages(&stove, config.runs / 10).await?;
   let (measurements, elapsed) = execute_load(&stove, config).await?;
   verify_measurements(&measurements, elapsed, config)?;
+  Ok(())
+}
+
+async fn verify_all_pages(stove: &RunningStove, expected: usize) -> Result<()> {
+  let mut cursor: Option<String> = None;
+  let mut ids = HashSet::new();
+  loop {
+    let mut url = reqwest::Url::parse(&format!("{}/api/v1/runs", stove.base_url))?;
+    url
+      .query_pairs_mut()
+      .append_pair("app", "load-app-0")
+      .append_pair("limit", "100");
+    if let Some(token) = &cursor {
+      url.query_pairs_mut().append_pair("cursor", token);
+    }
+    let page = get_json(&stove.client, url).await?;
+    for run in page["runs"].as_array().context("page runs")? {
+      ensure!(
+        ids.insert(run["id"].as_str().context("run id")?.to_owned()),
+        "duplicate run across pages"
+      );
+    }
+    cursor = page["next_cursor"].as_str().map(ToOwned::to_owned);
+    if cursor.is_none() {
+      break;
+    }
+  }
+  ensure!(
+    ids.len() == expected,
+    "walked {} runs, expected {expected}",
+    ids.len()
+  );
   Ok(())
 }
 
@@ -219,8 +270,11 @@ fn verify_query_plans(postgres: &mut postgres::Client) -> Result<()> {
     "expected a bitmap index scan for the selective JSONB query:\n{metadata_plan}"
   );
   ensure!(
-    dashboard_plan.contains("idx_runs_app_started_at"),
-    "PostgreSQL did not select idx_runs_app_started_at for an ordered dashboard query:\n{dashboard_plan}"
+    (dashboard_plan.contains("idx_runs_app_started_at")
+      || dashboard_plan.contains("idx_runs_started_at_id"))
+      && dashboard_plan.contains("Index Cond:")
+      && !dashboard_plan.contains("Sort"),
+    "PostgreSQL did not use an ordered keyset index scan for the dashboard query:\n{dashboard_plan}"
   );
   Ok(())
 }
@@ -256,7 +310,15 @@ fn seed_runs(postgres: &mut postgres::Client, run_count: usize) -> Result<()> {
     &[&run_count],
   )?;
   ensure!(inserted == run_count as u64, "seeded {inserted} runs");
-  postgres.batch_execute("ANALYZE runs")?;
+  postgres.batch_execute(r#"
+    INSERT INTO tests (run_id, id, test_name, spec_name, test_path, started_at, status)
+    SELECT 'load-run-4242', 'test-' || lpad(value::text, 4, '0'), 'test ' || value, 'LoadSpec', '["load"]',
+      '2024-01-01T00:00:00Z', CASE WHEN value % 2 = 0 THEN 'FAILED' ELSE 'PASSED' END
+    FROM generate_series(1, 2000) value;
+    UPDATE runs SET status = 'FAILED', total_tests = 2000, failed = 1000, passed = 1000 WHERE id = 'load-run-4242';
+    ANALYZE runs;
+    ANALYZE tests;
+  "#)?;
   Ok(())
 }
 
@@ -269,8 +331,9 @@ fn explain_query_plans(postgres: &mut postgres::Client) -> Result<(String, Strin
     "EXPLAIN SELECT id, app_name, started_at, status, metadata
        FROM runs
       WHERE app_name = $1
-      ORDER BY started_at DESC, id DESC",
-    &[&"load-app-2"],
+        AND (started_at, id) < ($2, $3)
+      ORDER BY started_at DESC, id DESC LIMIT 51",
+    &[&"load-app-2", &"2024-01-01T06:00:00Z", &"load-run-21600"],
   )?;
   Ok((format_plan(metadata_rows), format_plan(dashboard_rows)))
 }
@@ -306,6 +369,22 @@ async fn execute_query(
   run_count: usize,
 ) -> Result<()> {
   match kind {
+    QueryKind::TestPages => assert_test_pages(client, base_url).await,
+    QueryKind::McpFailures => {
+      assert_mcp_survey(client, base_url, "stove_failures", json!({"limit":20})).await
+    }
+    QueryKind::McpApps => assert_mcp_survey(client, base_url, "stove_apps", json!({})).await,
+    QueryKind::McpDiagnosis => {
+      assert_mcp_survey(
+        client,
+        base_url,
+        "stove_diagnose",
+        json!({"app_name":"load-app-2", "metadata":{"team":"team-42"}}),
+      )
+      .await
+    }
+    QueryKind::MetadataFacets => assert_metadata_facets(client, base_url, run_count).await,
+    QueryKind::MultiValueMetadata => assert_multi_value_metadata(client, base_url).await,
     QueryKind::RestMetadataFilter => assert_rest_metadata_filter(client, base_url).await,
     QueryKind::DashboardApps => assert_dashboard_apps(client, base_url).await,
     QueryKind::DashboardRuns => assert_dashboard_runs(client, base_url, run_count).await,
@@ -322,7 +401,7 @@ async fn assert_rest_metadata_filter(client: &Client, base_url: &str) -> Result<
     r#"{"team":"team-42","gitlab.pipeline_id":"4242"}"#,
   );
   let runs = get_json(client, url).await?;
-  ensure!(has_single_run(&runs, "id"));
+  ensure!(has_single_run(&runs["runs"], "id"));
   Ok(())
 }
 
@@ -333,12 +412,51 @@ async fn assert_dashboard_apps(client: &Client, base_url: &str) -> Result<()> {
 }
 
 async fn assert_dashboard_runs(client: &Client, base_url: &str, run_count: usize) -> Result<()> {
-  let runs = get_json(client, format!("{base_url}/api/v1/runs?app=load-app-0")).await?;
-  ensure!(
-    runs
-      .as_array()
-      .is_some_and(|runs| runs.len() == run_count / 10)
-  );
+  #[derive(serde::Deserialize)]
+  struct Page {
+    runs: Vec<serde::de::IgnoredAny>,
+    next_cursor: Option<String>,
+  }
+  let page: Page = client
+    .get(format!("{base_url}/api/v1/runs?app=load-app-0"))
+    .send()
+    .await?
+    .error_for_status()?
+    .json()
+    .await?;
+  ensure!(page.runs.len() == (run_count / 10).min(50));
+  ensure!(page.next_cursor.is_some() == (run_count / 10 > 50));
+  Ok(())
+}
+
+async fn assert_metadata_facets(client: &Client, base_url: &str, run_count: usize) -> Result<()> {
+  let facets = get_json(
+    client,
+    format!("{base_url}/api/v1/runs/metadata?app=load-app-0"),
+  )
+  .await?;
+  let pipeline = facets
+    .as_array()
+    .context("metadata facets")?
+    .iter()
+    .find(|facet| facet["key"] == "gitlab.pipeline_id")
+    .context("pipeline facet")?;
+  ensure!(pipeline["values"].as_array().context("facet values")?.len() == run_count / 10);
+  Ok(())
+}
+
+async fn assert_multi_value_metadata(client: &Client, base_url: &str) -> Result<()> {
+  let mut url = reqwest::Url::parse(&format!("{base_url}/api/v1/runs"))?;
+  // A sparse OR selector without a single-value predicate must still find the
+  // matching rows before applying the page limit.
+  url
+    .query_pairs_mut()
+    .append_pair("metadata", r#"{"gitlab.pipeline_id":["4242","8484"]}"#);
+  let page = get_json(client, url).await?;
+  let runs = page["runs"].as_array().context("multi-value runs")?;
+  ensure!(runs.len() == 2);
+  ensure!(runs[0]["id"] == "load-run-8484" && runs[1]["id"] == "load-run-4242");
+  ensure!(page["next_cursor"].is_null());
   Ok(())
 }
 
@@ -426,4 +544,70 @@ fn setting_u128(name: &str, default: u128) -> u128 {
     .ok()
     .and_then(|value| value.parse().ok())
     .unwrap_or(default)
+}
+
+async fn assert_test_pages(client: &Client, base_url: &str) -> Result<()> {
+  let first = get_json(
+    client,
+    format!("{base_url}/api/v1/runs/load-run-4242/tests?outcome=fail"),
+  )
+  .await?;
+  ensure!(first["tests"].as_array().context("tests")?.len() == 50);
+  ensure!(first["total"] == 1000 && first["summary"]["total"] == 2000);
+  let cursor = first["next_cursor"].as_str().context("next test cursor")?;
+  let second = get_json(
+    client,
+    format!("{base_url}/api/v1/runs/load-run-4242/tests?outcome=fail&cursor={cursor}"),
+  )
+  .await?;
+  ensure!(second["tests"][0]["id"] == "test-0102");
+  let sparse = get_json(
+    client,
+    format!("{base_url}/api/v1/runs/load-run-4242/tests?search=test%202000"),
+  )
+  .await?;
+  ensure!(sparse["total"] == 1 && sparse["tests"][0]["id"] == "test-2000");
+  Ok(())
+}
+
+async fn assert_mcp_survey(
+  client: &Client,
+  base_url: &str,
+  name: &str,
+  arguments: Value,
+) -> Result<()> {
+  let response: Value = client.post(format!("{base_url}/mcp"))
+    .header(reqwest::header::ACCEPT, "application/json, text/event-stream")
+    .json(&json!({"jsonrpc":"2.0", "id":1, "method":"tools/call", "params":{"name":name,"arguments":arguments}}))
+    .send().await?.error_for_status()?.json().await?;
+  ensure!(response["result"]["isError"] == false, "{response}");
+  let content = &response["result"]["structuredContent"];
+  match name {
+    "stove_failures" => {
+      ensure!(content["total_failure_count"] == 1000 && content["failure_count"] == 20);
+      ensure!(content["next_cursor"].is_string());
+    }
+    "stove_apps" => ensure!(
+      content["apps"]
+        .as_array()
+        .context("apps")?
+        .iter()
+        .find(|app| app["app_name"] == "load-app-2")
+        .context("app")?["failed_runs"]
+        == 1
+    ),
+    "stove_diagnose" => {
+      ensure!(content["status"] == "ambiguous_run");
+      ensure!(
+        content["candidate_runs"]
+          .as_array()
+          .context("candidates")?
+          .len()
+          == 5
+      );
+      ensure!(content["matched_runs"].as_i64().context("matches")? > 5);
+    }
+    _ => unreachable!(),
+  }
+  Ok(())
 }

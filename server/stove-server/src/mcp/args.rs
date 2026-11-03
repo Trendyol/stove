@@ -39,11 +39,13 @@ pub(crate) struct RunsArgs {
   pub(crate) common: CommonArgs,
   pub(crate) app_name: Option<String>,
   pub(crate) status: Option<String>,
-  pub(crate) metadata: Option<BTreeMap<String, String>>,
+  pub(crate) metadata: Option<crate::storage::repository::MetadataSelectors>,
+  pub(crate) cursor: Option<String>,
 }
 
 #[derive(Debug, Deserialize, Default)]
 pub(crate) struct FailuresArgs {
+  pub(crate) cursor: Option<String>,
   #[serde(flatten)]
   pub(crate) common: CommonArgs,
   pub(crate) app_name: Option<String>,
@@ -64,7 +66,7 @@ pub(crate) struct DiagnoseArgs {
   pub(crate) common: CommonArgs,
   pub(crate) run_id: Option<String>,
   pub(crate) test_id: Option<String>,
-  pub(crate) after_test_id: Option<String>,
+  pub(crate) cursor: Option<String>,
   pub(crate) app_name: Option<String>,
   pub(crate) metadata: Option<BTreeMap<String, String>>,
 }

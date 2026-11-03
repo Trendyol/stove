@@ -4,10 +4,8 @@ import {
   mergeApps,
   mergeEntries,
   mergeInteractions,
-  mergeRuns,
   mergeSnapshotLists,
   mergeSpanLists,
-  mergeTests,
   mergeWarnings,
 } from "./live-cache/reconciliation";
 import { dashboardKeys } from "./query-keys";
@@ -35,10 +33,6 @@ function dashboardQuery<T>(
 
 export const dashboardQueries = {
   apps: () => dashboardQuery(dashboardKeys.apps, api.getApps, mergeApps),
-  runs: (app: string) =>
-    dashboardQuery(dashboardKeys.runs(app), (signal) => api.getRuns(app, signal), mergeRuns),
-  tests: (runId: string) =>
-    dashboardQuery(dashboardKeys.tests(runId), (signal) => api.getTests(runId, signal), mergeTests),
   entries: (runId: string, testId: string) =>
     dashboardQuery(
       dashboardKeys.entries(runId, testId),

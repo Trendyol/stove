@@ -38,10 +38,15 @@ function DashboardApp({ route }: { route: StoveRoute }) {
     activeApp,
     latestRun,
     runs,
-    allRuns,
+    metadataOptions,
+    runPickerFeedback,
+    hasOlderRuns,
+    loadingOlderRuns,
+    loadOlderRuns,
     selectedRunId,
     metadataFilter,
     tests,
+    testBrowser,
     selectedTest,
     liveConnected,
     mismatchedApps,
@@ -75,11 +80,16 @@ function DashboardApp({ route }: { route: StoveRoute }) {
           activeApp={activeApp}
           mismatchedApps={mismatchedApps}
           runs={runs}
-          allRuns={allRuns}
+          metadataOptions={metadataOptions}
+          runPickerFeedback={runPickerFeedback}
+          hasOlderRuns={hasOlderRuns}
+          loadingOlderRuns={loadingOlderRuns}
+          onLoadOlderRuns={loadOlderRuns}
           selectedRunId={selectedRunId}
           metadataFilter={metadataFilter}
           latestRun={latestRun}
           tests={tests}
+          testBrowser={testBrowser}
           selectedTest={selectedTest}
           liveConnected={liveConnected}
           onSelectApp={selectApp}

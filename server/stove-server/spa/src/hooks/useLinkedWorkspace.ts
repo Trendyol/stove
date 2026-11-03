@@ -4,6 +4,7 @@ import { evidenceKeys, invalidateEvidenceQueries } from "../api/evidence-queries
 import { applyLiveDashboardEvents, invalidateDashboardQueries } from "../api/live-cache";
 import { useSSE } from "../api/sse";
 import type { EvidenceLocation } from "../utils/location";
+import { useTestPages } from "./useTestPages";
 
 export function useLinkedWorkspace(location: EvidenceLocation) {
   const { runId, testId } = location;
@@ -43,11 +44,6 @@ export function useLinkedWorkspace(location: EvidenceLocation) {
     retry: false,
     refetchInterval: connected ? false : 5000,
   });
-  const tests = useQuery({
-    queryKey: evidenceKeys.tests(runId),
-    queryFn: !testId && !location.focus ? ({ signal }) => api.getTests(runId, signal) : skipToken,
-    retry: false,
-    refetchInterval: connected ? false : 5000,
-  });
+  const tests = useTestPages(!testId && !location.focus ? runId : undefined, {}, connected);
   return { run, test, tests, connected };
 }

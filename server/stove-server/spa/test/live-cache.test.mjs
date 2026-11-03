@@ -1,3 +1,4 @@
+import { testPages } from "./helpers/fixtures.mjs";
 import assert from "node:assert/strict";
 import test from "node:test";
 import createJiti from "jiti";
@@ -9,18 +10,44 @@ const {
   loadAndReconcileDashboardData,
   reconcileDashboardData,
 } = await jiti.import("../src/api/live-cache.ts");
+const { dashboardKeys } = await jiti.import("../src/api/query-keys.ts");
+const { runPagesOptions } = await jiti.import("../src/api/run-queries.ts");
+const { api } = await jiti.import("../src/api/client.ts");
 const { dashboardQueries } = await jiti.import("../src/api/dashboard-queries.ts");
 
+
+function pages(runs) { return { pages: [{ runs, next_cursor: null }], pageParams: [undefined] }; }
+function setRuns(client, app, runs) { client.setQueryData(dashboardKeys.runs({ app }), pages(runs)); }
+function getRuns(client, app) { return client.getQueryData(dashboardKeys.runs({ app })).pages.flatMap(p => p.runs); }
 
 function applyLiveDashboardEvent(client, event) {
   applyLiveDashboardEvents(client, [event]);
 }
 
+test("new runs update only matching loaded pages without inventing a cursor for pending queries", () => {
+  const client = new QueryClient();
+  const matching = dashboardKeys.runs({ app: "live-app", metadata: { team: ["checkout"] } });
+  const other = dashboardKeys.runs({ app: "live-app", metadata: { team: ["payments"] } });
+  client.setQueryData(matching, pages([]));
+  const pending = dashboardKeys.runs({ app: "live-app", metadata: {} });
+  client.getQueryCache().build(client, { queryKey: pending });
+  client.setQueryData(other, pages([]));
+  applyLiveDashboardEvent(client, {
+    seq: 1, run_id: "new", event_type: "run_started",
+    payload: { app_name: "live-app", started_at: "2024-06-01T10:00:00Z", stove_version: null,
+      systems: [], metadata: { team: "checkout" }, last_activity_at: "2024-06-01T10:00:00Z" },
+  });
+  assert.deepEqual(client.getQueryData(matching).pages[0].runs.map((run) => run.id), ["new"]);
+  assert.deepEqual(client.getQueryData(other), pages([]));
+  assert.equal(client.getQueryData(pending), undefined);
+  client.clear();
+});
+
 test("applyLiveDashboardEvent updates run, test, and detail caches from live SSE payloads", () => {
   const queryClient = new QueryClient();
   queryClient.setQueryData(["apps"], []);
-  queryClient.setQueryData(["runs", "live-app"], []);
-  queryClient.setQueryData(["tests", "run-live"], []);
+  setRuns(queryClient, "live-app", []);
+  queryClient.setQueryData(["tests", "run-live"], testPages());
   queryClient.setQueryData(["entries", "run-live", "test-1"], []);
   queryClient.setQueryData(["spans", "run-live", "test-1"], []);
   queryClient.setQueryData(["mock-interactions", "run-live", "test-1"], []);
@@ -194,8 +221,8 @@ test("applyLiveDashboardEvent updates run, test, and detail caches from live SSE
   });
 
   const apps = queryClient.getQueryData(["apps"]);
-  const runs = queryClient.getQueryData(["runs", "live-app"]);
-  const tests = queryClient.getQueryData(["tests", "run-live"]);
+  const runs = getRuns(queryClient, "live-app");
+  const tests = queryClient.getQueryData(["tests", "run-live"]).pages.flatMap(p => p.tests);
   const entries = queryClient.getQueryData(["entries", "run-live", "test-1"]);
   const spans = queryClient.getQueryData(["spans", "run-live", "test-1"]);
   const testInteractions = queryClient.getQueryData(["mock-interactions", "run-live", "test-1"]);
@@ -243,7 +270,7 @@ test("a live run start updates its app cache without touching another app", () =
       metadata: { team: "checkout" },
     },
   ]);
-  queryClient.setQueryData(["runs", "live-app"], [
+  setRuns(queryClient, "live-app", [
     {
       id: "old-run",
       app_name: "live-app",
@@ -259,7 +286,7 @@ test("a live run start updates its app cache without touching another app", () =
       metadata: { team: "checkout" },
     },
   ]);
-  queryClient.setQueryData(["runs", "another-app"], []);
+  setRuns(queryClient, "another-app", []);
 
   applyLiveDashboardEvent(queryClient, {
     seq: 1,
@@ -275,11 +302,11 @@ test("a live run start updates its app cache without touching another app", () =
   });
 
   const apps = queryClient.getQueryData(["apps"]);
-  const runs = queryClient.getQueryData(["runs", "live-app"]);
+  const runs = getRuns(queryClient, "live-app");
   assert.equal(apps[0].latest_run_id, "new-run");
   assert.equal("total_runs" in apps[0], false);
   assert.deepEqual(runs.map((run) => run.id), ["new-run", "old-run"]);
-  assert.deepEqual(queryClient.getQueryData(["runs", "another-app"]), []);
+  assert.deepEqual(getRuns(queryClient, "another-app"), []);
 });
 
 test("app reconciliation retains a newer persisted run when the cache contains an older run", () => {
@@ -346,7 +373,7 @@ test("a newer apps response wins over an older live event received in flight", a
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   const queryKey = ["apps"];
   const response = deferredPromise();
-  queryClient.setQueryData(queryKey, []);
+  queryClient.setQueryData(queryKey, queryKey[0] === "runs" ? pages([]) : queryKey[0] === "tests" ? testPages() : []);
 
   const request = queryClient.fetchQuery({
     queryKey,
@@ -371,7 +398,7 @@ test("a newer apps response wins over an older live event received in flight", a
 test("live assertion retries collapse to the latest attempt and retain failure history", () => {
   const queryClient = new QueryClient();
   const queryKey = ["entries", "run-retry", "test-retry"];
-  queryClient.setQueryData(queryKey, []);
+  queryClient.setQueryData(queryKey, queryKey[0] === "runs" ? pages([]) : queryKey[0] === "tests" ? testPages() : []);
 
   for (let attempt = 1; attempt <= 5; attempt += 1) {
     const failed = attempt < 5;
@@ -455,84 +482,25 @@ test("live assertion retries collapse to the latest attempt and retain failure h
   assert.equal(reconciledRetry.failure_count, 4);
 });
 
-test("live test data survives a stale persisted response", () => {
-  const queryClient = new QueryClient();
-  const queryKey = ["tests", "run-race"];
-
-  queryClient.setQueryData(queryKey, [
-    {
-      id: "test-live",
-      run_id: "run-race",
-      test_name: "arrives over SSE",
-      spec_name: "RealtimeSpec",
-      test_path: ["RealtimeSpec", "arrives over SSE"],
-      started_at: "2024-06-01T10:00:01Z",
-      ended_at: null,
-      status: "RUNNING",
-      duration_ms: null,
-      error: null,
-    },
-  ]);
-
-  const reconciled = reconcileDashboardData(queryClient, dashboardQueries.tests("run-race"), []);
-
-  assert.equal(reconciled.length, 1);
-  assert.equal(reconciled[0].id, "test-live");
-  assert.equal(reconciled[0].status, "RUNNING");
-});
-
-test("a live event survives a production-shaped in-flight REST request without cancellation", async () => {
-  const queryClient = new QueryClient({
-    defaultOptions: { queries: { retry: false } },
-  });
-  let requestWasAborted = false;
-
-  const queryKey = ["tests", "run-race"];
-  const staleRequest = queryClient
-    .fetchQuery({
-      queryKey,
-      queryFn: ({ signal }) =>
-        loadAndReconcileDashboardData(queryClient, { ...dashboardQueries.tests("run-race"), load: () =>
-          new Promise((resolve, reject) => {
-            signal.addEventListener(
-              "abort",
-              () => {
-                requestWasAborted = true;
-                reject(new DOMException("The operation was aborted", "AbortError"));
-              },
-              { once: true },
-            );
-            setTimeout(() => resolve([]), 100);
-          }),
-        }, signal),
-    })
-    .catch((error) => error);
-
-  applyLiveDashboardEvent(queryClient, {
-    seq: 1,
-    run_id: "run-race",
-    event_type: "test_started",
-    payload: {
-      test_id: "test-live",
-      test_name: "cannot be erased",
-      spec_name: "RealtimeSpec",
-      test_path: ["RealtimeSpec", "cannot be erased"],
-      started_at: "2024-06-01T10:00:01Z",
-      status: "RUNNING",
-    },
-  });
-
-  await staleRequest;
-  const tests = queryClient.getQueryData(["tests", "run-race"]);
-
-  assert.equal(requestWasAborted, false);
-  assert.equal(tests.length, 1);
-  assert.equal(tests[0].id, "test-live");
+test("test events cancel stale page reads and preserve cached live data", async () => {
+  const client = new QueryClient({defaultOptions:{queries:{retry:false}}});
+  const key = ["tests", "run-race"];
+  client.setQueryData(key, testPages());
+  let aborted = false;
+  const request = client.fetchQuery({queryKey:key, queryFn: ({signal}) => new Promise((resolve, reject) => {
+    signal.addEventListener("abort", () => { aborted=true; reject(new Error("aborted")); });
+  })}).catch(error => error);
+  applyLiveDashboardEvent(client, {seq:1, run_id:"run-race", event_type:"test_started", payload:{test_id:"test-live", test_name:"live", spec_name:"Spec", test_path:[], started_at:"2024-06-01T00:00:00Z", status:"RUNNING"}});
+  await request;
+  assert.equal(aborted,true);
+  assert.equal(client.getQueryData(key).pages[0].tests[0].id,"test-live");
+  assert.equal(client.getQueryState(key).isInvalidated,true);
+  client.clear();
 });
 
 test("batched test starts update one summary query without creating detail caches", () => {
   const queryClient = new QueryClient();
-  queryClient.setQueryData(["tests", "run-batch"], []);
+  queryClient.setQueryData(["tests", "run-batch"], testPages());
   let testQueryUpdates = 0;
   const unsubscribe = queryClient.getQueryCache().subscribe((event) => {
     if (event.type === "updated" && event.query.queryHash.includes("run-batch")) {
@@ -558,9 +526,9 @@ test("batched test starts update one summary query without creating detail cache
   );
   unsubscribe();
 
-  assert.equal(queryClient.getQueryData(["tests", "run-batch"]).length, 1_000);
+  assert.equal(queryClient.getQueryData(["tests", "run-batch"]).pages.flatMap(p => p.tests).length, 100);
   assert.equal(queryClient.getQueryCache().getAll().length, 1);
-  assert.equal(testQueryUpdates, 1);
+  assert.equal(testQueryUpdates, 2); // One data write and one invalidation.
 });
 
 test("a frame batch produces the same cache state as sequential live events", () => {
@@ -568,12 +536,12 @@ test("a frame batch produces the same cache state as sequential live events", ()
   const batched = new QueryClient();
   const queryKeys = [
     ["apps"],
-    ["runs", "live-app"],
+    dashboardKeys.runs({ app: "live-app" }),
     ["tests", "run-batch-equivalence"],
     ["entries", "run-batch-equivalence", "test-1"],
   ];
   for (const queryClient of [sequential, batched]) {
-    for (const queryKey of queryKeys) queryClient.setQueryData(queryKey, []);
+    for (const queryKey of queryKeys) queryClient.setQueryData(queryKey, queryKey[0] === "runs" ? pages([]) : queryKey[0] === "tests" ? testPages() : []);
   }
 
   const events = [
@@ -817,21 +785,21 @@ test("deletion events remove runs and evidence despite older REST requests", asy
   const { run, testRecord, app } = await import("./helpers/fixtures.mjs");
   const client = new QueryClient();
   client.setQueryData(["apps"], [{ ...app, latest_run_id: run.id }]);
-  client.setQueryData(["runs", "demo"], [run]);
-  client.setQueryData(["tests", run.id], [testRecord]);
+  setRuns(client, "demo", [run]);
+  client.setQueryData(["tests", run.id], testPages([testRecord]));
   client.setQueryData(["linked", run.id, "run"], run);
   client.setQueryData(["entries", run.id, testRecord.id], [{ id: 1 }]);
   client.setQueryData(["trace", "shared-trace"], [{run_id: run.id}, {run_id: "other-run"}]);
   let resolve;
   const pending = new Promise((done) => { resolve = done; });
-  const query = { ...dashboardQueries.runs("demo"), load: () => pending };
+  const query = { ...dashboardQueries.entries(run.id, testRecord.id), load: () => pending };
   const request = loadAndReconcileDashboardData(client, query);
   applyLiveDashboardEvent(client, { seq: 10, run_id: run.id, event_type: "run_deleted", payload: {} });
-  resolve([run]);
+  resolve([testRecord]);
   assert.deepEqual(await request, []);
-  assert.deepEqual(client.getQueryData(["runs", "demo"]), []);
+  assert.deepEqual(getRuns(client, "demo"), []);
   assert.deepEqual(client.getQueryData(["apps"]), []);
-  assert.deepEqual(client.getQueryData(["tests", run.id]), []);
+  assert.deepEqual(client.getQueryData(["tests", run.id]).pages[0].tests, []);
   assert.deepEqual(client.getQueryData(["entries", run.id, testRecord.id]), []);
   assert.equal(client.getQueryData(["linked", run.id, "run"]), null);
   assert.deepEqual(client.getQueryData(["trace", "shared-trace"]), [{run_id: "other-run"}]);

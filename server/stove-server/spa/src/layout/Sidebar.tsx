@@ -1,13 +1,13 @@
-import { type CSSProperties, useState } from "react";
-import type { AppSummary, Run, Test } from "../api/types";
+import type { CSSProperties } from "react";
+import type { TestBrowserState } from "../api/test-queries";
+import type { AppSummary, Run, RunMetadataFacet, Test } from "../api/types";
 import { TopFilterPicker, type TopFilterPickerProps } from "../components/TopFilterPicker";
-import { filterTests } from "../utils/filters";
 import type { MetadataFilter } from "../utils/metadata-filter";
 import { AppPicker } from "./sidebar/AppPicker";
+import type { RunPickerFeedback } from "./sidebar/RunPicker";
 import { RunPicker } from "./sidebar/RunPicker";
 import { RunSummary } from "./sidebar/RunSummary";
 import { SidebarResizer, useSidebarWidth } from "./sidebar/SidebarResizer";
-import type { FilterValue } from "./sidebar/TestFilters";
 import { TestFilters } from "./sidebar/TestFilters";
 import { TestTree } from "./sidebar/TestTree";
 
@@ -18,13 +18,18 @@ interface SidebarProps {
   selectedApp: string | undefined;
   onSelectApp: (name: string) => void;
   runs: Run[];
-  availableRuns: Run[];
+  metadataOptions: RunMetadataFacet[];
+  runPickerFeedback?: RunPickerFeedback;
+  hasOlderRuns: boolean;
+  loadingOlderRuns: boolean;
+  onLoadOlderRuns: () => void;
   selectedRunId: string | undefined;
   onSelectRun: (runId: string) => void;
   metadataFilter: MetadataFilter;
   onMetadataFilterChange: (metadata: MetadataFilter) => void;
   run: Run | undefined;
   tests: Test[];
+  testBrowser: TestBrowserState;
   selectedTestId: string | undefined;
   onSelectTest: (testId: string) => void;
   onSelectProfiles?: () => void;
@@ -38,22 +43,24 @@ export function Sidebar({
   selectedApp,
   onSelectApp,
   runs,
-  availableRuns,
+  metadataOptions,
+  runPickerFeedback,
+  hasOlderRuns,
+  loadingOlderRuns,
+  onLoadOlderRuns,
   selectedRunId,
   onSelectRun,
   metadataFilter,
   onMetadataFilterChange,
   run,
   tests,
+  testBrowser,
   selectedTestId,
   onSelectTest,
   onSelectProfiles,
   profilesSelected,
 }: SidebarProps) {
-  const [filter, setFilter] = useState<FilterValue>("all");
-  const [search, setSearch] = useState("");
   const [width, setWidth] = useSidebarWidth();
-  const filteredTests = filterTests(tests, filter, search);
 
   return (
     <aside
@@ -71,7 +78,11 @@ export function Sidebar({
         />
         <RunPicker
           runs={runs}
-          availableRuns={availableRuns}
+          metadataOptions={metadataOptions}
+          feedback={runPickerFeedback}
+          hasOlderRuns={hasOlderRuns}
+          loadingOlderRuns={loadingOlderRuns}
+          onLoadOlderRuns={onLoadOlderRuns}
           selectedRunId={selectedRunId}
           onSelectRun={onSelectRun}
           metadataFilter={metadataFilter}
@@ -80,7 +91,7 @@ export function Sidebar({
         {run && (
           <RunSummary
             run={run}
-            tests={tests}
+            summary={testBrowser.summary}
             metadataFilter={metadataFilter}
             onMetadataFilterChange={onMetadataFilterChange}
           />
@@ -97,21 +108,33 @@ export function Sidebar({
         </button>
       )}
       <TestFilters
-        filter={filter}
-        onFilterChange={setFilter}
-        search={search}
-        onSearchChange={setSearch}
+        filter={testBrowser.outcome}
+        onFilterChange={testBrowser.onOutcomeChange}
+        search={testBrowser.search}
+        onSearchChange={testBrowser.onSearchChange}
       />
       <div className="stove-test-tree-panel">
         <div className="stove-sidebar-section-label">
           <span>Tests</span>
-          <span>{filteredTests.length}</span>
+          <span>
+            {tests.length} of {testBrowser.total}
+          </span>
         </div>
-        <TestTree
-          tests={filteredTests}
-          selectedTestId={selectedTestId}
-          onSelectTest={onSelectTest}
-        />
+        <TestTree tests={tests} selectedTestId={selectedTestId} onSelectTest={onSelectTest} />
+        {testBrowser.error && (
+          <p role="alert">
+            Could not load tests.{" "}
+            <button type="button" onClick={testBrowser.retry}>
+              Retry tests
+            </button>
+          </p>
+        )}
+        {testBrowser.loading && <p role="status">Loading tests…</p>}
+        {testBrowser.hasMore && (
+          <button type="button" disabled={testBrowser.loading} onClick={testBrowser.loadMore}>
+            Load more tests
+          </button>
+        )}
       </div>
       <SidebarResizer width={width} onResize={setWidth} />
     </aside>

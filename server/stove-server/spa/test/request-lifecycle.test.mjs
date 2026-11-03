@@ -1,3 +1,4 @@
+import { testPage, entry } from "./helpers/fixtures.mjs";
 import assert from "node:assert/strict";
 import { test, afterEach } from "node:test";
 import { JSDOM } from "jsdom";
@@ -60,11 +61,14 @@ function dashboardApi(t) {
   t.mock.method(api, "getTopFilter", async () => ({ settings: { metadata_key: null }, available_keys: [], values: [] }));
   t.mock.method(api, "getApps", async () => [app]);
   t.mock.method(api, "getMeta", async () => meta);
-  t.mock.method(api, "getRuns", async () => [run, { ...run, id: "run-2" }]);
-  t.mock.method(api, "getTests", async (runId) => [
+  t.mock.method(api, "getRuns", async () => ({ runs: [run, { ...run, id: "run-2" }], next_cursor: null }));
+  t.mock.method(api, "getRunMetadata", async () => []);
+  t.mock.method(api, "getRun", async id => ({ ...run, id }));
+  t.mock.method(api, "getTest", async (runId, id) => ({...testRecord, run_id: runId, id}));
+  t.mock.method(api, "getTests", async (runId) => testPage([
     { ...testRecord, run_id: runId },
     { ...testRecord, id: "test-2", run_id: runId },
-  ]);
+  ]));
 }
 
 test("dashboard selections survive pending and failed requests and recover after retry", async (t) => {
@@ -84,12 +88,35 @@ test("dashboard selections survive pending and failed requests and recover after
   await act(async () => pending.reject(new Error("offline")));
   await waitFor(() => assert.equal(result.current.error?.message, "offline"));
   assert.equal(result.current.selectedRunId, "run-2");
-  api.getRuns.mock.mockImplementation(async () => [run, { ...run, id: "run-2" }]);
+  api.getRuns.mock.mockImplementation(async () => ({ runs: [run, { ...run, id: "run-2" }], next_cursor: null }));
   await act(async () => {
     await result.current.retry();
   });
   await waitFor(() => assert.equal(result.current.selectedTest?.id, "test-2"));
   assert.equal(result.current.latestRun.id, "run-2");
+});
+
+test("dashboard loads older pages and applies metadata filters before paging", async (t) => {
+  dashboardApi(t);
+  api.getRunMetadata.mock.mockImplementation(async () => [{ key: "team", values: [{ value: "older", count: 1 }] }]);
+  api.getRuns.mock.mockImplementation(async ({ metadata, cursor }) => {
+    if (metadata.team) return { runs: [{ ...run, id: "older", metadata: { team: "older" } }], next_cursor: null };
+    return cursor
+      ? { runs: [{ ...run, id: "older", metadata: { team: "older" } }], next_cursor: null }
+      : { runs: [run], next_cursor: "older-page" };
+  });
+  api.getRun.mock.mockImplementation(async id => ({ ...run, id, metadata: { team: "older" } }));
+  const { result } = mount(useAppData);
+  await waitFor(() => assert.equal(result.current.hasOlderRuns, true));
+  assert.equal(result.current.metadataOptions[0].values[0].value, "older");
+  act(() => result.current.loadOlderRuns());
+  await waitFor(() => assert.equal(result.current.runs.length, 2));
+  act(() => result.current.selectRun("older"));
+  await waitFor(() => assert.equal(result.current.latestRun.id, "older"));
+  act(() => result.current.filterRunsByMetadata({ team: ["older"] }));
+  await waitFor(() => assert.deepEqual(result.current.runs.map((item) => item.id), ["older"]));
+  assert.equal(result.current.latestRun.id, "older");
+  assert.equal(result.current.hasOlderRuns, false);
 });
 
 test("an explicit app survives an unsuccessful refresh, but a successful empty list clears it", async (t) => {
@@ -114,7 +141,7 @@ test("an explicit app survives an unsuccessful refresh, but a successful empty l
 
 test("admin preserves a retention draft during refetch and discards late purge previews", async (t) => {
   t.mock.method(api, "getAdminStatus", async () => adminStatus);
-  t.mock.method(api, "getRuns", async () => []);
+  t.mock.method(api, "getRunMetadata", async () => []);
   const preview = deferred();
   t.mock.method(api, "previewPurge", () => preview.promise);
   const { result, client } = mount(useAdminController);
@@ -133,16 +160,16 @@ test("admin preserves a retention draft during refetch and discards late purge p
 
 test("metadata purge filters scope requests to the app and invalidate obsolete previews", async (t) => {
   t.mock.method(api, "getAdminStatus", async () => adminStatus);
-  t.mock.method(api, "getRuns", async (appName) => [{ ...run, app_name: appName, metadata: { branch: "main" } }]);
+  t.mock.method(api, "getRunMetadata", async (appName) => [{ key: appName, values: [{ value: "main", count: 1 }] }]);
   const latePreview = deferred();
   t.mock.method(api, "previewPurge", () => latePreview.promise);
   t.mock.method(api, "purgeRuns", async () => ({}));
   const { result } = mount(useAdminController);
   await waitFor(() => assert.equal(result.current.busy, false));
-  assert.equal(api.getRuns.mock.callCount(), 0);
+  assert.equal(api.getRunMetadata.mock.callCount(), 0);
   act(() => result.current.setAppName("checkout"));
   await waitFor(() => assert.equal(result.current.metadataLoading, false));
-  assert.equal(result.current.metadataRuns[0].app_name, "checkout");
+  assert.equal(result.current.metadataFacets[0].key, "checkout");
   act(() => result.current.setMetadata({ branch: ["main", "release"], pipeline: ["42"] }));
   act(() => result.current.previewPurge());
   await waitFor(() => assert.equal(api.previewPurge.mock.callCount(), 1));
@@ -166,23 +193,23 @@ test("metadata purge filters scope requests to the app and invalidate obsolete p
   act(() => result.current.setAppName("catalog"));
   assert.deepEqual(result.current.metadata, {});
   assert.equal(result.current.preview, null);
-  await waitFor(() => assert.equal(result.current.metadataRuns[0]?.app_name, "catalog"));
+  await waitFor(() => assert.equal(result.current.metadataFacets[0]?.key, "catalog"));
   act(() => result.current.setAppName(""));
-  assert.deepEqual(result.current.metadataRuns, []);
+  assert.deepEqual(result.current.metadataFacets, []);
 });
 
 test("switching the purge app ignores metadata that arrives late for the old app", async (t) => {
   t.mock.method(api, "getAdminStatus", async () => adminStatus);
   const oldRuns = deferred();
-  t.mock.method(api, "getRuns", (appName) => appName === "old-app"
-    ? oldRuns.promise : Promise.resolve([{ ...run, app_name: appName, metadata: { team: "new" } }]));
+  t.mock.method(api, "getRunMetadata", (appName) => appName === "old-app"
+    ? oldRuns.promise : Promise.resolve([{ key: "team", values: [{ value: "new", count: 1 }] }]));
   const { result } = mount(useAdminController);
   act(() => result.current.setAppName("old-app"));
-  await waitFor(() => assert.equal(api.getRuns.mock.callCount(), 1));
+  await waitFor(() => assert.equal(api.getRunMetadata.mock.callCount(), 1));
   act(() => result.current.setAppName("new-app"));
-  await waitFor(() => assert.equal(result.current.metadataRuns[0]?.metadata.team, "new"));
-  await act(async () => oldRuns.resolve([{ ...run, metadata: { team: "old" } }]));
-  assert.equal(result.current.metadataRuns[0].metadata.team, "new");
+  await waitFor(() => assert.equal(result.current.metadataFacets[0]?.values[0].value, "new"));
+  await act(async () => oldRuns.resolve([{ key: "team", values: [{ value: "old", count: 1 }] }]));
+  assert.equal(result.current.metadataFacets[0].values[0].value, "new");
 });
 
 test("retention saves keep the submitted value visible during refresh and preserve later edits", async (t) => {
@@ -274,11 +301,7 @@ test("searching a long metadata list preserves selections across values and fiel
     const [value, setValue] = useState({});
     return createElement(PurgeMetadataFilters, {
       appName: "demo",
-      runs: Array.from({ length: 8 }, (_, index) => ({
-        ...run,
-        id: `run-${index}`,
-        metadata: { branch: `release-${index}`, team: "checkout" },
-      })),
+      options: [{ key: "branch", values: Array.from({ length: 8 }, (_, index) => ({ value: `release-${index}`, count: 1 })) }, { key: "team", values: [{ value: "checkout", count: 8 }] }],
       value,
       loading: false,
       error: null,
@@ -316,16 +339,16 @@ test("top filter scopes applications, runs and tests, persists across apps, and 
   };
   api.getTopFilter.mock.mockImplementation(async () => catalog);
   api.getApps.mock.mockImplementation(async () => [app, secondApp, otherApp]);
-  api.getRuns.mock.mockImplementation(async (name) => [
+  api.getRuns.mock.mockImplementation(async ({ app: name, metadata }) => ({ runs: [
     { ...run, id: `${name}-payments`, app_name: name, metadata: { "gitlab.team": "payments", region: "eu" } },
     { ...run, id: `${name}-checkout`, app_name: name, metadata: { "gitlab.team": "checkout", region: "eu" } },
-  ]);
+  ].filter(r => Object.entries(metadata ?? {}).every(([k, values]) => values.includes(r.metadata[k]))), next_cursor: null }));
   const { result, client } = mount(useAppData);
   await waitFor(() => assert.equal(result.current.apps.length, 3));
   act(() => result.current.topFilter.onChange("checkout"));
   await waitFor(() => assert.equal(result.current.selectedTest?.run_id, "demo-checkout"));
   assert.deepEqual(result.current.apps.map(a => a.app_name), ["demo", "second"]);
-  assert.deepEqual(result.current.allRuns.map(r => r.id), ["demo-checkout"]);
+  assert.deepEqual(result.current.runs.map(r => r.id), ["demo-checkout"]);
   assert.equal(JSON.parse(localStorage.getItem("stove-top-filter")).value, "checkout");
   act(() => result.current.selectApp("second"));
   await waitFor(() => assert.equal(result.current.selectedTest?.run_id, "second-checkout"));
@@ -465,15 +488,15 @@ test("admin and schema load failures can be retried without losing drafts", asyn
 test("failed evidence lists expose a retry that recovers the same query", async (t) => {
   const { useDashboardListQuery } = await jiti.import("../src/hooks/useDashboardListQuery.ts");
   const { dashboardQueries } = await jiti.import("../src/api/dashboard-queries.ts");
-  t.mock.method(api, "getTests", async () => { throw new Error("Evidence unavailable"); });
+  t.mock.method(api, "getEntries", async () => { throw new Error("Evidence unavailable"); });
   const { result } = mount(() => useDashboardListQuery({
-    query: dashboardQueries.tests("run-1"), liveConnected: true, pollWhileDisconnected: false,
+    query: dashboardQueries.entries("run-1", "test-1"), liveConnected: true, pollWhileDisconnected: false,
   }));
   await waitFor(() => assert.equal(result.current.kind, "error"));
-  api.getTests.mock.mockImplementation(async () => [testRecord]);
+  api.getEntries.mock.mockImplementation(async () => [entry]);
   act(() => result.current.retry());
   await waitFor(() => assert.equal(result.current.kind, "ready"));
-  assert.deepEqual(result.current.data, [testRecord]);
+  assert.deepEqual(result.current.data, [entry]);
 });
 
 test("database changes refresh catalog membership without clearing the browsing scope", async (t) => {
@@ -586,4 +609,139 @@ test("admin idle timeout defaults to one hour, preserves drafts and saves zero",
   assert.equal(result.current.idleTimeoutValid, false);
   act(() => result.current.updateIdleTimeout());
   assert.equal(api.updateIdleTimeout.mock.callCount(), 1);
+});
+
+test("refreshed first page restores pagination after previously reaching the end", async (t) => {
+  dashboardApi(t);
+  const { result, client } = mount(useAppData);
+  await waitFor(() => assert.equal(result.current.runs.length, 2));
+  assert.equal(result.current.hasOlderRuns, false);
+  api.getRuns.mock.mockImplementation(async () => ({ runs: [{ ...run, id: "newest" }], next_cursor: "more-runs" }));
+  await act(async () => { await client.invalidateQueries({ queryKey: ["runs"] }); });
+  await waitFor(() => assert.equal(result.current.hasOlderRuns, true));
+});
+
+test("older-page errors recover locally and do not poison another filter", async (t) => {
+  dashboardApi(t);
+  api.getRuns.mock.mockImplementation(async ({ cursor }) => {
+    if (cursor) throw new Error("older page offline");
+    return { runs: [run], next_cursor: "older" };
+  });
+  const { result } = mount(useAppData);
+  await waitFor(() => assert.equal(result.current.hasOlderRuns, true));
+  act(() => result.current.loadOlderRuns());
+  await waitFor(() => assert.equal(result.current.runPickerFeedback.pageError?.message, "older page offline"));
+  assert.equal(result.current.error, null);
+  api.getRuns.mock.mockImplementation(async ({ cursor }) => ({ runs: [{ ...run, id: cursor ? "older-run" : run.id }], next_cursor: cursor ? null : "older" }));
+  act(() => result.current.loadOlderRuns());
+  await waitFor(() => assert.equal(result.current.runs.length, 2));
+  assert.equal(result.current.runPickerFeedback.pageError, null);
+  act(() => result.current.filterRunsByMetadata({ team: ["other"] }));
+  assert.equal(result.current.runPickerFeedback.pageError, null);
+});
+
+test("metadata errors recover independently of run pages", async (t) => {
+  dashboardApi(t);
+  api.getRunMetadata.mock.mockImplementation(async () => { throw new Error("facets offline"); });
+  const { result } = mount(useAppData);
+  await waitFor(() => assert.equal(result.current.runPickerFeedback.metadataError?.message, "facets offline"));
+  assert.equal(result.current.error, null);
+  api.getRunMetadata.mock.mockImplementation(async () => []);
+  act(() => result.current.runPickerFeedback.retryMetadata());
+  await waitFor(() => assert.equal(result.current.runPickerFeedback.metadataError, null));
+});
+
+test("clearing a filter preserves a selected run outside the first page", async (t) => {
+  dashboardApi(t);
+  const old = { ...run, id: "selected-old-run", metadata: { team: "older" } };
+  api.getRun.mock.mockImplementation(async () => old);
+  api.getRuns.mock.mockImplementation(async ({ metadata }) => metadata.team ? { runs: [old], next_cursor: null } : { runs: [run], next_cursor: "older-page" });
+  const { result } = mount(useAppData);
+  await waitFor(() => assert.equal(result.current.runs.length, 1));
+  act(() => result.current.filterRunsByMetadata({ team: ["older"] }));
+  await waitFor(() => assert.equal(result.current.latestRun.id, old.id));
+  act(() => result.current.selectRun(old.id));
+  act(() => result.current.filterRunsByMetadata({}));
+  await waitFor(() => assert.equal(result.current.runs.length, 2));
+  assert.equal(result.current.selectedRunId, old.id);
+  assert.equal(result.current.latestRun.id, old.id);
+});
+
+test("refetch updates older pages after missed completion and deletion events", async (t) => {
+  dashboardApi(t);
+  let refreshed = false;
+  api.getRuns.mock.mockImplementation(async ({ cursor }) => cursor ? {
+    runs: refreshed ? [{ ...run, id: "old-running", status: "PASSED" }] : [
+      { ...run, id: "old-running", status: "RUNNING" }, { ...run, id: "deleted" }
+    ], next_cursor: null,
+  } : { runs: [run], next_cursor: "older" });
+  const { result, client } = mount(useAppData);
+  await waitFor(() => assert.equal(result.current.hasOlderRuns, true));
+  act(() => result.current.loadOlderRuns());
+  await waitFor(() => assert.equal(result.current.runs.length, 3));
+  refreshed = true;
+  await act(async () => { await client.invalidateQueries(); });
+  await waitFor(() => assert.equal(result.current.runs.find(r => r.id === "old-running").status, "PASSED"));
+  assert.equal(result.current.runs.some(r => r.id === "deleted"), false);
+});
+
+test("a late older page cannot overwrite a run completion event", async (t) => {
+  dashboardApi(t);
+  const { applyLiveDashboardEvents } = await jiti.import("../src/api/live-cache.ts");
+  const pending = deferred();
+  api.getRuns.mock.mockImplementation(async ({ cursor }) => cursor ? pending.promise : { runs: [{ ...run, status: "RUNNING" }], next_cursor: "older" });
+  const { result, client } = mount(useAppData);
+  await waitFor(() => assert.equal(result.current.hasOlderRuns, true));
+  act(() => result.current.loadOlderRuns());
+  await waitFor(() => assert.equal(result.current.loadingOlderRuns, true));
+  api.getRuns.mock.mockImplementation(async () => ({ runs: [{ ...run, status: "PASSED" }], next_cursor: null }));
+  await act(async () => {
+    applyLiveDashboardEvents(client, [{ seq: 1, event_type: "run_ended", run_id: run.id, payload: { status: "PASSED", ended_at: run.started_at, total_tests: 1, passed: 1, failed: 0, duration_ms: 100 } }]);
+    pending.resolve({ runs: [{ ...run, status: "RUNNING" }], next_cursor: null });
+  });
+  await waitFor(() => assert.equal(result.current.loadingOlderRuns, false));
+  assert.equal(result.current.runs.find(r => r.id === run.id).status, "PASSED");
+});
+
+test("test pages retry, refresh cursors, and query filters on the server", async (t) => {
+  const { useTestPages } = await jiti.import("../src/hooks/useTestPages.ts");
+  let failOlder = true;
+  let refreshed = false;
+  const requests = [];
+  t.mock.method(api, "getTests", async (runId, options) => {
+    requests.push({runId, ...options});
+    if (options.search) return testPage([{...testRecord, id:"outside-first-page"}]);
+    if (!options.cursor) return testPage([testRecord], refreshed ? "fresh-cursor" : "old-cursor", 2);
+    if (failOlder) throw new Error("Older tests unavailable");
+    return testPage([{...testRecord, id:refreshed ? "fresh-test" : "old-test"}], null, 2);
+  });
+  const { result, client } = mount(() => {
+    const [search, setSearch] = useState("");
+    return {...useTestPages("run-1", {search}, true), setSearch};
+  });
+  await waitFor(() => assert.equal(result.current.tests.length, 1));
+  act(() => result.current.loadMore());
+  await waitFor(() => assert.equal(result.current.isFetchNextPageError, true));
+  assert.equal(result.current.tests.length, 1);
+  failOlder = false;
+  act(() => result.current.loadMore());
+  await waitFor(() => assert.equal(result.current.tests.length, 2));
+  refreshed = true;
+  await act(async () => client.invalidateQueries({queryKey:["tests", "run-1"]}));
+  await waitFor(() => assert.ok(result.current.tests.some(test => test.id === "fresh-test")));
+  assert.equal(requests[requests.length - 1].cursor, "fresh-cursor");
+  act(() => result.current.setSearch("outside"));
+  await waitFor(() => assert.equal(result.current.tests[0]?.id, "outside-first-page"));
+  assert.equal(requests[requests.length - 1].search, "outside");
+  assert.equal(requests[requests.length - 1].cursor, undefined);
+});
+
+test("selected tests remain available outside the loaded page", async (t) => {
+  dashboardApi(t);
+  const {result} = mount(useAppData);
+  await waitFor(() => assert.equal(result.current.tests.length, 2));
+  act(() => result.current.selectTest("test-1999"));
+  await waitFor(() => assert.equal(result.current.selectedTest?.id, "test-1999"));
+  assert.equal(result.current.tests.length, 2);
+  assert.equal(api.getTest.mock.calls.at(-1).arguments[1], "test-1999");
 });

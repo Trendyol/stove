@@ -519,6 +519,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/runs/metadata": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["get_run_metadata_facets"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/top-filter": {
         parameters: {
             query?: never;
@@ -1030,6 +1046,19 @@ export interface components {
             /** Format: int32 */
             total_tests: number;
         };
+        RunMetadataFacet: {
+            key: string;
+            values: components["schemas"]["RunMetadataValue"][];
+        };
+        RunMetadataValue: {
+            /** Format: int64 */
+            count: number;
+            value: string;
+        };
+        RunPage: {
+            next_cursor?: string | null;
+            runs: components["schemas"]["Run"][];
+        };
         /**
          * @description Status of a test run.
          * @enum {string}
@@ -1125,11 +1154,36 @@ export interface components {
             test_name: string;
             test_path: string[];
         };
+        /** @enum {string} */
+        TestOutcome: "all" | "pass" | "fail";
+        TestPage: {
+            next_cursor?: string | null;
+            /** Format: int64 */
+            remaining: number;
+            /** @description All tests in the run, independent of the active filters. */
+            summary: components["schemas"]["TestSummary"];
+            tests: components["schemas"]["Test"][];
+            /**
+             * Format: int64
+             * @description Matching tests across all pages.
+             */
+            total: number;
+        };
         /**
          * @description Status of an individual test or entry result.
          * @enum {string}
          */
         TestStatus: "RUNNING" | "PASSED" | "FAILED" | "ERROR";
+        TestSummary: {
+            /** Format: int64 */
+            failed: number;
+            /** Format: int64 */
+            passed: number;
+            /** Format: int64 */
+            running: number;
+            /** Format: int64 */
+            total: number;
+        };
         TopFilterCatalog: {
             available_keys: string[];
             settings: components["schemas"]["TopFilterSettings"];
@@ -1562,8 +1616,14 @@ export interface operations {
         parameters: {
             query?: {
                 app?: string;
-                /** @description URL-encoded JSON object containing an exact metadata subset to match. */
+                /** @description Opaque cursor returned by the preceding page, with the same filters. */
+                cursor?: string;
+                /** @description Maximum runs in a page (1–100, default 50). */
+                limit?: number;
+                /** @description JSON object of metadata selectors; values may be strings or arrays (OR within a key). */
                 metadata?: string;
+                /** @description Optional run status: RUNNING, PASSED, or FAILED. */
+                status?: string;
             };
             header?: never;
             path?: never;
@@ -1571,13 +1631,13 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description Runs matching the filters */
+            /** @description Page of runs matching the filters */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Run"][];
+                    "application/json": components["schemas"]["RunPage"];
                 };
             };
             /** @description Invalid metadata filter */
@@ -1771,20 +1831,24 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
+                cursor: string | null;
+                limit: number | null;
+                outcome: components["schemas"]["TestOutcome"];
                 /** @description Run identifier */
                 run_id: string;
+                search: string;
             };
             cookie?: never;
         };
         requestBody?: never;
         responses: {
-            /** @description Tests in the run */
+            /** @description Page of tests in the run */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Test"][];
+                    "application/json": components["schemas"]["TestPage"];
                 };
             };
         };
@@ -1999,6 +2063,37 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["Span"][];
                 };
+            };
+        };
+    };
+    get_run_metadata_facets: {
+        parameters: {
+            query?: {
+                app?: string;
+                /** @description JSON object of exact metadata values limiting the facet scope. */
+                metadata?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Metadata values and counts across matching runs */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RunMetadataFacet"][];
+                };
+            };
+            /** @description Invalid metadata filter */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
         };
     };

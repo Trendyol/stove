@@ -126,10 +126,34 @@ fn concurrent_reads_have_separate_capacity_from_ingestion() {
       .as_deref(),
     Some("1")
   );
-  let error = repo.get_runs(None).unwrap_err();
+  let error = repo
+    .get_run_page(
+      &crate::storage::repository::RunFilter {
+        app: None,
+        ..Default::default()
+      },
+      100,
+      None,
+    )
+    .map(|page| page.runs)
+    .unwrap_err();
   assert!(error.is_database_unavailable());
   drop(held);
-  assert_eq!(repo.get_runs(None).unwrap().len(), 1);
+  assert_eq!(
+    repo
+      .get_run_page(
+        &crate::storage::repository::RunFilter {
+          app: None,
+          ..Default::default()
+        },
+        100,
+        None
+      )
+      .map(|page| page.runs)
+      .unwrap()
+      .len(),
+    1
+  );
 }
 
 #[test]
@@ -286,7 +310,19 @@ fn metrics_report_pool_pressure_timeouts_and_privileged_diagnostics() {
     .map(|_| backend.read.get().unwrap())
     .collect();
   backend.metrics.sample(backend.capacity());
-  assert!(repo.get_runs(None).is_err());
+  assert!(
+    repo
+      .get_run_page(
+        &crate::storage::repository::RunFilter {
+          app: None,
+          ..Default::default()
+        },
+        100,
+        None
+      )
+      .map(|page| page.runs)
+      .is_err()
+  );
   let text = repo.metrics.prometheus();
   assert!(
     text
@@ -305,7 +341,19 @@ fn metrics_report_pool_pressure_timeouts_and_privileged_diagnostics() {
   // Dedicated monitoring session works even with every read connection held.
   assert!(backend.diagnostics().is_ok());
   drop(held);
-  assert!(repo.get_runs(None).is_ok());
+  assert!(
+    repo
+      .get_run_page(
+        &crate::storage::repository::RunFilter {
+          app: None,
+          ..Default::default()
+        },
+        100,
+        None
+      )
+      .map(|page| page.runs)
+      .is_ok()
+  );
 }
 
 #[test]

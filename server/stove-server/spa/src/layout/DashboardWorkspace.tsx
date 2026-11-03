@@ -1,5 +1,6 @@
 import { useLayoutEffect, useRef, useState } from "react";
-import type { AppSummary, Run, Test } from "../api/types";
+import type { TestBrowserState } from "../api/test-queries";
+import type { AppSummary, Run, RunMetadataFacet, Test } from "../api/types";
 import { ConnectAgentButton } from "../components/agent-connection/AgentConnectionProvider";
 import { DrillDownPanel } from "../components/DrillDownPanel";
 import type { TopFilterPickerProps } from "../components/TopFilterPicker";
@@ -14,6 +15,7 @@ import {
 } from "../hooks/usePhoneNavigation";
 import type { MetadataFilter } from "../utils/metadata-filter";
 import { Sidebar } from "./Sidebar";
+import type { RunPickerFeedback } from "./sidebar/RunPicker";
 import { TestDetail } from "./TestDetail";
 
 interface DashboardWorkspaceProps {
@@ -22,11 +24,16 @@ interface DashboardWorkspaceProps {
   activeApp: string | undefined;
   mismatchedApps: string[];
   runs: Run[];
-  allRuns: Run[];
+  metadataOptions: RunMetadataFacet[];
+  runPickerFeedback?: RunPickerFeedback;
+  hasOlderRuns: boolean;
+  loadingOlderRuns: boolean;
+  onLoadOlderRuns: () => void;
   selectedRunId: string | undefined;
   metadataFilter: MetadataFilter;
   latestRun: Run | undefined;
   tests: Test[];
+  testBrowser: TestBrowserState;
   selectedTest: Test | undefined;
   liveConnected: boolean;
   onSelectApp: (appName: string) => void;
@@ -48,11 +55,16 @@ function DashboardWorkspaceContent({
   activeApp,
   mismatchedApps,
   runs,
-  allRuns,
+  metadataOptions,
+  runPickerFeedback,
+  hasOlderRuns,
+  loadingOlderRuns,
+  onLoadOlderRuns,
   selectedRunId,
   metadataFilter,
   latestRun,
   tests,
+  testBrowser,
   selectedTest,
   liveConnected,
   onSelectApp,
@@ -97,13 +109,18 @@ function DashboardWorkspaceContent({
           selectedApp={activeApp}
           onSelectApp={onSelectApp}
           runs={runs}
-          availableRuns={allRuns}
+          metadataOptions={metadataOptions}
+          runPickerFeedback={runPickerFeedback}
+          hasOlderRuns={hasOlderRuns}
+          loadingOlderRuns={loadingOlderRuns}
+          onLoadOlderRuns={onLoadOlderRuns}
           selectedRunId={selectedRunId}
           onSelectRun={onSelectRun}
           metadataFilter={metadataFilter}
           onMetadataFilterChange={onMetadataFilterChange}
           run={latestRun}
           tests={tests}
+          testBrowser={testBrowser}
           selectedTestId={selectedTest?.id}
           profilesSelected={showProfiles}
           onSelectProfiles={() => {

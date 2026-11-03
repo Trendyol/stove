@@ -1,3 +1,4 @@
+import { testPage } from "./helpers/fixtures.mjs";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
@@ -52,11 +53,13 @@ function dashboardApi(t) {
     test_path: ["updates a product"], status: "FAILED", error: "update failed"}];
   t.mock.method(api, "getApps", async () => [app]);
   t.mock.method(api, "getMeta", async () => meta);
-  t.mock.method(api, "getRuns", async () => [{...run, total_tests: 2}, {...run, id: "run-2"}]);
-  t.mock.method(api, "getTests", async () => tests);
+  t.mock.method(api, "getRuns", async () => ({ runs: [{...run, total_tests: 2}, {...run, id: "run-2", started_at: "2023-01-01T00:00:00Z"}], next_cursor: null }));
+  t.mock.method(api, "getRunMetadata", async () => []);
+  t.mock.method(api, "getTests", async () => testPage(tests));
   t.mock.method(api, "getEntries", async (_run, testId) => [{...entry, test_id: testId}]);
   t.mock.method(api, "getSpans", async () => [span]);
-  for (const method of ["getRun", "getTest", "getFocusedEvidence"]) {
+  t.mock.method(api, "getRun", async id => ({ ...run, id, total_tests: 2 }));
+  for (const method of ["getTest", "getFocusedEvidence"]) {
     t.mock.method(api, method, () => { throw new Error("unexpected linked evidence request"); });
   }
 }
@@ -81,6 +84,7 @@ test("dashboard test, tab, error and evidence clicks stay in place without linke
     }
   };
 
+  await waitFor(() => assert.ok(within(sidebar).getByRole("button", {name: /updates a product/})));
   fireEvent.click(within(sidebar).getByRole("button", {name: /updates a product/}));
   await waitFor(() => assert.ok(view.getByRole("button", {name: /POST \/products/})));
   assert.ok(view.getByRole("heading", {name: "updates a product"}));
@@ -115,7 +119,7 @@ test("dashboard test, tab, error and evidence clicks stay in place without linke
 test("changing dashboard runs retains the navigator while tests load", async (t) => {
   dashboardApi(t);
   const pending = deferred();
-  api.getTests.mock.mockImplementation(async (runId) => runId === "run-2" ? pending.promise : [testRecord]);
+  api.getTests.mock.mockImplementation(async (runId) => runId === "run-2" ? pending.promise : testPage([testRecord]));
   const view = render(h(App), wrapper());
   await waitFor(() => assert.ok(view.getByRole("heading", {name: "creates a product"})));
   const sidebar = view.getByRole("complementary", {name: "Test navigator"});
@@ -124,10 +128,10 @@ test("changing dashboard runs retains the navigator while tests load", async (t)
   assert.equal(window.location.pathname, "/");
   assert.equal(view.getByRole("combobox", {name: "Run"}).value, "run-2");
   assert.equal(view.queryByText("Loading requested test run…"), null);
-  await act(async () => pending.resolve([{...testRecord, run_id: "run-2"}]));
+  await act(async () => pending.resolve(testPage([{...testRecord, run_id: "run-2"}])));
   await waitFor(() => assert.ok(view.getByRole("heading", {name: "creates a product"})));
   assert.equal(view.getByRole("complementary", {name: "Test navigator"}), sidebar);
-  assert.equal(api.getRun.mock.callCount(), 0);
+  assert.equal(api.getRun.mock.calls[0].arguments[0], "run-2");
   assert.equal(api.getTest.mock.callCount(), 0);
   assert.equal(sources.length, 1);
 });

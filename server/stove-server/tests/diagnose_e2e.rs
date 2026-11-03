@@ -256,9 +256,9 @@ async fn agent_can_page_every_failure_without_switching_to_a_newer_run() {
   }
   assert_eq!(seen.len(), 5);
   for args in [
-    json!({"run_id":"run-a", "after_test_id":"unknown"}),
-    json!({"app_name":"checkout", "metadata":{"job":"a"}, "after_test_id":"same-test-id"}),
-    json!({"run_id":"run-a", "test_id":"same-test-id", "after_test_id":"same-test-id"}),
+    json!({"run_id":"run-a", "cursor":"unknown"}),
+    json!({"app_name":"checkout", "metadata":{"job":"a"}, "cursor":"same-test-id"}),
+    json!({"run_id":"run-a", "test_id":"same-test-id", "cursor":"same-test-id"}),
   ] {
     assert_eq!(diagnose(&server, args).await["result"]["isError"], true);
   }

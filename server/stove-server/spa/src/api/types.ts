@@ -20,6 +20,8 @@ export type EventType = LiveDashboardEvent["event_type"];
 
 // REST shapes are owned by the Rust OpenAPI contract.
 export type AppSummary = components["schemas"]["AppSummary"];
+export type RunPage = components["schemas"]["RunPage"];
+export type RunMetadataFacet = components["schemas"]["RunMetadataFacet"];
 export type TopFilterSettings = components["schemas"]["TopFilterSettings"];
 export type TopFilterCatalog = components["schemas"]["TopFilterCatalog"];
 export type TopFilterValue = components["schemas"]["TopFilterValue"];
@@ -65,3 +67,6 @@ export type AgentSetupScope = components["schemas"]["AgentSetupScope"];
 
 export type ProfileReport = components["schemas"]["ProfileReport"];
 export type ProfileSeries = components["schemas"]["Series"];
+
+export type TestPage = components["schemas"]["TestPage"];
+export type TestSummary = components["schemas"]["TestSummary"];

@@ -147,11 +147,34 @@ fn full_event_lifecycle() {
     systems: vec!["HTTP".into(), "Kafka".into()],
     metadata: std::collections::BTreeMap::new(),
   };
-  assert_eq!(repo.get_runs(None).unwrap(), vec![expected_run.clone()]);
+  assert_eq!(
+    repo
+      .get_run_page(
+        &crate::storage::repository::RunFilter {
+          app: None,
+          ..Default::default()
+        },
+        100,
+        None
+      )
+      .map(|page| page.runs)
+      .unwrap(),
+    vec![expected_run.clone()]
+  );
   assert_eq!(repo.get_run("run-1").unwrap(), Some(expected_run));
 
   assert_eq!(
-    repo.get_tests_for_run("run-1").unwrap(),
+    repo
+      .get_test_page(
+        &crate::storage::repository::TestFilter {
+          run_id: "run-1".into(),
+          ..Default::default()
+        },
+        100,
+        None
+      )
+      .map(|page| page.tests)
+      .unwrap(),
     vec![Test {
       id: "test-1".into(),
       run_id: "run-1".into(),
@@ -593,7 +616,21 @@ fn ending_a_run_prunes_previous_completed_results_for_that_app() {
     .unwrap();
 
   assert!(repo.get_run("old-run").unwrap().is_none());
-  assert_eq!(repo.get_tests_for_run("old-run").unwrap().len(), 0);
+  assert_eq!(
+    repo
+      .get_test_page(
+        &crate::storage::repository::TestFilter {
+          run_id: "old-run".into(),
+          ..Default::default()
+        },
+        100,
+        None
+      )
+      .map(|page| page.tests)
+      .unwrap()
+      .len(),
+    0
+  );
   assert!(repo.get_run("new-run").unwrap().is_some());
   assert!(repo.get_run("other-run").unwrap().is_some());
 
@@ -625,11 +662,31 @@ fn get_runs_filters_by_app_name() {
     .save_run_start("run-2", "order-api", "2024-01-01T00:00:01Z", &[])
     .unwrap();
 
-  let product_runs = repo.get_runs(Some("product-api")).unwrap();
+  let product_runs = repo
+    .get_run_page(
+      &crate::storage::repository::RunFilter {
+        app: Some("product-api".to_owned()),
+        ..Default::default()
+      },
+      100,
+      None,
+    )
+    .map(|page| page.runs)
+    .unwrap();
   assert_eq!(product_runs.len(), 1);
   assert_eq!(product_runs[0].app_name, "product-api");
 
-  let all_runs = repo.get_runs(None).unwrap();
+  let all_runs = repo
+    .get_run_page(
+      &crate::storage::repository::RunFilter {
+        app: None,
+        ..Default::default()
+      },
+      100,
+      None,
+    )
+    .map(|page| page.runs)
+    .unwrap();
   assert_eq!(all_runs.len(), 2);
 }
 
@@ -645,8 +702,36 @@ fn clear_all_removes_everything() {
 
   repo.clear_all().unwrap();
 
-  assert_eq!(repo.get_runs(None).unwrap().len(), 0);
-  assert_eq!(repo.get_tests_for_run("run-1").unwrap().len(), 0);
+  assert_eq!(
+    repo
+      .get_run_page(
+        &crate::storage::repository::RunFilter {
+          app: None,
+          ..Default::default()
+        },
+        100,
+        None
+      )
+      .map(|page| page.runs)
+      .unwrap()
+      .len(),
+    0
+  );
+  assert_eq!(
+    repo
+      .get_test_page(
+        &crate::storage::repository::TestFilter {
+          run_id: "run-1".into(),
+          ..Default::default()
+        },
+        100,
+        None
+      )
+      .map(|page| page.tests)
+      .unwrap()
+      .len(),
+    0
+  );
 }
 
 #[test]
@@ -682,7 +767,17 @@ fn get_runs_keeps_overlapping_runs_when_started_at_ties() {
     .save_run_start("run-2", "my-app", "2024-06-01T00:00:00Z", &[])
     .unwrap();
 
-  let runs = repo.get_runs(Some("my-app")).unwrap();
+  let runs = repo
+    .get_run_page(
+      &crate::storage::repository::RunFilter {
+        app: Some("my-app".to_owned()),
+        ..Default::default()
+      },
+      100,
+      None,
+    )
+    .map(|page| page.runs)
+    .unwrap();
 
   assert_eq!(runs.len(), 2);
   assert_eq!(runs[0].id, "run-2");
@@ -715,7 +810,17 @@ fn configurable_retention_keeps_the_latest_completed_runs() {
       .unwrap();
   }
 
-  let runs = repo.get_runs(Some("my-app")).unwrap();
+  let runs = repo
+    .get_run_page(
+      &crate::storage::repository::RunFilter {
+        app: Some("my-app".to_owned()),
+        ..Default::default()
+      },
+      100,
+      None,
+    )
+    .map(|page| page.runs)
+    .unwrap();
   assert_eq!(
     runs.iter().map(|run| run.id.as_str()).collect::<Vec<_>>(),
     vec!["run-3", "run-2"]
@@ -749,7 +854,15 @@ fn retention_never_prunes_an_active_run() {
   assert!(repo.get_run("old-run").unwrap().is_none());
   assert_eq!(
     repo
-      .get_runs(Some("my-app"))
+      .get_run_page(
+        &crate::storage::repository::RunFilter {
+          app: Some("my-app".to_owned()),
+          ..Default::default()
+        },
+        100,
+        None
+      )
+      .map(|page| page.runs)
       .unwrap()
       .iter()
       .map(|run| run.id.as_str())
@@ -787,7 +900,21 @@ fn ending_an_unknown_run_remains_a_no_op() {
     .save_run_end("unknown-run", "2024-06-01T00:01:00Z", 0, 0, 0, 60_000)
     .unwrap();
 
-  assert_eq!(repo.get_runs(None).unwrap().len(), 0);
+  assert_eq!(
+    repo
+      .get_run_page(
+        &crate::storage::repository::RunFilter {
+          app: None,
+          ..Default::default()
+        },
+        100,
+        None
+      )
+      .map(|page| page.runs)
+      .unwrap()
+      .len(),
+    0
+  );
 }
 
 #[test]
@@ -816,7 +943,21 @@ fn zero_retention_disables_automatic_pruning() {
       .unwrap();
   }
 
-  assert_eq!(repo.get_runs(Some("my-app")).unwrap().len(), 2);
+  assert_eq!(
+    repo
+      .get_run_page(
+        &crate::storage::repository::RunFilter {
+          app: Some("my-app".to_owned()),
+          ..Default::default()
+        },
+        100,
+        None
+      )
+      .map(|page| page.runs)
+      .unwrap()
+      .len(),
+    2
+  );
 }
 
 #[test]
@@ -849,7 +990,17 @@ fn retention_can_be_changed_while_the_repository_is_running() {
       .unwrap();
   }
 
-  let runs = repo.get_runs(Some("my-app")).unwrap();
+  let runs = repo
+    .get_run_page(
+      &crate::storage::repository::RunFilter {
+        app: Some("my-app".to_owned()),
+        ..Default::default()
+      },
+      100,
+      None,
+    )
+    .map(|page| page.runs)
+    .unwrap();
   assert_eq!(runs.len(), 1);
   assert_eq!(runs[0].id, "run-2");
 }
@@ -997,7 +1148,19 @@ fn corrupt_run_fields_are_errors_instead_of_fabricated_defaults() {
       repo.get_run("run-1"),
       Err(crate::error::AppError::InvalidStoredField(_))
     ));
-    assert!(repo.get_runs(None).is_err());
+    assert!(
+      repo
+        .get_run_page(
+          &crate::storage::repository::RunFilter {
+            app: None,
+            ..Default::default()
+          },
+          100,
+          None
+        )
+        .map(|page| page.runs)
+        .is_err()
+    );
     if field != "systems" {
       assert!(repo.get_apps().is_err());
     }
@@ -1027,7 +1190,16 @@ fn corrupt_test_fields_are_errors_instead_of_fabricated_defaults() {
       .batch_execute(&format!("UPDATE tests SET {field} = '{value}'"))
       .unwrap();
     assert!(matches!(
-      repo.get_tests_for_run("run-1"),
+      repo
+        .get_test_page(
+          &crate::storage::repository::TestFilter {
+            run_id: "run-1".into(),
+            ..Default::default()
+          },
+          100,
+          None
+        )
+        .map(|page| page.tests),
       Err(crate::error::AppError::InvalidStoredField(_))
     ));
   }

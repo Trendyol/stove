@@ -71,10 +71,10 @@ fn tool_description(tool: ToolName) -> &'static str {
       "List apps recorded in the Stove dashboard database. Use this when multiple apps may have test runs."
     }
     ToolName::Runs => {
-      "List Stove runs, optionally filtered by app_name, status, and an exact metadata subset. run_id is the canonical execution boundary for detail tools."
+      "List a page of Stove runs, optionally filtered by app_name, status, and metadata selectors (strings or string arrays). Follow next_tool_call to continue. run_id is the canonical execution boundary for detail tools."
     }
     ToolName::Failures => {
-      "Survey failed or errored tests grouped by app and run, with ready-to-use detail tool calls. Prefer stove_diagnose for a single-call diagnosis."
+      "Survey a page of failed or errored tests grouped by app and run, with ready-to-use detail tool calls. Follow next_tool_call until null. Prefer stove_diagnose for a single-call diagnosis."
     }
     ToolName::Diagnose => {
       "Single-call failure investigation. Select by exact run_id, or app_name plus exact CI metadata identifying one run. Optional test_id narrows the run. Returns ranked recorded findings, assertion differences, exception locations, mock mismatches, nested diagnostic payload fields, a bounded failure timeline and relevant trace path, citations and evidence gaps. Never chooses an arbitrary run or claims an inferred root cause is proven."
@@ -106,13 +106,15 @@ fn tool_fields(tool: ToolName) -> Vec<FieldSpec> {
     ToolName::Runs => vec![
       FieldSpec::string(ArgName::AppName).description("Optional app grouping label."),
       FieldSpec::string_enum(ArgName::Status, SchemaEnum::RunStatus),
-      FieldSpec::object(ArgName::Metadata)
-        .description("Optional string key/value pairs that must all match run metadata."),
+      FieldSpec::new(ArgName::Metadata, FieldKind::MetadataSelectors)
+        .description("Metadata selectors: strings or arrays of strings. Any value within a key matches; every key must match."),
       FieldSpec::limit(),
+      FieldSpec::string(ArgName::Cursor).description("Opaque next_cursor from the preceding page; keep filters unchanged."),
       FieldSpec::budget(),
       FieldSpec::max_chars(),
     ],
     ToolName::Failures => vec![
+      FieldSpec::string(ArgName::Cursor).description("Opaque next_cursor from the preceding page; keep app_name and run_id unchanged."),
       FieldSpec::string(ArgName::AppName)
         .description("Optional app grouping label. Does not uniquely identify a run."),
       FieldSpec::string(ArgName::RunId).description("Optional exact run id."),
@@ -129,7 +131,7 @@ fn tool_fields(tool: ToolName) -> Vec<FieldSpec> {
     ],
     ToolName::FailureDetail => exact_test_fields(),
     ToolName::Diagnose => vec![
-      FieldSpec::string(ArgName::AfterTestId).description("Resume after this test using the returned next_tool_call. Requires run_id; incompatible with test_id."),
+      FieldSpec::string(ArgName::Cursor).description("Resume using the opaque cursor in next_tool_call. Requires run_id; incompatible with test_id."),
       FieldSpec::string(ArgName::RunId).description("Exact run id; preferred when known."),
       FieldSpec::string(ArgName::AppName).description("Required with nonempty metadata when run_id is unknown."),
       FieldSpec::object(ArgName::Metadata).description("Exact run metadata subset, e.g. project, pipeline, job and attempt. All supplied selectors must match."),
@@ -258,6 +260,14 @@ impl FieldSpec {
           maximum.unwrap_or(i64::MAX)
         )
       }
+      FieldKind::MetadataSelectors => {
+        if serde_json::from_value::<crate::storage::repository::MetadataSelectors>(value.clone())
+          .is_ok()
+        {
+          return Ok(());
+        }
+        "an object with string or nonempty string-array values".to_string()
+      }
       FieldKind::StringMap => {
         if value
           .as_object()
@@ -368,6 +378,13 @@ impl FieldSpec {
         "enum": enum_kind.values(),
       }),
       FieldKind::Integer => json!({ "type": "integer" }),
+      FieldKind::MetadataSelectors => json!({
+        "type": "object",
+        "additionalProperties": { "oneOf": [
+          { "type": "string" },
+          { "type": "array", "items": { "type": "string" }, "minItems": 1 }
+        ] },
+      }),
       FieldKind::StringMap => json!({
         "type": "object",
         "additionalProperties": { "type": "string" },
@@ -400,6 +417,7 @@ enum FieldKind {
   StringEnum(SchemaEnum),
   Integer,
   StringMap,
+  MetadataSelectors,
   IntegerWithBounds {
     minimum: Option<i64>,
     maximum: Option<i64>,

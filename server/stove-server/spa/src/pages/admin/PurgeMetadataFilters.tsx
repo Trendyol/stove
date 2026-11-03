@@ -1,16 +1,15 @@
-import { useMemo, useState } from "react";
-import type { Run } from "../../api/types";
+import { useState } from "react";
+import type { RunMetadataFacet } from "../../api/types";
 import { ErrorNotice } from "../../components/ErrorNotice";
 import {
   isMetadataValueSelected,
   type MetadataFilter,
   toggleMetadataValue,
 } from "../../utils/metadata-filter";
-import { metadataOptionsForRuns } from "../../utils/metadata-options";
 
 interface PurgeMetadataFiltersProps {
   appName: string;
-  runs: Run[];
+  options: RunMetadataFacet[];
   value: MetadataFilter;
   loading: boolean;
   error: string | null;
@@ -20,14 +19,13 @@ interface PurgeMetadataFiltersProps {
 
 export function PurgeMetadataFilters({
   appName,
-  runs,
+  options,
   value,
   loading,
   error,
   onChange,
   onRetry,
 }: PurgeMetadataFiltersProps) {
-  const options = useMemo(() => metadataOptionsForRuns(runs), [runs]);
   const hasSelections = Object.keys(value).length > 0;
 
   if (!appName) return null;
@@ -112,9 +110,7 @@ function PurgeMetadataOptions({
   error,
   onChange,
   onRetry,
-}: Omit<PurgeMetadataFiltersProps, "runs"> & {
-  options: ReturnType<typeof metadataOptionsForRuns>;
-}) {
+}: PurgeMetadataFiltersProps) {
   if (loading) return <p role="status">Loading metadata…</p>;
   if (error)
     return (

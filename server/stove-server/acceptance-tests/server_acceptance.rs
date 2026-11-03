@@ -198,7 +198,7 @@ async fn real_server_admin_retention_preview_purge_and_clear_are_safe() -> Resul
   assert_eq!(updated["runs"], 3);
   assert_eq!(updated["running_runs"], 2);
 
-  let retained_ids = run_ids(&stove.get_json("/runs?app=retention-app").await?);
+  let retained_ids = run_ids(&stove.get_json("/runs?app=retention-app").await?["runs"]);
   assert_eq!(
     retained_ids,
     BTreeSet::from([
@@ -288,7 +288,7 @@ async fn local_server_default_retention_keeps_one_completed_run_and_all_active_r
   assert_eq!(status["runs"], 2);
   assert_eq!(status["running_runs"], 1);
   assert_eq!(
-    run_ids(&stove.get_json("/runs?app=default-app").await?),
+    run_ids(&stove.get_json("/runs?app=default-app").await?["runs"]),
     BTreeSet::from(["active".to_string(), "completed-new".to_string()])
   );
   assert!(stove.get_json("/runs/completed-old").await?.is_null());
@@ -366,8 +366,44 @@ async fn postgres_server_runs_migrations_jsonb_filters_retention_and_admin_in_te
     .json::<Value>()
     .await?;
   assert_eq!(
-    run_ids(&rest_filtered),
+    run_ids(&rest_filtered["runs"]),
     BTreeSet::from(["postgres-pipeline-42".to_string()])
+  );
+
+  let mut page_url = reqwest::Url::parse(&stove.api_url("/runs"))?;
+  page_url
+    .query_pairs_mut()
+    .append_pair("app", "postgres-app")
+    .append_pair("limit", "1")
+    .append_pair("metadata", r#"{"team":["checkout","catalog"]}"#);
+  let first: Value = stove
+    .client
+    .get(page_url.clone())
+    .send()
+    .await?
+    .error_for_status()?
+    .json()
+    .await?;
+  assert_eq!(first["runs"][0]["id"], "postgres-active");
+  page_url
+    .query_pairs_mut()
+    .append_pair("cursor", first["next_cursor"].as_str().unwrap());
+  let second: Value = stove
+    .client
+    .get(page_url)
+    .send()
+    .await?
+    .error_for_status()?
+    .json()
+    .await?;
+  assert_eq!(second["runs"][0]["id"], "postgres-pipeline-42");
+  let facets = stove.get_json("/runs/metadata?app=postgres-app").await?;
+  assert!(
+    facets
+      .as_array()
+      .unwrap()
+      .iter()
+      .any(|facet| facet["key"] == "team" && facet["values"].as_array().unwrap().len() == 2)
   );
 
   let status = stove.get_json("/admin/status").await?;
@@ -505,7 +541,7 @@ async fn postgres_server_runs_migrations_jsonb_filters_retention_and_admin_in_te
   assert_eq!(retained["runs"], 2);
   assert_eq!(retained["running_runs"], 1);
   assert_eq!(
-    run_ids(&stove.get_json("/runs?app=postgres-app").await?),
+    run_ids(&stove.get_json("/runs?app=postgres-app").await?["runs"]),
     BTreeSet::from([
       "postgres-active".to_string(),
       "postgres-pipeline-42".to_string(),
@@ -537,7 +573,7 @@ async fn postgres_server_runs_migrations_jsonb_filters_retention_and_admin_in_te
     .await?;
   assert_eq!(purged["purged_run_ids"], json!(["postgres-pipeline-42"]));
   assert_eq!(
-    run_ids(&stove.get_json("/runs?app=postgres-app").await?),
+    run_ids(&stove.get_json("/runs?app=postgres-app").await?["runs"]),
     BTreeSet::from(["postgres-active".to_string()])
   );
 
@@ -867,7 +903,7 @@ async fn assert_exact_concurrent_retention(
   c?;
 
   let retained = reader.get_json("/runs?app=distributed-retention").await?;
-  assert_eq!(retained.as_array().map(Vec::len), Some(2));
+  assert_eq!(retained["runs"].as_array().map(Vec::len), Some(2));
   Ok(())
 }
 
@@ -877,7 +913,7 @@ async fn assert_rest_lifecycle(stove: &RunningStove) -> Result<()> {
   assert_eq!(apps[0]["app_name"], "service-tests");
 
   let all_runs = stove.get_json("/runs?app=service-tests").await?;
-  assert_eq!(all_runs.as_array().context("runs array")?.len(), 2);
+  assert_eq!(all_runs["runs"].as_array().context("runs array")?.len(), 2);
 
   let mut url = reqwest::Url::parse(&stove.api_url("/runs"))?;
   url
@@ -888,9 +924,15 @@ async fn assert_rest_lifecycle(stove: &RunningStove) -> Result<()> {
       r#"{"team":"checkout","gitlab.pipeline_id":"42"}"#,
     );
   let matching = stove.client.get(url).send().await?.json::<Value>().await?;
-  assert_eq!(matching.as_array().context("matching runs array")?.len(), 1);
-  assert_eq!(matching[0]["id"], "pipeline-42");
-  assert_eq!(matching[0]["metadata"]["tribe"], "commerce");
+  assert_eq!(
+    matching["runs"]
+      .as_array()
+      .context("matching runs array")?
+      .len(),
+    1
+  );
+  assert_eq!(matching["runs"][0]["id"], "pipeline-42");
+  assert_eq!(matching["runs"][0]["metadata"]["tribe"], "commerce");
 
   let mut missing_url = reqwest::Url::parse(&stove.api_url("/runs"))?;
   missing_url
@@ -903,7 +945,7 @@ async fn assert_rest_lifecycle(stove: &RunningStove) -> Result<()> {
       .send()
       .await?
       .json::<Value>()
-      .await?
+      .await?["runs"]
       .as_array()
       .context("missing runs array")?
       .len(),
@@ -914,7 +956,7 @@ async fn assert_rest_lifecycle(stove: &RunningStove) -> Result<()> {
   assert_eq!(run["status"], "FAILED");
   assert_eq!(run["metadata"]["team"], "checkout");
 
-  let tests = stove.get_json("/runs/pipeline-42/tests").await?;
+  let tests = stove.get_json("/runs/pipeline-42/tests").await?["tests"].clone();
   assert_eq!(tests[0]["id"], "test-failed");
   assert_eq!(tests[0]["status"], "FAILED");
 

@@ -1,3 +1,4 @@
+import { testPage } from "./helpers/fixtures.mjs";
 import assert from "node:assert/strict";
 import test from "node:test";
 import createJiti from "jiti";
@@ -23,8 +24,9 @@ const cases = [
   [() => api.updateTopFilter({ metadata_key: "team" }), { metadata_key: "team" }],
   [() => api.getMeta(), meta],
   [() => api.getApps(), [app]],
-  [() => api.getRuns(), [run]],
-  [() => api.getTests("run-1"), [testRecord]],
+  [() => api.getRuns(), { runs: [run], next_cursor: null }],
+  [() => api.getRunMetadata(), [{ key: "team", values: [{ value: "one", count: 1 }] }]],
+  [() => api.getTests("run-1"), testPage([testRecord])],
   [() => api.getEntries("run-1", "test-1"), [entry]],
   [() => api.getSpans("run-1", "test-1"), [span]],
   [() => api.getTrace("trace-1"), [span]],

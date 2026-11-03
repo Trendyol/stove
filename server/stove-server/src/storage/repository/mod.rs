@@ -10,6 +10,9 @@
 //! parallel `sqlite_backend/` and `postgres_backend/` modules.
 
 mod admin;
+mod cursor;
+mod failure_page;
+pub use failure_page::{FailureFilter, FailurePage};
 mod distributed;
 mod evidence_sql;
 mod explorer;
@@ -19,6 +22,12 @@ mod monitoring;
 mod postgres_backend;
 mod profiles;
 mod reads;
+mod run_page;
+mod test_page;
+pub use run_page::{
+  DEFAULT_RUN_PAGE_SIZE, MAX_RUN_PAGE_SIZE, MetadataSelectors, RunFilter, RunMetadataFacet, RunPage,
+};
+pub use test_page::{TestFilter, TestOutcome, TestPage, TestSummary};
 mod sqlite_backend;
 mod top_filter;
 mod write_models;

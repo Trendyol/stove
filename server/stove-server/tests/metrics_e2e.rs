@@ -5,14 +5,38 @@ use common::TestServer;
 async fn prometheus_metrics_use_public_prefix_and_scrapes_do_not_query_storage() {
   let server =
     TestServer::start_with_public_url(Some("https://stove.example/observe".into())).await;
-  server.repo.get_runs(None).unwrap();
+  server
+    .repo
+    .get_run_page(
+      &stove::storage::repository::RunFilter {
+        app: None,
+        ..Default::default()
+      },
+      100,
+      None,
+    )
+    .map(|page| page.runs)
+    .unwrap();
   // Breaking the application schema makes any fresh DB query fail. Scrapes
   // must still expose the counters collected before the failure.
   server
     .repo
     .execute_database_query("DROP TABLE runs", 1)
     .unwrap();
-  assert!(server.repo.get_runs(None).is_err());
+  assert!(
+    server
+      .repo
+      .get_run_page(
+        &stove::storage::repository::RunFilter {
+          app: None,
+          ..Default::default()
+        },
+        100,
+        None
+      )
+      .map(|page| page.runs)
+      .is_err()
+  );
   let response = server
     .client
     .get(format!("{}/observe/metrics", server.base_url))
@@ -28,14 +52,14 @@ async fn prometheus_metrics_use_public_prefix_and_scrapes_do_not_query_storage()
     text
       .lines()
       .any(|line| line.starts_with("stove_db_duration_seconds_count{")
-        && line.contains("kind=\"operation\",operation=\"get_runs_filtered\"")
+        && line.contains("kind=\"operation\",operation=\"get_run_page\"")
         && line.ends_with(" 2"))
   );
   assert!(
     text
       .lines()
       .any(|line| line.starts_with("stove_db_errors_total{")
-        && line.contains("kind=\"operation\",operation=\"get_runs_filtered\"")
+        && line.contains("kind=\"operation\",operation=\"get_run_page\"")
         && line.ends_with(" 1"))
   );
   assert!(!text.contains("DROP TABLE"));
@@ -52,7 +76,7 @@ async fn prometheus_metrics_use_public_prefix_and_scrapes_do_not_query_storage()
     again
       .lines()
       .any(|line| line.starts_with("stove_db_duration_seconds_count{")
-        && line.contains("kind=\"operation\",operation=\"get_runs_filtered\"")
+        && line.contains("kind=\"operation\",operation=\"get_run_page\"")
         && line.ends_with(" 2"))
   );
 }

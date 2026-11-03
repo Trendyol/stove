@@ -95,6 +95,10 @@ fn run_routes() -> Router<AppState> {
     .route("/admin/top-filter", put(super::routes::update_top_filter))
     .route("/events", post(super::routes::post_event))
     .route("/runs", get(super::routes::get_runs))
+    .route(
+      "/runs/metadata",
+      get(super::routes::get_run_metadata_facets),
+    )
     .route("/runs/{run_id}", get(super::routes::get_run))
     .route(
       "/runs/{run_id}/tests/{test_id}",

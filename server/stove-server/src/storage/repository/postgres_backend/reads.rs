@@ -19,6 +19,30 @@ use crate::storage::schema::postgres::{
 };
 
 impl PostgresBackend {
+  pub fn get_run_metadata_facets(
+    &self,
+    app: Option<&str>,
+    scope: &BTreeMap<String, String>,
+  ) -> Result<Vec<crate::storage::repository::run_page::FacetRow>> {
+    let mut conn = self.checkout_read()?;
+    Ok(
+      diesel::sql_query(
+        r"
+      SELECT facet.key, facet.value, count(*) AS count
+      FROM runs
+      CROSS JOIN LATERAL jsonb_each_text(runs.metadata) facet
+      WHERE ($1::text IS NULL OR runs.app_name = $1)
+        AND runs.metadata @> $2::jsonb
+      GROUP BY facet.key, facet.value
+      ORDER BY facet.key, facet.value
+    ",
+      )
+      .bind::<diesel::sql_types::Nullable<Text>, _>(app)
+      .bind::<Text, _>(serde_json::to_string(scope)?)
+      .load(&mut *conn)?,
+    )
+  }
+
   pub fn get_test(&self, run_id: &str, test_id: &str) -> Result<Option<Test>> {
     let mut conn = self.checkout_read()?;
     tests::table
@@ -274,26 +298,83 @@ impl PostgresBackend {
     .collect()
   }
 
-  pub fn get_runs_filtered(
+  pub fn count_runs(&self, filter: &crate::storage::repository::RunFilter) -> Result<i64> {
+    let mut conn = self.checkout_read()?;
+    Ok(filtered_runs(filter)?.count().get_result(&mut *conn)?)
+  }
+
+  pub fn failed_run_counts(&self, apps: &[String]) -> Result<BTreeMap<String, i64>> {
+    let mut conn = self.checkout_read()?;
+    Ok(
+      runs::table
+        .filter(runs::app_name.eq_any(apps))
+        .filter(runs::status.eq("FAILED"))
+        .group_by(runs::app_name)
+        .select((runs::app_name, diesel::dsl::count_star()))
+        .load::<(String, i64)>(&mut *conn)?
+        .into_iter()
+        .collect(),
+    )
+  }
+
+  pub fn get_failure_page(
     &self,
-    app_name: Option<&str>,
-    metadata: &BTreeMap<String, String>,
+    filter: &crate::storage::repository::FailureFilter,
+    limit: i64,
+    position: Option<&crate::storage::repository::failure_page::Position>,
+  ) -> Result<Vec<(Run, Test)>> {
+    let mut conn = self.checkout_read()?;
+    let rows = crate::storage::repository::failure_page::failure_query!(filter, position)
+      .order((
+        runs::started_at.desc(),
+        runs::id.desc(),
+        tests::started_at.asc(),
+        tests::id.asc(),
+      ))
+      .limit(limit)
+      .select((runs::all_columns, tests::all_columns))
+      .load::<(RunRow<serde_json::Value>, TestRow)>(&mut *conn)?;
+    drop(conn);
+    rows
+      .into_iter()
+      .map(|(run, test)| Ok((Run::try_from(run)?, Test::try_from(test)?)))
+      .collect()
+  }
+
+  pub fn count_failures(&self, filter: &crate::storage::repository::FailureFilter) -> Result<i64> {
+    let mut conn = self.checkout_read()?;
+    let position: Option<&crate::storage::repository::failure_page::Position> = None;
+    Ok(
+      crate::storage::repository::failure_page::failure_query!(filter, position)
+        .count()
+        .get_result(&mut *conn)?,
+    )
+  }
+
+  pub fn get_run_page(
+    &self,
+    filter: &crate::storage::repository::RunFilter,
+    limit: i64,
+    position: Option<&crate::storage::repository::run_page::Position>,
   ) -> Result<Vec<Run>> {
     let mut conn = self.checkout_read()?;
-    let mut query = runs::table.into_boxed::<diesel::pg::Pg>();
-    if let Some(app_name) = app_name {
-      query = query.filter(runs::app_name.eq(app_name));
+    let mut query = filtered_runs(filter)?;
+    if let Some(position) = position {
+      query = query.filter(
+        diesel::dsl::sql::<diesel::sql_types::Bool>("(started_at, id) < (")
+          .bind::<Text, _>(&position.started_at)
+          .sql(", ")
+          .bind::<Text, _>(&position.id)
+          .sql(")"),
+      );
     }
-    if !metadata.is_empty() {
-      query = query.filter(runs::metadata.contains(serde_json::to_value(metadata)?));
-    }
-    query
+    let rows = query
       .order((runs::started_at.desc(), runs::id.desc()))
+      .limit(limit)
       .select(runs::all_columns)
-      .load::<RunRow<serde_json::Value>>(&mut *conn)?
-      .into_iter()
-      .map(Run::try_from)
-      .collect::<Result<Vec<_>>>()
+      .load::<RunRow<serde_json::Value>>(&mut *conn)?;
+    drop(conn);
+    rows.into_iter().map(Run::try_from).collect()
   }
 
   pub fn get_run(&self, run_id: &str) -> Result<Option<Run>> {
@@ -307,16 +388,44 @@ impl PostgresBackend {
       .transpose()
   }
 
-  pub fn get_tests_for_run(&self, run_id: &str) -> Result<Vec<Test>> {
+  pub fn get_test_page(
+    &self,
+    filter: &crate::storage::repository::TestFilter,
+    limit: i64,
+    position: Option<&crate::storage::repository::test_page::Position>,
+  ) -> Result<Vec<Test>> {
     let mut conn = self.checkout_read()?;
-    tests::table
-      .filter(tests::run_id.eq(run_id))
-      .order(tests::started_at)
-      .select(tests::all_columns)
-      .load::<TestRow>(&mut *conn)?
-      .into_iter()
-      .map(Test::try_from)
-      .collect::<Result<Vec<_>>>()
+    let query = positioned_tests(filter, position);
+    let rows = query
+      .order((tests::started_at.asc(), tests::id.asc()))
+      .limit(limit)
+      .load::<TestRow>(&mut *conn)?;
+    drop(conn);
+    rows.into_iter().map(Test::try_from).collect()
+  }
+
+  pub fn count_tests(
+    &self,
+    filter: &crate::storage::repository::TestFilter,
+    position: Option<&crate::storage::repository::test_page::Position>,
+  ) -> Result<i64> {
+    let mut conn = self.checkout_read()?;
+    Ok(
+      positioned_tests(filter, position)
+        .count()
+        .get_result(&mut *conn)?,
+    )
+  }
+
+  pub fn test_summary(&self, run_id: &str) -> Result<Vec<(String, i64)>> {
+    let mut conn = self.checkout_read()?;
+    Ok(
+      tests::table
+        .filter(tests::run_id.eq(run_id))
+        .group_by(tests::status)
+        .select((tests::status, diesel::dsl::count_star()))
+        .load(&mut *conn)?,
+    )
   }
 
   pub fn get_entries(&self, run_id: &str, test_id: &str, raw: bool) -> Result<Vec<Entry>> {
@@ -486,3 +595,84 @@ static SPANS_FOR_TEST_SQL: std::sync::LazyLock<String> =
   std::sync::LazyLock::new(|| format!("{SPANS_FOR_TEST_BASE} ORDER BY start_time_nanos"));
 static TEST_SPAN_BY_ID_SQL: std::sync::LazyLock<String> =
   std::sync::LazyLock::new(|| format!("{SPANS_FOR_TEST_BASE} AND id = $3"));
+
+fn filtered_runs(
+  filter: &crate::storage::repository::RunFilter,
+) -> Result<runs::BoxedQuery<'static, diesel::pg::Pg>> {
+  let mut query = runs::table.into_boxed::<diesel::pg::Pg>();
+  if let Some(app) = &filter.app {
+    query = query.filter(runs::app_name.eq(app.clone()));
+  }
+  if let Some(status) = &filter.status {
+    query = query.filter(runs::status.eq(status.to_string()));
+  }
+  // Single-value selectors retain the JSONB containment index; multi-value
+  // selectors are evaluated before LIMIT with OR within each key.
+  let singles: BTreeMap<_, _> = filter
+    .metadata
+    .iter()
+    .filter(|(_, values)| values.len() == 1)
+    .map(|(key, values)| (key.clone(), values[0].clone()))
+    .collect();
+  if !singles.is_empty() {
+    query = query.filter(runs::metadata.contains(serde_json::to_value(singles)?));
+  }
+  let multiple: BTreeMap<_, _> = filter
+    .metadata
+    .iter()
+    .filter(|(_, values)| values.len() > 1)
+    .collect();
+  if !multiple.is_empty() {
+    query = query.filter(diesel::dsl::sql::<diesel::sql_types::Bool>("NOT EXISTS (SELECT 1 FROM jsonb_each(")
+        .bind::<Text, _>(serde_json::to_string(&multiple)?)
+        .sql("::jsonb) wanted WHERE NOT EXISTS (SELECT 1 FROM jsonb_array_elements_text(wanted.value) selected(value) WHERE runs.metadata @> jsonb_build_object(wanted.key, selected.value)))"));
+  }
+  Ok(query)
+}
+
+fn filtered_tests(
+  filter: &crate::storage::repository::TestFilter,
+) -> tests::BoxedQuery<'static, diesel::pg::Pg> {
+  use crate::storage::repository::TestOutcome;
+  let mut query = tests::table
+    .filter(tests::run_id.eq(filter.run_id.clone()))
+    .into_boxed::<diesel::pg::Pg>();
+  match filter.outcome {
+    TestOutcome::All => {}
+    TestOutcome::Pass => query = query.filter(tests::status.eq("PASSED")),
+    TestOutcome::Fail => query = query.filter(tests::status.eq_any(["FAILED", "ERROR"])),
+  }
+  if !filter.search.is_empty() {
+    let pattern = format!(
+      "%{}%",
+      filter
+        .search
+        .to_lowercase()
+        .replace('\\', "\\\\")
+        .replace('%', "\\%")
+        .replace('_', "\\_")
+    );
+    query = query.filter(diesel::dsl::sql::<diesel::sql_types::Bool>("(LOWER(tests.test_name) LIKE ")
+      .bind::<Text, _>(pattern.clone()).sql(" ESCAPE '\\' OR LOWER(tests.spec_name) LIKE ")
+      .bind::<Text, _>(pattern.clone()).sql(" ESCAPE '\\' OR EXISTS (SELECT 1 FROM jsonb_array_elements_text(tests.test_path::jsonb) path(value) WHERE LOWER(path.value) LIKE ")
+      .bind::<Text, _>(pattern).sql(" ESCAPE '\\'))"));
+  }
+  query
+}
+
+fn positioned_tests(
+  filter: &crate::storage::repository::TestFilter,
+  position: Option<&crate::storage::repository::test_page::Position>,
+) -> tests::BoxedQuery<'static, diesel::pg::Pg> {
+  let mut query = filtered_tests(filter);
+  if let Some(position) = position {
+    query = query.filter(
+      tests::started_at.gt(position.started_at.clone()).or(
+        tests::started_at
+          .eq(position.started_at.clone())
+          .and(tests::id.gt(position.id.clone())),
+      ),
+    );
+  }
+  query
+}

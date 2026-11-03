@@ -173,6 +173,25 @@ async fn agents_can_filter_runs_by_dynamic_metadata_pairs() {
   assert_eq!(runs[0]["run_id"], "run-checkout");
   assert_eq!(runs[0]["metadata"]["tribe"], "commerce");
 
+  let first = mcp_tool(
+    &server,
+    "stove_runs",
+    json!({"app_name": "service-tests", "limit": 1, "metadata": {"team": ["checkout", "catalog", "checkout"]}}),
+  )
+  .await;
+  let content = &first["result"]["structuredContent"];
+  assert_eq!(content["runs"][0]["run_id"], "run-catalog");
+  let next = &content["next_tool_call"];
+  let second = mcp_tool(&server, "stove_runs", next["arguments"].clone()).await;
+  assert_eq!(
+    second["result"]["structuredContent"]["runs"][0]["run_id"],
+    "run-checkout"
+  );
+  assert!(second["result"]["structuredContent"]["next_cursor"].is_null());
+
+  let invalid = mcp_tool(&server, "stove_runs", json!({"metadata": {"team": []}})).await;
+  assert_eq!(invalid["result"]["isError"], true);
+
   let apps = mcp_tool(&server, "stove_apps", json!({})).await;
   assert_eq!(
     apps["result"]["structuredContent"]["apps"][0]["metadata"]["team"],
@@ -653,7 +672,7 @@ async fn tool_errors_are_recoverable_and_do_not_silently_drop_filters() {
     (
       "stove_runs",
       json!({"metadata": {"pipeline": 42}}),
-      "string values",
+      "string or nonempty string-array values",
     ),
     (
       "stove_failures",
@@ -841,4 +860,61 @@ async fn trace_views_select_evidence_and_keep_the_failure_when_capped() {
       .len(),
     12
   );
+}
+
+#[tokio::test]
+async fn failure_pages_continue_within_and_across_runs_and_keep_selectors() {
+  let server = TestServer::start().await;
+  for run_id in ["run-a", "run-b"] {
+    server.seed_run(run_id, "page-app");
+    for id in ["a", "b", "c"] {
+      server.seed_test(run_id, id, "duplicate name", "Spec");
+      server.end_test_failed(run_id, id, 1, "failed");
+    }
+  }
+  let mut args = json!({"app_name":"page-app", "limit":2, "budget":"tiny"});
+  let mut ids = std::collections::HashSet::new();
+  loop {
+    let response = mcp_tool(&server, "stove_failures", args.clone()).await;
+    assert_eq!(response["result"]["isError"], false, "{response}");
+    let page = &response["result"]["structuredContent"];
+    assert_eq!(page["total_failure_count"], 6);
+    assert!(page["failure_count"].as_u64().unwrap() <= 2);
+    for group in page["groups"].as_array().unwrap() {
+      for failure in group["failures"].as_array().unwrap() {
+        assert!(ids.insert((
+          group["run_id"].as_str().unwrap().to_owned(),
+          failure["test_id"].as_str().unwrap().to_owned()
+        )));
+      }
+    }
+    if page["next_tool_call"].is_null() {
+      break;
+    }
+    args = page["next_tool_call"]["arguments"].clone();
+    assert_eq!(args["budget"], "tiny");
+    assert_eq!(args["app_name"], "page-app");
+  }
+  assert_eq!(ids.len(), 6);
+  let conflict = mcp_tool(
+    &server,
+    "stove_failures",
+    json!({"run_id":"run-a","app_name":"other"}),
+  )
+  .await;
+  assert_eq!(conflict["result"]["structuredContent"]["failure_count"], 0);
+  let first = mcp_tool(
+    &server,
+    "stove_failures",
+    json!({"run_id":"run-a","limit":1}),
+  )
+  .await;
+  let cursor = &first["result"]["structuredContent"]["next_cursor"];
+  let invalid = mcp_tool(
+    &server,
+    "stove_failures",
+    json!({"run_id":"run-b","cursor":cursor}),
+  )
+  .await;
+  assert_eq!(invalid["result"]["isError"], true);
 }

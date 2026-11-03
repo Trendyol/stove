@@ -1,9 +1,14 @@
+import type { RunListFilter } from "./run-queries";
+
 export const dashboardKeys = {
   apps: ["apps"] as const,
   meta: ["meta"] as const,
   topFilter: ["top-filter"] as const,
   runsRoot: ["runs"] as const,
-  runs: (appName: string) => ["runs", appName] as const,
+  runs: (filter: RunListFilter) => ["runs", filter] as const,
+  run: (id: string | undefined) => ["run", id] as const,
+  runMetadata: (app: string | undefined, scope: Record<string, string>) =>
+    ["run-metadata", app, scope] as const,
   testsRoot: ["tests"] as const,
   tests: (runId: string) => ["tests", runId] as const,
   entries: (runId: string, testId: string) => ["entries", runId, testId] as const,
@@ -22,7 +27,10 @@ const DASHBOARD_ROOTS = new Set([
   "focus",
   "apps",
   "runs",
+  "run",
+  "run-metadata",
   "tests",
+  "test",
   "entries",
   "spans",
   "snapshots",

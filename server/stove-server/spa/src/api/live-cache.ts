@@ -12,6 +12,9 @@ import {
   mergeSpans,
   upsertTest,
 } from "./live-cache/records";
+import { dashboardKeys } from "./query-keys";
+import { matchesRun, type RunListFilter, type RunPages } from "./run-queries";
+import type { TestPages } from "./test-queries";
 import type {
   AppSummary,
   Entry,
@@ -36,9 +39,48 @@ export function applyLiveDashboardEvents(
   if (events.length === 0) return;
   const deletions = events.filter((event) => event.event_type === EVENT_TYPE.RUN_DELETED);
   if (deletions.length) cancelPreDeletionRequests(queryClient);
+  // An in-flight page read may predate this event. Cancel it before publishing live
+  // changes, then refetch through the infinite query so all page boundaries agree.
+  const runChanged = events.some(
+    (event) =>
+      event.event_type === EVENT_TYPE.RUN_STARTED || event.event_type === EVENT_TYPE.RUN_ENDED,
+  );
+  const changedTests = new Set(
+    events
+      .filter(
+        (event) =>
+          event.event_type === EVENT_TYPE.TEST_STARTED ||
+          event.event_type === EVENT_TYPE.TEST_ENDED,
+      )
+      .map((event) => event.run_id),
+  );
+  const interrupted = queryClient
+    .getQueryCache()
+    .findAll({
+      predicate: (query) =>
+        ((runChanged && (query.queryKey[0] === "runs" || query.queryKey[0] === "run")) ||
+          (changedTests.has(String(query.queryKey[1])) &&
+            (query.queryKey[0] === "tests" || query.queryKey[0] === "test"))) &&
+        query.state.fetchStatus === "fetching",
+    })
+    .map((query) => query.queryKey);
+  for (const queryKey of interrupted) void queryClient.cancelQueries({ queryKey, exact: true });
   const cache = new LiveCacheBuffer(queryClient);
   for (const event of events) applyEvent(cache, event);
   cache.flush();
+  for (const runId of changedTests) {
+    void queryClient.invalidateQueries({ queryKey: ["tests", runId] }, { cancelRefetch: false });
+    void queryClient.invalidateQueries({ queryKey: ["test", runId] }, { cancelRefetch: false });
+  }
+  for (const queryKey of interrupted) void queryClient.invalidateQueries({ queryKey, exact: true });
+  if (
+    events.some(
+      (event) =>
+        event.event_type === EVENT_TYPE.RUN_STARTED || event.event_type === EVENT_TYPE.RUN_DELETED,
+    )
+  ) {
+    void queryClient.invalidateQueries({ queryKey: ["run-metadata"] });
+  }
   if (deletions.length) {
     for (const event of deletions) invalidateDashboardQueries(queryClient, event.run_id);
     void queryClient.invalidateQueries({ queryKey: ["admin"] });
@@ -98,6 +140,9 @@ function applyRunStarted(cache: LiveCacheBuffer, event: LiveEventOf<"run_started
 
 function applyRunEnded(cache: LiveCacheBuffer, event: LiveEventOf<"run_ended">) {
   updateCachedRuns(cache, event.run_id, (run) => ({ ...run, ...event.payload }));
+  cache.setQueryData<Run | null>(dashboardKeys.run(event.run_id), (run) =>
+    run ? { ...run, ...event.payload } : run,
+  );
   cache.setQueryData<AppSummary[]>(["apps"], (apps) =>
     apps?.map((app) =>
       app.latest_run_id === event.run_id ? { ...app, latest_status: event.payload.status } : app,
@@ -116,9 +161,23 @@ function applyTestStarted(cache: LiveCacheBuffer, event: LiveEventOf<"test_start
     duration_ms: null,
     error: null,
   };
-  updateExistingQueryData<Test[]>(cache, ["tests", event.run_id], (tests) =>
-    upsertTest(tests, test),
-  );
+  for (const [key, data] of cache.getQueriesData<TestPages>({
+    queryKey: ["tests", event.run_id],
+  })) {
+    if (!data?.pages.length) continue;
+    const filter = key[2] as { outcome?: string; search?: string } | undefined;
+    if (filter?.search || (filter?.outcome && filter.outcome !== "all")) continue;
+    cache.setQueryData<TestPages>(key, {
+      ...data,
+      pages: data.pages.map((page, index) => ({
+        ...page,
+        tests:
+          index === data.pages.length - 1 && !page.next_cursor
+            ? upsertTest(page.tests, test).slice(0, 100)
+            : page.tests,
+      })),
+    });
+  }
 }
 
 function applyTestEnded(cache: LiveCacheBuffer, event: LiveEventOf<"test_ended">) {
@@ -186,11 +245,14 @@ function applyMockWarning(cache: LiveCacheBuffer, event: LiveEventOf<"mock_warni
 export function invalidateDashboardQueries(queryClient: QueryClient, runId?: string) {
   queryClient.invalidateQueries({ queryKey: ["apps"] });
   queryClient.invalidateQueries({ queryKey: ["runs"] });
+  queryClient.invalidateQueries({ queryKey: ["run"] });
+  queryClient.invalidateQueries({ queryKey: ["run-metadata"] });
   if (runId) {
     queryClient.invalidateQueries({ queryKey: ["linked", runId] });
     queryClient.invalidateQueries({ queryKey: ["focus", runId] });
     queryClient.invalidateQueries({ queryKey: ["trace"] });
     queryClient.invalidateQueries({ queryKey: ["tests", runId] });
+    queryClient.invalidateQueries({ queryKey: ["test", runId] });
     queryClient.invalidateQueries({ queryKey: ["entries", runId] });
     queryClient.invalidateQueries({ queryKey: ["spans", runId] });
     queryClient.invalidateQueries({ queryKey: ["snapshots", runId] });
@@ -207,21 +269,34 @@ function upsertAppSummary(apps: AppSummary[] | undefined, incoming: AppSummary):
   );
 }
 
-function updateRunQueriesForStart(queryClient: LiveCacheBuffer, incoming: Run) {
-  updateExistingQueryData<Run[]>(queryClient, ["runs", incoming.app_name], (runs) =>
-    [...(runs ?? []).filter((run) => run.id !== incoming.id), incoming].sort(compareRuns),
-  );
+function updateRunQueriesForStart(cache: LiveCacheBuffer, incoming: Run) {
+  for (const [key, data] of cache.getQueriesData<RunPages>({ queryKey: ["runs"] })) {
+    if (!data?.pages.length || !matchesRun(incoming, key[1] as RunListFilter)) continue;
+    cache.setQueryData<RunPages>(key, {
+      ...data,
+      pages: data.pages.map((page, index) => ({
+        ...page,
+        runs:
+          index === 0
+            ? [...page.runs.filter((run) => run.id !== incoming.id), incoming].sort(compareRuns)
+            : page.runs.filter((run) => run.id !== incoming.id),
+      })),
+    });
+  }
 }
 
-function updateCachedRuns(queryClient: LiveCacheBuffer, runId: string, updater: (run: Run) => Run) {
-  for (const [queryKey, runs] of queryClient.getQueriesData<Run[]>({ queryKey: ["runs"] })) {
-    if (!runs?.some((run) => run.id === runId)) {
-      continue;
-    }
-    queryClient.setQueryData(
-      queryKey,
-      runs.map((run) => (run.id === runId ? updater(run) : run)).sort(compareRuns),
-    );
+function updateCachedRuns(cache: LiveCacheBuffer, runId: string, updater: (run: Run) => Run) {
+  for (const [key, data] of cache.getQueriesData<RunPages>({ queryKey: ["runs"] })) {
+    if (!data) continue;
+    cache.setQueryData<RunPages>(key, {
+      ...data,
+      pages: data.pages.map((page) => ({
+        ...page,
+        runs: page.runs
+          .map((run) => (run.id === runId ? updater(run) : run))
+          .filter((run) => matchesRun(run, key[1] as RunListFilter)),
+      })),
+    });
   }
 }
 
@@ -231,11 +306,20 @@ function updateCachedTests(
   testId: string,
   updater: (test: Test) => Test,
 ) {
-  updateExistingQueryData<Test[]>(
-    queryClient,
-    ["tests", runId],
-    (tests) =>
-      tests?.map((test) => (test.id === testId ? updater(test) : test)).sort(compareTests) ?? tests,
+  for (const [key, data] of queryClient.getQueriesData<TestPages>({ queryKey: ["tests", runId] })) {
+    if (!data) continue;
+    queryClient.setQueryData<TestPages>(key, {
+      ...data,
+      pages: data.pages.map((page) => ({
+        ...page,
+        tests: page.tests
+          .map((test) => (test.id === testId ? updater(test) : test))
+          .sort(compareTests),
+      })),
+    });
+  }
+  queryClient.setQueryData<Test | null>(["test", runId, testId], (test) =>
+    test ? updater(test) : test,
   );
 }
 
@@ -269,11 +353,15 @@ function updateExistingQueryData<T>(
 
 function applyRunDeleted(cache: LiveCacheBuffer, event: LiveEventOf<"run_deleted">) {
   const runId = event.run_id;
-  for (const [key, runs] of cache.getQueriesData<Run[]>({ queryKey: ["runs"] })) {
-    cache.setQueryData(
-      key,
-      runs?.filter((run) => run.id !== runId),
-    );
+  for (const [key, data] of cache.getQueriesData<RunPages>({ queryKey: ["runs"] })) {
+    if (data)
+      cache.setQueryData<RunPages>(key, {
+        ...data,
+        pages: data.pages.map((page) => ({
+          ...page,
+          runs: page.runs.filter((run) => run.id !== runId),
+        })),
+      });
   }
   for (const [key, spans] of cache.getQueriesData<Span[]>({ queryKey: ["trace"] })) {
     cache.setQueryData(
@@ -286,7 +374,20 @@ function applyRunDeleted(cache: LiveCacheBuffer, event: LiveEventOf<"run_deleted
     apps?.filter((app) => app.latest_run_id !== runId),
   );
   for (const [key, data] of cache.getQueriesData<unknown>({ queryKey: [] })) {
-    if (key[0] !== "runs" && key.includes(runId)) {
+    if (key[0] === "tests" && key[1] === runId && data) {
+      const pages = data as TestPages;
+      cache.setQueryData<TestPages>(key, {
+        ...pages,
+        pages: pages.pages.map((page) => ({
+          ...page,
+          tests: [],
+          total: 0,
+          remaining: 0,
+          next_cursor: null,
+          summary: { total: 0, passed: 0, failed: 0, running: 0 },
+        })),
+      });
+    } else if (key[0] !== "runs" && key.includes(runId)) {
       cache.setQueryData(key, Array.isArray(data) ? [] : null);
     }
   }

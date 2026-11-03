@@ -1,19 +1,22 @@
-import { type QueryClient, skipToken, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useCallback, useEffect, useMemo } from "react";
-import { api } from "../api/client";
+import { skipToken, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useCallback, useDeferredValue, useEffect, useMemo, useState } from "react";
+import { ApiError, api } from "../api/client";
 import { dashboardQueries } from "../api/dashboard-queries";
 import {
   applyLiveDashboardEvents,
   invalidateDashboardQueries,
   loadAndReconcileDashboardData,
 } from "../api/live-cache";
+import { mergeRuns } from "../api/live-cache/reconciliation";
 import { dashboardKeys } from "../api/query-keys";
+import { matchesRun, normalizeRunFilter } from "../api/run-queries";
 import { useSSE } from "../api/sse";
-import type { LiveDashboardEvent, Run } from "../api/types";
-import { filterRunsByMetadata } from "../utils/metadata-filter";
-import { isRunning } from "../utils/status";
+import type { TestBrowserState } from "../api/test-queries";
+import type { LiveDashboardEvent, Run, Test } from "../api/types";
 import { summarizeVersionMismatches } from "../utils/version-mismatch";
 import { useDashboardSelection } from "./useDashboardSelection";
+import { useRunPages } from "./useRunPages";
+import { useTestPages } from "./useTestPages";
 import { useTopFilter } from "./useTopFilter";
 
 const EMPTY_LIST: never[] = [];
@@ -61,18 +64,59 @@ export function useAppData() {
   const appInScope = topFilter.value === null || apps.some((app) => app.app_name === selectedApp);
   const activeApp = (appInScope ? selectedApp : undefined) ?? apps[0]?.app_name;
   const serverVersion = metaQuery.data?.stove_server_version ?? null;
-  const runsQuery = useRunsQuery(queryClient, activeApp, liveConnected);
-  const unscopedRuns = runsQuery.data ?? EMPTY_LIST;
-  const allRuns = useMemo(
+  const scope = useMemo(
     () =>
       topFilter.key !== null && topFilter.value !== null
-        ? filterRunsByMetadata(unscopedRuns, { [topFilter.key]: [topFilter.value] })
-        : unscopedRuns,
-    [unscopedRuns, topFilter.key, topFilter.value],
+        ? { [topFilter.key]: topFilter.value }
+        : {},
+    [topFilter.key, topFilter.value],
   );
+  const combined = useMemo(() => {
+    const result: Record<string, readonly string[]> = { ...metadataFilter };
+    for (const [key, value] of Object.entries(scope)) {
+      if (result[key] && !result[key].includes(value)) return null;
+      result[key] = [value];
+    }
+    return result;
+  }, [metadataFilter, scope]);
+  const runsQuery = useRunPages(activeApp, combined, liveConnected);
+  const facetsQuery = useQuery({
+    queryKey: dashboardKeys.runMetadata(activeApp, scope),
+    queryFn: ({ signal }) => api.getRunMetadata(activeApp, scope, signal),
+    enabled: Boolean(activeApp),
+    refetchInterval: liveConnected ? false : 5000,
+  });
+  const selectedRunQuery = useQuery<Run | null>({
+    queryKey: dashboardKeys.run(selectedRunId),
+    queryFn: selectedRunId
+      ? async ({ signal }) => {
+          try {
+            return await api.getRun(selectedRunId, signal);
+          } catch (error) {
+            if (error instanceof ApiError && error.status === 404) return null;
+            throw error;
+          }
+        }
+      : skipToken,
+    initialData: () => runsQuery.runs.find((run) => run.id === selectedRunId),
+    refetchInterval: selectedRunId && !liveConnected ? 5000 : false,
+    staleTime: liveConnected ? Infinity : 0,
+  });
+  const selectedRun = selectedRunQuery.data;
+  const selectedRunMatches =
+    selectedRun &&
+    combined !== null &&
+    selectedRun.app_name === activeApp &&
+    matchesRun(selectedRun, normalizeRunFilter({ app: activeApp, metadata: combined }));
   const runs = useMemo(
-    () => filterRunsByMetadata(allRuns, metadataFilter),
-    [allRuns, metadataFilter],
+    () =>
+      selectedRunMatches
+        ? mergeRuns(
+            runsQuery.runs.filter((run) => run.id !== selectedRun.id),
+            [selectedRun],
+          )
+        : runsQuery.runs,
+    [runsQuery.runs, selectedRun, selectedRunMatches],
   );
 
   useEffect(() => {
@@ -80,31 +124,56 @@ export function useAppData() {
   }, [topFilter.key, selection.clearApp]);
 
   const appsSettled = topFilter.query.isSuccess && appsQuery.isSuccess && !appsQuery.isFetching;
-  const runsSettled = appsSettled && runsQuery.isSuccess && !runsQuery.isFetching;
+  const runsSettled =
+    appsSettled && (combined === null || (runsQuery.isSuccess && !runsQuery.isFetching));
   const latestRun =
     runs.find((run) => run.id === selectedRunId) ??
-    (!selectedRunId || runsSettled ? runs[0] : undefined);
+    (!selectedRunId || (selectedRunQuery.isSuccess && !selectedRunMatches) ? runs[0] : undefined);
 
-  const testsQueryKey = latestRun ? dashboardKeys.tests(latestRun.id) : dashboardKeys.testsRoot;
-  const testsQueryFn = latestRun
-    ? ({ signal }: { signal: AbortSignal }) =>
-        loadAndReconcileDashboardData(queryClient, dashboardQueries.tests(latestRun.id), signal)
-    : skipToken;
-  const testsQuery = useQuery({
-    queryKey: testsQueryKey,
-    queryFn: testsQueryFn,
-    refetchInterval: (query) => {
-      if (!latestRun || liveConnected) return false;
-      const cachedTests = query.state.data;
-      return isRunning(latestRun.status) || cachedTests?.length !== latestRun.total_tests
-        ? 5000
-        : false;
-    },
-    staleTime: liveConnected ? Number.POSITIVE_INFINITY : 0,
+  const [testOutcome, setTestOutcome] = useState<"all" | "pass" | "fail">("all");
+  const [testSearch, setTestSearch] = useState("");
+  const deferredSearch = useDeferredValue(testSearch);
+  const testsQuery = useTestPages(
+    latestRun?.id,
+    { outcome: testOutcome, search: deferredSearch },
+    liveConnected,
+  );
+  const selectedTestQuery = useQuery<Test | null>({
+    queryKey: ["test", latestRun?.id, selectedTestId],
+    enabled:
+      Boolean(latestRun && selectedTestId) &&
+      !testsQuery.tests.some((test) => test.id === selectedTestId),
+    queryFn:
+      latestRun && selectedTestId
+        ? async ({ signal }) => {
+            try {
+              return await api.getTest(latestRun.id, selectedTestId, signal);
+            } catch (error) {
+              if (error instanceof ApiError && error.status === 404) return null;
+              throw error;
+            }
+          }
+        : skipToken,
+    initialData: () => testsQuery.tests.find((test) => test.id === selectedTestId),
+    refetchInterval: selectedTestId && !liveConnected ? 5000 : false,
+    staleTime: liveConnected ? Infinity : 0,
   });
-
-  const tests = testsQuery.data ?? EMPTY_LIST;
-  const testsSettled = runsSettled && testsQuery.isSuccess && !testsQuery.isFetching;
+  const tests = testsQuery.tests;
+  const testBrowser: TestBrowserState = {
+    outcome: testOutcome,
+    search: testSearch,
+    onOutcomeChange: setTestOutcome,
+    onSearchChange: setTestSearch,
+    hasMore: testsQuery.hasNextPage,
+    loading: testsQuery.isFetching,
+    error: testsQuery.error,
+    loadMore: testsQuery.loadMore,
+    retry: () => {
+      void testsQuery.refetch();
+    },
+    total: testsQuery.total,
+    summary: testsQuery.summary,
+  };
 
   useEffect(() => {
     if (appsSettled && selectedApp && !apps.some((app) => app.app_name === selectedApp)) {
@@ -113,20 +182,38 @@ export function useAppData() {
   }, [appsSettled, apps, selectedApp, selection.clearApp]);
 
   useEffect(() => {
-    if (runsSettled && selectedRunId && !runs.some((run) => run.id === selectedRunId)) {
+    if (appsSettled && selectedRunId && selectedRunQuery.isSuccess && !selectedRunMatches) {
       selection.clearRun();
     }
-  }, [runsSettled, runs, selectedRunId, selection.clearRun]);
+  }, [
+    appsSettled,
+    selectedRunId,
+    selectedRunQuery.isSuccess,
+    selectedRunMatches,
+    selection.clearRun,
+  ]);
 
   useEffect(() => {
-    if (testsSettled && selectedTestId && !tests.some((test) => test.id === selectedTestId)) {
+    if (
+      runsSettled &&
+      selectedTestId &&
+      selectedTestQuery.isSuccess &&
+      selectedTestQuery.data === null
+    ) {
       selection.clearTest();
     }
-  }, [testsSettled, selectedTestId, selection.clearTest, tests]);
+  }, [
+    runsSettled,
+    selectedTestId,
+    selectedTestQuery.isSuccess,
+    selectedTestQuery.data,
+    selection.clearTest,
+  ]);
 
   const selectedTest =
     tests.find((test) => test.id === selectedTestId) ??
-    (!selectedTestId || testsSettled ? tests[0] : undefined);
+    selectedTestQuery.data ??
+    (!selectedTestId || selectedTestQuery.isSuccess ? tests[0] : undefined);
   const versionMismatchSummary = summarizeVersionMismatches(apps, serverVersion, activeApp);
   const mismatchedApps = versionMismatchSummary?.affectedAppNames ?? [];
 
@@ -135,17 +222,20 @@ export function useAppData() {
       topFilter.query.error ??
       appsQuery.error ??
       runsQuery.error ??
-      testsQuery.error ??
+      selectedRunQuery.error ??
+      selectedTestQuery.error ??
       metaQuery.error,
     loading:
       topFilter.query.isPending ||
       appsQuery.isPending ||
-      (Boolean(activeApp) && runsQuery.isPending) ||
+      (Boolean(activeApp) && combined !== null && runsQuery.isPending) ||
       (Boolean(latestRun) && testsQuery.isPending),
     retry: () =>
       queryClient.refetchQueries({
         predicate: (query) =>
-          ["apps", "runs", "tests", "meta", "top-filter"].includes(String(query.queryKey[0])),
+          ["apps", "runs", "run", "run-metadata", "tests", "test", "meta", "top-filter"].includes(
+            String(query.queryKey[0]),
+          ),
         type: "active",
       }),
     apps,
@@ -163,10 +253,22 @@ export function useAppData() {
     serverVersion,
     latestRun,
     runs,
-    allRuns,
+    metadataOptions: facetsQuery.data ?? EMPTY_LIST,
+    runPickerFeedback: {
+      pageError: runsQuery.pageError,
+      metadataError: facetsQuery.error,
+      metadataLoading: facetsQuery.isFetching,
+      retryMetadata: () => {
+        void facetsQuery.refetch();
+      },
+    },
+    hasOlderRuns: runsQuery.hasOlderRuns,
+    loadingOlderRuns: runsQuery.loadingOlderRuns,
+    loadOlderRuns: runsQuery.loadOlderRuns,
     selectedRunId: selectedRunId ?? latestRun?.id,
     metadataFilter,
     tests,
+    testBrowser,
     selectedTest,
     liveConnected,
     mismatchedApps,
@@ -176,22 +278,4 @@ export function useAppData() {
     filterRunsByMetadata: selection.filterRunsByMetadata,
     selectTest: selection.selectTest,
   };
-}
-
-function useRunsQuery(
-  queryClient: QueryClient,
-  appName: string | undefined,
-  liveConnected: boolean,
-) {
-  const queryKey = appName ? dashboardKeys.runs(appName) : dashboardKeys.runsRoot;
-  const queryFn = appName
-    ? ({ signal }: { signal: AbortSignal }) =>
-        loadAndReconcileDashboardData(queryClient, dashboardQueries.runs(appName), signal)
-    : skipToken;
-  return useQuery<Run[]>({
-    queryKey,
-    queryFn,
-    refetchInterval: appName && !liveConnected ? 5000 : false,
-    staleTime: liveConnected ? Number.POSITIVE_INFINITY : 0,
-  });
 }

@@ -545,7 +545,7 @@ async fn apps_and_runs_preserve_a_four_part_snapshot_version() {
   assert_eq!(apps[0]["stove_version"], "1.0.0.566-SNAPSHOT");
 
   let runs = server.get_json("/runs").await;
-  assert_eq!(runs[0]["stove_version"], "1.0.0.566-SNAPSHOT");
+  assert_eq!(runs["runs"][0]["stove_version"], "1.0.0.566-SNAPSHOT");
 }
 
 // ---------------------------------------------------------------------------
@@ -558,7 +558,7 @@ async fn runs_returns_all_runs() {
   server.seed_full_run();
 
   let body = server.get_json("/runs").await;
-  let runs = body.as_array().unwrap();
+  let runs = body["runs"].as_array().unwrap();
   assert_eq!(runs.len(), 1);
   assert_eq!(runs[0]["id"], "run-1");
   assert_eq!(runs[0]["app_name"], "product-api");
@@ -581,7 +581,7 @@ async fn runs_return_stove_version() {
   server.seed_run_with_version("run-1", "product-api", "0.23.1");
 
   let body = server.get_json("/runs").await;
-  let runs = body.as_array().unwrap();
+  let runs = body["runs"].as_array().unwrap();
 
   assert_eq!(runs[0]["stove_version"], "0.23.1");
 }
@@ -593,7 +593,7 @@ async fn runs_filters_by_app_name() {
   server.seed_run("run-b", "beta-api");
 
   let body = server.get_json("/runs?app=alpha-api").await;
-  let runs = body.as_array().unwrap();
+  let runs = body["runs"].as_array().unwrap();
   assert_eq!(runs.len(), 1);
   assert_eq!(runs[0]["app_name"], "alpha-api");
 }
@@ -604,7 +604,7 @@ async fn runs_returns_empty_for_unknown_app() {
   server.seed_full_run();
 
   let body = server.get_json("/runs?app=nonexistent").await;
-  assert_eq!(body, Value::Array(vec![]));
+  assert_eq!(body["runs"], Value::Array(vec![]));
 }
 
 // ---------------------------------------------------------------------------
@@ -640,7 +640,7 @@ async fn get_tests_returns_tests_for_run() {
   let server = TestServer::start().await;
   server.seed_full_run();
 
-  let body = server.get_json("/runs/run-1/tests").await;
+  let body = server.get_json("/runs/run-1/tests").await["tests"].clone();
   let tests = body.as_array().unwrap();
   assert_eq!(tests.len(), 2);
 
@@ -659,7 +659,7 @@ async fn get_tests_returns_tests_for_run() {
 async fn get_tests_returns_empty_for_unknown_run() {
   let server = TestServer::start().await;
 
-  let body = server.get_json("/runs/nonexistent/tests").await;
+  let body = server.get_json("/runs/nonexistent/tests").await["tests"].clone();
   assert_eq!(body, Value::Array(vec![]));
 }
 
@@ -748,7 +748,7 @@ async fn concurrent_running_tests_are_visible_via_api_while_run_is_in_progress()
   let run = server.get_json("/runs/run-concurrent").await;
   assert_eq!(run["status"], "RUNNING");
 
-  let tests = server.get_json("/runs/run-concurrent/tests").await;
+  let tests = server.get_json("/runs/run-concurrent/tests").await["tests"].clone();
   let tests = tests.as_array().unwrap();
   assert_eq!(tests.len(), 2);
 
@@ -980,7 +980,7 @@ async fn concurrent_interleaved_test_lifecycle_remains_isolated_across_api_views
   assert_eq!(run["passed"], 1);
   assert_eq!(run["failed"], 1);
 
-  let tests = server.get_json("/runs/run-interleaved/tests").await;
+  let tests = server.get_json("/runs/run-interleaved/tests").await["tests"].clone();
   let tests = tests.as_array().unwrap();
   assert_eq!(tests.len(), 2);
 
@@ -1747,13 +1747,13 @@ async fn sse_stream_pushes_full_events_only_after_their_database_commit() {
   let run_before_flush = server.get_json("/runs/run-live-sse").await;
   assert_eq!(run_before_flush["status"], "RUNNING");
 
-  let tests_before_flush = server.get_json("/runs/run-live-sse/tests").await;
+  let tests_before_flush = server.get_json("/runs/run-live-sse/tests").await["tests"].clone();
   assert_eq!(tests_before_flush.as_array().map(Vec::len), Some(1));
 
   let run_after_flush = server.get_json("/runs/run-live-sse").await;
   assert_eq!(run_after_flush["status"], "RUNNING");
 
-  let tests_after_flush = server.get_json("/runs/run-live-sse/tests").await;
+  let tests_after_flush = server.get_json("/runs/run-live-sse/tests").await["tests"].clone();
   let tests_after_flush = tests_after_flush.as_array().unwrap();
   assert_eq!(tests_after_flush.len(), 1);
   assert_eq!(tests_after_flush[0]["id"], "test-live");
@@ -1786,7 +1786,7 @@ async fn sse_broadcast_data_is_readable_after_notification() {
   assert!(msg.json.contains("run-sse"));
 
   // Immediately refetch — data must be present (this is what the browser does)
-  let body = server.get_json("/runs/run-sse/tests").await;
+  let body = server.get_json("/runs/run-sse/tests").await["tests"].clone();
   let tests = body.as_array().unwrap();
   assert_eq!(
     tests.len(),
@@ -1979,7 +1979,7 @@ async fn sse_stream_delivers_interleaved_notifications_for_concurrent_test_load(
   assert_eq!(event_counts.get("test_ended"), Some(&2));
   assert_eq!(event_counts.get("run_ended"), Some(&1));
 
-  let tests = server.get_json("/runs/run-sse-load/tests").await;
+  let tests = server.get_json("/runs/run-sse-load/tests").await["tests"].clone();
   let tests = tests.as_array().unwrap();
   assert_eq!(tests.len(), 2);
 
@@ -2076,12 +2076,12 @@ async fn ending_a_run_discards_the_previous_completed_run_for_that_app() {
   server.seed_run_at("run-new", "my-app", "2024-06-01T00:00:00Z", &[]);
 
   let while_running = server.get_json("/runs?app=my-app").await;
-  assert_eq!(while_running.as_array().unwrap().len(), 2);
+  assert_eq!(while_running["runs"].as_array().unwrap().len(), 2);
 
   server.end_run("run-new", 1, 0, 1000);
 
   let body = server.get_json("/runs?app=my-app").await;
-  let runs = body.as_array().unwrap();
+  let runs = body["runs"].as_array().unwrap();
   assert_eq!(runs.len(), 1);
   assert_eq!(runs[0]["id"], "run-new");
 }
@@ -2095,7 +2095,7 @@ async fn retention_uses_ingestion_order_when_timestamps_are_equal() {
   server.end_run("run-2", 1, 0, 1000);
 
   let body = server.get_json("/runs?app=my-app").await;
-  let runs = body.as_array().unwrap();
+  let runs = body["runs"].as_array().unwrap();
 
   assert_eq!(runs.len(), 1);
   assert_eq!(runs[0]["id"], "run-2");
@@ -2175,8 +2175,8 @@ async fn run_metadata_round_trips_from_proto_and_filters_by_exact_subset() {
     .json::<Value>()
     .await
     .unwrap();
-  assert_eq!(matching.as_array().unwrap().len(), 1);
-  assert_eq!(matching[0]["id"], "pipeline-42");
+  assert_eq!(matching["runs"].as_array().unwrap().len(), 1);
+  assert_eq!(matching["runs"][0]["id"], "pipeline-42");
 
   let mut missing_url = reqwest::Url::parse(&server.url("/runs")).unwrap();
   missing_url
@@ -2191,7 +2191,103 @@ async fn run_metadata_round_trips_from_proto_and_filters_by_exact_subset() {
     .json::<Value>()
     .await
     .unwrap();
-  assert_eq!(missing.as_array().unwrap().len(), 0);
+  assert_eq!(missing["runs"].as_array().unwrap().len(), 0);
+}
+
+#[tokio::test]
+async fn run_pages_filter_before_limit_and_survive_anchor_deletion() {
+  let server = TestServer::start().await;
+  let service = DashboardEventServiceImpl::new(server.ingestor.clone());
+  for (id, team, pipeline) in [
+    ("a", "red", "1"),
+    ("b", "blue", "2"),
+    ("c", "red", "3"),
+    ("d", "green", "4"),
+  ] {
+    send_event(
+      &service,
+      run_started_event_with_metadata(id, "paged", &[("team", team), ("ci.pipeline", pipeline)]),
+    )
+    .await
+    .unwrap();
+  }
+  let request = |metadata: &str, cursor: Option<&str>| {
+    let mut url = reqwest::Url::parse(&server.url("/runs")).unwrap();
+    url
+      .query_pairs_mut()
+      .append_pair("app", "paged")
+      .append_pair("status", "RUNNING")
+      .append_pair("limit", "1")
+      .append_pair("metadata", metadata);
+    if let Some(cursor) = cursor {
+      url.query_pairs_mut().append_pair("cursor", cursor);
+    }
+    server.client.get(url)
+  };
+  let metadata = r#"{"team":["red","blue"]}"#;
+  let first = request(metadata, None)
+    .send()
+    .await
+    .unwrap()
+    .json::<Value>()
+    .await
+    .unwrap();
+  assert_eq!(first["runs"][0]["id"], "c");
+  let cursor = first["next_cursor"].as_str().unwrap();
+  server.repo.purge_runs(&["c".to_string()], true).unwrap();
+  let second = request(r#"{"team":["blue","red","red"]}"#, Some(cursor))
+    .send()
+    .await
+    .unwrap()
+    .json::<Value>()
+    .await
+    .unwrap();
+  assert_eq!(second["runs"][0]["id"], "b");
+  let third = request(metadata, second["next_cursor"].as_str())
+    .send()
+    .await
+    .unwrap()
+    .json::<Value>()
+    .await
+    .unwrap();
+  assert_eq!(third["runs"][0]["id"], "a");
+  assert!(third["next_cursor"].is_null());
+  assert_eq!(
+    request(r#"{"team":"green"}"#, Some(cursor))
+      .send()
+      .await
+      .unwrap()
+      .status(),
+    StatusCode::BAD_REQUEST
+  );
+  assert_eq!(
+    request(metadata, Some("invalid"))
+      .send()
+      .await
+      .unwrap()
+      .status(),
+    StatusCode::BAD_REQUEST
+  );
+  for limit in [0, 101] {
+    assert_eq!(
+      server
+        .client
+        .get(server.url(&format!("/runs?limit={limit}")))
+        .send()
+        .await
+        .unwrap()
+        .status(),
+      StatusCode::BAD_REQUEST
+    );
+  }
+  let facets = server.get_json("/runs/metadata?app=paged").await;
+  assert!(
+    facets
+      .as_array()
+      .unwrap()
+      .iter()
+      .any(|facet| facet["key"] == "team" && facet["values"].as_array().unwrap().len() == 3)
+  );
 }
 
 #[tokio::test]
@@ -2491,4 +2587,65 @@ async fn admin_idle_timeout_is_persisted_validated_and_deletes_idle_runs() {
   assert!(enabled.status().is_success());
   assert_eq!(server.repo.expire_idle_runs().unwrap(), 1);
   assert!(server.get_json("/runs/idle").await.is_null());
+}
+
+#[tokio::test]
+async fn test_pages_bound_large_runs_and_filter_before_limiting() {
+  let server = TestServer::start().await;
+  server.seed_run("large-run", "pagination");
+  for index in 0..2000 {
+    let id = format!("test-{index:04}");
+    server.seed_test("large-run", &id, &format!("case {index}"), "LargeSpec");
+  }
+  server.end_test_failed("large-run", "test-1999", 10, "failure");
+  let first = server.get_json("/runs/large-run/tests").await;
+  assert_eq!(first["tests"].as_array().unwrap().len(), 50);
+  assert_eq!(first["total"], 2000);
+  assert_eq!(first["summary"]["failed"], 1);
+  let filtered = server
+    .get_json("/runs/large-run/tests?outcome=fail&limit=1")
+    .await;
+  assert_eq!(filtered["tests"][0]["id"], "test-1999");
+  assert_eq!(filtered["total"], 1);
+  assert_eq!(filtered["summary"]["total"], 2000);
+  assert!(filtered["next_cursor"].is_null());
+  let searched = server
+    .get_json("/runs/large-run/tests?search=case%201999")
+    .await;
+  assert_eq!(searched["tests"][0]["id"], "test-1999");
+  let mut ids = std::collections::HashSet::new();
+  let mut page = first;
+  loop {
+    for test in page["tests"].as_array().unwrap() {
+      assert!(ids.insert(test["id"].as_str().unwrap().to_owned()));
+    }
+    let Some(cursor) = page["next_cursor"].as_str() else {
+      break;
+    };
+    page = server
+      .get_json(&format!("/runs/large-run/tests?limit=100&cursor={cursor}"))
+      .await;
+  }
+  assert_eq!(ids.len(), 2000);
+  assert_eq!(page["remaining"], 0);
+  let cursor = server.get_json("/runs/large-run/tests?limit=1").await["next_cursor"]
+    .as_str()
+    .unwrap()
+    .to_owned();
+  for suffix in [
+    format!("/runs/other/tests?cursor={cursor}"),
+    format!("/runs/large-run/tests?outcome=fail&cursor={cursor}"),
+    "/runs/large-run/tests?limit=101".into(),
+  ] {
+    assert_eq!(
+      server
+        .client
+        .get(format!("{}/api/v1{suffix}", server.base_url))
+        .send()
+        .await
+        .unwrap()
+        .status(),
+      400
+    );
+  }
 }

@@ -1,29 +1,27 @@
-import { useId, useMemo, useState } from "react";
-import type { Run } from "../../api/types";
+import { useId, useState } from "react";
+import type { RunMetadataFacet } from "../../api/types";
 import {
   isMetadataValueSelected,
   type MetadataFilter,
   metadataSelections,
   toggleMetadataValue,
 } from "../../utils/metadata-filter";
-import { metadataOptionsForRuns } from "../../utils/metadata-options";
 
 interface MetadataFiltersProps {
-  availableRuns: Run[];
+  options: RunMetadataFacet[];
   visibleRunCount: number;
   value: MetadataFilter;
   onChange: (value: MetadataFilter) => void;
 }
 
 export function MetadataFilters({
-  availableRuns,
+  options,
   visibleRunCount,
   value,
   onChange,
 }: MetadataFiltersProps) {
   const [expanded, setExpanded] = useState(false);
   const panelId = useId();
-  const options = useMemo(() => metadataOptionsForRuns(availableRuns), [availableRuns]);
   const selections = metadataSelections(value);
   const hasSelections = selections.length > 0;
 
@@ -52,11 +50,7 @@ export function MetadataFilters({
           </span>
           <span className="stove-metadata-filter-copy">
             <strong>Filter runs</strong>
-            <small>
-              {hasSelections
-                ? `${visibleRunCount} of ${availableRuns.length} matching`
-                : "Metadata"}
-            </small>
+            <small>{hasSelections ? `${visibleRunCount} matching loaded` : "Metadata"}</small>
           </span>
           {hasSelections ? (
             <span className="stove-metadata-filter-count">{selections.length}</span>

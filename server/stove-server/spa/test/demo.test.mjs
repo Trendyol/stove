@@ -29,12 +29,12 @@ test("demo provides valid, linked evidence for every sample application and run"
   const apps = await get("/apps", list(schema.isAppSummary));
   assert.equal(apps.length, 3);
   for (const app of apps) {
-    const runs = await get(`/runs?app=${app.app_name}`, list(schema.isRun));
+    const runs = (await get(`/runs?app=${app.app_name}`, schema.isRunPage)).runs;
     assert.equal(runs.length, 3);
     assert.ok(runs.every((run) => run.app_name === app.app_name));
     for (const run of runs) {
       await get(`/runs/${run.id}`, schema.isRun);
-      const tests = await get(`/runs/${run.id}/tests`, list(schema.isTest));
+      const tests = (await get(`/runs/${run.id}/tests`, schema.isTestPage)).tests;
       assert.equal(tests.length, 6);
       for (const test of tests) {
         const root = `/runs/${run.id}/tests/${encodeURIComponent(test.id)}`;
@@ -60,8 +60,8 @@ test("demo provides valid, linked evidence for every sample application and run"
 
 test("focused links keep the exact record, bound context, and reject other scopes", async (t) => {
   const { get, request, list } = setup(t);
-  const [run] = await get("/runs", list(schema.isRun));
-  const [first, second] = await get(`/runs/${run.id}/tests`, list(schema.isTest));
+  const [run] = (await get("/runs", schema.isRunPage)).runs;
+  const [first, second] = (await get(`/runs/${run.id}/tests`, schema.isTestPage)).tests;
   const root = `/runs/${run.id}/tests/${encodeURIComponent(first.id)}`;
   const entries = await get(`${root}/entries`, list(schema.isEntry));
   const focus = await get(`${root}/evidence/entry/${entries[3].id}?context=1`, schema.isFocusedEvidence);
@@ -133,7 +133,7 @@ test("replay streams valid events, finishes, and gives each replay a distinct tr
   backend.reset();
   t.mock.timers.tick(20_000);
   assert.equal(backend.replaying, false);
-  assert.equal((await get("/runs", list(schema.isRun))).length, 9);
+  assert.equal(((await get("/runs", schema.isRunPage)).runs).length, 9);
 });
 
 test("errors and aborted requests do not silently fall through to a real server", async (t) => {

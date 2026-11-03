@@ -32,9 +32,9 @@ export function useAdminController() {
     includeRunning: false,
     metadata: {},
   });
-  const metadataRunsQuery = useQuery({
-    queryKey: [...adminKeys.root, "purge-runs", filters.appName],
-    queryFn: ({ signal }) => api.getRuns(filters.appName, signal),
+  const metadataFacetsQuery = useQuery({
+    queryKey: [...adminKeys.root, "purge-metadata-facets", filters.appName],
+    queryFn: ({ signal }) => api.getRunMetadata(filters.appName, undefined, signal),
     enabled: Boolean(filters.appName),
   });
   const previewMutation = useMutation({ mutationFn: previewPurge });
@@ -99,10 +99,10 @@ export function useAdminController() {
     ...filters,
     setAppName: (appName: string) => updateFilter({ appName, metadata: {} }),
     setMetadata: (metadata: MetadataFilter) => updateFilter({ metadata }),
-    metadataRuns: metadataRunsQuery.data ?? [],
-    metadataLoading: Boolean(filters.appName) && metadataRunsQuery.isPending,
-    metadataError: metadataRunsQuery.error?.message ?? null,
-    retryMetadata: () => void metadataRunsQuery.refetch(),
+    metadataFacets: metadataFacetsQuery.data ?? [],
+    metadataLoading: Boolean(filters.appName) && metadataFacetsQuery.isPending,
+    metadataError: metadataFacetsQuery.error?.message ?? null,
+    retryMetadata: () => void metadataFacetsQuery.refetch(),
     setOlderThan: (olderThan: string) => updateFilter({ olderThan }),
     setIncludeRunning: (includeRunning: boolean) => updateFilter({ includeRunning }),
     preview,

@@ -18,6 +18,39 @@ use crate::storage::schema::sqlite::{
 };
 
 impl SqliteBackend {
+  pub fn get_run_metadata_facets(
+    &self,
+    app: Option<&str>,
+    scope: &BTreeMap<String, String>,
+  ) -> Result<Vec<crate::storage::repository::run_page::FacetRow>> {
+    let mut db = self.lock_read();
+    Ok(
+      diesel::sql_query(
+        r"
+      WITH params(app, scope) AS (VALUES (?, ?))
+      SELECT facet.key AS key, facet.value AS value, count(*) AS count
+      FROM runs, params, json_each(runs.metadata) facet
+      WHERE (params.app IS NULL OR runs.app_name = params.app)
+        AND facet.type = 'text'
+        AND NOT EXISTS (
+          SELECT 1 FROM json_each(params.scope) wanted
+          WHERE NOT EXISTS (
+            SELECT 1 FROM json_each(runs.metadata) actual
+            WHERE actual.key = wanted.key
+              AND actual.type = 'text'
+              AND actual.value = wanted.value
+          )
+        )
+      GROUP BY facet.key, facet.value
+      ORDER BY facet.key, facet.value
+    ",
+      )
+      .bind::<diesel::sql_types::Nullable<Text>, _>(app)
+      .bind::<Text, _>(serde_json::to_string(scope)?)
+      .load(db.conn())?,
+    )
+  }
+
   pub fn get_test(&self, run_id: &str, test_id: &str) -> Result<Option<Test>> {
     let mut db = self.lock_read();
     tests::table
@@ -278,29 +311,83 @@ impl SqliteBackend {
     .collect()
   }
 
-  pub fn get_runs_filtered(
+  pub fn count_runs(&self, filter: &crate::storage::repository::RunFilter) -> Result<i64> {
+    let mut db = self.lock_read();
+    Ok(filtered_runs(filter)?.count().get_result(db.conn())?)
+  }
+
+  pub fn failed_run_counts(&self, apps: &[String]) -> Result<BTreeMap<String, i64>> {
+    let mut db = self.lock_read();
+    Ok(
+      runs::table
+        .filter(runs::app_name.eq_any(apps))
+        .filter(runs::status.eq("FAILED"))
+        .group_by(runs::app_name)
+        .select((runs::app_name, diesel::dsl::count_star()))
+        .load::<(String, i64)>(db.conn())?
+        .into_iter()
+        .collect(),
+    )
+  }
+
+  pub fn get_failure_page(
     &self,
-    app_name: Option<&str>,
-    metadata: &BTreeMap<String, String>,
+    filter: &crate::storage::repository::FailureFilter,
+    limit: i64,
+    position: Option<&crate::storage::repository::failure_page::Position>,
+  ) -> Result<Vec<(Run, Test)>> {
+    let mut db = self.lock_read();
+    let rows = crate::storage::repository::failure_page::failure_query!(filter, position)
+      .order((
+        runs::started_at.desc(),
+        runs::id.desc(),
+        tests::started_at.asc(),
+        tests::id.asc(),
+      ))
+      .limit(limit)
+      .select((runs::all_columns, tests::all_columns))
+      .load::<(RunRow<String>, TestRow)>(db.conn())?;
+    drop(db);
+    rows
+      .into_iter()
+      .map(|(run, test)| Ok((Run::try_from(run)?, Test::try_from(test)?)))
+      .collect()
+  }
+
+  pub fn count_failures(&self, filter: &crate::storage::repository::FailureFilter) -> Result<i64> {
+    let mut db = self.lock_read();
+    let position: Option<&crate::storage::repository::failure_page::Position> = None;
+    Ok(
+      crate::storage::repository::failure_page::failure_query!(filter, position)
+        .count()
+        .get_result(db.conn())?,
+    )
+  }
+
+  pub fn get_run_page(
+    &self,
+    filter: &crate::storage::repository::RunFilter,
+    limit: i64,
+    position: Option<&crate::storage::repository::run_page::Position>,
   ) -> Result<Vec<Run>> {
     let mut db = self.lock_read();
-    let mut query = runs::table.into_boxed::<diesel::sqlite::Sqlite>();
-    if let Some(app_name) = app_name {
-      query = query.filter(runs::app_name.eq(app_name));
+    let mut query = filtered_runs(filter)?;
+    if let Some(position) = position {
+      query = query.filter(
+        diesel::dsl::sql::<diesel::sql_types::Bool>("(started_at, id) < (")
+          .bind::<Text, _>(&position.started_at)
+          .sql(", ")
+          .bind::<Text, _>(&position.id)
+          .sql(")"),
+      );
     }
-    let mut found = query
+    let rows = query
       .order((runs::started_at.desc(), runs::id.desc()))
+      .limit(limit)
       .select(runs::all_columns)
-      .load::<RunRow<String>>(db.conn())?
-      .into_iter()
-      .map(Run::try_from)
-      .collect::<Result<Vec<_>>>()?;
-    found.retain(|run| {
-      metadata
-        .iter()
-        .all(|(key, value)| run.metadata.get(key) == Some(value))
-    });
-    Ok(found)
+      .load::<RunRow<String>>(db.conn())?;
+    drop(db);
+    rows.into_iter().map(Run::try_from).collect()
   }
 
   pub fn get_run(&self, run_id: &str) -> Result<Option<Run>> {
@@ -314,16 +401,44 @@ impl SqliteBackend {
       .transpose()
   }
 
-  pub fn get_tests_for_run(&self, run_id: &str) -> Result<Vec<Test>> {
+  pub fn get_test_page(
+    &self,
+    filter: &crate::storage::repository::TestFilter,
+    limit: i64,
+    position: Option<&crate::storage::repository::test_page::Position>,
+  ) -> Result<Vec<Test>> {
     let mut db = self.lock_read();
-    tests::table
-      .filter(tests::run_id.eq(run_id))
-      .order(tests::started_at)
-      .select(tests::all_columns)
-      .load::<TestRow>(db.conn())?
-      .into_iter()
-      .map(Test::try_from)
-      .collect::<Result<Vec<_>>>()
+    let query = positioned_tests(filter, position);
+    let rows = query
+      .order((tests::started_at.asc(), tests::id.asc()))
+      .limit(limit)
+      .load::<TestRow>(db.conn())?;
+    drop(db);
+    rows.into_iter().map(Test::try_from).collect()
+  }
+
+  pub fn count_tests(
+    &self,
+    filter: &crate::storage::repository::TestFilter,
+    position: Option<&crate::storage::repository::test_page::Position>,
+  ) -> Result<i64> {
+    let mut db = self.lock_read();
+    Ok(
+      positioned_tests(filter, position)
+        .count()
+        .get_result(db.conn())?,
+    )
+  }
+
+  pub fn test_summary(&self, run_id: &str) -> Result<Vec<(String, i64)>> {
+    let mut db = self.lock_read();
+    Ok(
+      tests::table
+        .filter(tests::run_id.eq(run_id))
+        .group_by(tests::status)
+        .select((tests::status, diesel::dsl::count_star()))
+        .load(db.conn())?,
+    )
   }
 
   pub fn get_entries(&self, run_id: &str, test_id: &str, raw: bool) -> Result<Vec<Entry>> {
@@ -493,3 +608,68 @@ static SPANS_FOR_TEST_SQL: std::sync::LazyLock<String> =
   std::sync::LazyLock::new(|| format!("{SPANS_FOR_TEST_BASE} ORDER BY start_time_nanos"));
 static TEST_SPAN_BY_ID_SQL: std::sync::LazyLock<String> =
   std::sync::LazyLock::new(|| format!("{SPANS_FOR_TEST_BASE} AND id = $3"));
+
+fn filtered_runs(
+  filter: &crate::storage::repository::RunFilter,
+) -> Result<runs::BoxedQuery<'static, diesel::sqlite::Sqlite>> {
+  let mut query = runs::table.into_boxed::<diesel::sqlite::Sqlite>();
+  if let Some(app) = &filter.app {
+    query = query.filter(runs::app_name.eq(app.clone()));
+  }
+  if let Some(status) = &filter.status {
+    query = query.filter(runs::status.eq(status.to_string()));
+  }
+  let metadata = serde_json::to_string(&filter.metadata)?;
+  if !filter.metadata.is_empty() {
+    query = query.filter(diesel::dsl::sql::<diesel::sql_types::Bool>("NOT EXISTS (SELECT 1 FROM json_each(")
+        .bind::<Text, _>(metadata).sql(") wanted WHERE NOT EXISTS (SELECT 1 FROM json_each(runs.metadata) actual WHERE actual.key = wanted.key AND actual.type = 'text' AND EXISTS (SELECT 1 FROM json_each(wanted.value) selected WHERE selected.value = actual.value)))"));
+  }
+  Ok(query)
+}
+
+fn filtered_tests(
+  filter: &crate::storage::repository::TestFilter,
+) -> tests::BoxedQuery<'static, diesel::sqlite::Sqlite> {
+  use crate::storage::repository::TestOutcome;
+  let mut query = tests::table
+    .filter(tests::run_id.eq(filter.run_id.clone()))
+    .into_boxed::<diesel::sqlite::Sqlite>();
+  match filter.outcome {
+    TestOutcome::All => {}
+    TestOutcome::Pass => query = query.filter(tests::status.eq("PASSED")),
+    TestOutcome::Fail => query = query.filter(tests::status.eq_any(["FAILED", "ERROR"])),
+  }
+  if !filter.search.is_empty() {
+    let pattern = format!(
+      "%{}%",
+      filter
+        .search
+        .to_lowercase()
+        .replace('\\', "\\\\")
+        .replace('%', "\\%")
+        .replace('_', "\\_")
+    );
+    query = query.filter(diesel::dsl::sql::<diesel::sql_types::Bool>("(LOWER(tests.test_name) LIKE ")
+      .bind::<Text, _>(pattern.clone()).sql(" ESCAPE '\\' OR LOWER(tests.spec_name) LIKE ")
+      .bind::<Text, _>(pattern.clone()).sql(" ESCAPE '\\' OR EXISTS (SELECT 1 FROM json_each(tests.test_path) path WHERE LOWER(path.value) LIKE ")
+      .bind::<Text, _>(pattern).sql(" ESCAPE '\\'))"));
+  }
+  query
+}
+
+fn positioned_tests(
+  filter: &crate::storage::repository::TestFilter,
+  position: Option<&crate::storage::repository::test_page::Position>,
+) -> tests::BoxedQuery<'static, diesel::sqlite::Sqlite> {
+  let mut query = filtered_tests(filter);
+  if let Some(position) = position {
+    query = query.filter(
+      tests::started_at.gt(position.started_at.clone()).or(
+        tests::started_at
+          .eq(position.started_at.clone())
+          .and(tests::id.gt(position.id.clone())),
+      ),
+    );
+  }
+  query
+}

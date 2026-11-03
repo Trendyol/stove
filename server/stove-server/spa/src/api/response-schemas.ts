@@ -23,8 +23,11 @@ import type {
   ProfileSeries,
   PurgePreview,
   PurgeResult,
+  RunMetadataFacet,
+  RunPage,
   Snapshot,
   Span,
+  TestPage,
   TopFilterCatalog,
   TopFilterSettings,
   TopFilterValue,
@@ -49,6 +52,11 @@ export const isAppSummary = object<AppSummary>({
   latest_status: isRunStatus,
   stove_version: isNullableString,
   metadata: isStringRecord,
+});
+
+export const isRunMetadataFacet = object<RunMetadataFacet>({
+  key: isString,
+  values: arrayOf(object({ value: isString, count: isNumber })),
 });
 
 export const isTopFilterSettings = object<TopFilterSettings>({ metadata_key: isNullableString });
@@ -84,7 +92,10 @@ export const isHealthResponse = object<HealthResponse>({
   checks: arrayOf(isHealthCheck),
 });
 
+import { isRun, isTest } from "./run-schemas";
+
 export { isRun, isTest } from "./run-schemas";
+export const isRunPage = object<RunPage>({ runs: arrayOf(isRun), next_cursor: isNullableString });
 
 const isEvidenceCounts = object<EvidenceCounts>({
   tests: isNumber,
@@ -241,4 +252,17 @@ export const isProfileReport = object<ProfileReport>({
   series: arrayOf(isProfileSeries),
   truncated: isBoolean,
   interpretation: isString,
+});
+
+export const isTestPage = object<TestPage>({
+  tests: arrayOf(isTest),
+  next_cursor: isNullableString,
+  total: isNumber,
+  remaining: isNumber,
+  summary: object<TestPage["summary"]>({
+    total: isNumber,
+    passed: isNumber,
+    failed: isNumber,
+    running: isNumber,
+  }),
 });

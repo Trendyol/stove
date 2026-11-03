@@ -11,11 +11,10 @@ use super::common::failure_item;
 use super::common::fallback_message;
 use super::common::groups_have_running_runs;
 use super::common::is_failed_status;
-use super::common::is_failed_test;
-use super::common::selected_runs;
 use super::common::selector_rules;
 use super::common::test_json;
 use super::common::timeline_summary;
+use super::common::tool_call;
 use super::evidence::clip_opt;
 use super::evidence::entry_preview;
 use super::evidence::interaction_preview;
@@ -30,63 +29,59 @@ use crate::mcp::args::parse;
 use crate::mcp::contract::ToolName;
 use crate::storage::models::Entry;
 use crate::storage::models::RunStatus;
-use crate::storage::models::Test;
 use crate::storage::models::TestStatus;
+use crate::storage::repository::FailureFilter;
 
 impl Analyzer {
   pub(super) fn failures(&self, arguments: Value) -> Result<Value, String> {
-    let args: FailuresArgs = parse(arguments)?;
+    let args: FailuresArgs = parse(arguments.clone())?;
     let budget = Budget::from_args(args.common.budget.as_deref(), args.common.max_chars);
-    let limit = args.common.limit();
-    let runs = selected_runs(
-      &self.repository,
-      args.app_name.as_deref(),
-      args.run_id.as_deref(),
-    )?;
-
-    let mut groups = Vec::new();
-    let mut selected_failures = 0_usize;
-    let mut total_failures = 0_usize;
-    for run in runs {
-      let tests = self
-        .repository
-        .get_tests_for_run(&run.id)
-        .map_err(display_error)?;
-      let failed_tests: Vec<Test> = tests.into_iter().filter(is_failed_test).collect();
-      total_failures += failed_tests.len();
-
-      let remaining = limit.saturating_sub(selected_failures);
-      let failures: Vec<Value> = failed_tests
-        .into_iter()
-        .take(remaining)
-        .map(|test| failure_item(&run, &test, budget.string_chars))
-        .collect();
-
-      if failures.is_empty() {
-        continue;
+    let filter = FailureFilter {
+      app: args.app_name,
+      run_id: args.run_id,
+    };
+    let page = self
+      .repository
+      .get_failure_page(&filter, args.common.limit(), args.cursor.as_deref())
+      .map_err(display_error)?;
+    let total_failures = self
+      .repository
+      .count_failures(&filter)
+      .map_err(display_error)?;
+    let selected_failures = page.failures.len();
+    let mut groups: Vec<Value> = Vec::new();
+    for (run, test) in &page.failures {
+      let failure = failure_item(run, test, budget.string_chars);
+      if let Some(group) = groups.last_mut().filter(|group| group["run_id"] == run.id) {
+        group["failures"]
+          .as_array_mut()
+          .expect("failure group array")
+          .push(failure);
+      } else {
+        groups.push(json!({
+          "app_name": run.app_name, "run_id": run.id, "run_status": run.status,
+          "started_at": run.started_at, "ended_at": run.ended_at,
+          "stove_version": run.stove_version, "failures": [failure],
+        }));
       }
-      selected_failures += failures.len();
-      groups.push(json!({
-        "app_name": run.app_name,
-        "run_id": run.id,
-        "run_status": run.status,
-        "started_at": run.started_at,
-        "ended_at": run.ended_at,
-        "stove_version": run.stove_version,
-        "failures": failures,
-      }));
     }
-
-    let structured = json!({
+    let next_tool_call = page.next_cursor.as_ref().map(|cursor| {
+      let mut next = arguments;
+      next["cursor"] = json!(cursor);
+      tool_call(ToolName::Failures, next)
+    });
+    Ok(json!({
       "groups": groups,
       "failure_count": selected_failures,
       "total_failure_count": total_failures,
-      "omitted_failures": total_failures.saturating_sub(selected_failures),
+      "omitted_failures": total_failures.saturating_sub(i64::try_from(selected_failures).expect("bounded page")).max(0),
+      "next_cursor": page.next_cursor,
+      "next_tool_call": next_tool_call,
+      "pagination": "Follow next_tool_call until null. Newest runs first, tests chronological within each run. Counts describe all matching retained failures; omitted_failures counts failures outside this page. Pages are not a database snapshot. Repeat from the first page after active runs complete.",
       "data_freshness": if groups_have_running_runs(&groups) { "partial" } else { "complete_or_idle" },
       "selector_rules": selector_rules(),
       "fallback": fallback_message(),
-    });
-    Ok(structured)
+    }))
   }
 
   pub(super) fn failure_detail(&self, arguments: Value) -> Result<Value, String> {

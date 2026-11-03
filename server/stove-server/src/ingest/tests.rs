@@ -118,8 +118,38 @@ async fn no_broadcast_on_invalid_event_order() {
     rx.try_recv().is_err(),
     "invalid events must not be broadcast"
   );
-  assert_eq!(svc.repository.get_runs(None).unwrap().len(), 0);
-  assert_eq!(svc.repository.get_runs(None).unwrap().len(), 0);
+  assert_eq!(
+    svc
+      .repository
+      .get_run_page(
+        &crate::storage::repository::RunFilter {
+          app: None,
+          ..Default::default()
+        },
+        100,
+        None
+      )
+      .map(|page| page.runs)
+      .unwrap()
+      .len(),
+    0
+  );
+  assert_eq!(
+    svc
+      .repository
+      .get_run_page(
+        &crate::storage::repository::RunFilter {
+          app: None,
+          ..Default::default()
+        },
+        100,
+        None
+      )
+      .map(|page| page.runs)
+      .unwrap()
+      .len(),
+    0
+  );
 }
 
 #[tokio::test]
@@ -152,7 +182,18 @@ async fn acknowledgement_requires_a_committed_domain_and_outbox_event() {
       duplicate: false,
     }
   );
-  let runs = svc.repository.get_runs(None).unwrap();
+  let runs = svc
+    .repository
+    .get_run_page(
+      &crate::storage::repository::RunFilter {
+        app: None,
+        ..Default::default()
+      },
+      100,
+      None,
+    )
+    .map(|page| page.runs)
+    .unwrap();
   assert_eq!(runs.len(), 1);
   assert_eq!(svc.repository.latest_live_event_id().unwrap(), 1);
 }
@@ -177,7 +218,18 @@ async fn process_run_started_event() {
 
   svc.ingest(&event).unwrap();
 
-  let runs = svc.repository.get_runs(None).unwrap();
+  let runs = svc
+    .repository
+    .get_run_page(
+      &crate::storage::repository::RunFilter {
+        app: None,
+        ..Default::default()
+      },
+      100,
+      None,
+    )
+    .map(|page| page.runs)
+    .unwrap();
   assert_eq!(runs.len(), 1);
   assert_eq!(runs[0].app_name, "product-api");
   assert_eq!(runs[0].stove_version.as_deref(), Some("0.23.2"));
@@ -207,7 +259,18 @@ async fn process_run_started_event_persists_a_snapshot_version() {
     })
     .unwrap();
 
-  let runs = svc.repository.get_runs(None).unwrap();
+  let runs = svc
+    .repository
+    .get_run_page(
+      &crate::storage::repository::RunFilter {
+        app: None,
+        ..Default::default()
+      },
+      100,
+      None,
+    )
+    .map(|page| page.runs)
+    .unwrap();
   assert_eq!(runs.len(), 1);
   assert_eq!(runs[0].stove_version.as_deref(), Some("1.0.0.566-SNAPSHOT"));
 }
@@ -316,11 +379,33 @@ async fn process_full_lifecycle() {
     })
     .unwrap();
 
-  let runs = svc.repository.get_runs(None).unwrap();
+  let runs = svc
+    .repository
+    .get_run_page(
+      &crate::storage::repository::RunFilter {
+        app: None,
+        ..Default::default()
+      },
+      100,
+      None,
+    )
+    .map(|page| page.runs)
+    .unwrap();
   assert_eq!(runs.len(), 1);
   assert_eq!(runs[0].status, crate::storage::models::RunStatus::Passed);
 
-  let tests = svc.repository.get_tests_for_run("run-1").unwrap();
+  let tests = svc
+    .repository
+    .get_test_page(
+      &crate::storage::repository::TestFilter {
+        run_id: "run-1".into(),
+        ..Default::default()
+      },
+      100,
+      None,
+    )
+    .map(|page| page.tests)
+    .unwrap();
   assert_eq!(tests.len(), 1);
   assert_eq!(tests[0].status, crate::storage::models::TestStatus::Passed);
 
@@ -562,7 +647,19 @@ async fn invalid_statuses_never_commit_domain_or_live_events() {
   }
   assert_eq!(svc.repository.latest_live_event_id().unwrap(), 0);
   assert_eq!(
-    svc.repository.get_tests_for_run("run-1").unwrap()[0].status,
+    svc
+      .repository
+      .get_test_page(
+        &crate::storage::repository::TestFilter {
+          run_id: "run-1".into(),
+          ..Default::default()
+        },
+        100,
+        None
+      )
+      .map(|page| page.tests)
+      .unwrap()[0]
+      .status,
     crate::storage::models::TestStatus::Running
   );
   assert_eq!(

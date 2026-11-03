@@ -1,5 +1,3 @@
-use std::collections::BTreeMap;
-
 use super::{Backend, Repository};
 use crate::error::Result;
 use crate::storage::models::{
@@ -159,32 +157,10 @@ impl Repository {
     })
   }
 
-  pub fn get_runs(&self, app_name: Option<&str>) -> Result<Vec<Run>> {
-    self.get_runs_filtered(app_name, &BTreeMap::new())
-  }
-
-  pub fn get_runs_filtered(
-    &self,
-    app_name: Option<&str>,
-    metadata: &BTreeMap<String, String>,
-  ) -> Result<Vec<Run>> {
-    self.with_backend("get_runs_filtered", "read", |backend| match backend {
-      Backend::Sqlite(sqlite) => sqlite.get_runs_filtered(app_name, metadata),
-      Backend::Postgres(postgres) => postgres.get_runs_filtered(app_name, metadata),
-    })
-  }
-
   pub fn get_run(&self, run_id: &str) -> Result<Option<Run>> {
     self.with_backend("get_run", "read", |backend| match backend {
       Backend::Sqlite(sqlite) => sqlite.get_run(run_id),
       Backend::Postgres(postgres) => postgres.get_run(run_id),
-    })
-  }
-
-  pub fn get_tests_for_run(&self, run_id: &str) -> Result<Vec<Test>> {
-    self.with_backend("get_tests_for_run", "read", |backend| match backend {
-      Backend::Sqlite(sqlite) => sqlite.get_tests_for_run(run_id),
-      Backend::Postgres(postgres) => postgres.get_tests_for_run(run_id),
     })
   }
 

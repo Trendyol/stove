@@ -60,7 +60,7 @@ function LinkedWorkspaceContent({
   const { run, test, tests, connected } = workspace;
   let error = run.error;
   if (!error && testId) error = test.error;
-  else if (!error && !location.focus) error = tests.error;
+  else if (!error && !location.focus && !tests.data) error = tests.error;
 
   if (error)
     return (
@@ -134,16 +134,37 @@ function LinkedTestList({
   tests: ReturnType<typeof useLinkedWorkspace>["tests"];
 }) {
   if (tests.isPending) return <p role="status">Loading tests…</p>;
-  if (tests.data?.length === 0) return <p>No tests recorded.</p>;
+  if (tests.tests.length === 0) return <p>No tests recorded.</p>;
   return (
-    <ul className="linked-test-list">
-      {tests.data?.map((test) => (
-        <li key={test.id}>
-          <a href={appPath(evidencePath(runId, test.id))}>
-            {test.status} · {test.spec_name} · {test.test_path.join(" › ") || test.test_name}
-          </a>
-        </li>
-      ))}
-    </ul>
+    <div>
+      <ul className="linked-test-list">
+        {tests.tests.map((test) => (
+          <li key={test.id}>
+            <a href={appPath(evidencePath(runId, test.id))}>
+              {test.status} · {test.spec_name} · {test.test_path.join(" › ") || test.test_name}
+            </a>
+          </li>
+        ))}
+      </ul>
+      {tests.error && (
+        <p role="alert">
+          Could not load tests.{" "}
+          <button
+            type="button"
+            onClick={() => {
+              if (tests.isFetchNextPageError) tests.loadMore();
+              else void tests.refetch();
+            }}
+          >
+            Retry tests
+          </button>
+        </p>
+      )}
+      {tests.hasNextPage && (
+        <button type="button" disabled={tests.isFetching} onClick={tests.loadMore}>
+          Load more tests
+        </button>
+      )}
+    </div>
   );
 }

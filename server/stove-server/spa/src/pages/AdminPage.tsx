@@ -57,7 +57,7 @@ export function AdminPage({ apps, onNavigateDashboard }: AdminPageProps) {
           olderThan={admin.olderThan}
           includeRunning={admin.includeRunning}
           metadata={admin.metadata}
-          metadataRuns={admin.metadataRuns}
+          metadataFacets={admin.metadataFacets}
           metadataLoading={admin.metadataLoading}
           metadataError={admin.metadataError}
           onMetadataChange={admin.setMetadata}

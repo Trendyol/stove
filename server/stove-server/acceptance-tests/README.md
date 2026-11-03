@@ -43,9 +43,11 @@ Run the PostgreSQL load test separately:
 cargo test --test load -- --nocapture
 ```
 
-It seeds 50,000 runs, requires PostgreSQL to select the JSONB GIN index, and
-mixes concurrent REST metadata searches, run-list and app-list dashboard reads,
-admin reads, SPA loads, and MCP metadata searches. The default p95 latency
+It seeds 50,000 runs and a run with 2,000 tests, requires PostgreSQL to select the JSONB GIN index, and
+mixes concurrent REST metadata searches (including sparse multi-value selectors),
+metadata facet aggregation with thousands of distinct values, run-list and app-list dashboard reads,
+admin reads, SPA loads, test pagination and search, and MCP metadata searches,
+failure surveys, app counts, and ambiguous diagnosis lookups. The default p95 latency
 budget is 2 seconds. The workload can be tuned with
 `STOVE_LOAD_TEST_RUNS`, `STOVE_LOAD_TEST_REQUESTS`,
 `STOVE_LOAD_TEST_CONCURRENCY`, and `STOVE_LOAD_TEST_P95_MS`.
@@ -54,7 +56,9 @@ The test reports p95 and max latency for the aggregate workload and for every
 query kind before asserting, so a failure names the endpoint that regressed. The
 client negotiates gzip like a browser, which makes run-list reads spend server
 CPU on compression; the server compresses at the cheapest gzip level to keep
-that cost off the dashboard read path.
+that cost off the dashboard read path. The run-list measurement includes one
+50-run page and JSON validation; the test also walks all pages outside the
+timed workload and checks that no run is duplicated or omitted.
 
 ## MCP failure-evidence benchmark
 

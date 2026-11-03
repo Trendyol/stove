@@ -1,30 +1,28 @@
-import type { Run, Test } from "../../api/types";
+import type { Run, TestSummary } from "../../api/types";
 import { formatDuration } from "../../utils/format";
 import {
   isMetadataValueSelected,
   type MetadataFilter,
   toggleMetadataValue,
 } from "../../utils/metadata-filter";
-import { isFailed, isPassed, isRunning } from "../../utils/status";
 
 interface RunSummaryProps {
   run: Run;
-  tests: Test[];
+  summary?: TestSummary;
   metadataFilter: MetadataFilter;
   onMetadataFilterChange: (metadata: MetadataFilter) => void;
 }
 
 export function RunSummary({
   run,
-  tests,
+  summary,
   metadataFilter,
   onMetadataFilterChange,
 }: RunSummaryProps) {
-  const hasLiveTests = tests.length > 0;
-  const total = hasLiveTests ? tests.length : run.total_tests;
-  const passed = hasLiveTests ? tests.filter((t) => isPassed(t.status)).length : run.passed;
-  const failed = hasLiveTests ? tests.filter((t) => isFailed(t.status)).length : run.failed;
-  const running = hasLiveTests ? tests.filter((t) => isRunning(t.status)).length : 0;
+  const total = summary?.total ?? run.total_tests;
+  const passed = summary?.passed ?? run.passed;
+  const failed = summary?.failed ?? run.failed;
+  const running = summary?.running ?? 0;
   return (
     <div className="stove-run-summary">
       <section className="stove-run-overview" aria-label="Run results">

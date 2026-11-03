@@ -137,12 +137,40 @@ fn span() -> NewSpan {
 
 fn assert_round_trip(repo: &Repository, metadata: &BTreeMap<String, String>) {
   assert_eq!(repo.get_run("run-1").unwrap().unwrap().metadata, *metadata);
-  assert_eq!(repo.get_tests_for_run("run-1").unwrap().len(), 1);
+  assert_eq!(
+    repo
+      .get_test_page(
+        &crate::storage::repository::TestFilter {
+          run_id: "run-1".into(),
+          ..Default::default()
+        },
+        100,
+        None
+      )
+      .map(|page| page.tests)
+      .unwrap()
+      .len(),
+    1
+  );
   assert_eq!(repo.get_entries("run-1", "test-1").unwrap().len(), 1);
   assert_eq!(repo.get_spans_for_test("run-1", "test-1").unwrap().len(), 1);
   assert_eq!(repo.get_snapshots("run-1", "test-1").unwrap().len(), 1);
   let filter = BTreeMap::from([("gitlab.pipeline_id".to_string(), "42".to_string())]);
-  assert_eq!(repo.get_runs_filtered(None, &filter).unwrap().len(), 1);
+  assert_eq!(
+    repo
+      .get_run_page(
+        &crate::storage::repository::RunFilter {
+          metadata: filter.clone().into(),
+          ..Default::default()
+        },
+        100,
+        None
+      )
+      .map(|page| page.runs)
+      .unwrap()
+      .len(),
+    1
+  );
   let purge_filter = BTreeMap::from([
     ("gitlab.pipeline_id".into(), vec!["42".into(), "43".into()]),
     ("team".into(), vec!["checkout".into()]),
@@ -205,7 +233,21 @@ fn assert_admin_operations(repo: &Repository) {
 
 fn assert_migrations_are_idempotent_and_indexed(database: &TestSchema) {
   let repo = database.repository();
-  assert_eq!(repo.get_runs(None).unwrap().len(), 2);
+  assert_eq!(
+    repo
+      .get_run_page(
+        &crate::storage::repository::RunFilter {
+          app: None,
+          ..Default::default()
+        },
+        100,
+        None
+      )
+      .map(|page| page.runs)
+      .unwrap()
+      .len(),
+    2
+  );
   let mut client = connect_driver(&database.url).unwrap();
   let applied_migrations: i64 = client
     .query_one("SELECT COUNT(*)::BIGINT FROM refinery_schema_history", &[])

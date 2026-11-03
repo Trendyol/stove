@@ -1,11 +1,22 @@
-import type { Run } from "../../api/types";
+import type { Run, RunMetadataFacet } from "../../api/types";
 import { formatTimestamp } from "../../utils/format";
 import type { MetadataFilter } from "../../utils/metadata-filter";
 import { MetadataFilters } from "./MetadataFilters";
 
+export interface RunPickerFeedback {
+  pageError: Error | null;
+  metadataError: Error | null;
+  metadataLoading: boolean;
+  retryMetadata: () => void;
+}
+
 interface RunPickerProps {
+  feedback?: RunPickerFeedback;
   runs: Run[];
-  availableRuns: Run[];
+  metadataOptions: RunMetadataFacet[];
+  hasOlderRuns: boolean;
+  loadingOlderRuns: boolean;
+  onLoadOlderRuns: () => void;
   selectedRunId: string | undefined;
   onSelectRun: (runId: string) => void;
   metadataFilter: MetadataFilter;
@@ -14,17 +25,42 @@ interface RunPickerProps {
 
 export function RunPicker({
   runs,
-  availableRuns,
+  feedback,
+  metadataOptions,
+  hasOlderRuns,
+  loadingOlderRuns,
+  onLoadOlderRuns,
   selectedRunId,
   onSelectRun,
   metadataFilter,
   onMetadataFilterChange,
 }: RunPickerProps) {
+  const loadLabel = feedback?.pageError ? "Retry older runs" : "Load older runs";
   return (
     <section className="stove-run-picker" aria-label="Run selection">
       <RunSelect runs={runs} selectedRunId={selectedRunId} onSelectRun={onSelectRun} />
+      {feedback?.pageError && (
+        <p role="alert">Could not load older runs: {feedback.pageError.message}</p>
+      )}
+      {hasOlderRuns && (
+        <button type="button" disabled={loadingOlderRuns} onClick={onLoadOlderRuns}>
+          {loadingOlderRuns ? "Loading…" : loadLabel}
+        </button>
+      )}
+      {feedback?.metadataError && (
+        <div role="alert">
+          Could not load metadata: {feedback.metadataError.message}
+          <button
+            type="button"
+            disabled={feedback.metadataLoading}
+            onClick={feedback.retryMetadata}
+          >
+            Retry metadata
+          </button>
+        </div>
+      )}
       <MetadataFilters
-        availableRuns={availableRuns}
+        options={metadataOptions}
         visibleRunCount={runs.length}
         value={metadataFilter}
         onChange={onMetadataFilterChange}

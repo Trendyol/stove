@@ -11,6 +11,7 @@ import type {
   Test,
 } from "../api/types";
 import { DEFAULT_IDLE_TIMEOUT_SECONDS, isIdleTimeout } from "../utils/idle-timeout";
+import { metadataOptionsForRuns } from "../utils/metadata-options";
 import { createDemoData, type DemoData } from "./fixtures";
 
 const tables = [
@@ -125,7 +126,10 @@ export function createDemoBackend(SQL: SqlJsStatic, version: string) {
     ) ?? []) as DemoData[T];
   }
 
-  const runs = () => rows("runs").sort((a, b) => b.started_at.localeCompare(a.started_at));
+  const runs = () =>
+    rows("runs").sort(
+      (a, b) => b.started_at.localeCompare(a.started_at) || b.id.localeCompare(a.id),
+    );
   function counts(ids: string[]): EvidenceCounts {
     return Object.fromEntries(
       tables
@@ -350,12 +354,44 @@ export function createDemoBackend(SQL: SqlJsStatic, version: string) {
             if (!apps.has(run.app_name)) apps.set(run.app_name, appSummary(run, version));
           return ok([...apps.values()]);
         }
-        if (path === "/runs")
-          return ok(
-            runs().filter(
-              (run) => !url.searchParams.has("app") || run.app_name === url.searchParams.get("app"),
-            ),
+        if (path === "/runs" || path === "/runs/metadata") {
+          const metadata = JSON.parse(url.searchParams.get("metadata") ?? "{}") as Record<
+            string,
+            string | string[]
+          >;
+          const filtered = runs().filter(
+            (run) =>
+              (!url.searchParams.has("app") || run.app_name === url.searchParams.get("app")) &&
+              (!url.searchParams.has("status") || run.status === url.searchParams.get("status")) &&
+              Object.entries(metadata).every(([key, selected]) =>
+                (Array.isArray(selected) ? selected : [selected]).includes(run.metadata[key]),
+              ),
           );
+          if (path === "/runs/metadata") return ok(metadataOptionsForRuns(filtered));
+          const limit = Number(url.searchParams.get("limit") ?? 50);
+          if (!Number.isInteger(limit) || limit < 1 || limit > 100)
+            return ok({ error: "Invalid limit" }, 400);
+          const cursor = url.searchParams.get("cursor");
+          const position = cursor
+            ? (JSON.parse(decodeURIComponent(cursor)) as { started_at: string; id: string })
+            : null;
+          const remaining = position
+            ? filtered.filter(
+                (run) =>
+                  run.started_at < position.started_at ||
+                  (run.started_at === position.started_at && run.id < position.id),
+              )
+            : filtered;
+          const page = remaining.slice(0, limit);
+          const last = page[page.length - 1];
+          return ok({
+            runs: page,
+            next_cursor:
+              remaining.length > limit
+                ? encodeURIComponent(JSON.stringify({ started_at: last.started_at, id: last.id }))
+                : null,
+          });
+        }
         if (path === "/admin/status") return ok(status());
         if (path === "/admin/database/schema") return ok(schema());
         if (path?.startsWith("/traces/"))
@@ -373,12 +409,59 @@ export function createDemoBackend(SQL: SqlJsStatic, version: string) {
           if (!suffix) {
             if (testId)
               return ok(rows("tests").find((test) => test.run_id === runId && test.id === testId));
-            return ok(
-              path.endsWith("/tests")
-                ? rows("tests").filter((test) => test.run_id === runId)
-                : runs().find((run) => run.id === runId),
-            );
+            if (path.endsWith("/tests")) {
+              const all = rows("tests").filter((test) => test.run_id === runId);
+              const outcome = url.searchParams.get("outcome") ?? "all";
+              const search = (url.searchParams.get("search") ?? "").toLowerCase();
+              const selected = all
+                .filter(
+                  (test) =>
+                    (outcome === "all" ||
+                      (outcome === "pass"
+                        ? test.status === "PASSED"
+                        : ["FAILED", "ERROR"].includes(test.status))) &&
+                    [test.test_name, test.spec_name, ...test.test_path].some((value) =>
+                      value.toLowerCase().includes(search),
+                    ),
+                )
+                .sort(
+                  (a, b) => a.started_at.localeCompare(b.started_at) || a.id.localeCompare(b.id),
+                );
+              const token = url.searchParams.get("cursor");
+              const position = token
+                ? (JSON.parse(decodeURIComponent(token)) as { started_at: string; id: string })
+                : undefined;
+              const remaining = position
+                ? selected.filter(
+                    (test) =>
+                      test.started_at > position.started_at ||
+                      (test.started_at === position.started_at && test.id > position.id),
+                  )
+                : selected;
+              const limit = Math.min(100, Math.max(1, Number(url.searchParams.get("limit") ?? 50)));
+              const tests = remaining.slice(0, limit);
+              const last = tests[tests.length - 1];
+              return ok({
+                tests,
+                total: selected.length,
+                remaining: Math.max(0, remaining.length - tests.length),
+                next_cursor:
+                  remaining.length > limit && last
+                    ? encodeURIComponent(
+                        JSON.stringify({ started_at: last.started_at, id: last.id }),
+                      )
+                    : null,
+                summary: {
+                  total: all.length,
+                  passed: all.filter((t) => t.status === "PASSED").length,
+                  failed: all.filter((t) => ["FAILED", "ERROR"].includes(t.status)).length,
+                  running: all.filter((t) => t.status === "RUNNING").length,
+                },
+              });
+            }
+            return ok(rows("runs").find((run) => run.id === runId));
           }
+
           function selected<T extends Exclude<Table, "runs" | "tests">>(table: T): DemoData[T] {
             return rows(table).filter((record) => {
               if (record.run_id !== runId) return false;

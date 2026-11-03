@@ -1,5 +1,7 @@
 import { appPath, type EvidenceFocus } from "../utils/location";
 import * as schema from "./response-schemas";
+import type { RunListRequest } from "./run-queries";
+import type { TestListRequest } from "./test-queries";
 import { request } from "./transport";
 import type {
   DatabaseQueryRequest,
@@ -114,14 +116,42 @@ export const api = {
     ),
   getMeta: (signal?: AbortSignal) => get("/meta", schema.isMetaResponse, signal),
   getApps: (signal?: AbortSignal) => get("/apps", arrayOf(schema.isAppSummary), signal),
-  getRuns: (app?: string, signal?: AbortSignal) => {
+  getRuns: (
+    { app, metadata, cursor, status, limit }: RunListRequest = {},
+    signal?: AbortSignal,
+  ) => {
     const params = new URLSearchParams();
     if (app) params.set("app", app);
+    if (metadata && Object.keys(metadata).length) params.set("metadata", JSON.stringify(metadata));
+    if (cursor) params.set("cursor", cursor);
+    if (status) params.set("status", status);
+    if (limit !== undefined) params.set("limit", String(limit));
     const query = params.toString();
-    return get(query ? `/runs?${query}` : "/runs", arrayOf(schema.isRun), signal);
+    return get(query ? `/runs?${query}` : "/runs", schema.isRunPage, signal);
   },
-  getTests: (runId: string, signal?: AbortSignal) =>
-    get(`/runs/${encodePath(runId)}/tests`, arrayOf(schema.isTest), signal),
+  getRunMetadata: (app?: string, metadata?: Record<string, string>, signal?: AbortSignal) => {
+    const params = new URLSearchParams();
+    if (app) params.set("app", app);
+    if (metadata && Object.keys(metadata).length) params.set("metadata", JSON.stringify(metadata));
+    return get(`/runs/metadata?${params}`, arrayOf(schema.isRunMetadataFacet), signal);
+  },
+  getTests: (
+    runId: string,
+    { outcome, search, cursor, limit }: TestListRequest = {},
+    signal?: AbortSignal,
+  ) => {
+    const params = new URLSearchParams();
+    if (outcome && outcome !== "all") params.set("outcome", outcome);
+    if (search) params.set("search", search);
+    if (cursor) params.set("cursor", cursor);
+    if (limit !== undefined) params.set("limit", String(limit));
+    const query = params.toString();
+    return get(
+      `/runs/${encodePath(runId)}/tests${query ? `?${query}` : ""}`,
+      schema.isTestPage,
+      signal,
+    );
+  },
   getEntries: (runId: string, testId: string, signal?: AbortSignal) =>
     get(
       `/runs/${encodePath(runId)}/tests/${encodePath(testId)}/entries`,

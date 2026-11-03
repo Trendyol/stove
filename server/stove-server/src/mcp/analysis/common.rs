@@ -16,27 +16,9 @@ use crate::mcp::contract::RunStatusValue;
 use crate::mcp::contract::ToolName;
 use crate::storage::models::Entry;
 use crate::storage::models::Run;
-use crate::storage::models::RunStatus;
 use crate::storage::models::Test;
 use crate::storage::models::TestStatus;
 use crate::storage::repository::Repository;
-
-pub(super) fn selected_runs(
-  repository: &Repository,
-  app_name: Option<&str>,
-  run_id: Option<&str>,
-) -> Result<Vec<Run>, String> {
-  if let Some(run_id) = run_id {
-    return repository
-      .get_run(run_id)
-      .map_err(display_error)?
-      .map_or_else(|| Ok(Vec::new()), |run| Ok(vec![run]));
-  }
-
-  let mut runs = repository.get_runs(app_name).map_err(display_error)?;
-  runs.retain(|run| run.status == RunStatus::Failed || run.status == RunStatus::Running);
-  Ok(runs)
-}
 
 pub(super) fn failure_item(run: &Run, test: &Test, max_chars: usize) -> Value {
   json!({
@@ -143,19 +125,8 @@ pub(super) fn correlated_test_for_trace(
   run: &Run,
   trace_id: &str,
 ) -> Option<Test> {
-  repository
-    .get_tests_for_run(&run.id)
-    .ok()?
-    .into_iter()
-    .find(|test| {
-      repository
-        .get_raw_entries(&run.id, &test.id)
-        .is_ok_and(|entries| {
-          entries
-            .iter()
-            .any(|entry| entry.trace_id.as_deref() == Some(trace_id))
-        })
-    })
+  let test_id = repository.get_test_id_for_trace(&run.id, trace_id).ok()??;
+  repository.get_test(&run.id, &test_id).ok()?
 }
 
 pub(super) fn is_failed_test(test: &Test) -> bool {

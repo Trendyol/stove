@@ -114,7 +114,17 @@ mod tests {
     assert_eq!(ack.sequence, 1);
     assert!(!ack.duplicate);
 
-    let runs = repository.get_runs(None).unwrap();
+    let runs = repository
+      .get_run_page(
+        &crate::storage::repository::RunFilter {
+          app: None,
+          ..Default::default()
+        },
+        100,
+        None,
+      )
+      .map(|page| page.runs)
+      .unwrap();
     assert_eq!(runs.len(), 1);
     assert_eq!(runs[0].app_name, "http-ingested-app");
     assert_eq!(
@@ -146,7 +156,21 @@ mod tests {
     assert!(second_ack.accepted);
     assert!(second_ack.duplicate);
 
-    assert_eq!(repository.get_runs(None).unwrap().len(), 1);
+    assert_eq!(
+      repository
+        .get_run_page(
+          &crate::storage::repository::RunFilter {
+            app: None,
+            ..Default::default()
+          },
+          100,
+          None
+        )
+        .map(|page| page.runs)
+        .unwrap()
+        .len(),
+      1
+    );
   }
 
   #[tokio::test]
@@ -231,7 +255,8 @@ mod tests {
       "binary"
     );
     assert_eq!(document["servers"][0]["url"], "..");
-    assert_eq!(document["paths"].as_object().unwrap().len(), 35);
+    assert_eq!(document["paths"].as_object().unwrap().len(), 36);
+    assert!(document["paths"]["/api/v1/runs/metadata"]["get"].is_object());
     assert!(document["paths"]["/api/v1/agent-setup"]["get"].is_object());
     assert!(document["paths"]["/api/v1/top-filter"]["get"].is_object());
     assert!(document["paths"]["/api/v1/admin/top-filter"]["put"].is_object());

@@ -426,7 +426,8 @@ The server exposes REST endpoints for integration:
 | `GET /api/v1/top-filter` | configured browsing field, recorded keys, values, and matching application summaries |
 | `GET /api/v1/apps` | list registered apps |
 | `POST /api/v1/events` | ingest a protobuf-encoded `DashboardEvent`; responds with a protobuf `EventAck` |
-| `GET /api/v1/runs?app=...&metadata=...` | list runs by app and/or an exact metadata subset |
+| `GET /api/v1/runs` | list runs in cursor-paginated pages, with optional app, status, and metadata filters |
+| `GET /api/v1/runs/metadata` | list metadata values and counts across matching runs |
 | `GET /api/v1/runs/{run}/tests` | tests in a run |
 | `GET /api/v1/runs/{run}/mock-interactions` | mock exchanges for a run; append `/ambient` for unattributed exchanges |
 | `GET /api/v1/runs/{run}/mock-warnings` | mock diagnostics for a run; append `/ambient` for unattributed diagnostics |
@@ -437,13 +438,15 @@ The server exposes REST endpoints for integration:
 
 Useful for CI artifact extraction, custom analyzers, or building tooling on top.
 
-The `metadata` query value is a URL-encoded JSON object whose values must be strings. Every supplied pair must match:
+The `metadata` query value is a URL-encoded JSON object. Values may be strings or arrays of strings: any value within one key matches, and every key must match:
 
 ```bash
 curl --get 'http://localhost:4040/api/v1/runs' \
   --data-urlencode 'app=checkout-api' \
   --data-urlencode 'metadata={"team":"checkout","gitlab.pipeline_id":"12345"}'
 ```
+
+The response is `{ "runs": [...], "next_cursor": "..." }`. Pages default to 50 runs; `limit` accepts 1–100. Pass `next_cursor` as `cursor` with the same app, status, and metadata filters to fetch older runs, until it is null. Cursors are opaque and are not a security boundary. Pages are ordered by start time and run ID, descending. They are not a snapshot: new runs before the cursor do not appear in later pages, and deleted runs disappear. The dashboard loads older runs on demand and obtains metadata choices across retained runs from `GET /api/v1/runs/metadata`.
 
 Agents can apply the same dynamic filter through `stove_runs`:
 
@@ -571,3 +574,13 @@ and dashboard-exposed run configuration.
 See [Profiling and Drill Down](../observability/profiling.md) for the complete
 setup, HTTPS configuration, language support, recording lifecycle, memory-leak
 interpretation, MCP workflow, ingestion contract, and resource limits.
+
+Test lists use the same bounded cursor model: `GET /api/v1/runs/{run_id}/tests`
+returns `{tests, next_cursor, total, remaining, summary}` with a default page size
+of 50 and a maximum of 100. Follow `next_cursor` with unchanged `outcome` and
+`search` filters. Tests are ordered by `(started_at, id)` ascending. `outcome`
+accepts `all`, `pass`, or `fail` (including errors); `search` matches test names,
+spec names, and test-path segments before the page limit is applied.
+`total` counts matching tests; `summary` counts all tests in the run regardless
+of filters. The dashboard loads more tests on demand and resolves selected tests
+by ID. Counts and pages reflect live data and are not a database snapshot.

@@ -6,7 +6,7 @@ use serde::{Deserialize, Serialize};
 use utoipa::ToSchema;
 
 /// Status of a test run.
-#[derive(Debug, Clone, Serialize, ToSchema, PartialEq, Eq)]
+#[derive(Debug, Clone, Serialize, Deserialize, ToSchema, PartialEq, Eq)]
 pub enum RunStatus {
   #[serde(rename = "RUNNING")]
   Running,
