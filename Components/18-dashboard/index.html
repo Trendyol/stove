@@ -4469,8 +4469,12 @@ stored <code>stove_version</code>; if it is absent, the UI says "not reported" i
 <td>ingest a protobuf-encoded <code>DashboardEvent</code>; responds with a protobuf <code>EventAck</code></td>
 </tr>
 <tr>
-<td><code>GET /api/v1/runs?app=...&amp;metadata=...</code></td>
-<td>list runs by app and/or an exact metadata subset</td>
+<td><code>GET /api/v1/runs</code></td>
+<td>list runs in cursor-paginated pages, with optional app, status, and metadata filters</td>
+</tr>
+<tr>
+<td><code>GET /api/v1/runs/metadata</code></td>
+<td>list metadata values and counts across matching runs</td>
 </tr>
 <tr>
 <td><code>GET /api/v1/runs/{run}/tests</code></td>
@@ -4503,11 +4507,12 @@ stored <code>stove_version</code>; if it is absent, the UI says "not reported" i
 </tbody>
 </table>
 <p>Useful for CI artifact extraction, custom analyzers, or building tooling on top.</p>
-<p>The <code>metadata</code> query value is a URL-encoded JSON object whose values must be strings. Every supplied pair must match:</p>
+<p>The <code>metadata</code> query value is a URL-encoded JSON object. Values may be strings or arrays of strings: any value within one key matches, and every key must match:</p>
 <div class="language-bash highlight"><pre><span></span><code><span id="__span-18-1"><a id="__codelineno-18-1" name="__codelineno-18-1" href="#__codelineno-18-1"></a>curl<span class="w"> </span>--get<span class="w"> </span><span class="s1">'http://localhost:4040/api/v1/runs'</span><span class="w"> </span><span class="se">\</span>
 </span><span id="__span-18-2"><a id="__codelineno-18-2" name="__codelineno-18-2" href="#__codelineno-18-2"></a><span class="w">  </span>--data-urlencode<span class="w"> </span><span class="s1">'app=checkout-api'</span><span class="w"> </span><span class="se">\</span>
 </span><span id="__span-18-3"><a id="__codelineno-18-3" name="__codelineno-18-3" href="#__codelineno-18-3"></a><span class="w">  </span>--data-urlencode<span class="w"> </span><span class="s1">'metadata={"team":"checkout","gitlab.pipeline_id":"12345"}'</span>
 </span></code></pre></div>
+<p>The response is <code>{ "runs": [...], "next_cursor": "..." }</code>. Pages default to 50 runs; <code>limit</code> accepts 1–100. Pass <code>next_cursor</code> as <code>cursor</code> with the same app, status, and metadata filters to fetch older runs, until it is null. Cursors are opaque and are not a security boundary. Pages are ordered by start time and run ID, descending. They are not a snapshot: new runs before the cursor do not appear in later pages, and deleted runs disappear. The dashboard loads older runs on demand and obtains metadata choices across retained runs from <code>GET /api/v1/runs/metadata</code>.</p>
 <p>Agents can apply the same dynamic filter through <code>stove_runs</code>:</p>
 <div class="language-json highlight"><pre><span></span><code><span id="__span-19-1"><a id="__codelineno-19-1" name="__codelineno-19-1" href="#__codelineno-19-1"></a><span class="p">{</span>
 </span><span id="__span-19-2"><a id="__codelineno-19-2" name="__codelineno-19-2" href="#__codelineno-19-2"></a><span class="w">  </span><span class="nt">"app_name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"checkout-api"</span><span class="p">,</span>
@@ -4722,6 +4727,15 @@ and dashboard-exposed run configuration.</p>
 <p>See <a href="../../observability/profiling/">Profiling and Drill Down</a> for the complete
 setup, HTTPS configuration, language support, recording lifecycle, memory-leak
 interpretation, MCP workflow, ingestion contract, and resource limits.</p>
+<p>Test lists use the same bounded cursor model: <code>GET /api/v1/runs/{run_id}/tests</code>
+returns <code>{tests, next_cursor, total, remaining, summary}</code> with a default page size
+of 50 and a maximum of 100. Follow <code>next_cursor</code> with unchanged <code>outcome</code> and
+<code>search</code> filters. Tests are ordered by <code>(started_at, id)</code> ascending. <code>outcome</code>
+accepts <code>all</code>, <code>pass</code>, or <code>fail</code> (including errors); <code>search</code> matches test names,
+spec names, and test-path segments before the page limit is applied.
+<code>total</code> counts matching tests; <code>summary</code> counts all tests in the run regardless
+of filters. The dashboard loads more tests on demand and resolves selected tests
+by ID. Counts and pages reflect live data and are not a database snapshot.</p>
 
 
 
