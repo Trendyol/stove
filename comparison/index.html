@@ -6,7 +6,7 @@
       <meta charset="utf-8">
       <meta name="viewport" content="width=device-width,initial-scale=1">
       
-        <meta name="description" content="Compare Spring Boot, Testcontainers, and supporting libraries with Stove for application setup, cross-system assertions, and failure evidence.">
+        <meta name="description" content="See how Stove coordinates application setup, cross-system assertions, and failure evidence across frameworks and runtimes, with a Spring Boot and Testcontainers worked example.">
       
       
       
@@ -640,6 +640,17 @@
       Table of contents
     </label>
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#runtimes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Different applications. The same coordination work.
+      
+    </span>
+  </a>
+  
+</li>
       
         <li class="md-nav__item">
   <a href="#scenario" class="md-nav__link">
@@ -3599,6 +3610,17 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
+  <a href="#runtimes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Different applications. The same coordination work.
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#scenario" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -3821,7 +3843,7 @@
 
 <div class="stove-comparison">
 <div class="comparison-hero">
-<p class="comparison-eyebrow">Spring Boot + Testcontainers · A practical comparison</p>
+<p class="comparison-eyebrow">End-to-end testing across frameworks and runtimes</p>
 <h1 id="the-same-test-less-wiring">The same test. Less wiring.<a class="headerlink" href="#the-same-test-less-wiring" title="Permanent link">&para;</a></h1>
 <p class="comparison-lead">Starting containers is one part of an end-to-end test. Stove connects application startup, dependency configuration, assertions, and failure evidence.</p>
 <div class="comparison-actions">
@@ -3829,8 +3851,10 @@
 <a class="stove-btn" href="../wizard/?rt=jvm&amp;fw=spring-boot&amp;test=kotest&amp;sys=sys.http,sys.postgresql,sys.kafka&amp;mk=sys.wiremock&amp;obs=obs.reporting&amp;br=0&amp;step=6">Try this setup</a></p>
 </div>
 <p>Both approaches can exercise a real service. Stove builds on <strong>Testcontainers and WireMock</strong>, giving you a shared lifecycle, a Kotlin DSL, and reporting across the systems in your test.</p>
+<p><strong>Spring Boot is the worked example, not the boundary.</strong> The same coordination problem appears in Ktor, Micronaut, Quarkus, and services written in other languages. Stove separates the application runner from the systems your tests exercise.</p>
 </div>
 <nav aria-label="On this page" class="comparison-jumps">
+  <a href="#runtimes">Your runtime</a>
   <a href="#scenario">The flow</a>
   <a href="#prepare">01 · Prepare</a>
   <a href="#assert">02 · Assert</a>
@@ -3838,7 +3862,37 @@
   <a href="#responsibilities">What changes</a>
   <a href="#fit">Is it a fit?</a>
 </nav>
+<h2 id="runtimes">Different applications. The same coordination work.<a class="headerlink" href="#runtimes" title="Permanent link">&para;</a></h2>
+<p>Starting the app, passing dependency addresses, arranging mocks, checking side effects, and collecting failure evidence are concerns across frameworks. Stove lets you choose the runner for your application while composing the systems around it.</p>
+<table>
+<thead>
+<tr>
+<th>Your application</th>
+<th>How Stove runs or connects to it</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Spring Boot, Ktor, Micronaut, or Quarkus</td>
+<td>A <a href="../frameworks/">framework runner</a> starts the JVM application in the test process.</td>
+</tr>
+<tr>
+<td>A host executable, such as a Go service</td>
+<td>A <a href="../other-languages/go-process/">process runner</a> starts the application with explicit environment and readiness configuration.</td>
+</tr>
+<tr>
+<td>A containerized service, in any language</td>
+<td>A <a href="../Components/22-container/">container runner</a> starts the image with explicit networking and readiness configuration.</td>
+</tr>
+<tr>
+<td>An already running service</td>
+<td>A <a href="../Components/19-provided-application/">provided-application runner</a> connects to its configured endpoints.</td>
+</tr>
+</tbody>
+</table>
+<p>Tests are authored in <strong>Kotlin</strong> across these modes. Integration details differ: in-process dependency injection, Kafka observation, tracing, and profiling depend on the selected runner and instrumentation. Choose the supported capabilities your test needs; changing runners does not make those integrations automatic.</p>
 <h2 id="scenario">One flow. The same expectations.<a class="headerlink" href="#scenario" title="Permanent link">&para;</a></h2>
+<p><strong>For this comparison, we use Spring Boot.</strong> Its service connections provide a capable baseline for showing what an assembled stack handles and what Stove adds. The responsibility comparison below applies more broadly; the code and framework conveniences here are specific to this example.</p>
 <p>Place an order: the app checks inventory over HTTP, persists the order, then sends an <code>OrderCreated</code> event. The inventory service is mocked at its network boundary; the application, PostgreSQL, and Kafka are real.</p>
 <ol aria-label="Order flow, in execution order" class="comparison-flow">
 <li><span class="comparison-tag">Test client</span><strong>POST /orders</strong><span>Send a unique order</span></li>
@@ -4165,12 +4219,13 @@
 <div class="comparison-next">
 <h3 id="try-it-on-one-flow">Try it on one flow<a class="headerlink" href="#try-it-on-one-flow" title="Permanent link">&para;</a></h3>
 <p>Start with the HTTP, PostgreSQL, Kafka, and WireMock setup from this page. Add deeper observability when it helps your team diagnose failures.</p>
+<p>Using another framework or language? <a href="../wizard/">Choose your runtime and systems in the wizard</a>.</p>
 <div class="comparison-actions">
 <p><a class="stove-btn primary" href="../wizard/?rt=jvm&amp;fw=spring-boot&amp;test=kotest&amp;sys=sys.http,sys.postgresql,sys.kafka&amp;mk=sys.wiremock&amp;obs=obs.reporting&amp;br=0&amp;step=6">Open this setup in the wizard</a>
 <a class="stove-btn" href="../recipes/order-flow/">Read the order-flow recipe</a>
 <a class="stove-btn" href="https://trendyol.github.io/stove/dashboard-demo/">Explore the dashboard demo</a></p>
 </div>
-<p>The dashboard demo runs in your browser with <strong>fictional test data</strong>. It demonstrates the investigation experience, not a live execution of these excerpts.</p>
+<p>The dashboard demo runs in your browser with <strong>fictional test data and profiling samples</strong>. Explore the timeline, traces, and Drill Down CPU/allocation views; it is not a live execution of these excerpts.</p>
 </div>
 </div>
 
