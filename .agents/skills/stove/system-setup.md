@@ -985,7 +985,7 @@ quarkus(
 Supports both direct main runner and packaged runtime. Configurable startup timeout via `stove.quarkus.startup.timeout.ms` system property (default: 120s).
 
 Quarkus specifics:
-- If the app exposes no HTTP endpoint, publish a readiness signal: set `System.setProperty("stove.quarkus.ready", "true")` from an `@Observes StartupEvent` handler.
+- Stove detects Quarkus lifecycle startup automatically in both direct and fast-jar modes, including apps without HTTP. Do not add a `StoveStartupSignal` bean or `stove.quarkus.ready` property.
 - Kafka interceptors need shared classloading — add to `application.properties`: `quarkus.class-loading.parent-first-artifacts=org.apache.kafka:kafka-clients`. Without it, Stove's Kafka interceptor can't attach.
 - For CDI access, register `com.trendyol.stove.quarkus.bridge` and follow [Quarkus Bridge setup](quarkus-bridge.md). Bridge requires the augmented uber-jar on the shared test classpath; the isolated fast-jar runner supports system DSL assertions but cannot provide `using<T>` access.
 

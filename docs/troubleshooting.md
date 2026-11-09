@@ -109,7 +109,7 @@ Disable in CI for clean runs.
 |---|---|
 | Spring `BeanCreationException` | Treat it as an application configuration error; inspect the root cause and fix the bean |
 | `port already in use` | The app's port matches another process; pass a different `server.port=` via `withParameters` |
-| Runner never reaches readiness | For Ktor, start with `wait = false`; for Quarkus, use the documented `Quarkus.run(*args)` startup pattern and readiness signal |
+| Runner never reaches readiness | For Ktor, start with `wait = false`; for Quarkus, use the documented `Quarkus.run(*args)` startup pattern; Stove waits for Quarkus lifecycle completion |
 
 ### Test bean override doesn't apply
 

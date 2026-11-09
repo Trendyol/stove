@@ -41,6 +41,7 @@ apiValidation {
     "spring-2x-tests",
     "quarkus-example",
     "quarkus-bridge",
+    "quarkus-startup",
     "ktor-di-tests",
     "ktor-koin-tests",
     "ktor-test-fixtures",

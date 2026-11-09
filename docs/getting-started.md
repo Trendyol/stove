@@ -180,17 +180,9 @@ Stove boots your app from tests. Extract startup into a reusable `run(args)` fun
     object QuarkusMainApp {
         @JvmStatic fun main(args: Array<String>) { Quarkus.run(*args) }
     }
-
-    @ApplicationScoped
-    class StoveStartupSignal {
-        fun onStart(@Observes event: StartupEvent) =
-            System.setProperty("stove.quarkus.ready", "true")
-        fun onStop(@Observes event: ShutdownEvent) =
-            System.clearProperty("stove.quarkus.ready")
-    }
     ```
 
-    Quarkus needs a startup signal if your app has no HTTP endpoint Stove can probe. See the [Quarkus guide](frameworks/quarkus.md) for full details.
+    Stove detects Quarkus startup automatically, including applications without HTTP. See the [Quarkus guide](frameworks/quarkus.md) for full details.
 
 </li>
 <li markdown="block">

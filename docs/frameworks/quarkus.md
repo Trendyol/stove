@@ -6,7 +6,7 @@ Stove starts the real Quarkus runtime. `bridge()` exposes CDI beans through `usi
 
 <div class="stove-tldr" markdown>
 <span class="stove-tldr-title">Quarkus specifics</span>
-1) Keep <code>@QuarkusMain</code> intact. 2) Publish a readiness signal if your app has no HTTP. 3) For Bridge, build an augmented uber-jar and use the shared test classpath described below.
+1) Keep <code>@QuarkusMain</code> intact. 2) Startup is detected automatically, including apps without HTTP. 3) For Bridge, build an augmented uber-jar and use the shared test classpath described below.
 </div>
 
 ## Setup
@@ -38,18 +38,11 @@ object QuarkusMainApp {
 }
 ```
 
-If your app **does not** expose an HTTP endpoint, publish a startup signal so Stove can detect readiness:
-
-```kotlin
-@ApplicationScoped
-class StoveStartupSignal {
-  fun onStart(@Observes event: StartupEvent) =
-    System.setProperty("stove.quarkus.ready", "true")
-
-  fun onStop(@Observes event: ShutdownEvent) =
-    System.clearProperty("stove.quarkus.ready")
-}
-```
+Stove waits for Quarkus to finish application startup before running tests. This works
+with both the shared classpath and isolated fast-jar runtime, including applications
+without HTTP. No application-side readiness bean or system property is needed.
+Startup failures are reported to the test JVM, and the startup timeout remains
+configurable through `stove.quarkus.startup.timeout.ms` (default: 120 seconds).
 
 Minimal `Stove().with { }`:
 

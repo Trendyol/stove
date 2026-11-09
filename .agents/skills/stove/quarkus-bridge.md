@@ -82,7 +82,8 @@ any convention that sets the task's classpath. See [Gradle configuration](gradle
 
 Keep the application's normal `@QuarkusMain` entrypoint, for example a Java main
 method that calls `Quarkus.run(args)`. Register the Quarkus-specific Bridge before
-the runner in the existing suite startup lifecycle:
+the runner in the existing suite startup lifecycle. Stove detects completed Quarkus
+startup automatically; no custom readiness signal or HTTP endpoint is required:
 
 ```kotlin
 import com.trendyol.stove.quarkus.bridge
