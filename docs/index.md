@@ -128,8 +128,6 @@ JVM frameworks solve application startup well, but e2e suites still need the sam
 
 <span data-rn="highlight" data-rn-color="#00968855" data-rn-duration="800">One testing model. Many stacks.</span>
 
-[See what Stove handles across frameworks and runtimes →](comparison.md){ .stove-btn }
-
 ## Architecture
 
 ![Stove architecture](./assets/stove_architecture.svg)
