@@ -38,6 +38,7 @@ hooks:
   - hooks/wizard_snippets.py
 nav:
   - Home: index.md
+  - Why Stove?: comparison.md
   - Try the dashboard: https://trendyol.github.io/stove/dashboard-demo/
   - Start:
     - Setup Wizard: wizard.md
