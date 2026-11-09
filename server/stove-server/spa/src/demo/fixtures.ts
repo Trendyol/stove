@@ -275,7 +275,12 @@ export function createDemoData(version: string, now = Date.now()): DemoData {
             start_time_nanos: (start + testIndex * 3000 + span.offset) * 1_000_000,
             end_time_nanos: (start + testIndex * 3000 + span.offset + span.duration) * 1_000_000,
             status,
-            attributes: JSON.stringify({ ...span.attrs, "stove.test.id": testId }),
+            attributes: JSON.stringify({
+              ...span.attrs,
+              "stove.test.id": testId,
+              // Correlation belongs to each service's local root, not every child span.
+              ...([1, 6].includes(index) ? { "pyroscope.profile.id": spanIds[index] } : {}),
+            }),
             exception_type: exception ? "PaymentTimeoutException" : null,
             exception_message: exception ? "Payment provider exceeded 800ms deadline" : null,
             exception_stack_trace: exception ? error : null,

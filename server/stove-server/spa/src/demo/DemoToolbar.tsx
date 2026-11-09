@@ -48,7 +48,7 @@ export default function DemoToolbar() {
         <span>
           {error ??
             (ready
-              ? "Fictional test runs. Explore every tab; changes stay in this page."
+              ? "Fictional runs and profiles. Select a run → Drill Down to explore CPU and allocations. Changes stay in this page."
               : "Preparing sample runs…")}
         </span>
       </div>

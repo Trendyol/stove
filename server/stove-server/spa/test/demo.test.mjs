@@ -163,3 +163,70 @@ test("demo top filter follows admin metadata selection and returns scoped app su
     assert.ok(group.apps.every(app => app.metadata[key] === group.value));
   }
 });
+
+test("Drill Down provides consistent CPU/allocation totals and honest scope filtering", async (t) => {
+  const { get, request, list } = setup(t);
+  const runs = (await get("/runs", schema.isRunPage)).runs;
+  for (const run of runs) {
+    const root = `/runs/${run.id}`;
+    const whole = await get(`${root}/profiles`, schema.isProfileReport);
+    assert.equal(whole.run_id, run.id);
+    assert.equal(whole.series.length, 4);
+    assert.match(whole.interpretation, /Fictional/);
+    for (const series of whole.series) {
+      assert.equal(series.profile_ids.length, 6);
+      assert.equal(series.total, series.stacks.reduce((n, s) => n + s.value, 0));
+      assert.equal(series.total, series.hotspots.reduce((n, h) => n + h.self_value, 0));
+      assert.ok(series.hotspots.some(h => h.inclusive_value > h.self_value));
+      assert.ok(series.stacks.every(s => s.frames.length >= 2));
+    }
+    const [first] = (await get(`${root}/tests`, schema.isTestPage)).tests;
+    const spans = await get(`${root}/tests/${encodeURIComponent(first.id)}/spans`, list(schema.isSpan));
+    const localRoot = spans.find(s => s.service_name === run.app_name && JSON.parse(s.attributes)["pyroscope.profile.id"]);
+    const profileId = JSON.parse(localRoot.attributes)["pyroscope.profile.id"];
+    const window = await get(`${root}/profiles?from_ms=${Date.parse(first.started_at)}&until_ms=${Date.parse(first.ended_at)}`, schema.isProfileReport);
+    assert.equal(window.series.length, 4);
+    assert.ok(window.series.every(s => s.profile_ids.length === 1 && s.until_ms > Date.parse(first.ended_at)));
+    const trace = await get(`${root}/profiles?trace_id=${localRoot.trace_id}`, schema.isProfileReport);
+    assert.equal(trace.series.length, 4);
+    assert.ok(trace.series.every(s => s.profile_ids.length === 1));
+    assert.ok(trace.series.every(s => s.total < window.series.find(w => w.metric === s.metric && w.service === s.service).total));
+    const span = await get(`${root}/profiles?trace_id=${localRoot.trace_id}&span_id=${profileId}`, schema.isProfileReport);
+    assert.equal(span.series.length, 2);
+    assert.ok(span.series.every(s => s.service === run.app_name));
+    assert.ok(span.series.every(s => !s.hotspots.some(h => h.frame.name.includes("evictExpired"))));
+    const selected = await get(`${root}/profiles?service=${run.app_name}&instance=demo-jvm&metric=process_cpu:cpu`, schema.isProfileReport);
+    assert.deepEqual(selected.series, whole.series.filter(s => s.service === run.app_name && s.metric === "process_cpu:cpu"));
+    for (const query of ["trace_id=missing", "span_id=missing", "service=missing", "instance=missing", "metric=missing", "until_ms=1", `from_ms=${Date.parse(run.ended_at)}`, `trace_id=${localRoot.trace_id}&span_id=${spans[2].span_id}`]) {
+      assert.deepEqual((await get(`${root}/profiles?${query}`, schema.isProfileReport)).series, []);
+    }
+  }
+  for (const query of ["from_ms=x", "until_ms=1.5", "from_ms=", "from_ms=2&until_ms=1", "from_ms=1&until_ms=1", "unknown=x"]) {
+    assert.equal((await request(`/runs/${runs[0].id}/profiles?${query}`)).status, 400);
+  }
+  assert.equal((await request("/runs/missing/profiles")).status, 404);
+});
+
+test("demo profiling follows replay, SQL deletion, purge, and reset", async (t) => {
+  t.mock.timers.enable({ apis: ["setTimeout"] });
+  const { backend, get, request, list } = setup(t);
+  const replay = backend.replay();
+  const path = `/runs/${replay.runId}/profiles`;
+  assert.deepEqual((await get(path, schema.isProfileReport)).series, []);
+  for (let i = 0; i < 40; i++) t.mock.timers.tick(450);
+  const profile = await get(path, schema.isProfileReport);
+  assert.equal(profile.series.length, 4);
+  assert.ok(profile.series.every(s => s.profile_ids.length === 1 && s.profile_ids[0].includes(replay.runId)));
+  const spans = await get(`/runs/${replay.runId}/tests/${encodeURIComponent(replay.testId)}/spans`, list(schema.isSpan));
+  const correlated = await get(`${path}?trace_id=${spans[0].trace_id}`, schema.isProfileReport);
+  assert.equal(correlated.series.length, 4);
+  await get("/admin/purge", schema.isPurgeResult, "POST", { run_ids: [replay.runId], include_running: false });
+  assert.equal((await request(path)).status, 404);
+  const [run] = (await get("/runs", schema.isRunPage)).runs;
+  await get("/admin/database/query", schema.isDatabaseQueryResult, "POST", { sql: "DELETE FROM spans", max_rows: 100 });
+  assert.deepEqual((await get(`/runs/${run.id}/profiles`, schema.isProfileReport)).series, []);
+  backend.reset();
+  assert.equal((await get(`/runs/${run.id}/profiles`, schema.isProfileReport)).series.length, 4);
+  await request("/data", "DELETE");
+  assert.equal((await request(`/runs/${run.id}/profiles`)).status, 404);
+});
