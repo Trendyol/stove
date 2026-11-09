@@ -396,6 +396,42 @@ couchbase {
 
 ## Kafka assertions
 
+When the requirement is to prove that the **application under test consumed a
+message**, use `shouldBeConsumed<T>(atLeastIn = ...)`. This is the consumption
+assertion in both standalone and Spring Kafka. Match the expected topic and a
+unique message ID; include a key/header predicate when the scenario requires it.
+Let the assertion perform the bounded wait. Do not wrap it in `eventually`,
+Awaitility, or a retry loop that can hide its failure diagnostics.
+
+Do not implement equivalent detection through a test-side `KafkaConsumer`,
+Stove's standalone `consumer`, offset/lag polling, `messageStore()` inspection,
+`peekConsumedMessages` polling, sleeps, or custom listener/latch/counter hooks.
+A second consumer reading the record proves broker availability, not that the
+AUT consumed it. A database or HTTP outcome is useful **in addition** when the
+scenario also requires business completion; it does not replace an explicitly
+requested consumption assertion. Tests concerned only with a business outcome
+do not need an extra consumption assertion.
+
+If `shouldBeConsumed` cannot see the message, diagnose the existing integration:
+
+- Confirm the selected Kafka module, system key, topic, predicate, and serde.
+- Verify the AUT's actual listener/client has the interceptor or bridge wired;
+  for Spring, registering the bean alone is insufficient without attaching it
+  to the relevant listener factory. See [Kafka setup](system-setup.md#kafka).
+- Check observation routing and test correlation, then the selected integration's
+  consumption/commit semantics. Standalone waits for a matching observed commit;
+  Spring records listener success/failure; Go bridge hooks can report before
+  business processing finishes.
+- Keep matching failures and retries visible. The current consumed assertion
+  rejects those outcomes; do not catch them and poll until the test turns green.
+  For an expected failure or retry, use the corresponding supported assertion.
+
+If the AUT is an uninstrumented deployed application that cannot be changed,
+state that `shouldBeConsumed` cannot establish consumption in that setup. Use a
+broker read only for a broker-record requirement, or assert an observable
+business outcome as such. Document a genuine version/instrumentation limitation
+before using a fallback; a missing observation or timeout alone is not an API gap.
+
 ```kotlin
 // Verify published
 kafka {
@@ -405,10 +441,10 @@ kafka {
 }
 
 // Verify consumed — requires the bridge/interceptor wired into the AUT
-// (Spring: TestSystemKafkaInterceptor bean; Go: stove-kafka bridge; other: gRPC observer)
+// (Spring: interceptor attached to listener factory; Go: bridge; JVM client: interceptor)
 kafka {
     shouldBeConsumed<OrderCreatedEvent>(atLeastIn = 20.seconds) {
-        actual.orderId == orderId
+        metadata.topic == "order-events" && actual.orderId == orderId
     }
 }
 
@@ -462,7 +498,8 @@ kafka {
 // Inflight consumer (stove-kafka standalone only) — a real
 // KafkaConsumer inside the test, reading straight from the broker. Needs NO
 // bridge/interceptor in the AUT, so it works against .provided() clusters
-// (staging/pre-prod) as well as containers.
+// (staging/pre-prod) as well as containers. This checks broker records,
+// not AUT consumption; use shouldBeConsumed for the latter when instrumented.
 kafka {
     val seen = mutableListOf<ConsumerRecord<String, String>>()
     consumer<String, String>(
@@ -863,6 +900,7 @@ test("staging smoke test — order flow") {
         // The deployed app has no Stove bridge/interceptor, so sink-based
         // assertions (shouldBePublished/shouldBeConsumed) won't see its
         // messages — use the inflight consumer to read from the broker directly.
+        // This verifies an output record, not consumption by a downstream app.
         kafka {
             var found = false
             consumer<String, String>(topic = "order-events", keepConsumingAtLeastFor = 10.seconds) { record ->

@@ -39,7 +39,9 @@ These are search starting points; confirm signatures in the project's resolved v
 | SQL execution or typed queries | `shouldExecute` and `shouldQuery`, including inherited methods and mapper/parameter overloads; MSSQL also has an `ops {}` callback |
 | Cassandra execution or queries | `shouldExecute` and `shouldQuery`, including their `BoundStatement` overloads |
 | MongoDB, Elasticsearch, or Couchbase document operations | `save` / `saveToDefaultCollection`, `shouldGet`, `shouldQuery`, `shouldDelete`, and `shouldNotExist` as supported by that system |
-| Kafka publishing or observations | `publish`, typed assertions, `peek*`, and standalone `consumer`; preserve their distinct observation semantics described in [writing-tests.md](writing-tests.md#kafka-assertions) |
+| Prove the AUT consumed a Kafka message | `shouldBeConsumed<T>(atLeastIn = ...)`; repair observation wiring instead of implementing another consumption detector |
+| Kafka publishing, failures, or retries | `publish`, `shouldBePublished`, `shouldBeFailed`, and standalone `shouldBeRetried` |
+| Inspect observed Kafka records or read broker contents | `peek*` and standalone `consumer`; broker reads do not prove AUT consumption. See [Kafka assertions](writing-tests.md#kafka-assertions) |
 | gRPC calls or mocks | `channel<T>`, `wireClient<T>`, and the gRPC Mock DSL |
 
 For example, request counts and captured bodies are not reasons to call WireMock `server().verify(...)` or `server().findAll(...)`: Stove exposes verification and `callsFor`. An HTTP response header or NDJSON assertion does not require `client()`.
@@ -61,3 +63,11 @@ Prefer managed native extensions where available:
 - **HTTP:** `client { ... }` reports a single "Custom HTTP Client Operation". It does not automatically reproduce typed helper request configuration, correlation headers, or detailed response reports. The returned `client()` has no such report wrapper. Use either only for a verified gap, and inspect the relevant helper before relying on its behavior: correlation support varies by operation.
 
 Review newly introduced handle calls and helper implementations before finishing. Judge the system receiver and purpose, including calls hidden behind extensions or aliases; preserve documented native contracts and any explicit user requirement to use the native API.
+
+For a Kafka consumption requirement, also inspect helpers that avoid native
+handles but still recreate the assertion: `eventually`/Awaitility around
+`messageStore()` or `peekConsumedMessages`, custom listener counters, deferred
+values, and latches. Replace equivalent detection logic with `shouldBeConsumed`.
+A domain helper that delegates to it is fine. A different requirement, such as
+consumer-group lag monitoring, is not equivalent; name that requirement rather
+than presenting it as an alternative implementation of the consumption assertion.

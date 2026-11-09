@@ -255,6 +255,11 @@ Stove().with {
 
 **Kafka in provided mode**: if the deployed app has no Stove interceptor/bridge, observer-based assertions (`shouldBePublished`, `shouldBeConsumed`) won't observe its traffic. Standalone `stove-kafka` offers `consumer(topic) { record -> ... }` to read directly from the broker without AUT instrumentation (see [writing-tests.md](writing-tests.md#kafka-assertions)).
 
+That broker read is not a substitute for proving the deployed app consumed a
+message. When consumption is required and instrumentation is available, wire the
+observer and use `shouldBeConsumed`; otherwise state the observation limitation
+and distinguish any business-outcome assertion from a consumption assertion.
+
 ## Keyed systems (multiple instances)
 
 Register multiple instances of the same system type using `SystemKey`. Define keys as singleton objects:
