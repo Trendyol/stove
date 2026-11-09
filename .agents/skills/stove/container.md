@@ -143,7 +143,7 @@ containerApp(
 
 ## Step 5: Networking strategies
 
-There are two address spaces: the test JVM reaches services through host-mapped ports; the AUT container reaches them through its own network. `configureExposedConfiguration` maps values for the AUT but does not automatically translate host addresses into container addresses.
+Identify the network location of both the test JVM and the AUT. A host JVM usually reaches services through mapped ports; the AUT container uses its own network. A JVM running in a container may also have access to network aliases. `configureExposedConfiguration` maps values for the AUT but does not automatically translate addresses between these locations.
 
 **Port binding and a shared network** — attach the AUT and every container dependency to the same network. Give each dependency an alias and pass that alias plus its internal port to the AUT. Connecting only the AUT to `Network.SHARED` is insufficient.
 
@@ -186,6 +186,19 @@ Stove().with {
 
 The app must bind to a container-accessible interface such as `0.0.0.0`, not just its loopback address. Stove's database client still uses the mapped host endpoint; the app receives `app-db:5432`.
 
+**Test JVM in a container** — when a Compose or CI runner shares the application
+network, its HTTP client and readiness probes can use the AUT alias/internal
+port. Set the readiness URL explicitly; the default `localhost` URL refers to
+the runner itself. Verify the addresses exposed to Stove's database/broker
+clients are also reachable from that runner.
+
+JVM-hosted WireMock or tracing receivers need a reachable bind interface and
+runner alias for callbacks from the AUT. Record who creates and removes the
+network. A no-op network cleanup adapter is appropriate only for a network
+managed outside the suite; fixed names and aliases need isolation or serialized
+runs. Use [file-based configuration](other-languages.md#file-based-configuration)
+when the image needs generated files containing these endpoints.
+
 **Host network** — use only when the container runtime supports and enables it and the test JVM can reach that same host network. It is common on Linux; Docker Desktop versions with optional host networking need that feature enabled. Set `bindHostPort = false` and use matching host/internal ports:
 
 ```kotlin
@@ -197,7 +210,31 @@ configureContainer = { withNetworkMode("host") }
 
 **Kafka** — configure a listener/advertised listener reachable from the AUT and preserve one reachable from the test JVM. Replacing only the bootstrap hostname cannot fix unreachable addresses returned in broker metadata. Check the selected Kafka image and Testcontainers version's listener configuration.
 
-Default readiness probes run from the test JVM at `http://localhost:$hostPort/health`. For a remote Docker host, supply a reachable readiness URL and HTTP client base URL. Disabling fixed port binding does not discover a replacement port for the HTTP client. Use distinct fixed ports or serialized suites when tests share a host.
+Default readiness probes run from the test JVM at `http://localhost:$hostPort/health`. For a remote Docker host, supply a reachable readiness URL and HTTP client base URL.
+
+### Docker-assigned host ports
+
+For concurrent host-JVM suites, Docker-assigned ports can avoid fixed-port
+collisions. In the current runner, `bindHostPort = false` skips Stove's port
+exposure and binding; it does not select host networking or update the default
+readiness URL. For bridge networking, explicitly expose the application port in
+`configureContainer` with `withExposedPorts(internalPort)` and retain that
+container reference. Docker assigns its host port during startup.
+
+Resolve `container.host` and `container.getMappedPort(internalPort)` only after
+the container starts. Stove invokes `ReadinessStrategy.Probe` after container
+startup, making it a suitable place to construct and check the actual health
+URL. A custom Testcontainers wait strategy runs during `container.start()` and
+must also use a valid container/mapped endpoint.
+
+The HTTP client is configured before the AUT is running. Do not interpolate
+`getMappedPort` into an eagerly constructed `baseUrl` or call it directly in
+`configureClient`. For ordinary HTTP requests, a supported Ktor `defaultRequest`
+callback can resolve the host and port at request time, after startup. Check
+other protocols and helpers separately: WebSocket URLs and reporting metadata
+may still derive from the static `baseUrl`. Keep readiness and request addressing
+consistent. If using fixed ports, isolate their allocation or serialize suites;
+probing a free port and releasing it does not reserve it.
 
 ## Step 6: Bind mounts (optional)
 

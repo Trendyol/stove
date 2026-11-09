@@ -30,6 +30,30 @@
 
 All systems are configured inside `Stove().with { }`. The application runner goes last.
 
+### Map configuration to the application's actual consumers
+
+`configureExposedConfiguration` supplies application properties; it does not
+discover the application's property names. Follow its configuration binding,
+active test profile, client factories, and startup function before adapting an
+example. An application may use custom prefixes instead of `spring.datasource`
+or `spring.kafka`. Map every participating client: the main datasource and an
+outbox datasource, or a primary consumer and its retry consumer, can each have
+separate settings even when they use the same Stove-managed instance. Multiple
+property prefixes alone do not require multiple keyed systems.
+
+Keep runtime endpoints and credentials from the exposed configuration together.
+Replacing a broker address alone may leave profile-specific TLS, SASL, or
+listener settings incompatible with the test broker. Match those settings to
+the selected test infrastructure; preserve them when testing that protocol.
+
+For Spring, confirm the application's runner actually forwards Stove's arguments
+to `SpringApplication.run` and applies test initializers before startup. Use bare
+`key=value` strings in `withParameters`: the Spring runner adds `--`. Avoid
+defining the same property in several system mappings and `withParameters`;
+Stove forwards a combined argument list, so do not assume it resolves duplicates
+as a last-write-wins map. Check the target framework's binding if duplicates are
+intentional.
+
 ## Process Application (non-JVM apps)
 
 Use `processApp()` or `goApp()` from the `stove-process` module to test applications written in any language (Go, Python, Rust, Node.js, etc.) as OS processes.

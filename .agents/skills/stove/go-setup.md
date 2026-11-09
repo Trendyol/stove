@@ -26,6 +26,10 @@ Stove 0.28.0 (upcoming) supports native Go profiling through `go/stove-profiler`
 
 Make dependency addresses configurable and handle SIGTERM for graceful shutdown. `goApp` accepts a binary path, target, and environment provider. For CLI arguments, working directory, startup hooks, or a longer shutdown timeout, use `processApp` with `ProcessApplicationOptions`.
 
+If the app loads configuration files, preserve that contract and follow
+[file-based configuration](other-languages.md#file-based-configuration) for
+dynamic endpoint rendering, startup-hook ordering, paths, and cleanup.
+
 `ProcessTarget.Server` defaults to GET `/health`; select another URL, a TCP probe, or a custom probe when appropriate. `ProcessTarget.Worker` does not require an HTTP port.
 
 Example environment contract (adapt app-specific names):

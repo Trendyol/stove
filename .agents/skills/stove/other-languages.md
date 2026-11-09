@@ -13,9 +13,30 @@ For Stove + AI agent triage on failed runs, see [mcp.md](mcp.md).
 
 Your application must:
 
-1. **Accept configuration** --- via environment variables, CLI arguments, or both
+1. **Accept configuration** --- via environment variables, CLI arguments, configuration files, or a combination
 2. **Handle SIGTERM** --- for clean test teardown
 3. **Optional: expose a readiness endpoint** --- HTTP health check, TCP port, or custom probe
+
+## File-based configuration
+
+Preserve the application's loader contract, including profile precedence and
+working-directory assumptions. For files containing dynamic system endpoints,
+render their content after Stove resolves infrastructure configuration and before
+the application starts. Use `processApp` when startup hooks or an explicit
+working directory are needed beyond `goApp`'s convenience API.
+
+Check the resolved release's startup hook: `ProcessApplicationOptions.beforeStarted`
+receives configurations and options; `containerApp`'s `beforeStarted` receives
+configurations. In the current implementation, both runners evaluate environment
+and argument providers before this hook. Allocate paths before providers use
+them, then fill the files in the hook; a variable assigned only inside the hook
+cannot update an already computed environment or command.
+
+Pass explicit paths to a host process. For an application container, copy or
+mount the files and pass container paths; a host path alone does not make a file
+available there. Own temporary-file cleanup in the suite lifecycle after app
+shutdown, including failed startup. Do not assume the runner deletes fixture
+files it did not create.
 
 ## Setup Checklist
 

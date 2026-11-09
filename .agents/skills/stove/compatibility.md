@@ -2,6 +2,20 @@
 
 Use these notes when the project's resolved Stove version and failure signature match. Check dependency resolution before changing versions.
 
+## Maintaining legacy suites
+
+An existing `TestSystemConfig` name does not establish the Stove version. Inspect
+its imports and the owning test task's runtime dependencies. Pre-0.20 suites can
+legitimately use `TestSystem`, `com.trendyol.stove.testing.e2e.*`, and older option
+or serialization APIs. For a focused fix, use the APIs supplied by that release;
+do not combine current snippets with old dependencies or turn maintenance into
+an unrequested upgrade.
+
+For an upgrade, migrate the BOM/artifacts, imports, runner and system options,
+serialization, and framework lifecycle together, following the intervening
+release notes. Compile the affected source set before running it. A modern class
+name or successful import replacement alone does not verify a migration.
+
 ## Version reporting
 
 Stove reports the exact published coordinate of the artifact, not a separate "compatibility

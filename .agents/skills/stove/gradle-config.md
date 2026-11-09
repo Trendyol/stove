@@ -2,6 +2,7 @@
 
 ## Contents
 - [Dependencies (BOM)](#dependencies-bom)
+- [Existing tasks and convention plugins](#existing-tasks-and-convention-plugins)
 - [Register test-e2e source set](#register-test-e2e-source-set)
 - [Register e2eTest task](#register-e2etest-task)
 - [Test discovery and verification](#test-discovery-and-verification)
@@ -13,7 +14,7 @@
 
 Reuse an existing test source set/task when the project already has one; the `test-e2e` / `e2eTest` names below are an example convention. Read the Stove version from the project's version catalog or build configuration and keep Stove modules aligned through its BOM.
 
-Stove e2e tests are Kotlin-first. Even for Java/Scala projects, keep e2e test sources in `src/test-e2e/kotlin`.
+Stove e2e tests are Kotlin-first, including for Java/Scala applications. Use the existing Kotlin test source set; `src/test-e2e/kotlin` below is an example layout. A standalone harness may already use `src/test/kotlin`.
 
 ```kotlin
 dependencies {
@@ -45,6 +46,24 @@ dependencies {
 ```
 
 Choose one Kafka integration: `stove-kafka` and `stove-spring-kafka` define overlapping classes and should not share a runtime classpath. The BOM aligns Stove artifacts; reuse the project's Kotlin plugin and test engine versions.
+
+## Existing tasks and convention plugins
+
+An entry task may aggregate another task or `JvmTestSuite` rather than execute
+tests itself. Inspect its type and dependencies, including included build logic,
+before using `tasks.named<Test>(...)`. Keep the alias and configure the actual
+`Test` task for JVM properties, filters, tracing, and reports. For example, if
+`verifyService` depends on an `integrationTest` suite, configure and filter
+`integrationTest`; the alias is not a `Test` task.
+
+Derive JUnit artifact paths from that task's reports configuration. Without an
+override, this example writes `build/test-results/integrationTest`, regardless
+of the command's alias. `tasks --all`, `help --task integrationTest`, and a dry
+run can help inspect the task graph; they do not establish test execution.
+
+Reuse convention plugins and shared test-support classpaths before adding source
+sets or dependencies. Inspect whether `check` actually depends on the suite;
+neither an E2E task name nor a neighboring module's wiring establishes that.
 
 ## Register test-e2e source set
 
@@ -85,6 +104,32 @@ kotest.framework.config.fqn=com.yourcompany.e2e.StoveConfig
 ```
 
 Use the actual fully qualified config class name and register `StoveKotestExtension()` there; see [system-setup.md](system-setup.md#reporting). Keep the project's Kotest/JUnit engine and JUnit Platform launcher dependencies on the e2e runtime classpath. The Stove reporting extension does not replace the test engine.
+
+When a repository has E2E and provided-application acceptance suites, inspect
+each task's classes **and resources**. Each must select its intended project
+config through its own `kotest.properties` or the existing task-level
+`kotest.framework.config.fqn` system property. Adding both resource outputs to a
+shared classpath can select the wrong lifecycle. Preserve suite boundaries:
+acceptance tests may require an already-running app and should not accidentally
+be pulled into `check` or coverage aggregation by new task wiring.
+
+Trace configurable values through both JVMs. A `-Dapp.base.url=...` passed to
+Gradle is not automatically a property in its forked `Test` worker. Forward the
+specific supported setting on the executing `Test` task, then confirm the config
+actually reads it rather than a hard-coded value. For example:
+
+```kotlin
+tasks.named<Test>("acceptanceTest") {
+    systemProperty(
+        "app.base.url",
+        providers.systemProperty("app.base.url").getOrElse("http://localhost:8080")
+    )
+}
+```
+
+Use the same resolved application URL for HTTP requests and readiness. Preserve
+the repository's existing `-P`, environment, or `-D` interface and its precedence;
+avoid forwarding every Gradle system property into the test worker.
 
 Compile the selected test source set first, then run the affected suite using the project's Gradle wrapper and actual module/task names, for example:
 

@@ -9,6 +9,21 @@ Read this before introducing a native handle or an SDK-based test helper. Stove 
 3. If source is absent from the application checkout, inspect [local source artifacts](gradle-config.md#resolve-api-ambiguity-from-local-artifacts) or the matching upstream release. Missing local source does not establish a missing API; state any unresolved limitation accurately.
 4. Compare semantics as well as names, then use the existing DSL when it covers the behavior. Otherwise check system options and supported callbacks, then the narrowest managed native extension before taking an unrestricted handle. Do not recreate serialization, assertions, retry scenarios, verification, or request inspection that the system already supplies.
 
+## Repository-owned helpers
+
+A helper's package name does not establish that it ships with Stove. Follow its
+definition and supplying source set or module before adding a dependency or
+copying its implementation. A standalone harness may include shared Kotlin
+sources where another build uses a module dependency. An unresolved helper can
+be a classpath problem rather than a missing Stove API.
+
+Preserve useful domain helpers that delegate to supported APIs. When replacing
+native builders or string-based matchers, compare URL path versus full-URL
+matching, empty input, serialization, headers, and test ownership/reporting.
+Structural JSON matching is not automatically equivalent to matching serialized
+substrings. Preserve the required behavior or make an intended contract change
+explicit rather than treating a newer API as a mechanical rename.
+
 ## Common replacements
 
 These are search starting points; confirm signatures in the project's resolved version.

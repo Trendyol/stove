@@ -9,7 +9,7 @@ Open only the focused guides needed for the user's task. Guide links are relativ
 
 ## First checks
 
-1. Check the project's resolved Stove version, existing test setup, and Gradle conventions before adding configuration. Standalone downloads follow upstream `main`; plugins declare their Stove version, and local copies follow their source checkout. Any of these can differ from the project's dependencies; do not upgrade dependencies just to match an example.
+1. Check the project's resolved Stove version, existing test setup, and Gradle conventions before adding configuration. Follow task aliases to the actual Gradle `Test` task before configuring JVM options, tracing, or report paths. Standalone downloads follow upstream `main`; plugins declare their Stove version, and local copies follow their source checkout. Any of these can differ from the project's dependencies; do not upgrade dependencies just to match an example.
 2. Identify the application-under-test mode:
    - JVM in-process: Spring Boot, Ktor, Micronaut, Quarkus.
    - Host process: Go, Python, Rust, Node.js, or another binary via `processApp` / `goApp`.
@@ -127,8 +127,8 @@ In test code, `DashboardIngestion.Grpc(host, port)` defaults to `localhost:4041`
 
 ## Guardrails for agents
 
-- Do not use pre-0.20 imports such as `com.trendyol.stove.testing.e2e.*`.
-- Do not use removed runner types such as `ContainerAppOptions`, `ProcessAppOptions`, or `GoAppOptions`.
+- New examples use the current API. When maintaining a pre-0.20 suite, preserve imports such as `com.trendyol.stove.testing.e2e.*` if its resolved artifacts require them; an upgrade needs coordinated dependency, import, lifecycle, and API changes. See [compatibility.md](compatibility.md#maintaining-legacy-suites).
+- With current dependencies, do not use removed runner types such as `ContainerAppOptions`, `ProcessAppOptions`, or `GoAppOptions`; legacy maintenance follows the resolved release.
 - `ReadinessStrategy.HttpGet` takes `url = "..."`, not `path = "..."`.
 - `bridge()` is JVM-framework-specific. Import `com.trendyol.stove.spring.bridge`, `com.trendyol.stove.ktor.bridge`, or `com.trendyol.stove.micronaut.bridge` based on the selected framework.
 - `bridge()` is not supported on Quarkus yet; do not invent `com.trendyol.stove.quarkus.bridge`.
