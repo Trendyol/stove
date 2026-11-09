@@ -1593,6 +1593,205 @@ code.language-kotlin .token.punctuation {
 .stove-compare h4 { margin: 0 0 0.5rem; }
 @media (max-width: 800px) { .stove-compare { grid-template-columns: 1fr; } }
 
+/* Comparison landing page: static content, native disclosures, no JS required. */
+.stove-comparison {
+    max-width: 1320px;
+    margin-inline: auto;
+    color: var(--stove-doc-text);
+}
+.stove-comparison .comparison-hero {
+    padding: 2.8rem 0 1.8rem;
+    max-width: 980px;
+}
+.stove-comparison .comparison-eyebrow {
+    color: var(--stove-doc-accent-strong);
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    margin: 0 0 1rem;
+}
+.stove-comparison h1 {
+    color: var(--stove-doc-text);
+    font-size: clamp(2.1rem, 4.7vw, 3.7rem);
+    line-height: 1.08;
+    font-weight: 750;
+    letter-spacing: -0.045em;
+    margin: 0 0 1rem;
+}
+.stove-comparison .comparison-lead {
+    font-size: 1.05rem;
+    line-height: 1.65;
+    max-width: 810px;
+    color: var(--stove-doc-muted);
+}
+.stove-comparison .comparison-actions > p {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.6rem;
+    margin-block: 1.2rem;
+}
+.stove-comparison .stove-btn.primary {
+    color: var(--stove-doc-accent-chip-text) !important;
+    background: var(--stove-doc-accent-chip-bg);
+    border-color: var(--stove-doc-accent-border);
+}
+.stove-comparison .comparison-jumps {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem 1.2rem;
+    border-block: 1px solid var(--stove-doc-border);
+    padding: 0.8rem 0;
+    font-size: 0.75rem;
+}
+.stove-comparison .comparison-jumps a {
+    color: var(--stove-doc-accent-strong);
+    font-weight: 600;
+    padding-block: 0.3rem;
+}
+.stove-comparison h2 {
+    margin-top: 2.8rem;
+    font-size: 1.5rem;
+    font-weight: 700;
+    letter-spacing: -0.025em;
+    border-bottom: 0;
+    scroll-margin-top: 5rem;
+}
+.md-typeset .stove-comparison .comparison-flow {
+    display: grid;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    list-style: none;
+    gap: 1.2rem;
+    margin: 1.4rem 0;
+    padding: 0;
+}
+.stove-comparison .comparison-flow li {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 0.4rem;
+    margin: 0;
+    padding: 1rem 0.75rem;
+    border: 1px solid var(--stove-doc-border);
+    border-radius: 10px;
+    background: var(--stove-doc-surface);
+}
+.stove-comparison .comparison-flow li + li::before {
+    content: "→";
+    position: absolute;
+    left: -1rem;
+    color: var(--stove-doc-muted);
+}
+.stove-comparison .comparison-flow .comparison-flow-mock {
+    border: 1px dashed var(--stove-doc-accent-strong);
+    background: var(--stove-doc-accent-bg);
+}
+.stove-comparison .comparison-tag {
+    color: var(--stove-doc-accent-strong);
+    font-size: 0.62rem;
+    font-weight: 700;
+}
+.stove-comparison .comparison-flow strong { font-size: 0.87rem; }
+.stove-comparison .comparison-flow li > span:last-child {
+    color: var(--stove-doc-muted);
+    font-size: 0.66rem;
+}
+.stove-comparison .comparison-pair {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 1rem;
+    margin-block: 1.3rem;
+    align-items: start;
+}
+.stove-comparison .comparison-panel {
+    min-width: 0;
+    border: 1px solid var(--stove-doc-border);
+    border-top: 3px solid var(--stove-doc-border);
+    border-radius: 12px;
+    padding: 1.2rem;
+    background: var(--stove-doc-surface);
+}
+.stove-comparison .comparison-panel-stove {
+    border-top-color: var(--stove-doc-accent-strong);
+}
+.stove-comparison .comparison-panel h3 {
+    font-size: 0.98rem;
+    font-weight: 700;
+    line-height: 1.5;
+    margin-top: 0;
+    min-height: 3em;
+}
+.stove-comparison .comparison-panel > p { font-size: 0.78rem; }
+.stove-comparison .comparison-panel .highlight {
+    margin-inline: 0;
+    max-width: 100%;
+}
+.stove-comparison .comparison-panel pre > code {
+    overflow-x: auto;
+    white-space: pre;
+    font-size: 0.66rem;
+    line-height: 1.65;
+}
+/* Keep the existing dark code surface legible in both site palettes. */
+.md-typeset .stove-comparison .highlight :is(.c, .c1, .cm, .cs) {
+    color: #a0a6b3 !important;
+}
+.md-typeset .stove-comparison .highlight :is(.nd, .na) {
+    color: #c3a6ff !important;
+}
+.md-typeset .stove-comparison .highlight :is(.nf, .nc) {
+    color: #82b5f4 !important;
+}
+.stove-comparison .comparison-panel details {
+    border-color: var(--stove-doc-border);
+    box-shadow: none;
+    font-size: 0.74rem;
+    margin-bottom: 0;
+}
+.stove-comparison .comparison-panel summary {
+    background: var(--stove-doc-surface-muted);
+    cursor: pointer;
+    color: var(--stove-doc-text);
+}
+.stove-comparison .comparison-takeaway,
+.stove-comparison .comparison-evidence {
+    border-left: 3px solid var(--stove-doc-accent-strong);
+    padding: 0.8rem 1rem;
+    background: var(--stove-doc-accent-bg);
+    font-size: 0.8rem;
+}
+.stove-comparison .comparison-evidence > :first-child { margin-top: 0; }
+.stove-comparison .comparison-evidence > :last-child { margin-bottom: 0; }
+.stove-comparison .comparison-next {
+    border: 1px solid var(--stove-doc-accent-border);
+    border-radius: 14px;
+    background: var(--stove-doc-accent-bg);
+    padding: 1.5rem;
+    margin: 2rem 0;
+}
+.stove-comparison .comparison-next h3 { margin-top: 0; }
+.stove-comparison :is(a, summary):focus-visible {
+    outline: 3px solid var(--stove-doc-accent-strong);
+    outline-offset: 4px;
+}
+@media (max-width: 800px) {
+    main.md-main:has(.stove-comparison) .md-main__inner.md-grid { padding-inline: 0; }
+    .stove-comparison .comparison-hero { padding-top: 1.5rem; }
+    .stove-comparison .comparison-pair { grid-template-columns: minmax(0, 1fr); }
+    .stove-comparison .comparison-panel { padding: 1rem; }
+    .stove-comparison .comparison-panel h3 { min-height: 0; }
+    .md-typeset .stove-comparison .comparison-flow { grid-template-columns: minmax(0, 1fr); }
+    .stove-comparison .comparison-flow li { padding: 0.8rem 1rem; }
+    .stove-comparison .comparison-flow li + li::before {
+        content: "↓";
+        left: 50%;
+        top: -1.25rem;
+    }
+}
+@media (prefers-reduced-motion: reduce) {
+    .stove-comparison .stove-btn { transition: none; }
+}
+
 /* ---- Feature ribbon ---- */
 .stove-ribbon {
     display: grid;
