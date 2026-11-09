@@ -1,6 +1,6 @@
 ---
 title: Why Stove? The same test. Less wiring.
-description: Compare Spring Boot, Testcontainers, and supporting libraries with Stove for application setup, cross-system assertions, and failure evidence.
+description: See how Stove coordinates application setup, cross-system assertions, and failure evidence across frameworks and runtimes, with a Spring Boot and Testcontainers worked example.
 hide:
   - navigation
   - toc
@@ -10,7 +10,7 @@ hide:
 
 <div class="comparison-hero" markdown="1">
 
-<p class="comparison-eyebrow">Spring Boot + Testcontainers · A practical comparison</p>
+<p class="comparison-eyebrow">End-to-end testing across frameworks and runtimes</p>
 
 # The same test. Less wiring.
 
@@ -25,9 +25,12 @@ hide:
 
 Both approaches can exercise a real service. Stove builds on **Testcontainers and WireMock**, giving you a shared lifecycle, a Kotlin DSL, and reporting across the systems in your test.
 
+**Spring Boot is the worked example, not the boundary.** The same coordination problem appears in Ktor, Micronaut, Quarkus, and services written in other languages. Stove separates the application runner from the systems your tests exercise.
+
 </div>
 
 <nav class="comparison-jumps" aria-label="On this page">
+  <a href="#runtimes">Your runtime</a>
   <a href="#scenario">The flow</a>
   <a href="#prepare">01 · Prepare</a>
   <a href="#assert">02 · Assert</a>
@@ -36,7 +39,22 @@ Both approaches can exercise a real service. Stove builds on **Testcontainers an
   <a href="#fit">Is it a fit?</a>
 </nav>
 
+## Different applications. The same coordination work. { #runtimes }
+
+Starting the app, passing dependency addresses, arranging mocks, checking side effects, and collecting failure evidence are concerns across frameworks. Stove lets you choose the runner for your application while composing the systems around it.
+
+| Your application | How Stove runs or connects to it |
+|---|---|
+| Spring Boot, Ktor, Micronaut, or Quarkus | A [framework runner](frameworks/index.md) starts the JVM application in the test process. |
+| A host executable, such as a Go service | A [process runner](other-languages/go-process.md) starts the application with explicit environment and readiness configuration. |
+| A containerized service, in any language | A [container runner](Components/22-container.md) starts the image with explicit networking and readiness configuration. |
+| An already running service | A [provided-application runner](Components/19-provided-application.md) connects to its configured endpoints. |
+
+Tests are authored in **Kotlin** across these modes. Integration details differ: in-process dependency injection, Kafka observation, tracing, and profiling depend on the selected runner and instrumentation. Choose the supported capabilities your test needs; changing runners does not make those integrations automatic.
+
 ## One flow. The same expectations. { #scenario }
+
+**For this comparison, we use Spring Boot.** Its service connections provide a capable baseline for showing what an assembled stack handles and what Stove adds. The responsibility comparison below applies more broadly; the code and framework conveniences here are specific to this example.
 
 Place an order: the app checks inventory over HTTP, persists the order, then sends an `OrderCreated` event. The inventory service is mocked at its network boundary; the application, PostgreSQL, and Kafka are real.
 
@@ -412,6 +430,8 @@ Stove uses Testcontainers for container-backed dependencies and WireMock for HTT
 
 Start with the HTTP, PostgreSQL, Kafka, and WireMock setup from this page. Add deeper observability when it helps your team diagnose failures.
 
+Using another framework or language? [Choose your runtime and systems in the wizard](wizard.md).
+
 <div class="comparison-actions" markdown="1">
 
 [Open this setup in the wizard](wizard.md?rt=jvm&fw=spring-boot&test=kotest&sys=sys.http,sys.postgresql,sys.kafka&mk=sys.wiremock&obs=obs.reporting&br=0&step=6){ .stove-btn .primary }
@@ -420,7 +440,7 @@ Start with the HTTP, PostgreSQL, Kafka, and WireMock setup from this page. Add d
 
 </div>
 
-The dashboard demo runs in your browser with **fictional test data**. It demonstrates the investigation experience, not a live execution of these excerpts.
+The dashboard demo runs in your browser with **fictional test data and profiling samples**. Explore the timeline, traces, and Drill Down CPU/allocation views; it is not a live execution of these excerpts.
 
 </div>
 </div>
