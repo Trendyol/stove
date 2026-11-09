@@ -1,5 +1,5 @@
 "label": |-
-  Quarkus (no bridge)
+  Quarkus
 "gradle":
 - |-
   com.trendyol:stove-quarkus

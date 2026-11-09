@@ -194,12 +194,12 @@
       },
 
       bridgeSupportedInJvm() {
+        // Quarkus Bridge needs augmented-classpath build wiring; the wizard does not generate that setup.
         return this.state.runtime === "jvm" && this.state.framework !== "quarkus";
       },
 
       bridgeImportForFramework() {
         if (!this.bridgeSupportedInJvm()) return null;
-        // Quarkus has no bridge starter today; add it here if one ships.
         return {
           "spring-boot": "com.trendyol.stove.spring.bridge",
           "ktor": "com.trendyol.stove.ktor.bridge",
@@ -521,7 +521,7 @@ ${fill(test.sample, { body })}`;
             <label class="sw-toggle" x-show="state.runtime === 'jvm'">
               <input type="checkbox" x-model="state.bridge" :disabled="!bridgeSupportedInJvm()">
               Add <code>bridge()</code> (DI access for setup + verification)
-              <span class="sw-hint" x-show="state.framework === 'quarkus'">Bridge is not supported on Quarkus yet.</span>
+              <span class="sw-hint" x-show="state.framework === 'quarkus'">Quarkus Bridge requires manual build setup; see the Quarkus framework guide.</span>
             </label>
             <p class="sw-hint" x-show="state.runtime === 'provided' || state.runtime === 'process' || state.runtime === 'container'">
               Bridge is JVM-in-process only. Unavailable for <span x-text="state.runtime"></span> runtime.

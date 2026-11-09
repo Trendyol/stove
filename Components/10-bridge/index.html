@@ -3670,9 +3670,9 @@
 <p><span class="stove-tldr-title">When to use Bridge</span>
 You need state or behavior that isn't exposed through HTTP/Kafka/DB surfaces. Verifying internal flags, exercising a domain method directly, swapping <code>Clock</code> for deterministic time, capturing emitted domain events. If a public surface tells you the answer, prefer that instead.</p>
 </div>
-<div class="admonition warning">
-<p class="admonition-title">Quarkus</p>
-<p>Bridge isn't shipped for <code>stove-quarkus</code> (CDI lifecycle). Drive verification through HTTP, DB, Kafka, gRPC.</p>
+<div class="admonition note">
+<p class="admonition-title">Quarkus setup</p>
+<p>Import <code>com.trendyol.stove.quarkus.bridge</code>. Quarkus requires an augmented uber-jar on the shared test classpath and unused-bean removal disabled in the e2e build. See the <a href="../../frameworks/quarkus/#bridge">Quarkus Bridge guide</a>. The isolated fast-jar launcher is not supported by Bridge.</p>
 </div>
 <h2 id="setup">Setup<a class="headerlink" href="#setup" title="Permanent link">&para;</a></h2>
 <p>Built into the framework starters. No extra dependency.</p>
@@ -3873,7 +3873,11 @@ You're testing the test setup, not the app.
 <tbody>
 <tr>
 <td><code>bridge()</code> not available</td>
-<td>Quarkus isn't supported yet; use HTTP/DB/Kafka assertions</td>
+<td>Import the selected framework's extension, such as <code>com.trendyol.stove.quarkus.bridge</code></td>
+</tr>
+<tr>
+<td>Quarkus: ArC inaccessible or fast-jar rejected</td>
+<td>Use the <a href="../../frameworks/quarkus/#bridge">augmented uber-jar classpath</a> and preserve beans in the e2e build</td>
 </tr>
 <tr>
 <td><code>NoSuchBeanDefinitionException</code></td>

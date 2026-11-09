@@ -3015,6 +3015,28 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
+  <a href="#quarkus-bridge" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Quarkus Bridge
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#quarkus-startup-detection" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Quarkus startup detection
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#continuous-jvm-profiling" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -3431,6 +3453,28 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
+  <a href="#quarkus-bridge" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Quarkus Bridge
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#quarkus-startup-detection" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Quarkus startup detection
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#continuous-jvm-profiling" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -3567,6 +3611,18 @@
 <h1 id="0280">0.28.0<a class="headerlink" href="#0280" title="Permanent link">&para;</a></h1>
 <p><strong>Status: Upcoming — not yet released.</strong></p>
 <p>Stove 0.28.0 adds continuous JVM and Go profiling to the existing Stove Server. Enable the JVM profiler in the tracing Gradle plugin or configure the native Go wrapper, run your end-to-end tests, and use <strong>Drill Down</strong> or MCP to investigate sampled CPU cost, allocation pressure, surviving objects, and lock waits. No separate Pyroscope backend or additional deployed service is required.</p>
+<p>This release also adds Quarkus Bridge for direct CDI bean access from end-to-end tests.</p>
+<h2 id="quarkus-bridge">Quarkus Bridge<a class="headerlink" href="#quarkus-bridge" title="Permanent link">&para;</a></h2>
+<p><code>stove-quarkus</code> now provides <code>com.trendyol.stove.quarkus.bridge</code>. Register <code>bridge()</code> before the Quarkus runner, then use <code>using&lt;T&gt;</code> inside <code>stove {}</code> to access beans from the running application's ArC container.</p>
+<ul>
+<li>Supports default CDI qualifiers and generic bean types. Missing or ambiguous beans produce actionable errors.</li>
+<li>Requires an augmented uber-jar first on the test runtime classpath, with raw main output excluded. The isolated fast-jar launcher does not support Bridge.</li>
+<li>Preserve beans referenced only by tests with <code>%e2e.quarkus.arc.remove-unused-beans=false</code> as a fixed e2e build default. This is a build-time setting; runtime parameters alone cannot restore removed beans.</li>
+<li>Dependent instances are destroyed at <code>Stove.stop()</code>. Request scopes must already be active; Bridge does not activate them automatically.</li>
+</ul>
+<p>The bundled Stove skill now includes a focused Quarkus Bridge guide covering Gradle classpath setup, bean preservation, lifecycle, and troubleshooting. See <a href="../../frameworks/quarkus/#bridge">Quarkus Bridge setup</a> and the <a href="https://github.com/Trendyol/stove/tree/main/starters/quarkus/tests/quarkus-bridge">quarkus-bridge integration fixture</a> for the working configuration and verification tests.</p>
+<h2 id="quarkus-startup-detection">Quarkus startup detection<a class="headerlink" href="#quarkus-startup-detection" title="Permanent link">&para;</a></h2>
+<p>Stove now waits for Quarkus lifecycle startup completion in both direct and fast-jar modes. Headless applications need no HTTP endpoint or custom readiness bean. Existing <code>StoveStartupSignal</code> beans and <code>stove.quarkus.ready</code> properties can be removed. Startup failures propagate to tests without terminating the test JVM, and the existing startup timeout still applies.</p>
 <h2 id="continuous-jvm-profiling">Continuous JVM profiling<a class="headerlink" href="#continuous-jvm-profiling" title="Permanent link">&para;</a></h2>
 <ul>
 <li>Opt-in <code>stoveTracing.profiling</code> configuration attaches Pyroscope Java agent <strong>2.9.2</strong> to selected Gradle test JVMs. CPU sampling is enabled with profiling; allocation, live-allocation, and lock sampling are optional.</li>

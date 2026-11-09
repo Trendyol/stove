@@ -4147,7 +4147,7 @@ system saw the last successful operation.</p>
 </tr>
 <tr>
 <td>Runner never reaches readiness</td>
-<td>For Ktor, start with <code>wait = false</code>; for Quarkus, use the documented <code>Quarkus.run(*args)</code> startup pattern and readiness signal</td>
+<td>For Ktor, start with <code>wait = false</code>; for Quarkus, use the documented <code>Quarkus.run(*args)</code> startup pattern; Stove waits for Quarkus lifecycle completion</td>
 </tr>
 </tbody>
 </table>

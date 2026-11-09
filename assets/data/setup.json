@@ -22,7 +22,7 @@
       "runner": "micronaut(\n  runner = { params -> {pkg}.run(params) },\n  withParameters = listOf(\"micronaut.server.port=8080\")\n)"
     },
     "quarkus": {
-      "label": "Quarkus (no bridge)",
+      "label": "Quarkus",
       "gradle": [
         "com.trendyol:stove-quarkus"
       ],
