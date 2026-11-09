@@ -29,7 +29,7 @@ include(
   "shared:application",
 )
 plugins {
-  id("dev.aga.gradle.version-catalog-generator") version ("4.2.2")
+  id("dev.aga.gradle.version-catalog-generator") version ("4.2.3")
 }
 
 enableFeaturePreview("TYPESAFE_PROJECT_ACCESSORS")
