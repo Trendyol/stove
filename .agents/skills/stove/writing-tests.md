@@ -417,7 +417,10 @@ If `shouldBeConsumed` cannot see the message, diagnose the existing integration:
 - Confirm the selected Kafka module, system key, topic, predicate, and serde.
 - Verify the AUT's actual listener/client has the interceptor or bridge wired;
   for Spring, registering the bean alone is insufficient without attaching it
-  to the relevant listener factory. See [Kafka setup](system-setup.md#kafka).
+  to the relevant listener factory. Include this wiring when creating the test,
+  not as a deferred follow-up. For Go, use Stove's provided bridge; for other
+  process apps, use the existing observer protocol. JVM DI `bridge()` alone does
+  not enable Kafka observation. See the [wiring matrix](system-setup.md#wire-observation-before-asserting-consumption).
 - Check observation routing and test correlation, then the selected integration's
   consumption/commit semantics. Standalone waits for a matching observed commit;
   Spring records listener success/failure; Go bridge hooks can report before

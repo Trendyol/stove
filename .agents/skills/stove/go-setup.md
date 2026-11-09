@@ -71,6 +71,15 @@ otel.SetTextMapPropagator(propagation.NewCompositeTextMapPropagator(
 
 The Stove Kafka bridge library lives at `go/stove-kafka/`. It has a library-agnostic core and client-specific subpackages.
 
+Use this Stove-provided bridge when the suite asserts Go application consumption
+with `shouldBeConsumed`; do not build a parallel gRPC reporter, listener store,
+or polling assertion. Install the adapter in the application's actual Kafka
+client. For other Go clients, use the provided core `Report*` methods below.
+Configure `STOVE_KAFKA_BRIDGE_PORT` from Stove's exposed observer configuration
+and `STOVE_KAFKA_BRIDGE_HOST` when the JVM is not reachable at the default host.
+Constructing the bridge without attaching client hooks produces no observations;
+without the port, the provided environment factory intentionally disables it.
+
 ### Architecture
 
 ```

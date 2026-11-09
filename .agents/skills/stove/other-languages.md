@@ -46,7 +46,7 @@ files it did not create.
 - [ ] Step 3: Configure Gradle (build app + e2eTest task)
 - [ ] Step 4: Create StoveConfig with systems + processApp/goApp
 - [ ] Step 5: Instrument app with OpenTelemetry (optional)
-- [ ] Step 6: Add Kafka bridge (optional, Go only for now)
+- [ ] Step 6: Wire Kafka observation bridge when using observer-based assertions
 - [ ] Step 7: Write tests using stove {} DSL
 ```
 
@@ -214,9 +214,34 @@ Use your language's OTel SDK. Key points:
 
 See [tracing.md](tracing.md) for endpoint, port, and instrumentation details.
 
-## Step 6: Kafka bridge (Go only)
+## Step 6: Kafka observation bridge
 
-For Go apps using IBM/sarama, twmb/franz-go, or segmentio/kafka-go, add the `stove-kafka` bridge library. See [go-setup.md](go-setup.md) for details.
+For `shouldBeConsumed` and other observer-based Kafka assertions, wire the
+application's Kafka activity back to the standalone Stove Kafka system. Starting
+a process or container does not do this automatically.
+
+**Go:** use Stove's provided `github.com/trendyol/stove/go/stove-kafka` library,
+with adapters for IBM/sarama, twmb/franz-go, or segmentio/kafka-go. For other Go
+clients, adapt its core `Report*` methods instead of rewriting the bridge.
+See [Go bridge setup](go-setup.md#step-3-kafka-bridge).
+
+**Other languages:** use an existing compatible adapter when available. Otherwise
+generate a gRPC client from the version-matched Stove repository's
+`lib/stove-kafka/src/main/proto/messages.proto` and adapt the app's Kafka hooks to
+`StoveKafkaObserverService`. The protocol exposes `onConsumedMessage`,
+`onPublishedMessage`, `onCommittedMessage`, and `onAcknowledgedMessage`; do not
+assume a Stove-provided SDK exists for every language. Preserve payload bytes,
+topic, key, headers/test correlation, partition, and offset where the message
+type supports them. Standalone consumption assertions require the matching
+commit observation too; report the Kafka next-offset convention. Distinguish
+actual commit reports from any adapter's synthetic bookkeeping.
+
+Pass the actual observer endpoint from the harness to the app using its existing
+environment/argument contract. A container must reach the test JVM's observer
+host/port, not container-local `localhost`. Initialize observation before Kafka
+activity and close/flush the adapter during shutdown. A protocol adapter feeds
+Stove's existing assertions; it is not a reason to create a separate assertion
+store or replace `shouldBeConsumed`.
 
 The bridge forwards observed produced/consumed messages via gRPC to Stove. Observation can occur before broker acknowledgment or business processing completes; assert the final outcome as well. See [go-setup.md](go-setup.md#what-the-bridge-proves).
 
@@ -226,7 +251,7 @@ Go 1.20+ supports coverage for built binaries: compile with `go build -cover`, s
 
 ## What you can't do
 
-- **No `bridge()` / `using<T> {}`** --- no access to app's DI container
+- **No JVM DI `bridge()` / `using<T> {}`** --- no access to app's DI container; Kafka observation bridges above are supported separately
 - Everything else works: HTTP, databases, Kafka, tracing, WireMock, gRPC, dashboard
 
 ## Container mode (`containerApp`)

@@ -700,6 +700,28 @@ Choose one integration; the artifacts define overlapping `com.trendyol.stove.kaf
 
 Both support `shouldBePublished`, `shouldBeConsumed`, and `shouldBeFailed`. Current standalone source also provides `shouldBeRetried` and the direct broker `consumer` API; do not assume those exist in Spring. See [writing-tests.md](writing-tests.md#kafka-assertions).
 
+### Wire observation before asserting consumption
+
+Include the AUT-side wiring when adding `shouldBeConsumed`; creating the broker
+and pointing the app at it does not enable observation. Reuse an existing bridge
+or interceptor rather than creating another consumption detector.
+
+| AUT / integration | Required observation wiring |
+|---|---|
+| JVM using `stove-spring-kafka` | Register `TestSystemKafkaInterceptor` and the matching serde in the application context; attach that interceptor to each relevant listener factory. Preserve producer-listener wiring for publication assertions. |
+| JVM Kafka clients using standalone `stove-kafka` | Install the exposed interceptor class in the actual producer/consumer properties and forward `stove.kafka.bridge.id` / `stove.kafka.bridge.port` as described below. |
+| Go process or container | Use Stove's provided `github.com/trendyol/stove/go/stove-kafka` bridge and the adapter for the app's Kafka client. For an unsupported Go client, adapt the provided core reporting methods. See [Go bridge setup](go-setup.md#step-3-kafka-bridge). |
+| Other process or container language | Reuse an available compatible adapter, or generate a client for Stove's existing `StoveKafkaObserverService` protocol and connect it to the app's Kafka lifecycle. See [process bridge setup](other-languages.md#step-6-kafka-observation-bridge). Do not invent a language SDK or a different observation protocol. |
+
+**JVM DI bridging is separate.** For in-process Spring, Ktor, or Micronaut tests
+that use `using<T>` or other DI-backed helpers, register the framework's
+`bridge()` before the runner. Preserve it in an existing setup. This exposes
+application beans to tests; it does not install Kafka interceptors. Conversely,
+the Spring Kafka system obtains its application context from the runner and
+does not require DI `bridge()` solely for `shouldBeConsumed`. Process/container
+apps use Kafka observation bridges without gaining DI `using<T>` access;
+Quarkus currently has no DI bridge.
+
 ### Standalone Kafka
 
 For a JVM app using the Kafka client API, configure its producer and consumer interceptors:
