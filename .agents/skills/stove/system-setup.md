@@ -720,7 +720,9 @@ application beans to tests; it does not install Kafka interceptors. Conversely,
 the Spring Kafka system obtains its application context from the runner and
 does not require DI `bridge()` solely for `shouldBeConsumed`. Process/container
 apps use Kafka observation bridges without gaining DI `using<T>` access;
-Quarkus currently has no DI bridge.
+Quarkus also provides `com.trendyol.stove.quarkus.bridge`, with an augmented
+uber-jar on the shared test classpath and unused-bean removal disabled in the
+e2e build. See the [Quarkus Bridge setup](quarkus-bridge.md).
 
 ### Standalone Kafka
 
@@ -825,15 +827,20 @@ grpc {
 
 ## Bridge
 
-Direct access to DI container from tests. Built into `stove-spring` / `stove-ktor` / `stove-micronaut`.
+Direct access to the DI container from tests. Provided by `stove-spring`, `stove-ktor`,
+`stove-micronaut`, and `stove-quarkus` when supported by the resolved version.
+Import `bridge` from the selected framework's package and register it before the runner.
 
 ```kotlin
-bridge()  // Auto-detects DI framework
+bridge()  // Uses the selected framework-specific import
 ```
+
+Quarkus requires an augmented shared runtime classpath and e2e bean preservation;
+follow [Quarkus Bridge setup](quarkus-bridge.md) before using `using<T>`.
 
 ### Ktor DI support
 
-Bridge auto-detects your DI framework:
+Ktor Bridge auto-detects your DI framework:
 
 ```kotlin
 // Koin — add io.insert-koin:koin-ktor to classpath
@@ -980,7 +987,7 @@ Supports both direct main runner and packaged runtime. Configurable startup time
 Quarkus specifics:
 - If the app exposes no HTTP endpoint, publish a readiness signal: set `System.setProperty("stove.quarkus.ready", "true")` from an `@Observes StartupEvent` handler.
 - Kafka interceptors need shared classloading — add to `application.properties`: `quarkus.class-loading.parent-first-artifacts=org.apache.kafka:kafka-clients`. Without it, Stove's Kafka interceptor can't attach.
-- No `bridge()` — verify through system DSLs (HTTP, DB, Kafka) instead of `using<T>`.
+- For CDI access, register `com.trendyol.stove.quarkus.bridge` and follow [Quarkus Bridge setup](quarkus-bridge.md). Bridge requires the augmented uber-jar on the shared test classpath; the isolated fast-jar runner supports system DSL assertions but cannot provide `using<T>` access.
 
 ### Micronaut
 

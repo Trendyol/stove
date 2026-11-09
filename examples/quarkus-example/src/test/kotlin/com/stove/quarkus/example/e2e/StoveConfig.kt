@@ -6,6 +6,7 @@ import com.trendyol.stove.extensions.kotest.StoveKotestExtension
 import com.trendyol.stove.http.*
 import com.trendyol.stove.kafka.*
 import com.trendyol.stove.postgres.*
+import com.trendyol.stove.quarkus.bridge
 import com.trendyol.stove.quarkus.quarkus
 import com.trendyol.stove.serialization.StoveSerde
 import com.trendyol.stove.system.*
@@ -27,6 +28,7 @@ class StoveConfig : AbstractProjectConfig() {
   override suspend fun beforeProject() {
     Stove()
       .with {
+        bridge()
         tracing { enableSpanReceiver() }
         dashboard { DashboardSystemOptions(appName = "quarkus-example") }
         httpClient {

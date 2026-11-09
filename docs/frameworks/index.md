@@ -45,8 +45,8 @@ the assertion DSL, reporting, tracing, dashboard, and MCP keep the same shape ac
   </div>
 
   <div class="stove-sys-card">
-    <div class="stove-sys-card-head"><strong>Quarkus</strong><span class="stove-sys-card-badge">Bridge ✗</span></div>
-    <p class="stove-sys-card-desc"><code>@QuarkusMain</code> plus <code>Quarkus.run(*args)</code>; use readiness because bridge is not available.</p>
+    <div class="stove-sys-card-head"><strong>Quarkus</strong><span class="stove-sys-card-badge">Bridge ✓</span></div>
+    <p class="stove-sys-card-desc"><code>@QuarkusMain</code> plus <code>Quarkus.run(*args)</code>; Bridge requires an augmented uber-jar on the shared test classpath.</p>
     <div class="stove-sys-card-actions">
       <a href="quarkus/">Guide</a>
       <a href="https://github.com/Trendyol/stove/tree/main/examples/quarkus-example">Example</a>

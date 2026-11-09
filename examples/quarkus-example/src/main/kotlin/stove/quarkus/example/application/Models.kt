@@ -6,6 +6,12 @@ data class ProductCreateRequest(
   val supplierId: Long
 )
 
+data class ProductCreateResult(
+  val productId: Long,
+  val created: Boolean,
+  val message: String
+)
+
 data class ProductCreatedEvent(
   val id: Long,
   val name: String,

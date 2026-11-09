@@ -13,14 +13,18 @@ class ProductCreator(
   private val productEventPublisher: ProductEventPublisher
 ) {
   @WithSpan("ProductCreator.create")
-  fun create(request: ProductCreateRequest): String {
+  fun create(request: ProductCreateRequest): ProductCreateResult {
     val supplierPermission = supplierHttpService.getSupplierPermission(request.supplierId)
     if (!supplierPermission.isAllowed) {
-      return "Supplier with the given id(${request.supplierId}) is not allowed for product creation"
+      return ProductCreateResult(
+        productId = request.id,
+        created = false,
+        message = "Supplier with the given id(${request.supplierId}) is not allowed for product creation"
+      )
     }
 
     productRepository.save(request)
     productEventPublisher.publish(request.toProductCreatedEvent())
-    return "OK"
+    return ProductCreateResult(productId = request.id, created = true, message = "OK")
   }
 }

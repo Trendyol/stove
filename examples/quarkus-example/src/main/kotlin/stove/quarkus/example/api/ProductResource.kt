@@ -19,5 +19,5 @@ class ProductResource(
   @POST
   @Path("/product/create")
   @Consumes(MediaType.APPLICATION_JSON)
-  fun createProduct(request: ProductCreateRequest): String = productCreator.create(request)
+  fun createProduct(request: ProductCreateRequest): String = productCreator.create(request).message
 }

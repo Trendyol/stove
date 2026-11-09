@@ -770,6 +770,12 @@ grpc {
 
 ## Bridge (DI access)
 
+Register the framework-specific `bridge()` before the application runner, then call
+`using<T>` directly inside `stove {}`. For Quarkus, first configure the
+[augmented classpath and e2e bean preservation](quarkus-bridge.md). Quarkus lookup
+uses default CDI qualifiers and preserves generic types; request scopes must
+already be active, and dependent instances are destroyed at `Stove.stop()`.
+
 ```kotlin
 // Single bean
 using<OrderService> {

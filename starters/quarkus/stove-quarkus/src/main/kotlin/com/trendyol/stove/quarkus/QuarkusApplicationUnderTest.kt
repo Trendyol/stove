@@ -23,6 +23,7 @@ import java.net.URLClassLoader
 import java.nio.file.Path
 import java.nio.file.Paths
 import java.util.concurrent.atomic.AtomicReference
+import kotlin.time.Duration.Companion.milliseconds
 
 internal fun Stove.systemUnderTest(
   runner: Runner<Unit>,
@@ -78,7 +79,7 @@ class QuarkusApplicationUnderTest(
       if (quarkusLauncher.isReady()) return
       failIfStartupTimedOut(quarkusLauncher, startTime, startupTimeoutMs)
 
-      delay(POLL_INTERVAL_MS)
+      delay(POLL_INTERVAL_MS.milliseconds)
     }
   }
 
@@ -91,7 +92,7 @@ class QuarkusApplicationUnderTest(
   }
 
   private fun createLauncher(configurations: List<String>) = QuarkusLauncher(
-    runtime = resolveLaunchRuntime(runner),
+    runtime = resolveLaunchRuntime(runner, stove.systemsOf<QuarkusBridgeSystem>().isNotEmpty()),
     configuration = QuarkusConfiguration.from(configurations + parameters)
   )
 
@@ -150,10 +151,13 @@ private data class QuarkusConfiguration(
   }
 }
 
-private fun resolveLaunchRuntime(runner: Runner<Unit>): LaunchRuntime =
-  resolvePackagedRuntimeArtifacts()
-    ?.let(::packagedRuntime)
-    ?: directMainRuntime(runner)
+private fun resolveLaunchRuntime(runner: Runner<Unit>, bridgeEnabled: Boolean): LaunchRuntime {
+  val packagedArtifacts = resolvePackagedRuntimeArtifacts()
+  check(!bridgeEnabled || packagedArtifacts == null) {
+    "Quarkus Bridge cannot use the packaged fast-jar runtime. $QUARKUS_BRIDGE_CLASSPATH_HELP"
+  }
+  return packagedArtifacts?.let(::packagedRuntime) ?: directMainRuntime(runner)
+}
 
 private fun directMainRuntime(runner: Runner<Unit>) = LaunchRuntime(
   modeName = "direct-main",

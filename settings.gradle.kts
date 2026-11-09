@@ -45,6 +45,7 @@ include(
   "starters:ktor:tests:ktor-koin-tests",
   "starters:ktor:tests:ktor-di-tests",
   "starters:quarkus:stove-quarkus",
+  "starters:quarkus:tests:quarkus-bridge",
   "starters:spring:stove-spring",
   "starters:spring:stove-spring-kafka",
   "starters:spring:tests:spring-test-fixtures",

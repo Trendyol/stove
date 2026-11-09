@@ -1,6 +1,6 @@
 # Release Notes
 
-**Upcoming:** [0.28.0 — continuous JVM profiling and Drill Down](0.28.0.md).
+**Upcoming:** [0.28.0 — Quarkus Bridge, JVM and Go profiling, and Drill Down](0.28.0.md).
 
 Choose a version from the navigation for release highlights, migration guides, and compatibility changes.
 

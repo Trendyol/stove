@@ -7,8 +7,8 @@ Reach into your app's DI container from a test. Read internal state, drive domai
 You need state or behavior that isn't exposed through HTTP/Kafka/DB surfaces. Verifying internal flags, exercising a domain method directly, swapping <code>Clock</code> for deterministic time, capturing emitted domain events. If a public surface tells you the answer, prefer that instead.
 </div>
 
-!!! warning "Quarkus"
-    Bridge isn't shipped for `stove-quarkus` (CDI lifecycle). Drive verification through HTTP, DB, Kafka, gRPC.
+!!! note "Quarkus setup"
+    Import `com.trendyol.stove.quarkus.bridge`. Quarkus requires an augmented uber-jar on the shared test classpath and unused-bean removal disabled in the e2e build. See the [Quarkus Bridge guide](../frameworks/quarkus.md#bridge). The isolated fast-jar launcher is not supported by Bridge.
 
 ## Setup
 
@@ -237,7 +237,8 @@ You're testing the test setup, not the app.
 
 | Symptom | Check |
 |---|---|
-| `bridge()` not available | Quarkus isn't supported yet; use HTTP/DB/Kafka assertions |
+| `bridge()` not available | Import the selected framework's extension, such as `com.trendyol.stove.quarkus.bridge` |
+| Quarkus: ArC inaccessible or fast-jar rejected | Use the [augmented uber-jar classpath](../frameworks/quarkus.md#bridge) and preserve beans in the e2e build |
 | `NoSuchBeanDefinitionException` | Bean exists in production code? Type matches the bound interface? |
 | Ktor: wrong DI container detected | Pass explicit resolver: `bridge { app, type -> myContainer.resolve(type) }` |
 | Test bean not overriding production | Spring 2.x/3.x: `isPrimary = true`. Spring 4.x: `primary = true` |

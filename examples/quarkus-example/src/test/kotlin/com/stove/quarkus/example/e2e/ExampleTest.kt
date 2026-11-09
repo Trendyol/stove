@@ -5,6 +5,7 @@ import com.trendyol.stove.http.*
 import com.trendyol.stove.kafka.kafka
 import com.trendyol.stove.postgres.postgresql
 import com.trendyol.stove.system.stove
+import com.trendyol.stove.system.using
 import com.trendyol.stove.tracing.tracing
 import com.trendyol.stove.wiremock.wiremock
 import io.kotest.core.spec.style.FunSpec
@@ -13,7 +14,9 @@ import io.kotest.matchers.string.shouldContain
 import kotlinx.coroutines.delay
 import stove.quarkus.example.application.CreateProductCommand
 import stove.quarkus.example.application.ProductCreateRequest
+import stove.quarkus.example.application.ProductCreateResult
 import stove.quarkus.example.application.ProductCreatedEvent
+import stove.quarkus.example.application.ProductCreator
 import stove.quarkus.example.application.SupplierPermission
 import stove.quarkus.example.infrastructure.kafka.DEFAULT_USER_EMAIL_HEADER_VALUE
 import stove.quarkus.example.infrastructure.kafka.USER_EMAIL_HEADER
@@ -93,6 +96,45 @@ class ExampleTest :
               name = productCreateRequest.name,
               supplierId = productCreateRequest.supplierId
             )
+          }
+        }
+      }
+    }
+
+    test("should create a product through the CDI service using Bridge") {
+      stove {
+        val request = ProductCreateRequest(6L, name = "bridge product", supplierId = 94L)
+
+        wiremock {
+          mockGet(
+            "/suppliers/${request.supplierId}/allowed",
+            statusCode = 200,
+            responseBody = SupplierPermission(request.supplierId, isAllowed = true).some()
+          )
+        }
+
+        using<ProductCreator> {
+          val result: ProductCreateResult = create(request)
+          result shouldBe ProductCreateResult(productId = request.id, created = true, message = "OK")
+        }
+
+        postgresql {
+          shouldQuery<PersistedProduct>(
+            "SELECT * FROM products WHERE id = ${request.id}",
+            mapper = { row ->
+              PersistedProduct(row.long("id"), row.string("name"), row.long("supplier_id"))
+            }
+          ) { products ->
+            products shouldBe listOf(PersistedProduct(request.id, request.name, request.supplierId))
+          }
+        }
+
+        kafka {
+          shouldBePublished<ProductCreatedEvent>(5.seconds) {
+            actual.id == request.id &&
+              actual.name == request.name &&
+              actual.supplierId == request.supplierId &&
+              metadata.headers[USER_EMAIL_HEADER] == DEFAULT_USER_EMAIL_HEADER_VALUE
           }
         }
       }

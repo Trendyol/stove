@@ -59,8 +59,12 @@ tasks.matching { it.name == "quarkusGenerateCode" || it.name == "quarkusGenerate
   dependsOn(ensureJavaMainClassesDir)
 }
 
-tasks.named("test") {
+val augmentedJar = tasks.named<io.quarkus.gradle.tasks.QuarkusBuild>("quarkusBuild").map { it.runnerJar }
+tasks.test {
   dependsOn("quarkusBuild")
+  // Share ArC's augmented application classes with Bridge instead of loading raw main output.
+  classpath = files(augmentedJar) + (sourceSets.test.get().runtimeClasspath - sourceSets.main.get().output)
+  systemProperty("java.util.logging.manager", "org.jboss.logmanager.LogManager")
 }
 
 kotlin {

@@ -65,7 +65,7 @@ abstract class BridgeSystem<T : Any>(
   internal fun ensureContextInitialized() {
     check(::ctx.isInitialized) {
       "BridgeSystem context is not initialized. " +
-        "Ensure a JVM starter (springBoot/ktor/micronaut) is configured and Stove.run() has been called. " +
+        "Ensure a JVM starter (springBoot/ktor/micronaut/quarkus) is configured and Stove.run() has been called. " +
         "Note: providedApplication() does not support Bridge because the remote application's DI container is not accessible."
     }
   }

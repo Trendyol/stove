@@ -35,6 +35,7 @@ Native access is correct when it is the documented API contract: Redis currently
 |---|---|
 | Gradle source sets, BOM, `e2eTest`, local artifact ambiguity | [gradle-config.md](gradle-config.md) |
 | JVM setup, system options, provided instances (existing infra), keyed systems (`SystemKey`) | [system-setup.md](system-setup.md) |
+| Quarkus Bridge, CDI bean access, e2e bean preservation, augmented test classpath | [quarkus-bridge.md](quarkus-bridge.md) |
 | Writing `stove {}` assertions and validation DSL | [writing-tests.md](writing-tests.md) |
 | OIDC authentication, NAV/Keycloak providers, JWTs, token grants, or keyed issuers | [oidc.md](oidc.md) |
 | Choosing an API, using a native handle, or reviewing SDK-based helpers | [api-selection.md](api-selection.md) |
@@ -130,8 +131,8 @@ In test code, `DashboardIngestion.Grpc(host, port)` defaults to `localhost:4041`
 - New examples use the current API. When maintaining a pre-0.20 suite, preserve imports such as `com.trendyol.stove.testing.e2e.*` if its resolved artifacts require them; an upgrade needs coordinated dependency, import, lifecycle, and API changes. See [compatibility.md](compatibility.md#maintaining-legacy-suites).
 - With current dependencies, do not use removed runner types such as `ContainerAppOptions`, `ProcessAppOptions`, or `GoAppOptions`; legacy maintenance follows the resolved release.
 - `ReadinessStrategy.HttpGet` takes `url = "..."`, not `path = "..."`.
-- `bridge()` is JVM-framework-specific. Import `com.trendyol.stove.spring.bridge`, `com.trendyol.stove.ktor.bridge`, or `com.trendyol.stove.micronaut.bridge` based on the selected framework.
-- `bridge()` is not supported on Quarkus yet; do not invent `com.trendyol.stove.quarkus.bridge`.
+- `bridge()` is JVM-framework-specific. Import `com.trendyol.stove.spring.bridge`, `com.trendyol.stove.ktor.bridge`, `com.trendyol.stove.micronaut.bridge`, or `com.trendyol.stove.quarkus.bridge` based on the selected framework and resolved Stove version.
+- Quarkus Bridge requires an augmented uber-jar first on the test runtime classpath, raw main output excluded, and `quarkus.arc.remove-unused-beans=false` as a fixed e2e build default. The isolated fast-jar launcher does not support Bridge. See [Quarkus Bridge setup](quarkus-bridge.md).
 - Configure `Stove().with { ... }.run()` in the framework lifecycle, usually `beforeProject()` for Kotest, and pair it with `Stove.stop()` in teardown. Reuse the existing setup rather than starting Stove inside individual tests.
 - System `cleanup` callbacks run at `Stove.stop()`, not between tests. Use unique test data or explicit per-test cleanup when tests share state.
 - Keep examples minimal and app-specific. Add only the systems the user actually needs.
