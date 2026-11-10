@@ -29,7 +29,7 @@ Having Gradle in a project does not make the application a JVM process. `stoveTr
 
 ### Go developers
 
-Stove 0.28.0 (upcoming) supports native Go profiles through the small [`go/stove-profiler`](https://github.com/Trendyol/stove/tree/main/go/stove-profiler) module, following the `stove-kafka` integration pattern. It wraps Grafana `pyroscope-go` **1.4.3**, pushes directly to Stove Server, and is inactive when no profiling URL is configured. `stoveTracing.profiling` remains the Java-agent configuration; it is unnecessary for profiling a Go binary.
+Stove 0.28.0 (upcoming) supports native Go profiles through the small [`go/stove-profiler`](https://github.com/Trendyol/stove/tree/main/go/stove-profiler) module, following the `stove-kafka` integration pattern. It wraps Grafana `pyroscope-go` **1.5.0**, pushes directly to Stove Server, and is inactive when no profiling URL is configured. `stoveTracing.profiling` remains the Java-agent configuration; it is unnecessary for profiling a Go binary.
 
 After 0.28.0 is published, install `github.com/trendyol/stove/go/stove-profiler@v0.28.0`. Before release, use the matching checkout with a local Go `replace`, as the showcase does. The module requires Go 1.26.2 or newer.
 

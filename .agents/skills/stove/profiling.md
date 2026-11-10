@@ -10,7 +10,7 @@ Stove Server accepts Pyroscope Java JFR and the native Go SDK's delta pprof mult
 
 ## Native Go application
 
-Use `github.com/trendyol/stove/go/stove-profiler` (0.28.0 upcoming, Go >=1.26.2), which wraps `pyroscope-go` 1.4.3. Before publication use a matching checkout/local `replace`. In `main`, call `stoveprofiler.StartFromEnv()`, handle configuration errors, and defer its nil-safe, idempotent `Close()`. The wrapper is disabled when `STOVE_PROFILING_SERVER_URL` is absent. Gradle's Java profiling plugin is unnecessary for collecting Go profiles.
+Use `github.com/trendyol/stove/go/stove-profiler` (0.28.0 upcoming, Go >=1.26.2), which wraps `pyroscope-go` 1.5.0. Before publication use a matching checkout/local `replace`. In `main`, call `stoveprofiler.StartFromEnv()`, handle configuration errors, and defer its nil-safe, idempotent `Close()`. The wrapper is disabled when `STOVE_PROFILING_SERVER_URL` is absent. Gradle's Java profiling plugin is unnecessary for collecting Go profiles.
 
 Add `externalProfiling = DashboardExternalProfilingOptions(serverUrl = url, profileTypes = listOf("cpu", "alloc_space", "inuse_space", "goroutines"))` to `DashboardSystemOptions`, with dashboard event ingestion configured for the same server. Defaults: service is dashboard `appName`, interval 10 seconds, types CPU only. Put dashboard before the AUT runner. Map its exposed configuration using the existing process/container `envMapper`:
 

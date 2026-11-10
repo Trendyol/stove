@@ -1,6 +1,6 @@
 # Stove profiler for Go
 
-Native Go profiling for Stove 0.28.0 (upcoming), using Grafana `pyroscope-go` 1.4.3. Uploads go directly to the existing Stove Server; no separate profiling backend is required.
+Native Go profiling for Stove 0.28.0 (upcoming), using Grafana `pyroscope-go` 1.5.0. Uploads go directly to the existing Stove Server; no separate profiling backend is required.
 
 ```go
 import stoveprofiler "github.com/trendyol/stove/go/stove-profiler"

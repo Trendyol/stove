@@ -26,8 +26,8 @@ require (
 	github.com/felixge/httpsnoop v1.1.0 // indirect
 	github.com/go-logr/logr v1.4.4 // indirect
 	github.com/go-logr/stdr v1.2.2 // indirect
-	github.com/grafana/pyroscope-go v1.4.3 // indirect
-	github.com/grafana/pyroscope-go/godeltaprof v0.1.11 // indirect
+	github.com/grafana/pyroscope-go v1.5.0 // indirect
+	github.com/grafana/pyroscope-go/godeltaprof v0.1.12 // indirect
 	github.com/grpc-ecosystem/grpc-gateway/v2 v2.30.0 // indirect
 	github.com/hashicorp/go-uuid v1.0.3 // indirect
 	github.com/jcmturner/aescts/v2 v2.0.0 // indirect

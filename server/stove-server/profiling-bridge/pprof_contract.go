@@ -39,6 +39,7 @@ var goSampleTypes = map[string]goSampleType{
 	"alloc_space":    {unit: "bytes", displayUnit: "bytes", semantics: delta},
 	"inuse_objects":  {unit: "count", displayUnit: "objects", semantics: snapshot},
 	"inuse_space":    {unit: "bytes", displayUnit: "bytes", semantics: snapshot},
+	"goroutine":      {unit: "count", displayUnit: "goroutines", semantics: snapshot},
 	"goroutines":     {sourceName: "goroutine", unit: "count", displayUnit: "goroutines", semantics: snapshot},
 	"mutex_count":    {sourceName: "contentions", unit: "count", displayUnit: "lock_samples", semantics: delta},
 	"block_count":    {sourceName: "contentions", unit: "count", displayUnit: "lock_samples", semantics: delta},
