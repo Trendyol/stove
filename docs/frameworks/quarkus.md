@@ -78,8 +78,24 @@ stove {
 }
 ```
 
-Your application must include `io.quarkus:quarkus-arc`. In its `application.properties`,
-preserve all discovered CDI beans in the e2e profile and build an augmented uber-jar:
+Ensure `io.quarkus:quarkus-arc` is present in your application's dependencies,
+directly or transitively through another Quarkus extension. If it is already
+present, no additional declaration is needed. Otherwise, add it using the version
+managed by your application's Quarkus BOM:
+
+```kotlin
+dependencies {
+    implementation("io.quarkus:quarkus-arc")
+}
+```
+
+ArC must be available during application augmentation by `quarkusBuild`. Adding it
+only to `testImplementation`, including transitively through a Stove test dependency,
+does not satisfy that requirement. `stove-quarkus` uses the application's ArC;
+it does not supply the extension transitively.
+
+In your application's `application.properties`, preserve all discovered CDI beans
+in the e2e profile and build an augmented uber-jar:
 
 ```properties
 %e2e.quarkus.package.jar.type=uber-jar

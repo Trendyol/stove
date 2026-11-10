@@ -26,6 +26,14 @@ align Stove dependencies with the existing Stove BOM.
 
 ## Build and load the augmented application
 
+Check that `io.quarkus:quarkus-arc` is in the application's dependency graph,
+directly or transitively through another Quarkus extension. Add
+`implementation("io.quarkus:quarkus-arc")` only if missing, using the application's
+Quarkus BOM for its version. ArC must be available to `quarkusBuild` during
+application augmentation; a `testImplementation` dependency, even one exposed
+transitively by a Stove test dependency, does not satisfy this requirement.
+`stove-quarkus` uses the application's ArC and does not supply it transitively.
+
 ArC transforms application classes during the Quarkus build. Loading raw main
 classes in tests while the application uses another classloader breaks shared CDI
 access and type identity. Build an augmented uber-jar, place it first on the actual
@@ -46,8 +54,8 @@ Gradle property switch or conditional tests for bean preservation. This retains
 beans referenced only by tests; it does not make arbitrary test classes CDI beans.
 
 For a **dedicated e2e application module**, use this Gradle Kotlin DSL recipe after
-applying the existing Quarkus plugin and declaring the application's dependencies,
-including `io.quarkus:quarkus-arc` and test dependency `com.trendyol:stove-quarkus`:
+applying the existing Quarkus plugin, checking the application dependencies above,
+and declaring test dependency `com.trendyol:stove-quarkus`:
 
 ```kotlin
 // This module builds only the e2e application fixture.
