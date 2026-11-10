@@ -33,8 +33,6 @@ plugins {
 }
 
 enableFeaturePreview("TYPESAFE_PROJECT_ACCESSORS")
-val stoveVersion = "1.0.0.572-SNAPSHOT"
-
 dependencyResolutionManagement {
   repositories {
     mavenCentral()
@@ -48,10 +46,14 @@ dependencyResolutionManagement {
   versionCatalogs {
     create("libs") {
       from(files("../../gradle/libs.versions.toml"))
-      version("stove", stoveVersion)
     }
     generate("stoveLibs") {
-      from("com.trendyol:stove-bom:$stoveVersion")
+      from {
+        toml {
+          libraryAliases = listOf("stove-bom")
+          file = file("../../gradle/libs.versions.toml")
+        }
+      }
       using {
         aliasPrefixGenerator = GeneratorConfig.NO_PREFIX // (8)
       }
