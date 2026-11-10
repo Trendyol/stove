@@ -1,6 +1,12 @@
 name: Build Stove Server Binaries
 
 on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: Version to build and verify without publishing
+        required: true
+        type: string
   workflow_call:
     inputs:
       version:
@@ -14,18 +20,22 @@ permissions:
 jobs:
   build:
     name: Build ${{ matrix.label }}
+    timeout-minutes: 45
     env:
       STOVE_VERSION: ${{ inputs.version }}
+      CARGO_INCREMENTAL: "0"
+      # Keep the deployment baseline when upgrading the macOS build image.
+      MACOSX_DEPLOYMENT_TARGET: "14.0"
     strategy:
+      fail-fast: false
       matrix:
         include:
+          # Native runners are required by the embedded Go/cgo profiler.
           - target: aarch64-apple-darwin
-            runner: macos-14
+            runner: macos-26
             label: darwin-arm64
-          - target: x86_64-apple-darwin
-            runner: macos-14
-            label: darwin-amd64
           - target: x86_64-unknown-linux-gnu
+            # Preserve the standalone binary's glibc baseline.
             runner: ubuntu-24.04
             label: linux-amd64
     runs-on: ${{ matrix.runner }}
@@ -40,25 +50,28 @@ jobs:
         with:
           targets: ${{ matrix.target }}
 
-      - uses: actions/cache@v6
+      - uses: Swatinem/rust-cache@v2
         with:
-          path: |
-            ~/.cargo/registry
-            ~/.cargo/git
-            server/stove-server/target
-          key: cargo-release-${{ matrix.runner }}-${{ matrix.target }}-${{ hashFiles('server/stove-server/Cargo.lock') }}
-          restore-keys: cargo-release-${{ matrix.runner }}-${{ matrix.target }}-
+          workspaces: server/stove-server -> target
+          shared-key: stove-binaries-${{ matrix.runner }}-${{ matrix.target }}
+          env-vars: MACOSX_DEPLOYMENT_TARGET
+          save-if: ${{ github.ref == 'refs/heads/main' }}
 
-      - name: Build SPA
-        run: cd spa && npm run build
+      # Server CI verifies generated API types. Packaging only bundles them,
+      # avoiding a second Rust compilation just to run the type generator.
+      - name: Build SPA from checked-in API types
+        run: cd spa && npm run build:assets
 
       - name: Build release binary
-        run: cargo build --release --locked --features vendored-postgres --target ${{ matrix.target }}
+        run: cargo build --release --locked --bin stove --features vendored-postgres --target ${{ matrix.target }}
         env:
           SKIP_SPA_BUILD: "1"
 
       - name: Verify standalone release binary
-        run: ./scripts/verify-release-linkage.sh "target/${{ matrix.target }}/release/stove"
+        run: |
+          BINARY="target/${{ matrix.target }}/release/stove"
+          ./scripts/verify-release-linkage.sh "$BINARY"
+          test "$("$BINARY" --version)" = "stove ${STOVE_VERSION}"
 
       - name: Package tarball
         env:
@@ -75,6 +88,9 @@ jobs:
       - uses: actions/upload-artifact@v7
         with:
           name: binaries-${{ matrix.label }}
+          if-no-files-found: error
+          compression-level: 0
+          overwrite: true
           path: |
             server/stove-server/stove-*.tar.gz
             server/stove-server/stove-*.sha256

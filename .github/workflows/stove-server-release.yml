@@ -61,10 +61,17 @@ jobs:
       version: ${{ needs.resolve-version.outputs.version }}
 
     steps:
+      - uses: actions/checkout@v7
+
       - uses: actions/download-artifact@v8
         with:
           pattern: binaries-*
           merge-multiple: true
+
+      - name: Verify complete release artifacts
+        env:
+          VERSION: ${{ needs.resolve-version.outputs.version }}
+        run: server/stove-server/scripts/verify-release-artifacts.sh "$VERSION" .
 
       - name: Upload server binaries to release
         uses: softprops/action-gh-release@v3
@@ -74,7 +81,7 @@ jobs:
           files: |
             stove-*.tar.gz
             stove-*.sha256
-          fail_on_unmatched_files: false
+          fail_on_unmatched_files: true
           append_body: true
           body: |
 
@@ -82,7 +89,7 @@ jobs:
 
             ### Stove Server Install
 
-            **Homebrew (macOS):**
+            **Homebrew (macOS Apple Silicon & Linux x86_64):**
             ```
             brew install Trendyol/trendyol-tap/stove
             ```
@@ -114,7 +121,7 @@ jobs:
 
           CHECKSUM_DIR="$(mktemp -d)"
           trap 'rm -rf "$CHECKSUM_DIR"' EXIT
-          for platform in darwin-arm64 darwin-amd64 linux-amd64; do
+          for platform in darwin-arm64 linux-amd64; do
             archive="stove-${VERSION}-${platform}.tar.gz.sha256"
             curl -fsSL "${BASE_URL}/${archive}" -o "${CHECKSUM_DIR}/${archive}"
           done

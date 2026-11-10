@@ -31,6 +31,7 @@ permissions:
 jobs:
   resolve-version:
     runs-on: ubuntu-26.04
+    timeout-minutes: 5
     if: github.repository == 'Trendyol/stove'
     outputs:
       version: ${{ steps.resolve.outputs.version }}
@@ -81,6 +82,7 @@ jobs:
   publish-next:
     needs: [resolve-version, build]
     runs-on: ubuntu-26.04
+    timeout-minutes: 15
     concurrency:
       group: stove-server-next-publish
       queue: max
@@ -92,6 +94,11 @@ jobs:
         with:
           pattern: binaries-*
           merge-multiple: true
+
+      - name: Verify complete release artifacts
+        env:
+          VERSION: ${{ needs.resolve-version.outputs.version }}
+        run: server/stove-server/scripts/verify-release-artifacts.sh "$VERSION" .
 
       # queue: max orders runs by when they reach this job, not by version —
       # a slower older snapshot could otherwise roll the channel backward.
@@ -216,3 +223,25 @@ jobs:
               echo "Deleting stale asset ${ASSET}"
               gh release delete-asset next "$ASSET" --repo "$TAP_REPO" --yes
             done
+
+  publication-result:
+    name: Snapshot publication result
+    if: always() && github.repository == 'Trendyol/stove'
+    needs: [resolve-version, build, publish-image, publish-next]
+    runs-on: ubuntu-26.04
+    timeout-minutes: 5
+    steps:
+      - name: Summarize publication and report blocked jobs
+        env:
+          JOB_RESULTS: ${{ toJSON(needs) }}
+        run: |
+          {
+            echo '## Snapshot publication'
+            echo '| Job | Result |'
+            echo '| --- | --- |'
+            jq -r 'to_entries[] | "| \(.key) | \(.value.result) |"' <<< "$JOB_RESULTS"
+          } >> "$GITHUB_STEP_SUMMARY"
+          if ! jq -e 'all(.[]; .result == "success")' <<< "$JOB_RESULTS" > /dev/null; then
+            echo '::error::Snapshot publication is incomplete. Check the failed, cancelled, or skipped dependencies in the job summary.'
+            exit 1
+          fi

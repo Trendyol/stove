@@ -12,14 +12,9 @@ class Stove < Formula
   conflicts_with "stove-next", because: "both install a `stove` binary"
 
   on_macos do
-    if Hardware::CPU.arm?
-      url "https://github.com/Trendyol/stove/releases/download/v#{version}/stove-#{version}-darwin-arm64.tar.gz"
-      sha256 "__SHA256_DARWIN_ARM64__"
-    end
-    if Hardware::CPU.intel?
-      url "https://github.com/Trendyol/stove/releases/download/v#{version}/stove-#{version}-darwin-amd64.tar.gz"
-      sha256 "__SHA256_DARWIN_AMD64__"
-    end
+    depends_on arch: :arm64
+    url "https://github.com/Trendyol/stove/releases/download/v#{version}/stove-#{version}-darwin-arm64.tar.gz"
+    sha256 "__SHA256_DARWIN_ARM64__"
   end
 
   on_linux do

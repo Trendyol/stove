@@ -41,14 +41,15 @@ detect_platform() {
     *)             echo "Error: Unsupported architecture: $ARCH"; exit 1 ;;
   esac
 
-  # Linux arm64 is not currently built
-  if [ "$OS_LABEL" = "linux" ] && [ "$ARCH_LABEL" = "arm64" ]; then
-    echo "Error: Linux arm64 binaries are not available yet."
-    echo "Supported platforms: macOS (arm64, amd64), Linux (amd64)"
-    exit 1
-  fi
-
   PLATFORM="${OS_LABEL}-${ARCH_LABEL}"
+  case "$PLATFORM" in
+    darwin-arm64|linux-amd64) ;;
+    *)
+      echo "Error: Binaries are not available for ${PLATFORM}."
+      echo "Supported platforms: macOS (Apple Silicon), Linux (amd64)"
+      exit 1
+      ;;
+  esac
 }
 
 # ── Resolve latest version ─────────────────────────────────────────

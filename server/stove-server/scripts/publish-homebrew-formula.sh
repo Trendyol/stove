@@ -18,7 +18,7 @@ trap 'rm -rf "$publish_dir"' EXIT
 
 cp "$script_dir/../Formula/$formula.rb" "$publish_dir/$formula.rb"
 sed -i "s/__VERSION__/${version}/" "$publish_dir/$formula.rb"
-for platform in darwin-arm64 darwin-amd64 linux-amd64; do
+for platform in darwin-arm64 linux-amd64; do
   checksum="$(awk '{print $1}' "$checksum_dir/stove-${version}-${platform}.tar.gz.sha256")"
   placeholder="${platform^^}"
   placeholder="${placeholder//-/_}"
