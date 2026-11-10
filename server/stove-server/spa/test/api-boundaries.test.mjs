@@ -38,7 +38,7 @@ const cases = [
   [() => api.getAdminStatus(), adminStatus],
   [() => api.getDatabaseSchema(), schema],
   [() => api.executeDatabaseQuery("SELECT 1", 100), databaseResult],
-  [() => api.updateRetention(5), adminStatus],
+  [() => api.updateRetention(adminStatus.retention), adminStatus],
   [
     () => api.previewPurge({ include_running: false }),
     { run_ids: ["run-1"], run_count: 1, evidence: counts },

@@ -1,3 +1,5 @@
+#[cfg(test)]
+use crate::storage::repository::equal_retention;
 use crate::{
   ingest::EventIngestor,
   proto,
@@ -47,7 +49,7 @@ fn age(repo: &Repository) {
 }
 
 pub(in crate::storage::repository) fn lifecycle_round_trip(repo: &Arc<Repository>) {
-  repo.update_retention(0).unwrap();
+  repo.update_retention_policy(&equal_retention(0)).unwrap();
   assert_eq!(repo.storage_stats().unwrap().run_idle_timeout_seconds, 3600);
   repo.initialize_idle_timeout(3600).unwrap();
   let ingestor = EventIngestor::new(repo.clone(), Arc::new(SseManager::new()));
@@ -104,7 +106,7 @@ pub(in crate::storage::repository) fn lifecycle_round_trip(repo: &Arc<Repository
 #[test]
 fn sqlite_idle_run_lifecycle() {
   lifecycle_round_trip(&Arc::new(
-    Repository::connect_sqlite(":memory:", 0).unwrap(),
+    Repository::connect_sqlite(":memory:", &equal_retention(0)).unwrap(),
   ));
 }
 
@@ -112,19 +114,19 @@ fn sqlite_idle_run_lifecycle() {
 fn sqlite_idle_settings_survive_restart() {
   let dir = tempfile::tempdir().unwrap();
   let path = dir.path().join("idle.db");
-  let repo = Repository::connect_sqlite(path.to_str().unwrap(), 0).unwrap();
+  let repo = Repository::connect_sqlite(path.to_str().unwrap(), &equal_retention(0)).unwrap();
   repo.initialize_idle_timeout(3600).unwrap();
   repo.update_idle_timeout(1800).unwrap();
   assert!(repo.update_idle_timeout(u64::MAX).is_err());
   drop(repo);
-  let repo = Repository::connect_sqlite(path.to_str().unwrap(), 0).unwrap();
+  let repo = Repository::connect_sqlite(path.to_str().unwrap(), &equal_retention(0)).unwrap();
   repo.initialize_idle_timeout(3600).unwrap();
   assert_eq!(repo.storage_stats().unwrap().run_idle_timeout_seconds, 1800);
 }
 
 #[test]
 fn late_completion_outside_retention_commits_before_later_pruning() {
-  let repo = Arc::new(Repository::connect_sqlite(":memory:", 1).unwrap());
+  let repo = Arc::new(Repository::connect_sqlite(":memory:", &equal_retention(1)).unwrap());
   let ingestor = EventIngestor::new(repo.clone(), Arc::new(SseManager::new()));
   ingestor.ingest(&start()).unwrap();
   repo
@@ -143,14 +145,14 @@ fn late_completion_outside_retention_commits_before_later_pruning() {
     repo.get_run("idle-run").unwrap().unwrap().status,
     RunStatus::Passed
   );
-  repo.update_retention(1).unwrap();
+  repo.update_retention_policy(&equal_retention(1)).unwrap();
   assert!(repo.get_run("idle-run").unwrap().is_none());
   assert!(repo.get_run("new").unwrap().is_some());
 }
 
 #[test]
 fn sqlite_timeout_uses_configured_deadline_inclusive_of_boundary() {
-  let repo = Repository::connect_sqlite(":memory:", 0).unwrap();
+  let repo = Repository::connect_sqlite(":memory:", &equal_retention(0)).unwrap();
   repo
     .save_run_start("idle-run", "app", "2000-01-01T00:00:00Z", &[])
     .unwrap();
@@ -168,7 +170,7 @@ fn sqlite_timeout_uses_configured_deadline_inclusive_of_boundary() {
 
 #[test]
 fn cleanup_preserves_active_and_completed_runs() {
-  let repo = Repository::connect_sqlite(":memory:", 0).unwrap();
+  let repo = Repository::connect_sqlite(":memory:", &equal_retention(0)).unwrap();
   for id in ["active", "completed", "idle-run", "another-idle-run"] {
     repo
       .save_run_start(id, "app", "2000-01-01T00:00:00Z", &[])
@@ -196,7 +198,7 @@ fn cleanup_preserves_active_and_completed_runs() {
 
 #[test]
 fn sqlite_cleanup_deletes_large_batches_with_one_notification_per_run() {
-  let repo = Repository::connect_sqlite(":memory:", 0).unwrap();
+  let repo = Repository::connect_sqlite(":memory:", &equal_retention(0)).unwrap();
   repo
     .execute_database_query(
       "WITH RECURSIVE ids(id) AS (SELECT 1 UNION ALL SELECT id + 1 FROM ids WHERE id < 1001)

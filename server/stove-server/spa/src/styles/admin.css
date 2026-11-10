@@ -624,3 +624,19 @@
     border-bottom: 1px solid var(--stove-border);
   }
 }
+
+.stove-retention-card {
+  grid-column: 1 / -1;
+}
+
+.stove-retention-rule {
+  min-width: 0;
+  margin: 12px 0;
+  padding: 12px;
+  border: 1px solid var(--stove-border);
+  border-radius: 8px;
+}
+
+.stove-retention-rule .stove-admin-actions {
+  flex-wrap: wrap;
+}

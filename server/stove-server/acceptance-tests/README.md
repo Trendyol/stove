@@ -27,7 +27,7 @@ The suite covers:
 - MCP initialization, discovery, metadata filters, and agent drill-down calls;
 - non-local `Host`/`Origin` MCP clients;
 - the embedded SPA and its compiled assets;
-- default and runtime retention with overlapping active runs;
+- independent passed/failed quotas, ordered metadata overrides, persistence, and overlapping active runs;
 - purge preview counts, exact IDs, active-run protection, purge, and clear;
 - PostgreSQL migrations, JSONB storage and GIN indexing, metadata filters,
   retention, administration, schema discovery, SQL mutations, and bounded

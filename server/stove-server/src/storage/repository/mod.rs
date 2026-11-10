@@ -10,6 +10,11 @@
 //! parallel `sqlite_backend/` and `postgres_backend/` modules.
 
 mod admin;
+mod metadata;
+#[cfg(test)]
+pub(crate) use retention::equal_retention;
+mod retention;
+pub use retention::{RetentionPolicy, RetentionRule};
 mod cursor;
 mod failure_page;
 pub use failure_page::{FailureFilter, FailurePage};
@@ -24,8 +29,9 @@ mod profiles;
 mod reads;
 mod run_page;
 mod test_page;
+pub use metadata::MetadataSelectors;
 pub use run_page::{
-  DEFAULT_RUN_PAGE_SIZE, MAX_RUN_PAGE_SIZE, MetadataSelectors, RunFilter, RunMetadataFacet, RunPage,
+  DEFAULT_RUN_PAGE_SIZE, MAX_RUN_PAGE_SIZE, RunFilter, RunMetadataFacet, RunPage,
 };
 pub use test_page::{TestFilter, TestOutcome, TestPage, TestSummary};
 mod sqlite_backend;
@@ -35,8 +41,6 @@ mod writes;
 
 #[cfg(test)]
 use std::sync::MutexGuard;
-use std::sync::atomic::AtomicUsize;
-use std::sync::atomic::Ordering;
 
 use crate::error::Result;
 enum Backend {
@@ -47,7 +51,6 @@ enum Backend {
 pub struct Repository {
   backend: Backend,
   pub metrics: std::sync::Arc<crate::storage::metrics::StorageMetrics>,
-  retention_runs_per_app: AtomicUsize,
 }
 
 impl Repository {
@@ -59,25 +62,25 @@ impl Repository {
     })
   }
 
-  pub fn connect_sqlite(database_path: &str, retention_runs_per_app: usize) -> Result<Self> {
+  pub fn connect_sqlite(database_path: &str, retention: &RetentionPolicy) -> Result<Self> {
+    retention.validate()?;
     let backend = sqlite_backend::SqliteBackend::connect(database_path)?;
+    backend.initialize_retention(retention)?;
     let metrics = backend.metrics.clone();
     Ok(Self {
       metrics,
       backend: Backend::Sqlite(Box::new(backend)),
-      retention_runs_per_app: AtomicUsize::new(retention_runs_per_app),
     })
   }
 
-  pub fn connect_postgres(database_url: &str, retention_runs_per_app: usize) -> Result<Self> {
-    let backend = run_blocking(|| {
-      postgres_backend::PostgresBackend::connect(database_url, retention_runs_per_app)
-    })?;
+  pub fn connect_postgres(database_url: &str, retention: &RetentionPolicy) -> Result<Self> {
+    retention.validate()?;
+    let backend =
+      run_blocking(|| postgres_backend::PostgresBackend::connect(database_url, retention))?;
     let metrics = backend.metrics.clone();
     Ok(Self {
       metrics,
       backend: Backend::Postgres(Box::new(backend)),
-      retention_runs_per_app: AtomicUsize::new(retention_runs_per_app),
     })
   }
 
@@ -87,21 +90,6 @@ impl Repository {
       Backend::Sqlite(_) => "sqlite",
       Backend::Postgres(_) => "postgresql",
     }
-  }
-
-  #[must_use]
-  pub fn retention_runs_per_app(&self) -> usize {
-    match &self.backend {
-      Backend::Sqlite(_) => self.retention_runs_per_app.load(Ordering::Relaxed),
-      Backend::Postgres(postgres) => run_blocking(|| postgres.retention_runs_per_app())
-        .unwrap_or_else(|_| self.retention_runs_per_app.load(Ordering::Relaxed)),
-    }
-  }
-
-  pub fn set_retention_runs_per_app(&self, retention_runs_per_app: usize) {
-    self
-      .retention_runs_per_app
-      .store(retention_runs_per_app, Ordering::Relaxed);
   }
 
   /// Execute one synchronous backend operation without occupying a Tokio core worker.

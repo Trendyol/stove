@@ -15,7 +15,6 @@ impl SqliteBackend {
     &self,
     identity: &EventIdentity,
     event: &PreparedDashboardEvent,
-    retention: usize,
   ) -> Result<CommitOutcome> {
     let sequence = sequence_to_i64(identity.sequence, "SQLite")?;
     let mut database = self.lock_write();
@@ -34,7 +33,7 @@ impl SqliteBackend {
       }
 
       verify_sequence(conn, &event.live.run_id, sequence, &identity.event_id)?;
-      apply_persisted_event(conn, &event.persisted, retention)?;
+      apply_persisted_event(conn, &event.persisted)?;
       super::lifecycle::touch_run(conn, &event.live.run_id)?;
 
       let live_event_id = append_live_event(conn, &identity.event_id, &event.live)?;

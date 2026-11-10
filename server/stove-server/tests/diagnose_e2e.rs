@@ -1,4 +1,5 @@
 //! One-call diagnosis preserves execution scope and retrieves evidence before clipping.
+use common::retention_support::equal_retention;
 mod common;
 use common::TestServer;
 use serde_json::{Value, json};
@@ -33,7 +34,10 @@ async fn tool(server: &TestServer, name: &str, args: Value) -> Value {
 }
 
 fn seed(server: &TestServer, run: &str, job: &str) {
-  server.repo.update_retention(0).unwrap();
+  server
+    .repo
+    .update_retention_policy(&equal_retention(0))
+    .unwrap();
   server
     .repo
     .save_run_start_with_metadata(

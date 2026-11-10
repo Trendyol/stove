@@ -30,13 +30,14 @@ globalThis.EventSource = class {
 globalThis.confirm = () => true;
 const jiti = createJiti(import.meta.url, { jsx: { runtime: "automatic" }, fsCache: false });
 const { createElement, StrictMode, useState } = await jiti.import("react");
-const { render, fireEvent, renderHook, act, waitFor, cleanup } = await jiti.import("@testing-library/react");
+const { render, fireEvent, renderHook, act, waitFor, cleanup, within } = await jiti.import("@testing-library/react");
 const { QueryClient, QueryClientProvider } = await jiti.import("@tanstack/react-query");
 const { api } = await jiti.import("../src/api/client.ts");
 const { useAppData } = await jiti.import("../src/hooks/useAppData.ts");
+const { createRetentionDraft, retentionPolicyFromDraft, createRuleDraft } = await jiti.import("../src/pages/admin/retention-draft.ts");
 const { useAdminController } = await jiti.import("../src/pages/admin/useAdminController.ts");
 const { useDatabaseExplorer } = await jiti.import("../src/pages/admin/useDatabaseExplorer.ts");
-const { PurgeMetadataFilters } = await jiti.import("../src/pages/admin/PurgeMetadataFilters.tsx");
+const { MetadataFilters } = await jiti.import("../src/pages/admin/MetadataFilters.tsx");
 const clients = [];
 afterEach(() => {
   cleanup();
@@ -145,12 +146,12 @@ test("admin preserves a retention draft during refetch and discards late purge p
   const preview = deferred();
   t.mock.method(api, "previewPurge", () => preview.promise);
   const { result, client } = mount(useAdminController);
-  await waitFor(() => assert.equal(result.current.retention, 5));
-  act(() => result.current.setRetention(8));
+  await waitFor(() => assert.equal(result.current.retention.passed_runs_per_app, "5"));
+  act(() => result.current.setRetention(createRetentionDraft({ ...adminStatus.retention, passed_runs_per_app: 8 })));
   await act(async () => {
     await client.invalidateQueries({ queryKey: ["admin", "status"] });
   });
-  assert.equal(result.current.retention, 8);
+  assert.equal(result.current.retention.passed_runs_per_app, "8");
   act(() => result.current.previewPurge());
   await waitFor(() => assert.equal(result.current.busy, true));
   act(() => result.current.setAppName("another-app"));
@@ -215,23 +216,22 @@ test("switching the purge app ignores metadata that arrives late for the old app
 test("retention saves keep the submitted value visible during refresh and preserve later edits", async (t) => {
   t.mock.method(api, "getAdminStatus", async () => adminStatus);
   t.mock.method(api, "updateRetention", async () => ({
-    ...adminStatus,
-    retention_runs_per_app: 8,
+    ...adminStatus, retention: { ...adminStatus.retention, passed_runs_per_app: 8 },
   }));
   const { result } = mount(useAdminController);
-  await waitFor(() => assert.equal(result.current.retention, 5));
-  act(() => result.current.setRetention(8));
+  await waitFor(() => assert.equal(result.current.retention.passed_runs_per_app, "5"));
+  act(() => result.current.setRetention(createRetentionDraft({ ...adminStatus.retention, passed_runs_per_app: 8 })));
   const refresh = deferred();
   api.getAdminStatus.mock.mockImplementation(() => refresh.promise);
   act(() => result.current.updateRetention());
   await waitFor(() => assert.equal(api.getAdminStatus.mock.callCount(), 2));
-  assert.equal(result.current.retention, 8);
+  assert.equal(result.current.retention.passed_runs_per_app, "8");
   assert.equal(result.current.busy, true);
-  act(() => result.current.setRetention(9));
-  await act(async () => refresh.resolve({ ...adminStatus, retention_runs_per_app: 8 }));
+  act(() => result.current.setRetention(createRetentionDraft({ ...adminStatus.retention, passed_runs_per_app: 9 })));
+  await act(async () => refresh.resolve({ ...adminStatus, retention: { ...adminStatus.retention, passed_runs_per_app: 8 } }));
   await waitFor(() => assert.equal(result.current.busy, false));
-  assert.equal(result.current.status.retention_runs_per_app, 8);
-  assert.equal(result.current.retention, 9);
+  assert.equal(result.current.status.retention.passed_runs_per_app, 8);
+  assert.equal(result.current.retention.passed_runs_per_app, "9");
 });
 
 test("admin command errors are visible and a successful retry clears stale dashboard data", async (t) => {
@@ -299,7 +299,7 @@ test("searching a long metadata list preserves selections across values and fiel
   let selection = {};
   function Filters() {
     const [value, setValue] = useState({});
-    return createElement(PurgeMetadataFilters, {
+    return createElement(MetadataFilters, {
       appName: "demo",
       options: [{ key: "branch", values: Array.from({ length: 8 }, (_, index) => ({ value: `release-${index}`, count: 1 })) }, { key: "team", values: [{ value: "checkout", count: 8 }] }],
       value,
@@ -470,7 +470,7 @@ test("admin and schema load failures can be retried without losing drafts", asyn
   await waitFor(() => assert.equal(admin.result.current.error, "Status unavailable"));
   await waitFor(() => assert.equal(explorer.result.current.error, "Schema unavailable"));
   act(() => {
-    admin.result.current.setRetention(8);
+    admin.result.current.setRetention(createRetentionDraft({ ...adminStatus.retention, passed_runs_per_app: 8 }));
     explorer.result.current.setSql("SELECT 1");
   });
   api.getAdminStatus.mock.mockImplementation(async () => adminStatus);
@@ -481,7 +481,7 @@ test("admin and schema load failures can be retried without losing drafts", asyn
   });
   await waitFor(() => assert.equal(admin.result.current.error, null));
   await waitFor(() => assert.equal(explorer.result.current.error, null));
-  assert.equal(admin.result.current.retention, 8);
+  assert.equal(admin.result.current.retention.passed_runs_per_app, "8");
   assert.equal(explorer.result.current.sql, "SELECT 1");
 });
 
@@ -744,4 +744,93 @@ test("selected tests remain available outside the loaded page", async (t) => {
   await waitFor(() => assert.equal(result.current.selectedTest?.id, "test-1999"));
   assert.equal(result.current.tests.length, 2);
   assert.equal(api.getTest.mock.calls.at(-1).arguments[1], "test-1999");
+});
+
+test("retention editor saves independent limits and metadata rules and rejects invalid drafts", async (t) => {
+  const { RetentionCard } = await jiti.import("../src/pages/admin/RetentionCard.tsx");
+  const { isRetentionPolicy } = await jiti.import("../src/utils/retention.ts");
+  const submitted = [];
+  const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+  clients.push(client);
+  function Editor() {
+    const [retention, setRetention] = useState(() => createRetentionDraft({ passed_runs_per_app: 3, failed_runs_per_app: 5, rules: [] }));
+    return createElement(RetentionCard, {
+      apps: [], retention, valid: retentionPolicyFromDraft(retention) !== null, busy: false,
+      onRetentionChange: setRetention, onApply: () => submitted.push(retentionPolicyFromDraft(retention)),
+    });
+  }
+  const view = render(createElement(QueryClientProvider, { client }, createElement(Editor)));
+  fireEvent.click(view.getByRole("button", { name: "Add metadata rule" }));
+  assert.equal(view.getByRole("button", { name: "Apply retention" }).disabled, true);
+  fireEvent.change(view.getByLabelText("Metadata key"), { target: { value: "team" } });
+  fireEvent.change(view.getByLabelText("Metadata value"), { target: { value: "checkout" } });
+  fireEvent.click(view.getByRole("button", { name: "Add value" }));
+  fireEvent.change(view.getByLabelText("Failed runs override"), { target: { value: "12" } });
+  fireEvent.click(view.getByRole("button", { name: "Apply retention" }));
+  assert.deepEqual(submitted[0], {
+    passed_runs_per_app: 3, failed_runs_per_app: 5,
+    rules: [{ app_name: null, metadata: { team: ["checkout"] }, passed_runs_per_app: null, failed_runs_per_app: 12 }],
+  });
+  fireEvent.change(view.getByLabelText("Passed runs per app"), { target: { value: "1.5" } });
+  assert.equal(view.getByRole("button", { name: "Apply retention" }).disabled, true);
+  fireEvent.change(view.getByLabelText("Passed runs per app"), { target: { value: "0" } });
+  assert.equal(view.getByRole("button", { name: "Apply retention" }).disabled, false);
+  fireEvent.click(view.getByRole("button", { name: "Remove rule" }));
+  fireEvent.click(view.getByRole("button", { name: "Apply retention" }));
+  assert.deepEqual(submitted[1], { passed_runs_per_app: 0, failed_runs_per_app: 5, rules: [] });
+});
+
+test("reordering and removing retention rules preserves unfinished input on the correct rule", async () => {
+  const { RetentionCard } = await jiti.import("../src/pages/admin/RetentionCard.tsx");
+  const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+  clients.push(client);
+  const submitted = [];
+  function Editor() {
+    const [draft, setDraft] = useState(() => createRetentionDraft({
+      passed_runs_per_app: 3, failed_runs_per_app: 5,
+      rules: ["checkout", "payments"].map(team => ({metadata: {team: [team]}, failed_runs_per_app: 12})),
+    }));
+    return createElement(RetentionCard, {
+      apps: [], retention: draft, valid: retentionPolicyFromDraft(draft) !== null, busy: false,
+      onRetentionChange: setDraft, onApply: () => submitted.push(retentionPolicyFromDraft(draft)),
+    });
+  }
+  const view = render(createElement(QueryClientProvider, {client}, createElement(Editor)));
+  const first = within(view.getByRole("group", {name: "Rule 1"}));
+  fireEvent.change(first.getByLabelText("Metadata key"), {target: {value: "branch"}});
+  fireEvent.change(first.getByLabelText("Metadata value"), {target: {value: "main"}});
+  fireEvent.change(first.getByLabelText("Failed runs override"), {target: {value: "1."}});
+  fireEvent.click(first.getByRole("button", {name: "Move down"}));
+  const moved = within(view.getByRole("group", {name: "Rule 2"}));
+  assert.equal(moved.getByLabelText("Metadata key").value, "branch");
+  assert.equal(moved.getByLabelText("Metadata value").value, "main");
+  assert.equal(moved.getByLabelText("Failed runs override").value, "1.");
+  assert.equal(view.getByRole("button", {name: "Apply retention"}).disabled, true);
+  fireEvent.click(within(view.getByRole("group", {name: "Rule 1"})).getByRole("button", {name: "Remove rule"}));
+  const remaining = within(view.getByRole("group", {name: "Rule 1"}));
+  assert.equal(remaining.getByLabelText("Metadata key").value, "branch");
+  fireEvent.change(remaining.getByLabelText("Failed runs override"), {target: {value: "12"}});
+  fireEvent.click(remaining.getByRole("button", {name: "Add value"}));
+  fireEvent.click(view.getByRole("button", {name: "Apply retention"}));
+  assert.deepEqual(submitted[0].rules, [{app_name: null, metadata: {team: ["checkout"], branch: ["main"]}, passed_runs_per_app: null, failed_runs_per_app: 12}]);
+});
+
+test("unfinished metadata typed during retention save survives the response", async (t) => {
+  t.mock.method(api, "getAdminStatus", async () => adminStatus);
+  const pending = deferred();
+  t.mock.method(api, "updateRetention", () => pending.promise);
+  const { result } = mount(useAdminController);
+  await waitFor(() => assert.equal(result.current.busy, false));
+  const draft = createRetentionDraft({ passed_runs_per_app: 3, failed_runs_per_app: 5,
+    rules: [{metadata: {team: ["checkout"]}, failed_runs_per_app: 12}],
+  });
+  act(() => result.current.setRetention(draft));
+  act(() => result.current.updateRetention());
+  await waitFor(() => assert.equal(result.current.busy, true));
+  act(() => result.current.setRetention({...draft, rules: [{...draft.rules[0], metadataKey: "branch", metadataValue: "main"}]}));
+  await act(async () => pending.resolve({...adminStatus, retention: retentionPolicyFromDraft(draft)}));
+  await waitFor(() => assert.equal(result.current.busy, false));
+  assert.equal(result.current.retention.rules[0].metadataKey, "branch");
+  assert.equal(result.current.retention.rules[0].metadataValue, "main");
+  assert.equal(result.current.retention.rules[0].id, draft.rules[0].id);
 });

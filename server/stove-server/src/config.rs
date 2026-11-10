@@ -9,7 +9,6 @@ pub const DEFAULT_RUN_IDLE_TIMEOUT_SECONDS: u64 = 3600;
 
 const DEFAULT_HTTP_PORT: u16 = 4040;
 const DEFAULT_GRPC_PORT: u16 = 4041;
-const DEFAULT_RETENTION_RUNS_PER_APP: usize = 1;
 
 #[derive(Clone, Copy, Debug, Default, Deserialize, PartialEq, Eq, ValueEnum)]
 #[serde(rename_all = "lowercase")]
@@ -29,7 +28,7 @@ pub struct Config {
   pub grpc_port: u16,
   pub db: String,
   pub database_url: Option<String>,
-  pub retention_runs_per_app: usize,
+  pub retention: crate::storage::repository::RetentionPolicy,
   pub run_idle_timeout_seconds: u64,
   pub clear: bool,
   pub fresh_start: bool,
@@ -84,9 +83,17 @@ struct CliConfig {
   )]
   database_url_file: Option<PathBuf>,
 
-  /// Number of completed runs retained per application. Zero disables automatic pruning.
-  #[arg(long, env = "STOVE_RETENTION_RUNS_PER_APP")]
-  retention_runs_per_app: Option<usize>,
+  /// Passed runs kept per application (default 3). Zero keeps unlimited history.
+  #[arg(long, env = "STOVE_RETENTION_PASSED_RUNS_PER_APP")]
+  retention_passed_runs_per_app: Option<usize>,
+
+  /// Failed runs kept per application (default 5). Zero keeps unlimited history.
+  #[arg(long, env = "STOVE_RETENTION_FAILED_RUNS_PER_APP")]
+  retention_failed_runs_per_app: Option<usize>,
+
+  /// Ordered metadata retention rules as a JSON array. Admin changes persist.
+  #[arg(long, env = "STOVE_RETENTION_RULES")]
+  retention_rules: Option<String>,
 
   /// Idle seconds before deleting an inactive running run. Zero disables expiry; Admin changes persist across restarts.
   #[arg(long, env = "STOVE_RUN_IDLE_TIMEOUT_SECONDS")]
@@ -125,7 +132,9 @@ struct FileConfig {
   db: Option<PathBuf>,
   database_url: Option<String>,
   database_url_file: Option<PathBuf>,
-  retention_runs_per_app: Option<usize>,
+  retention_passed_runs_per_app: Option<usize>,
+  retention_failed_runs_per_app: Option<usize>,
+  retention_rules: Option<Vec<crate::storage::repository::RetentionRule>>,
 }
 
 /// Top-level subcommands for the Stove Server.
@@ -231,6 +240,26 @@ impl Config {
       .or_else(|| file.as_ref().and_then(|config| config.public_url.clone()))
       .map(|value| crate::navigation::validate_public_url(&value).map_err(anyhow::Error::msg))
       .transpose()?;
+    let defaults = crate::storage::repository::RetentionPolicy::default();
+    let retention = crate::storage::repository::RetentionPolicy {
+      passed_runs_per_app: cli
+        .retention_passed_runs_per_app
+        .or_else(|| file.as_ref().and_then(|c| c.retention_passed_runs_per_app))
+        .unwrap_or(defaults.passed_runs_per_app),
+      failed_runs_per_app: cli
+        .retention_failed_runs_per_app
+        .or_else(|| file.as_ref().and_then(|c| c.retention_failed_runs_per_app))
+        .unwrap_or(defaults.failed_runs_per_app),
+      rules: cli
+        .retention_rules
+        .as_deref()
+        .map(serde_json::from_str)
+        .transpose()
+        .context("parse retention_rules as a JSON array")?
+        .or_else(|| file.as_ref().and_then(|c| c.retention_rules.clone()))
+        .unwrap_or_default(),
+    };
+    retention.validate()?;
     Ok(Self {
       log_format: cli
         .log_format
@@ -255,14 +284,7 @@ impl Config {
         .unwrap_or(DEFAULT_GRPC_PORT),
       db,
       database_url,
-      retention_runs_per_app: cli
-        .retention_runs_per_app
-        .or_else(|| {
-          file
-            .as_ref()
-            .and_then(|config| config.retention_runs_per_app)
-        })
-        .unwrap_or(DEFAULT_RETENTION_RUNS_PER_APP),
+      retention,
       clear: cli.clear,
       fresh_start: cli.fresh_start,
       update_skills: cli.update_skills,
@@ -459,7 +481,8 @@ mod tests {
     assert_eq!(config.port, 4040);
     assert_eq!(config.grpc_port, 4041);
     assert!(config.database_url.is_none());
-    assert_eq!(config.retention_runs_per_app, 1);
+    assert_eq!(config.retention.passed_runs_per_app, 3);
+    assert_eq!(config.retention.failed_runs_per_app, 5);
     assert_eq!(config.run_idle_timeout_seconds, 3600);
     assert!(!config.clear);
     assert!(!config.fresh_start);
@@ -563,7 +586,7 @@ port = 8080
 grpc_port = 8081
 db = "data/stove.db"
 database_url_file = "database-url"
-retention_runs_per_app = 50
+retention_passed_runs_per_app = 50
 run_idle_timeout_seconds = 7200
 "#,
     )
@@ -582,7 +605,7 @@ run_idle_timeout_seconds = 7200
       config.database_url.as_deref(),
       Some("postgresql://stove:secret@postgres/stove")
     );
-    assert_eq!(config.retention_runs_per_app, 50);
+    assert_eq!(config.retention.passed_runs_per_app, 50);
     assert_eq!(config.run_idle_timeout_seconds, 7200);
   }
 
@@ -596,7 +619,7 @@ run_idle_timeout_seconds = 7200
   "port": 7070,
   "grpc_port": 7071,
   "database_url": "postgresql://stove:secret@postgres/stove",
-  "retention_runs_per_app": 25,
+  "retention_passed_runs_per_app": 25,
   "run_idle_timeout_seconds": 0
 }"#,
     )
@@ -612,7 +635,7 @@ run_idle_timeout_seconds = 7200
       config.database_url.as_deref(),
       Some("postgresql://stove:secret@postgres/stove")
     );
-    assert_eq!(config.retention_runs_per_app, 25);
+    assert_eq!(config.retention.passed_runs_per_app, 25);
   }
 
   #[test]
@@ -621,7 +644,7 @@ run_idle_timeout_seconds = 7200
     let config_path = dir.path().join("stove.toml");
     fs::write(
       &config_path,
-      "port = 5050\ndatabase_url_file = \"missing-secret\"\nretention_runs_per_app = 10\n",
+      "port = 5050\ndatabase_url_file = \"missing-secret\"\nretention_passed_runs_per_app = 10\n",
     )
     .unwrap();
 
@@ -633,7 +656,7 @@ run_idle_timeout_seconds = 7200
       "6060",
       "--database-url",
       "postgresql://override/stove",
-      "--retention-runs-per-app",
+      "--retention-passed-runs-per-app",
       "2",
     ])
     .unwrap();
@@ -643,7 +666,7 @@ run_idle_timeout_seconds = 7200
       config.database_url.as_deref(),
       Some("postgresql://override/stove")
     );
-    assert_eq!(config.retention_runs_per_app, 2);
+    assert_eq!(config.retention.passed_runs_per_app, 2);
   }
 
   #[test]
@@ -665,9 +688,10 @@ run_idle_timeout_seconds = 7200
 
   #[test]
   fn cli_parses_custom_run_retention() {
-    let config = Config::try_parse_from(["stove", "--retention-runs-per-app", "25"]).unwrap();
+    let config =
+      Config::try_parse_from(["stove", "--retention-passed-runs-per-app", "25"]).unwrap();
 
-    assert_eq!(config.retention_runs_per_app, 25);
+    assert_eq!(config.retention.passed_runs_per_app, 25);
   }
 
   #[test]

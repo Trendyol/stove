@@ -137,7 +137,7 @@ Configure the browser address with `STOVE_PUBLIC_URL=https://stove.example/obser
 
 Use the returned link unchanged. Entry links preserve the exact recorded attempt, even when a later retry passed. Span, snapshot, mock interaction, and warning links open the corresponding inspector. `stove_snapshot` includes the requested RFC 6901 `json_pointer` in its citation. Unattributed mocks and trace-only spans can link to run evidence without assigning a test.
 
-The dashboard starts with bounded context and lets readers expand it or open the full test. Missing or purged evidence produces an unavailable state; it never selects a newer run. Links remain valid only while their evidence is retained. Shared CI deployments should choose an appropriate retention period; the default keeps one completed run per app.
+The dashboard starts with bounded context and lets readers expand it or open the full test. Missing or purged evidence produces an unavailable state; it never selects a newer run. Links remain valid only while their evidence is retained. Shared CI deployments should choose an appropriate retention period; the default keeps 3 passed and 5 failed runs per app.
 
 ## Data model
 

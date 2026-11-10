@@ -36,7 +36,10 @@ impl PostgresBackend {
     Ok(())
   }
 
-  pub(super) fn connect(database_url: &str, default_retention: usize) -> Result<Self> {
+  pub(super) fn connect(
+    database_url: &str,
+    default_retention: &crate::storage::repository::RetentionPolicy,
+  ) -> Result<Self> {
     let connections = database::open(database_url, default_retention)?;
     Ok(Self {
       metrics: std::sync::Arc::new(crate::storage::metrics::StorageMetrics::new("postgresql")),

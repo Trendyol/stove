@@ -14,6 +14,8 @@ use crate::storage::models::Snapshot;
 use crate::storage::models::Span;
 use crate::storage::models::Test;
 use crate::storage::models::TestStatus;
+#[cfg(test)]
+use crate::storage::repository::equal_retention;
 use diesel::connection::SimpleConnection;
 use diesel::prelude::*;
 use diesel::sql_types::BigInt;
@@ -25,7 +27,7 @@ struct CountRow {
 }
 
 fn test_repo() -> Repository {
-  Repository::connect_sqlite(":memory:", 1).unwrap()
+  Repository::connect_sqlite(":memory:", &equal_retention(1)).unwrap()
 }
 
 #[test]
@@ -41,7 +43,7 @@ fn health_detects_unusable_storage() {
 }
 
 fn test_repo_with_retention(retention_runs_per_app: usize) -> Repository {
-  Repository::connect_sqlite(":memory:", retention_runs_per_app).unwrap()
+  Repository::connect_sqlite(":memory:", &equal_retention(retention_runs_per_app)).unwrap()
 }
 
 #[test]
@@ -963,10 +965,16 @@ fn zero_retention_disables_automatic_pruning() {
 #[test]
 fn retention_can_be_changed_while_the_repository_is_running() {
   let repo = test_repo_with_retention(2);
-  assert_eq!(repo.retention_runs_per_app(), 2);
+  assert_eq!(
+    repo.storage_stats().unwrap().retention.passed_runs_per_app,
+    2
+  );
 
-  repo.set_retention_runs_per_app(1);
-  assert_eq!(repo.retention_runs_per_app(), 1);
+  repo.update_retention_policy(&equal_retention(1)).unwrap();
+  assert_eq!(
+    repo.storage_stats().unwrap().retention.passed_runs_per_app,
+    1
+  );
 
   for index in 1..=2 {
     let run_id = format!("run-{index}");

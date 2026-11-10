@@ -72,7 +72,7 @@ impl Repository {
   ) -> Result<()> {
     let run = RunEnd::new(run_id, ended_at, total_tests, passed, failed, duration_ms);
     self.with_backend("save_run_end", "write", |backend| match backend {
-      Backend::Sqlite(sqlite) => sqlite.save_run_end(&run, self.retention_runs_per_app()),
+      Backend::Sqlite(sqlite) => sqlite.save_run_end(&run),
       Backend::Postgres(postgres) => postgres.save_run_end(&run),
     })
   }

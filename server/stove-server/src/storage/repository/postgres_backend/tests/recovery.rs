@@ -1,3 +1,5 @@
+#[cfg(test)]
+use crate::storage::repository::equal_retention;
 use std::sync::Arc;
 use std::time::{Duration, Instant};
 
@@ -39,7 +41,7 @@ fn reconnects_read_write_and_explorer_without_losing_data_or_settings() {
   };
   let repo = database.repository();
   let metadata = seed_evidence(&repo);
-  repo.update_retention(7).unwrap();
+  repo.update_retention_policy(&equal_retention(7)).unwrap();
   let Backend::Postgres(backend) = &repo.backend else {
     unreachable!()
   };
@@ -73,7 +75,10 @@ fn reconnects_read_write_and_explorer_without_losing_data_or_settings() {
       repo.execute_database_query("SELECT 42", 1).unwrap().rows[0][0].as_deref(),
       Some("42")
     );
-    assert_eq!(repo.retention_runs_per_app(), 7);
+    assert_eq!(
+      repo.storage_stats().unwrap().retention.passed_runs_per_app,
+      7
+    );
     repo.check_health().unwrap();
   }
 }
@@ -83,7 +88,7 @@ fn health_reports_explorer_pool_exhaustion_and_recovers_after_return() {
   let Some(database) = TestSchema::from_env() else {
     return;
   };
-  let backend = PostgresBackend::connect(&database.url, 2).unwrap();
+  let backend = PostgresBackend::connect(&database.url, &equal_retention(2)).unwrap();
   let held: Vec<_> = (0..backend.explorer.max_size())
     .map(|_| backend.explorer.get().unwrap())
     .collect();
@@ -221,7 +226,7 @@ fn live_event_listener_reconnects_after_termination() {
   let Some(mut database) = TestSchema::from_env() else {
     return;
   };
-  let backend = PostgresBackend::connect(&database.url, 2).unwrap();
+  let backend = PostgresBackend::connect(&database.url, &equal_retention(2)).unwrap();
   let mut receiver = backend.subscribe_live_event_notifications();
   let first_pid = wait_for_listener(&mut database, None);
   terminate(&mut database, first_pid);
@@ -361,7 +366,7 @@ fn restricted_postgres_role_omits_session_statistics_instead_of_claiming_zero() 
   let Some(mut database) = TestSchema::from_env() else {
     return;
   };
-  let mut backend = PostgresBackend::connect(&database.url, 2).unwrap();
+  let mut backend = PostgresBackend::connect(&database.url, &equal_retention(2)).unwrap();
   let role = format!("metrics_{}", uuid::Uuid::new_v4().simple());
   database
     .root

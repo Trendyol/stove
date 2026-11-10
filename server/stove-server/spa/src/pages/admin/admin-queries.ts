@@ -3,6 +3,7 @@ import { dashboardKeys, isDashboardDataQuery } from "../../api/query-keys";
 
 export const adminKeys = {
   root: ["admin"] as const,
+  metadata: (appName: string) => ["admin", "metadata", appName] as const,
   status: ["admin", "status"] as const,
   schema: ["admin", "schema"] as const,
 };

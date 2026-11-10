@@ -1021,8 +1021,22 @@ export interface components {
             purged_run_ids: string[];
             purged_runs: number;
         };
-        RetentionRequest: {
-            runs_per_app: number;
+        RetentionPolicy: {
+            failed_runs_per_app: number;
+            passed_runs_per_app: number;
+            rules: components["schemas"]["RetentionRule"][];
+        };
+        RetentionRule: {
+            /** @description Omit to match this metadata across all applications. */
+            app_name?: string | null;
+            /** @description Omit to inherit the default failed-run limit. Zero means unlimited. */
+            failed_runs_per_app?: number | null;
+            /** @description Exact values: OR within each key, AND across keys. Must not be empty. */
+            metadata: {
+                [key: string]: string[];
+            };
+            /** @description Omit to inherit the default passed-run limit. Zero means unlimited. */
+            passed_runs_per_app?: number | null;
         };
         /** @description A single test run (one execution of a test suite). */
         Run: {
@@ -1132,7 +1146,7 @@ export interface components {
         StorageStats: {
             backend: string;
             evidence: components["schemas"]["EvidenceCounts"];
-            retention_runs_per_app: number;
+            retention: components["schemas"]["RetentionPolicy"];
             /** Format: int64 */
             run_idle_timeout_seconds: number;
             /** Format: int64 */
@@ -1360,7 +1374,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["RetentionRequest"];
+                "application/json": components["schemas"]["RetentionPolicy"];
             };
         };
         responses: {

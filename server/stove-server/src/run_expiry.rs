@@ -3,6 +3,7 @@ use crate::storage::repository::Repository;
 use std::{sync::Arc, time::Duration};
 use tokio::{sync::watch, task::JoinHandle};
 
+#[must_use]
 pub fn spawn(repository: Arc<Repository>, mut shutdown: watch::Receiver<bool>) -> JoinHandle<()> {
   tokio::spawn(async move {
     let mut interval = tokio::time::interval(Duration::from_secs(60));

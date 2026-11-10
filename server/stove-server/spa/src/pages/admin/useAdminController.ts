@@ -1,13 +1,21 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { api } from "../../api/client";
+import type { RetentionPolicy } from "../../api/types";
 import { DEFAULT_IDLE_TIMEOUT_SECONDS, isIdleTimeout } from "../../utils/idle-timeout";
 import type { MetadataFilter } from "../../utils/metadata-filter";
+import { defaultRetention } from "../../utils/retention";
 import { adminKeys, refreshDatabaseQueries } from "./admin-queries";
+import {
+  createRetentionDraft,
+  type RetentionDraft,
+  retentionPolicyFromDraft,
+} from "./retention-draft";
+import { useAdminMetadata } from "./useAdminMetadata";
 
 type AdminCommand =
   | { kind: "idle-timeout"; seconds: number }
-  | { kind: "retention"; runsPerApp: number }
+  | { kind: "retention"; policy: RetentionPolicy; draft: RetentionDraft }
   | { kind: "purge"; runIds: string[]; includeRunning: boolean }
   | { kind: "clear" };
 
@@ -25,18 +33,14 @@ export function useAdminController() {
     queryFn: ({ signal }) => api.getAdminStatus(signal),
   });
   const [idleTimeoutDraft, setIdleTimeout] = useState<number>();
-  const [retentionDraft, setRetention] = useState<number>();
+  const [retentionDraft, setRetention] = useState<RetentionDraft>();
   const [filters, setFilters] = useState<PurgeFilters>({
     appName: "",
     olderThan: "",
     includeRunning: false,
     metadata: {},
   });
-  const metadataFacetsQuery = useQuery({
-    queryKey: [...adminKeys.root, "purge-metadata-facets", filters.appName],
-    queryFn: ({ signal }) => api.getRunMetadata(filters.appName, undefined, signal),
-    enabled: Boolean(filters.appName),
-  });
+  const metadataFacetsQuery = useAdminMetadata(filters.appName);
   const previewMutation = useMutation({ mutationFn: previewPurge });
   const refresh = () => {
     previewMutation.reset();
@@ -51,18 +55,17 @@ export function useAdminController() {
         setIdleTimeout((draft) => (draft === submitted.seconds ? undefined : draft));
       }
       if (submitted.kind === "retention") {
-        setRetention((draft) =>
-          draft !== undefined && normalizeRetention(draft) === submitted.runsPerApp
-            ? undefined
-            : draft,
-        );
+        setRetention((draft) => (draft === submitted.draft ? undefined : draft));
       }
     },
   });
   const idleTimeout =
     idleTimeoutDraft ?? statusQuery.data?.run_idle_timeout_seconds ?? DEFAULT_IDLE_TIMEOUT_SECONDS;
   const idleTimeoutValid = isIdleTimeout(idleTimeout);
-  const retention = retentionDraft ?? statusQuery.data?.retention_runs_per_app ?? 1;
+  const savedRetention = statusQuery.data?.retention ?? defaultRetention;
+  const savedDraft = useMemo(() => createRetentionDraft(savedRetention), [savedRetention]);
+  const retention = retentionDraft ?? savedDraft;
+  const retentionPolicy = retentionPolicyFromDraft(retention);
   const preview = previewMutation.data ?? null;
 
   const updateFilter = (patch: Partial<PurgeFilters>) => {
@@ -95,6 +98,7 @@ export function useAdminController() {
       if (idleTimeoutValid) command.mutate({ kind: "idle-timeout", seconds: idleTimeout });
     },
     retention,
+    retentionValid: retentionPolicy !== null,
     setRetention,
     ...filters,
     setAppName: (appName: string) => updateFilter({ appName, metadata: {} }),
@@ -109,8 +113,10 @@ export function useAdminController() {
     busy: command.isPending || previewMutation.isPending || statusQuery.isPending,
     error: (command.error ?? previewMutation.error ?? statusQuery.error)?.message ?? null,
     retry: statusQuery.error ? () => void statusQuery.refetch() : undefined,
-    updateRetention: () =>
-      command.mutate({ kind: "retention", runsPerApp: normalizeRetention(retention) }),
+    updateRetention: () => {
+      if (retentionPolicy)
+        command.mutate({ kind: "retention", policy: retentionPolicy, draft: retention });
+    },
     previewPurge: () => {
       command.reset();
       previewMutation.mutate(filters);
@@ -127,7 +133,7 @@ async function executeCommand(command: AdminCommand): Promise<void> {
       await api.updateIdleTimeout(command.seconds);
       return;
     case "retention":
-      await api.updateRetention(command.runsPerApp);
+      await api.updateRetention(command.policy);
       return;
     case "purge":
       await api.purgeRuns(command.runIds, command.includeRunning);
@@ -151,8 +157,4 @@ function previewPurge({ appName, olderThan, includeRunning, metadata }: PurgeFil
         }
       : {}),
   });
-}
-
-function normalizeRetention(value: number): number {
-  return Number.isFinite(value) ? Math.max(0, Math.trunc(value)) : 1;
 }

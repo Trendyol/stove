@@ -1,0 +1,683 @@
+{
+  "valid": [
+    {
+      "name": "independent outcomes and active runs",
+      "policy": {
+        "passed_runs_per_app": 1,
+        "failed_runs_per_app": 2,
+        "rules": []
+      },
+      "runs": [
+        {
+          "id": "active",
+          "status": "RUNNING",
+          "app_name": "app",
+          "metadata": {}
+        },
+        {
+          "id": "f3",
+          "status": "FAILED",
+          "app_name": "app",
+          "metadata": {}
+        },
+        {
+          "id": "p2",
+          "status": "PASSED",
+          "app_name": "app",
+          "metadata": {}
+        },
+        {
+          "id": "f2",
+          "status": "FAILED",
+          "app_name": "app",
+          "metadata": {}
+        },
+        {
+          "id": "p1",
+          "status": "PASSED",
+          "app_name": "app",
+          "metadata": {}
+        },
+        {
+          "id": "f1",
+          "status": "FAILED",
+          "app_name": "app",
+          "metadata": {}
+        }
+      ],
+      "expired": [
+        "p1",
+        "f1"
+      ]
+    },
+    {
+      "name": "application isolation",
+      "policy": {
+        "passed_runs_per_app": 1,
+        "failed_runs_per_app": 2,
+        "rules": []
+      },
+      "runs": [
+        {
+          "id": "a-f3",
+          "status": "FAILED",
+          "app_name": "app",
+          "metadata": {}
+        },
+        {
+          "id": "b-f2",
+          "status": "FAILED",
+          "app_name": "other",
+          "metadata": {}
+        },
+        {
+          "id": "a-f2",
+          "status": "FAILED",
+          "app_name": "app",
+          "metadata": {}
+        },
+        {
+          "id": "b-f1",
+          "status": "FAILED",
+          "app_name": "other",
+          "metadata": {}
+        },
+        {
+          "id": "a-f1",
+          "status": "FAILED",
+          "app_name": "app",
+          "metadata": {}
+        }
+      ],
+      "expired": [
+        "a-f1"
+      ]
+    },
+    {
+      "name": "unlimited failures",
+      "policy": {
+        "passed_runs_per_app": 1,
+        "failed_runs_per_app": 0,
+        "rules": []
+      },
+      "runs": [
+        {
+          "id": "p2",
+          "status": "PASSED",
+          "app_name": "app",
+          "metadata": {}
+        },
+        {
+          "id": "f3",
+          "status": "FAILED",
+          "app_name": "app",
+          "metadata": {}
+        },
+        {
+          "id": "f2",
+          "status": "FAILED",
+          "app_name": "app",
+          "metadata": {}
+        },
+        {
+          "id": "p1",
+          "status": "PASSED",
+          "app_name": "app",
+          "metadata": {}
+        },
+        {
+          "id": "f1",
+          "status": "FAILED",
+          "app_name": "app",
+          "metadata": {}
+        }
+      ],
+      "expired": [
+        "p1"
+      ]
+    },
+    {
+      "name": "unlimited passes",
+      "policy": {
+        "passed_runs_per_app": 0,
+        "failed_runs_per_app": 2,
+        "rules": []
+      },
+      "runs": [
+        {
+          "id": "p3",
+          "status": "PASSED",
+          "app_name": "app",
+          "metadata": {}
+        },
+        {
+          "id": "f3",
+          "status": "FAILED",
+          "app_name": "app",
+          "metadata": {}
+        },
+        {
+          "id": "p2",
+          "status": "PASSED",
+          "app_name": "app",
+          "metadata": {}
+        },
+        {
+          "id": "f2",
+          "status": "FAILED",
+          "app_name": "app",
+          "metadata": {}
+        },
+        {
+          "id": "p1",
+          "status": "PASSED",
+          "app_name": "app",
+          "metadata": {}
+        },
+        {
+          "id": "f1",
+          "status": "FAILED",
+          "app_name": "app",
+          "metadata": {}
+        }
+      ],
+      "expired": [
+        "f1"
+      ]
+    },
+    {
+      "name": "protected completion still consumes quota",
+      "policy": {
+        "passed_runs_per_app": 1,
+        "failed_runs_per_app": 1,
+        "rules": []
+      },
+      "runs": [
+        {
+          "id": "f3",
+          "status": "FAILED",
+          "app_name": "app",
+          "metadata": {}
+        },
+        {
+          "id": "protected",
+          "status": "FAILED",
+          "app_name": "app",
+          "metadata": {}
+        },
+        {
+          "id": "f1",
+          "status": "FAILED",
+          "app_name": "app",
+          "metadata": {}
+        }
+      ],
+      "expired": [
+        "f1"
+      ],
+      "protected_run": "protected"
+    },
+    {
+      "name": "unknown terminal outcomes consume failure quota",
+      "policy": {
+        "passed_runs_per_app": 1,
+        "failed_runs_per_app": 1,
+        "rules": []
+      },
+      "runs": [
+        {
+          "id": "unknown",
+          "status": "ABORTED",
+          "app_name": "app",
+          "metadata": {}
+        },
+        {
+          "id": "failed",
+          "status": "FAILED",
+          "app_name": "app",
+          "metadata": {}
+        }
+      ],
+      "expired": [
+        "failed"
+      ]
+    },
+    {
+      "name": "rules inherit defaults and OR values share a quota",
+      "policy": {
+        "passed_runs_per_app": 1,
+        "failed_runs_per_app": 2,
+        "rules": [
+          {
+            "metadata": {
+              "team": [
+                "checkout",
+                "payments"
+              ],
+              "branch": [
+                "main"
+              ]
+            },
+            "failed_runs_per_app": 1
+          }
+        ]
+      },
+      "runs": [
+        {
+          "id": "main-new",
+          "status": "FAILED",
+          "app_name": "app",
+          "metadata": {
+            "team": "payments",
+            "branch": "main"
+          }
+        },
+        {
+          "id": "main-old",
+          "status": "FAILED",
+          "app_name": "app",
+          "metadata": {
+            "team": "checkout",
+            "branch": "main"
+          }
+        },
+        {
+          "id": "other-new",
+          "status": "FAILED",
+          "app_name": "app",
+          "metadata": {
+            "team": "checkout",
+            "branch": "dev"
+          }
+        },
+        {
+          "id": "other-mid",
+          "status": "FAILED",
+          "app_name": "app",
+          "metadata": {
+            "team": "catalog",
+            "branch": "main"
+          }
+        },
+        {
+          "id": "other-old",
+          "status": "FAILED",
+          "app_name": "app",
+          "metadata": {
+            "team": "checkout"
+          }
+        },
+        {
+          "id": "pass-new",
+          "status": "PASSED",
+          "app_name": "app",
+          "metadata": {
+            "team": "checkout",
+            "branch": "main"
+          }
+        },
+        {
+          "id": "pass-old",
+          "status": "PASSED",
+          "app_name": "app",
+          "metadata": {
+            "team": "payments",
+            "branch": "main"
+          }
+        }
+      ],
+      "expired": [
+        "main-old",
+        "other-old",
+        "pass-old"
+      ]
+    },
+    {
+      "name": "first rule wins and application scope is exact",
+      "policy": {
+        "passed_runs_per_app": 1,
+        "failed_runs_per_app": 2,
+        "rules": [
+          {
+            "app_name": "app",
+            "metadata": {
+              "team": [
+                "checkout"
+              ]
+            },
+            "failed_runs_per_app": 0
+          },
+          {
+            "metadata": {
+              "team": [
+                "checkout"
+              ]
+            },
+            "failed_runs_per_app": 1
+          }
+        ]
+      },
+      "runs": [
+        {
+          "id": "a2",
+          "status": "FAILED",
+          "app_name": "app",
+          "metadata": {
+            "team": "checkout"
+          }
+        },
+        {
+          "id": "a1",
+          "status": "FAILED",
+          "app_name": "app",
+          "metadata": {
+            "team": "checkout"
+          }
+        },
+        {
+          "id": "b2",
+          "status": "FAILED",
+          "app_name": "other",
+          "metadata": {
+            "team": "checkout"
+          }
+        },
+        {
+          "id": "b1",
+          "status": "FAILED",
+          "app_name": "other",
+          "metadata": {
+            "team": "checkout"
+          }
+        }
+      ],
+      "expired": [
+        "b1"
+      ]
+    },
+    {
+      "name": "missing metadata differs from empty value",
+      "policy": {
+        "passed_runs_per_app": 1,
+        "failed_runs_per_app": 1,
+        "rules": [
+          {
+            "metadata": {
+              "label": [
+                ""
+              ]
+            },
+            "failed_runs_per_app": 0
+          }
+        ]
+      },
+      "runs": [
+        {
+          "id": "empty2",
+          "status": "FAILED",
+          "app_name": "app",
+          "metadata": {
+            "label": ""
+          }
+        },
+        {
+          "id": "missing2",
+          "status": "FAILED",
+          "app_name": "app",
+          "metadata": {}
+        },
+        {
+          "id": "empty1",
+          "status": "FAILED",
+          "app_name": "app",
+          "metadata": {
+            "label": ""
+          }
+        },
+        {
+          "id": "missing1",
+          "status": "FAILED",
+          "app_name": "app",
+          "metadata": {}
+        }
+      ],
+      "expired": [
+        "missing1"
+      ]
+    },
+    {
+      "name": "omitted rules are empty",
+      "policy": {
+        "passed_runs_per_app": 1,
+        "failed_runs_per_app": 1
+      },
+      "runs": [
+        {
+          "id": "p2",
+          "status": "PASSED",
+          "app_name": "app",
+          "metadata": {}
+        },
+        {
+          "id": "p1",
+          "status": "PASSED",
+          "app_name": "app",
+          "metadata": {}
+        }
+      ],
+      "expired": [
+        "p1"
+      ]
+    }
+  ],
+  "invalid": [
+    {
+      "name": "invalid default negative",
+      "policy": {
+        "passed_runs_per_app": -1,
+        "failed_runs_per_app": 2,
+        "rules": []
+      }
+    },
+    {
+      "name": "invalid default fraction",
+      "policy": {
+        "passed_runs_per_app": 1.5,
+        "failed_runs_per_app": 2,
+        "rules": []
+      }
+    },
+    {
+      "name": "invalid default string",
+      "policy": {
+        "passed_runs_per_app": "3",
+        "failed_runs_per_app": 2,
+        "rules": []
+      }
+    },
+    {
+      "name": "invalid default null",
+      "policy": {
+        "passed_runs_per_app": null,
+        "failed_runs_per_app": 2,
+        "rules": []
+      }
+    },
+    {
+      "name": "missing default",
+      "policy": {
+        "passed_runs_per_app": 3
+      }
+    },
+    {
+      "name": "legacy field",
+      "policy": {
+        "runs_per_app": 3
+      }
+    },
+    {
+      "name": "null rules",
+      "policy": {
+        "passed_runs_per_app": 1,
+        "failed_runs_per_app": 2,
+        "rules": null
+      }
+    },
+    {
+      "name": "unknown policy field",
+      "policy": {
+        "passed_runs_per_app": 1,
+        "failed_runs_per_app": 2,
+        "rules": [],
+        "extra": true
+      }
+    },
+    {
+      "name": "empty metadata",
+      "policy": {
+        "passed_runs_per_app": 1,
+        "failed_runs_per_app": 2,
+        "rules": [
+          {
+            "metadata": {},
+            "failed_runs_per_app": 3
+          }
+        ]
+      }
+    },
+    {
+      "name": "empty values",
+      "policy": {
+        "passed_runs_per_app": 1,
+        "failed_runs_per_app": 2,
+        "rules": [
+          {
+            "metadata": {
+              "team": []
+            },
+            "failed_runs_per_app": 3
+          }
+        ]
+      }
+    },
+    {
+      "name": "blank key",
+      "policy": {
+        "passed_runs_per_app": 1,
+        "failed_runs_per_app": 2,
+        "rules": [
+          {
+            "metadata": {
+              " ": [
+                "x"
+              ]
+            },
+            "failed_runs_per_app": 3
+          }
+        ]
+      }
+    },
+    {
+      "name": "blank application",
+      "policy": {
+        "passed_runs_per_app": 1,
+        "failed_runs_per_app": 2,
+        "rules": [
+          {
+            "metadata": {
+              "team": [
+                "x"
+              ]
+            },
+            "failed_runs_per_app": 3,
+            "app_name": " "
+          }
+        ]
+      }
+    },
+    {
+      "name": "no override",
+      "policy": {
+        "passed_runs_per_app": 1,
+        "failed_runs_per_app": 2,
+        "rules": [
+          {
+            "metadata": {
+              "team": [
+                "x"
+              ]
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "unknown rule field",
+      "policy": {
+        "passed_runs_per_app": 1,
+        "failed_runs_per_app": 2,
+        "rules": [
+          {
+            "metadata": {
+              "team": [
+                "x"
+              ]
+            },
+            "failed_runs_per_app": 3,
+            "extra": true
+          }
+        ]
+      }
+    },
+    {
+      "name": "scalar metadata value",
+      "policy": {
+        "passed_runs_per_app": 1,
+        "failed_runs_per_app": 2,
+        "rules": [
+          {
+            "metadata": {
+              "team": "x"
+            },
+            "failed_runs_per_app": 3
+          }
+        ]
+      }
+    },
+    {
+      "name": "invalid override",
+      "policy": {
+        "passed_runs_per_app": 1,
+        "failed_runs_per_app": 2,
+        "rules": [
+          {
+            "metadata": {
+              "team": [
+                "x"
+              ]
+            },
+            "failed_runs_per_app": -1
+          }
+        ]
+      }
+    },
+    {
+      "name": "too many rules",
+      "policy": {
+        "passed_runs_per_app": 1,
+        "failed_runs_per_app": 2,
+        "rules": [
+          {
+            "metadata": {
+              "team": [
+                "x"
+              ]
+            },
+            "failed_runs_per_app": 3
+          }
+        ]
+      },
+      "repeat_rules": 101
+    }
+  ]
+}

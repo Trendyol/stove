@@ -7,7 +7,8 @@ import {
   toggleMetadataValue,
 } from "../../utils/metadata-filter";
 
-interface PurgeMetadataFiltersProps {
+interface MetadataFiltersProps {
+  ariaLabel?: string;
   appName: string;
   options: RunMetadataFacet[];
   value: MetadataFilter;
@@ -17,7 +18,8 @@ interface PurgeMetadataFiltersProps {
   onRetry: () => void;
 }
 
-export function PurgeMetadataFilters({
+export function MetadataFilters({
+  ariaLabel = "Metadata filters",
   appName,
   options,
   value,
@@ -25,13 +27,13 @@ export function PurgeMetadataFilters({
   error,
   onChange,
   onRetry,
-}: PurgeMetadataFiltersProps) {
+}: MetadataFiltersProps) {
   const hasSelections = Object.keys(value).length > 0;
 
   if (!appName) return null;
 
   return (
-    <section className="stove-purge-metadata" aria-label="Purge metadata filters">
+    <section className="stove-purge-metadata" aria-label={ariaLabel}>
       <div className="stove-purge-metadata-heading">
         <h4>Metadata</h4>
         {hasSelections && (
@@ -40,7 +42,7 @@ export function PurgeMetadataFilters({
           </button>
         )}
       </div>
-      <PurgeMetadataOptions
+      <MetadataOptions
         appName={appName}
         options={options}
         value={value}
@@ -102,7 +104,7 @@ function MetadataDropdown({ field, options, selected, onToggle }: MetadataDropdo
   );
 }
 
-function PurgeMetadataOptions({
+function MetadataOptions({
   appName,
   options,
   value,
@@ -110,7 +112,7 @@ function PurgeMetadataOptions({
   error,
   onChange,
   onRetry,
-}: PurgeMetadataFiltersProps) {
+}: MetadataFiltersProps) {
   if (loading) return <p role="status">Loading metadata…</p>;
   if (error)
     return (

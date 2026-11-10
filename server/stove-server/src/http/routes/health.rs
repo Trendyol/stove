@@ -1,3 +1,5 @@
+#[cfg(test)]
+use crate::storage::repository::equal_retention;
 use std::time::Duration;
 
 use axum::{Json, extract::State, http::StatusCode};
@@ -116,7 +118,7 @@ mod tests {
   use crate::{ingest::EventIngestor, sse::manager::SseManager, storage::repository::Repository};
 
   fn state() -> AppState {
-    let repository = Arc::new(Repository::connect_sqlite(":memory:", 1).unwrap());
+    let repository = Arc::new(Repository::connect_sqlite(":memory:", &equal_retention(1)).unwrap());
     let sse_manager = Arc::new(SseManager::new());
     AppState {
       public_url: None,

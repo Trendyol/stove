@@ -1,6 +1,7 @@
-//! Diesel-backed `PostgreSQL` writes. Retention remains a set-based operation;
-//! all ordinary inserts and updates use Diesel's query builder.
+//! Diesel-backed `PostgreSQL` writes with serialized per-application retention.
 
+use super::super::RetentionPolicy;
+use super::super::retention::{Outcome, RetentionCandidate};
 use diesel::prelude::*;
 
 use super::PostgresBackend;
@@ -23,9 +24,10 @@ impl PostgresBackend {
 
   pub fn save_run_end(&self, run: &RunEnd<'_>) -> Result<()> {
     self.checkout_write()?.transaction(|conn| {
-      let retention = retention_on(conn)?;
+      let retention = retention_for_write_on(conn)?;
+      lock_completed_app(conn, run.run_id)?;
       save_run_end_on(conn, run)?;
-      prune_for_completed_run(conn, run.run_id, retention, None)
+      prune_for_completed_run(conn, run.run_id, &retention, None)
     })
   }
 
@@ -70,16 +72,12 @@ impl PostgresBackend {
   }
 }
 
-pub(super) fn apply_event(
-  conn: &mut PgConnection,
-  event: &PersistedDashboardEvent,
-  retention: usize,
-) -> Result<()> {
+pub(super) fn apply_event(conn: &mut PgConnection, event: &PersistedDashboardEvent) -> Result<()> {
   match WriteOperation::from(event) {
     WriteOperation::RunStarted(run) => save_run_start_on(conn, &run),
     WriteOperation::RunEnded(run) => {
-      save_run_end_on(conn, &run)?;
-      prune_for_completed_run(conn, run.run_id, retention, Some(run.run_id))
+      lock_completed_app(conn, run.run_id)?;
+      save_run_end_on(conn, &run)
     }
     WriteOperation::TestStarted(test) => save_test_start_on(conn, &test),
     WriteOperation::TestEnded(test) => save_test_end_on(conn, &test),
@@ -280,13 +278,13 @@ fn save_mock_warning_on(conn: &mut PgConnection, warning: &NewMockWarning) -> Re
   Ok(())
 }
 
-fn prune_for_completed_run(
+pub(super) fn prune_for_completed_run(
   conn: &mut PgConnection,
   run_id: &str,
-  retention: usize,
+  retention: &RetentionPolicy,
   protected_run: Option<&str>,
 ) -> Result<()> {
-  if retention == 0 {
+  if retention.disabled() {
     return Ok(());
   }
   if let Some(app_name) = runs::table
@@ -303,27 +301,39 @@ fn prune_for_completed_run(
 pub(in crate::storage::repository) fn prune_app(
   conn: &mut PgConnection,
   app_name: &str,
-  retention: usize,
+  retention: &RetentionPolicy,
   protected_run: Option<&str>,
 ) -> Result<()> {
-  if retention == 0 {
+  if retention.disabled() {
     return Ok(());
   }
+  lock_app(conn, app_name)?;
   crate::storage::metrics::retention(|| {
-    let offset = i64::try_from(retention).unwrap_or(i64::MAX);
-    let mut expired = runs::table
-      .filter(runs::app_name.eq(app_name))
-      .filter(runs::status.ne("RUNNING"))
-      .order((
-        runs::started_at.desc(),
-        runs::ended_at.desc(),
-        runs::id.desc(),
-      ))
-      .offset(offset)
-      .select(runs::id)
-      .load::<String>(conn)?;
-    // Keep the completing run through receipt/outbox commit and protect active runs.
-    expired.retain(|id| Some(id.as_str()) != protected_run);
+    let expired = if retention.rules.is_empty() {
+      expired_without_rules(conn, app_name, retention, protected_run)?
+    } else {
+      let candidates = runs::table
+        .filter(runs::app_name.eq(app_name))
+        .filter(runs::status.ne("RUNNING"))
+        .order((
+          runs::started_at.desc(),
+          runs::ended_at.desc(),
+          runs::id.desc(),
+        ))
+        .select((runs::id, runs::status, runs::metadata))
+        .load::<(String, String, serde_json::Value)>(conn)?
+        .into_iter()
+        .map(|(id, status, metadata)| {
+          Ok(RetentionCandidate {
+            id,
+            status,
+            metadata: serde_json::from_value(metadata)
+              .map_err(|_| AppError::InvalidStoredField("runs.metadata"))?,
+          })
+        })
+        .collect::<Result<Vec<_>>>()?;
+      retention.expired(app_name, candidates, protected_run)
+    };
     let deleted = diesel::delete(
       runs::table
         .filter(runs::id.eq_any(expired))
@@ -334,14 +344,76 @@ pub(in crate::storage::repository) fn prune_app(
   })
 }
 
-pub(in crate::storage::repository) fn retention_on(conn: &mut PgConnection) -> Result<usize> {
+// The usual policy needs only expired IDs. Unlimited outcomes are not fetched.
+fn expired_without_rules(
+  conn: &mut PgConnection,
+  app: &str,
+  policy: &RetentionPolicy,
+  protected: Option<&str>,
+) -> Result<Vec<String>> {
+  let mut expired = Vec::new();
+  for outcome in [Outcome::Passed, Outcome::Failed] {
+    let limit = policy.default_limit(outcome);
+    if limit == 0 {
+      continue;
+    }
+    let query = runs::table
+      .filter(runs::app_name.eq(app))
+      .filter(runs::status.ne("RUNNING"))
+      .order((
+        runs::started_at.desc(),
+        runs::ended_at.desc(),
+        runs::id.desc(),
+      ))
+      .offset(i64::try_from(limit).unwrap_or(i64::MAX))
+      .select(runs::id)
+      .into_boxed();
+    let query = match outcome {
+      Outcome::Passed => query.filter(runs::status.eq("PASSED")),
+      Outcome::Failed => query.filter(runs::status.ne("PASSED")),
+    };
+    expired.extend(query.load::<String>(conn)?);
+  }
+  expired.retain(|id| Some(id.as_str()) != protected);
+  Ok(expired)
+}
+
+pub(in crate::storage::repository) fn retention_on(
+  conn: &mut PgConnection,
+) -> Result<RetentionPolicy> {
   let value = dashboard_settings::table
-    .find("retention_runs_per_app")
+    .find(RetentionPolicy::SETTING_KEY)
     .select(dashboard_settings::setting_value)
     .first::<String>(conn)?;
-  value.parse().map_err(|error| {
-    AppError::Startup(format!(
-      "invalid PostgreSQL retention setting `{value}`: {error}"
-    ))
-  })
+  RetentionPolicy::from_stored(&value)
+}
+
+// Lock the policy before any run row changes. Admin replacement takes the
+// exclusive row lock, so pruning cannot race with a stale policy on another pod.
+pub(super) fn retention_for_write_on(conn: &mut PgConnection) -> Result<RetentionPolicy> {
+  let value = dashboard_settings::table
+    .find(RetentionPolicy::SETTING_KEY)
+    .select(dashboard_settings::setting_value)
+    .for_share()
+    .first::<String>(conn)?;
+  RetentionPolicy::from_stored(&value)
+}
+
+fn lock_completed_app(conn: &mut PgConnection, run_id: &str) -> Result<()> {
+  if let Some(app) = runs::table
+    .find(run_id)
+    .select(runs::app_name)
+    .first::<String>(conn)
+    .optional()?
+  {
+    lock_app(conn, &app)?;
+  }
+  Ok(())
+}
+
+fn lock_app(conn: &mut PgConnection, app: &str) -> Result<()> {
+  diesel::sql_query("SELECT pg_advisory_xact_lock(hashtextextended($1, 1))")
+    .bind::<diesel::sql_types::Text, _>(app)
+    .execute(conn)?;
+  Ok(())
 }

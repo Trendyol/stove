@@ -44,11 +44,7 @@ pub(super) fn select_purge_candidates(
     if !metadata.is_empty() {
       let values: BTreeMap<String, String> = serde_json::from_str(&candidate.metadata)
         .map_err(|_| AppError::InvalidStoredField("runs.metadata"))?;
-      if !metadata.iter().all(|(key, accepted)| {
-        values
-          .get(key)
-          .is_some_and(|value| accepted.contains(value))
-      }) {
+      if !super::metadata::matches_metadata(metadata.iter(), &values) {
         continue;
       }
     }
@@ -81,18 +77,17 @@ pub(super) fn select_requested_run_ids(
 impl Repository {
   pub fn storage_stats(&self) -> Result<StorageStats> {
     self.with_backend("storage_stats", "read", |backend| match backend {
-      Backend::Sqlite(sqlite) => sqlite.storage_stats(self.retention_runs_per_app()),
+      Backend::Sqlite(sqlite) => sqlite.storage_stats(),
       Backend::Postgres(postgres) => postgres.storage_stats(),
     })
   }
 
-  pub fn update_retention(&self, runs_per_app: usize) -> Result<()> {
+  pub fn update_retention_policy(&self, policy: &super::RetentionPolicy) -> Result<()> {
+    policy.validate()?;
     self.with_backend("update_retention", "write", |backend| match backend {
-      Backend::Sqlite(sqlite) => sqlite.update_retention(runs_per_app),
-      Backend::Postgres(postgres) => postgres.update_retention(runs_per_app),
-    })?;
-    self.set_retention_runs_per_app(runs_per_app);
-    Ok(())
+      Backend::Sqlite(sqlite) => sqlite.update_retention(policy),
+      Backend::Postgres(postgres) => postgres.update_retention(policy),
+    })
   }
 
   pub fn preview_purge(
