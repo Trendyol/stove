@@ -120,6 +120,10 @@ func normalizeSampleTypes(p *profilev1.Profile, cfg map[string]sampleTypeConfig,
 		if c.Units != "" && c.Units != spec.displayUnit {
 			return errors.New("invalid configured units")
 		}
+		// Keep the existing Stove metric stable across SDK versions.
+		if metric == "goroutine" {
+			metric = "goroutines"
+		}
 		if unit != spec.unit || seen[metric] || originalTypes[name] {
 			return errors.New("invalid or duplicate Go metric")
 		}

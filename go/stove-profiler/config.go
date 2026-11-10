@@ -89,7 +89,12 @@ func (cfg Config) normalized() (Config, error) {
 	// The SDK keeps this slice for its background collectors. Own a copy even
 	// when CPU is already selected; caller changes must not race with collection.
 	cfg.ProfileTypes = slices.Clone(cfg.ProfileTypes)
-	for _, t := range cfg.ProfileTypes {
+	for i, t := range cfg.ProfileTypes {
+		// Preserve Stove's existing configuration name while using the SDK's renamed type.
+		if t == "goroutines" {
+			t = pyroscope.ProfileGoroutines
+			cfg.ProfileTypes[i] = t
+		}
 		switch t {
 		case pyroscope.ProfileCPU, pyroscope.ProfileAllocObjects, pyroscope.ProfileAllocSpace, pyroscope.ProfileInuseObjects, pyroscope.ProfileInuseSpace, pyroscope.ProfileGoroutines, pyroscope.ProfileMutexCount, pyroscope.ProfileMutexDuration, pyroscope.ProfileBlockCount, pyroscope.ProfileBlockDuration:
 		default:

@@ -102,6 +102,8 @@ func TestPprofDeltaAndSnapshotContracts(t *testing.T) {
 		{"alloc_space", "bytes", `{"alloc_space":{"units":"bytes","cumulative":false}}`, "alloc_space"},
 		{"inuse_space", "bytes", `{"inuse_space":{"units":"bytes","aggregation":"average"}}`, "inuse_space"},
 		{"goroutine", "count", `{"goroutine":{"units":"goroutines","display-name":"goroutines","aggregation":"average"}}`, "goroutines"},
+		{"goroutine", "count", `{"goroutine":{"units":"goroutines","display-name":"goroutine","aggregation":"average"}}`, "goroutines"},
+		{"goroutine", "count", ``, "goroutines"},
 		{"contentions", "count", `{"contentions":{"units":"lock_samples","display-name":"mutex_count"}}`, "mutex_count"},
 		{"delay", "nanoseconds", `{"delay":{"units":"lock_nanoseconds","display-name":"block_duration"}}`, "block_duration"},
 	} {

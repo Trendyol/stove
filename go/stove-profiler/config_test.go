@@ -34,6 +34,15 @@ func TestConfigurationOwnsMutableValues(t *testing.T) {
 	}
 }
 
+func TestGoroutineProfileNames(t *testing.T) {
+	for _, input := range []pyroscope.ProfileType{"goroutines", "goroutine", pyroscope.ProfileGoroutines} {
+		cfg, err := (Config{ServerURL: "https://stove.example", RunID: "run", ServiceName: "app", ProfileTypes: []pyroscope.ProfileType{input}}).normalized()
+		if err != nil || cfg.ProfileTypes[0] != pyroscope.ProfileGoroutines {
+			t.Fatalf("profile type %q: %+v, %v", input, cfg, err)
+		}
+	}
+}
+
 func TestInvalidConfigurationFailsBeforeStartingSDK(t *testing.T) {
 	for name, mutate := range map[string]func(*Config){
 		"blank service":      func(c *Config) { c.ServiceName = " " },
