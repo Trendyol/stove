@@ -22,6 +22,9 @@ kotlin {
 // This recipe is an e2e fixture; preserve CDI beans and share augmented application classes.
 quarkus {
   quarkusBuildProperties.put("quarkus.profile", "e2e")
+  // These must be known before processResources, including on a clean/cached build.
+  quarkusBuildProperties.put("quarkus.package.jar.type", "uber-jar")
+  quarkusBuildProperties.put("quarkus.arc.remove-unused-beans", "false")
 }
 
 val augmentedJar = tasks.named<io.quarkus.gradle.tasks.QuarkusBuild>("quarkusBuild").map { it.runnerJar }
