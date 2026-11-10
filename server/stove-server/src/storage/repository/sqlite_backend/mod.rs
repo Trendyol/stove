@@ -46,14 +46,23 @@ impl SqliteBackend {
 
   fn new(database: SqliteDatabase) -> Result<Self> {
     let explorer = database.open_driver_peer()?;
-    let read = database.open_peer()?;
+    // Shared-cache in-memory SQLite cannot use WAL and returns SQLITE_LOCKED
+    // immediately when another connection holds a conflicting table lock.
+    // Use one connection for reads and writes in that mode.
+    let read = if database.disk_path().is_some() {
+      Some(database.open_peer()?)
+    } else {
+      None
+    };
     let monitor = database.open_driver_peer()?;
     monitor.busy_timeout(std::time::Duration::from_millis(100))?;
     let path = database.disk_path();
+    let write = Arc::new(Mutex::new(database));
+    let read = read.map_or_else(|| write.clone(), |db| Arc::new(Mutex::new(db)));
     Ok(Self {
       metrics: std::sync::Arc::new(crate::storage::metrics::StorageMetrics::new("sqlite")),
-      write: Arc::new(Mutex::new(database)),
-      read: Arc::new(Mutex::new(read)),
+      write,
+      read,
       explorer: Mutex::new(explorer),
       monitor: Mutex::new(monitor),
       path,
@@ -87,5 +96,47 @@ impl SqliteBackend {
         )
       })
       .unwrap()
+  }
+}
+
+#[cfg(test)]
+mod tests {
+  use super::SqliteBackend;
+  use diesel::connection::SimpleConnection;
+  use std::sync::{Arc, mpsc};
+  use std::time::Duration;
+
+  #[test]
+  fn in_memory_reads_serialize_with_writes() {
+    let backend = Arc::new(SqliteBackend::connect(":memory:").unwrap());
+    let mut reader = backend.lock_read();
+    reader
+      .conn()
+      .batch_execute("BEGIN; SELECT id FROM runs LIMIT 1;")
+      .unwrap();
+
+    let writer = backend.clone();
+    let (started_tx, started_rx) = mpsc::channel();
+    let (done_tx, done_rx) = mpsc::channel();
+    let thread = std::thread::spawn(move || {
+      started_tx.send(()).unwrap();
+      let result = writer
+        .lock_write()
+        .conn()
+        .batch_execute("UPDATE runs SET app_name = app_name");
+      done_tx.send(result).unwrap();
+    });
+    started_rx.recv().unwrap();
+    assert!(matches!(
+      done_rx.recv_timeout(Duration::from_millis(50)),
+      Err(mpsc::RecvTimeoutError::Timeout)
+    ));
+    reader.conn().batch_execute("COMMIT").unwrap();
+    drop(reader);
+    done_rx
+      .recv_timeout(Duration::from_secs(1))
+      .unwrap()
+      .unwrap();
+    thread.join().unwrap();
   }
 }

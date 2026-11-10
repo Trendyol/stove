@@ -27,6 +27,14 @@ impl SqliteBackend {
       }));
     }
     checks.push(HealthSample::probe("explorer", || {
+      let _memory_guard = if self.path.is_none() {
+        match self.write.try_lock() {
+          Ok(guard) => Some(guard),
+          Err(_) => return false,
+        }
+      } else {
+        None
+      };
       self.explorer.try_lock().is_ok_and(|connection| {
         connection
           .query_row(
@@ -42,6 +50,16 @@ impl SqliteBackend {
   pub(in crate::storage::repository) fn diagnostics(
     &self,
   ) -> std::result::Result<DatabaseDiagnostics, String> {
+    let _memory_guard = if self.path.is_none() {
+      Some(
+        self
+          .write
+          .try_lock()
+          .map_err(|_| "SQLite diagnostics connection unavailable")?,
+      )
+    } else {
+      None
+    };
     let connection = self
       .monitor
       .lock()

@@ -60,7 +60,11 @@ async fn sqlite_ingestion_waiting_for_the_writer_does_not_starve_async_work() {
 
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
 async fn acknowledgement_does_not_wait_for_the_sse_read_lane() {
-  let svc = test_service();
+  let directory = tempfile::tempdir().unwrap();
+  let path = directory.path().join("independent-ack.db");
+  let repo =
+    Arc::new(Repository::connect_sqlite(path.to_str().unwrap(), &equal_retention(1)).unwrap());
+  let svc = EventIngestor::new(repo, Arc::new(SseManager::new()));
   let locked_repository = svc.repository.clone();
   let (locked_tx, locked_rx) = std::sync::mpsc::sync_channel(1);
   let (release_tx, release_rx) = std::sync::mpsc::sync_channel(1);
