@@ -117,9 +117,9 @@ Everything around the runner stays the same: `httpClient`, `postgresql`, `kafka`
 | Spring Boot | ✓ | exposes the running `ApplicationContext` |
 | Ktor | ✓ | exposes the selected Koin or Ktor-DI container |
 | Micronaut | ✓ | exposes the running `ApplicationContext` |
-| Quarkus | ✗ | CDI lifecycle integration not yet shipped |
+| Quarkus | ✓ | exposes ArC CDI beans on an augmented shared test classpath |
 
-For Quarkus, drive verification through HTTP, DB queries, and Kafka assertions instead of `using<T> { ... }`.
+For Quarkus Bridge, build an augmented uber-jar, share it on the test classpath, and preserve beans in the e2e build. See the [Quarkus Bridge setup](quarkus.md#bridge).
 
 ## What stays identical
 

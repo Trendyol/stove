@@ -521,7 +521,7 @@ ${fill(test.sample, { body })}`;
             <label class="sw-toggle" x-show="state.runtime === 'jvm'">
               <input type="checkbox" x-model="state.bridge" :disabled="!bridgeSupportedInJvm()">
               Add <code>bridge()</code> (DI access for setup + verification)
-              <span class="sw-hint" x-show="state.framework === 'quarkus'">Quarkus Bridge requires manual build setup; see the Quarkus framework guide.</span>
+              <span class="sw-hint" x-show="state.framework === 'quarkus'">Quarkus supports Bridge, but the wizard does not generate its build setup. Follow the <a href="../frameworks/quarkus/#bridge">Quarkus Bridge guide</a> to add it manually.</span>
             </label>
             <p class="sw-hint" x-show="state.runtime === 'provided' || state.runtime === 'process' || state.runtime === 'container'">
               Bridge is JVM-in-process only. Unavailable for <span x-text="state.runtime"></span> runtime.

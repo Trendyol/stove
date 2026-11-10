@@ -1,13 +1,13 @@
 # Quarkus Recipe Setup
 
-This package provides Stove integration for the Quarkus recipe without relying on
-Quarkus bean bridging.
+This package provides Stove integration for the Quarkus recipe. The recipe uses
+HTTP and tracing assertions and does not configure CDI Bridge access.
 
 ## What It Does
 
 - keeps the public `quarkus(runner, withParameters)` DSL unchanged
-- starts Quarkus by calling the provided `main` runner on a background thread
-- waits for an explicit Quarkus startup signal before tests run
+- starts Quarkus using its normal `main` entrypoint
+- waits for Quarkus startup to complete before tests run
 - shuts Quarkus down cleanly after the project
 - remains compatible with Stove tracing and failure reporting
 
@@ -16,7 +16,7 @@ Quarkus bean bridging.
 | File | Purpose |
 |------|---------|
 | `StoveConfig.kt` | Kotest project config and Stove systems |
-| `QuarkusSystem.kt` | `quarkus()` DSL and direct-main launcher |
+| `stove-quarkus` | `quarkus()` DSL and Quarkus launcher |
 | `IndexTests.kt` | HTTP smoke test and tracing smoke test |
 
 ## Usage
@@ -32,9 +32,7 @@ quarkus(
 )
 ```
 
-The DSL shape stays the same and the recipe invokes `QuarkusMainApp.main(...)`
-from a dedicated launcher thread. Quarkus readiness is based on an application
-startup signal, so the launcher can work for both HTTP apps and worker-only apps.
+Stove detects Quarkus startup for both HTTP apps and worker-only apps.
 
 ## Tracing
 
@@ -44,8 +42,9 @@ OpenTelemetry Java agent, the recipe can collect spans for Quarkus request flow.
 The recipe includes a tracing smoke test that verifies spans are emitted for a real
 HTTP request.
 
-## Non-Goals
+## CDI Bridge
 
-- No `using<T>` bridge support for Quarkus beans
-- No cross-classloader bean access
-- No Quarkus-specific DI adapter in this recipe
+Quarkus supports `using<T>` through `com.trendyol.stove.quarkus.bridge`. This
+recipe does not configure it. Bridge requires an augmented uber-jar on the shared
+test runtime classpath and e2e bean preservation; the isolated fast-jar launcher
+does not support it. See the [Quarkus Bridge guide](https://trendyol.github.io/stove/frameworks/quarkus/#bridge).

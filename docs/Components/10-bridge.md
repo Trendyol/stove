@@ -1,6 +1,6 @@
 # Bridge
 
-Reach into your app's DI container from a test. Read internal state, drive domain services, replace beans for the test only. Type-safe, framework-aware.
+Reach into your app's DI container from a test. Read internal state and drive domain services. Test-only bean registration and replacement depend on the framework; Quarkus Bridge provides CDI lookup but does not replace beans.
 
 <div class="stove-tldr" markdown>
 <span class="stove-tldr-title">When to use Bridge</span>
