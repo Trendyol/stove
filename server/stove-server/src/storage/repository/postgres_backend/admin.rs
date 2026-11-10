@@ -1,3 +1,4 @@
+use super::super::RetentionPolicy;
 use diesel::prelude::*;
 use std::collections::BTreeMap;
 
@@ -13,17 +14,13 @@ use crate::storage::schema::postgres::{
 };
 
 impl PostgresBackend {
-  pub fn retention_runs_per_app(&self) -> Result<usize> {
-    retention_on(&mut *self.checkout_read()?)
-  }
-
   pub fn storage_stats(&self) -> Result<StorageStats> {
     let mut conn = self.checkout_read()?;
     let retention = retention_on(&mut conn)?;
     Ok(StorageStats {
       run_idle_timeout_seconds: super::lifecycle::idle_timeout_on(&mut conn)?.seconds(),
       backend: "postgresql".to_string(),
-      retention_runs_per_app: retention,
+      retention,
       runs: runs::table.count().get_result(&mut *conn)?,
       running_runs: runs::table
         .filter(runs::status.eq("RUNNING"))
@@ -33,21 +30,21 @@ impl PostgresBackend {
     })
   }
 
-  pub fn update_retention(&self, retention: usize) -> Result<()> {
+  pub fn update_retention(&self, retention: &RetentionPolicy) -> Result<()> {
     self.checkout_write()?.transaction(|conn| {
       diesel::insert_into(dashboard_settings::table)
         .values((
-          dashboard_settings::setting_key.eq("retention_runs_per_app"),
-          dashboard_settings::setting_value.eq(retention.to_string()),
+          dashboard_settings::setting_key.eq(RetentionPolicy::SETTING_KEY),
+          dashboard_settings::setting_value.eq(serde_json::to_string(retention)?),
         ))
         .on_conflict(dashboard_settings::setting_key)
         .do_update()
         .set((
-          dashboard_settings::setting_value.eq(retention.to_string()),
+          dashboard_settings::setting_value.eq(serde_json::to_string(retention)?),
           dashboard_settings::updated_at.eq(diesel::dsl::now),
         ))
         .execute(conn)?;
-      if retention > 0 {
+      if !retention.disabled() {
         let apps = runs::table
           .select(runs::app_name)
           .distinct()

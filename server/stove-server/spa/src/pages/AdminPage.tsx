@@ -2,9 +2,10 @@ import type { MouseEventHandler } from "react";
 import type { AppSummary } from "../api/types";
 import { ErrorNotice } from "../components/ErrorNotice";
 import { appPath } from "../utils/location";
-import { ClearAllCard, PurgeCard, RetentionCard, StorageCard } from "./admin/AdminSections";
+import { ClearAllCard, PurgeCard, StorageCard } from "./admin/AdminSections";
 import { DatabaseExplorer } from "./admin/DatabaseExplorer";
 import { IdleTimeoutCard } from "./admin/IdleTimeoutCard";
+import { RetentionCard } from "./admin/RetentionCard";
 import { TopFilterCard } from "./admin/TopFilterCard";
 import { useAdminController } from "./admin/useAdminController";
 
@@ -37,6 +38,8 @@ export function AdminPage({ apps, onNavigateDashboard }: AdminPageProps) {
         <div className="stove-admin-grid">
           <StorageCard status={admin.status} />
           <RetentionCard
+            apps={apps}
+            valid={admin.retentionValid}
             retention={admin.retention}
             busy={admin.busy}
             onRetentionChange={admin.setRetention}

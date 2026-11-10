@@ -81,6 +81,7 @@ mod tests {
   use crate::proto;
   use crate::sse::manager::SseManager;
   use crate::storage::repository::Repository;
+  use crate::storage::repository::equal_retention;
 
   fn run_started(run_id: &str, event_id: &str) -> proto::DashboardEvent {
     proto::DashboardEvent {
@@ -105,7 +106,8 @@ mod tests {
     let directory = tempfile::tempdir().unwrap();
     let database = directory.path().join("relay.db");
     let repository = Arc::new(
-      Repository::connect_sqlite(database.to_str().unwrap(), 0).expect("database should open"),
+      Repository::connect_sqlite(database.to_str().unwrap(), &equal_retention(0))
+        .expect("database should open"),
     );
     let old_manager = Arc::new(SseManager::new());
     EventIngestor::new(repository.clone(), old_manager)

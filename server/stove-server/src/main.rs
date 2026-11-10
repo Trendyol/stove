@@ -133,9 +133,9 @@ fn open_repository(
   config: &config::Config,
 ) -> anyhow::Result<Arc<storage::repository::Repository>> {
   let repository = if let Some(database_url) = &config.database_url {
-    storage::repository::Repository::connect_postgres(database_url, config.retention_runs_per_app)?
+    storage::repository::Repository::connect_postgres(database_url, &config.retention)?
   } else {
-    storage::repository::Repository::connect_sqlite(&config.db, config.retention_runs_per_app)?
+    storage::repository::Repository::connect_sqlite(&config.db, &config.retention)?
   };
   Ok(Arc::new(repository))
 }

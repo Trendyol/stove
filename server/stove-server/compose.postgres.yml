@@ -31,7 +31,9 @@ services:
         condition: service_healthy
     environment:
       STOVE_DATABASE_URL: postgresql://stove:stove@postgres:5432/stove?sslmode=disable
-      STOVE_RETENTION_RUNS_PER_APP: ${STOVE_RETENTION_RUNS_PER_APP:-50}
+      STOVE_RETENTION_PASSED_RUNS_PER_APP: ${STOVE_RETENTION_PASSED_RUNS_PER_APP:-3}
+      STOVE_RETENTION_FAILED_RUNS_PER_APP: ${STOVE_RETENTION_FAILED_RUNS_PER_APP:-5}
+      STOVE_RETENTION_RULES: ${STOVE_RETENTION_RULES:-[]}
     ports:
       - "127.0.0.1:${STOVE_HTTP_PORT:-4040}:4040"
       - "127.0.0.1:${STOVE_GRPC_PORT:-4041}:4041"

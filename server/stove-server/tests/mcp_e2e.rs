@@ -1,5 +1,6 @@
 //! End-to-end tests for the Stove MCP endpoint.
 
+use common::retention_support::equal_retention;
 mod common;
 
 use common::TestServer;
@@ -122,7 +123,10 @@ async fn apps_omit_the_redundant_run_count() {
 #[tokio::test]
 async fn agents_can_filter_runs_by_dynamic_metadata_pairs() {
   let server = TestServer::start().await;
-  server.repo.update_retention(0).unwrap();
+  server
+    .repo
+    .update_retention_policy(&equal_retention(0))
+    .unwrap();
   let checkout_metadata = BTreeMap::from([
     ("team".to_string(), "checkout".to_string()),
     ("tribe".to_string(), "commerce".to_string()),

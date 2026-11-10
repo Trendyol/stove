@@ -1,4 +1,6 @@
 use super::*;
+#[cfg(test)]
+use crate::storage::repository::equal_retention;
 use crate::{
   ingest::EventIngestor, proto, sse::manager::SseManager, storage::repository::Repository,
 };
@@ -44,7 +46,7 @@ fn pending_events_and_failed_work_are_cleaned_up_on_drop() {
 
 #[test]
 fn pending_ingestion_age_exposes_a_blocked_database_writer() {
-  let repository = Arc::new(Repository::connect_sqlite(":memory:", 0).unwrap());
+  let repository = Arc::new(Repository::connect_sqlite(":memory:", &equal_retention(0)).unwrap());
   let ingestor = EventIngestor::new(repository.clone(), Arc::new(SseManager::new()));
   let handle = repository.with_write_db_locked(|| {
     let handle = std::thread::spawn(move || {
@@ -91,7 +93,7 @@ fn pending_ingestion_age_exposes_a_blocked_database_writer() {
 
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
 async fn http_metrics_use_route_templates_exclude_scrapes_and_track_stream_lifetime() {
-  let repository = Arc::new(Repository::connect_sqlite(":memory:", 0).unwrap());
+  let repository = Arc::new(Repository::connect_sqlite(":memory:", &equal_retention(0)).unwrap());
   let manager = Arc::new(SseManager::new());
   let ingestor = EventIngestor::new(repository.clone(), manager.clone());
   let app = crate::http::server::create_router_with_public_url(
@@ -199,7 +201,7 @@ async fn grpc_stream_gauge_is_released_when_ingestion_fails() {
     dashboard_event_service_server::DashboardEventServiceServer,
   };
   use tokio_stream::wrappers::{ReceiverStream, TcpListenerStream};
-  let repository = Arc::new(Repository::connect_sqlite(":memory:", 0).unwrap());
+  let repository = Arc::new(Repository::connect_sqlite(":memory:", &equal_retention(0)).unwrap());
   let ingestor = EventIngestor::new(repository.clone(), Arc::new(SseManager::new()));
   let service = crate::grpc::service::DashboardEventServiceImpl::new(ingestor);
   let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();

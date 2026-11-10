@@ -1,7 +1,7 @@
 import type { AdminStatus, AppSummary, PurgePreview, RunMetadataFacet } from "../../api/types";
 import { SelectField } from "../../components/SelectField";
 import type { MetadataFilter } from "../../utils/metadata-filter";
-import { PurgeMetadataFilters } from "./PurgeMetadataFilters";
+import { MetadataFilters } from "./MetadataFilters";
 
 export function StorageCard({ status }: { status: AdminStatus | null }) {
   const stats = [
@@ -23,34 +23,6 @@ export function StorageCard({ status }: { status: AdminStatus | null }) {
           </div>
         ))}
       </dl>
-    </section>
-  );
-}
-
-interface RetentionCardProps {
-  retention: number;
-  busy: boolean;
-  onRetentionChange: (value: number) => void;
-  onApply: () => void;
-}
-
-export function RetentionCard({ retention, busy, onRetentionChange, onApply }: RetentionCardProps) {
-  return (
-    <section className="stove-admin-card">
-      <h3>Retention</h3>
-      <p>Completed runs kept per application. Use 0 for unlimited history.</p>
-      <label className="stove-admin-field">
-        <span>Runs per app</span>
-        <input
-          min="0"
-          type="number"
-          value={retention}
-          onChange={(event) => onRetentionChange(Number(event.target.value))}
-        />
-      </label>
-      <button type="button" disabled={busy} onClick={onApply}>
-        Apply retention
-      </button>
     </section>
   );
 }
@@ -108,7 +80,8 @@ export function PurgeCard(props: PurgeCardProps) {
           Include active runs
         </label>
       </div>
-      <PurgeMetadataFilters
+      <MetadataFilters
+        ariaLabel="Purge metadata filters"
         appName={props.appName}
         options={props.metadataFacets}
         value={props.metadata}

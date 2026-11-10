@@ -99,7 +99,7 @@ New snapshots replace the channel in place; `brew update && brew upgrade stove-n
 stove                                  # default UI/REST/MCP port 4040, gRPC port 4041
 stove --public-url https://stove.example/observe  # public browser URL and optional gateway prefix
 stove --port 9000 --grpc-port 9001     # override ports
-stove --retention-runs-per-app 50      # keep 50 completed runs per app (default: 1; 0: unlimited)
+stove --retention-passed-runs-per-app 3 --retention-failed-runs-per-app 5  # independent per-app quotas; 0: unlimited
 stove --run-idle-timeout-seconds 3600  # delete idle runs after 1 hour without ingestion (0: disabled)
 stove --fresh-start                    # back up and recreate the DB, then start
 stove --db ./my-stove.sqlite           # custom DB path
@@ -118,7 +118,8 @@ Production deployments can mount a TOML or JSON configuration file and keep the 
 port = 4040
 grpc_port = 4041
 database_url_file = "/run/secrets/stove/database-url"
-retention_runs_per_app = 50
+retention_passed_runs_per_app = 3
+retention_failed_runs_per_app = 5
 run_idle_timeout_seconds = 3600
 log_format = "json"
 ```
@@ -130,7 +131,8 @@ The equivalent JSON keys are identical:
   "port": 4040,
   "grpc_port": 4041,
   "database_url_file": "/run/secrets/stove/database-url",
-  "retention_runs_per_app": 50,
+  "retention_passed_runs_per_app": 3,
+  "retention_failed_runs_per_app": 5,
   "run_idle_timeout_seconds": 3600,
   "log_format": "json"
 }
@@ -196,7 +198,7 @@ This builds the local Stove image, starts PostgreSQL 18, waits for it to become 
 - gRPC ingestion at `localhost:4041`;
 - PostgreSQL at `localhost:5433`, using `stove` for the local-only database, user, and password.
 
-The PostgreSQL volume survives normal restarts. Use `just postgres-logs` to follow Stove, `just postgres-down` to stop both containers, or `just postgres-reset` to stop them and permanently delete the local database volume. Override ports or retention with `STOVE_HTTP_PORT`, `STOVE_GRPC_PORT`, `STOVE_POSTGRES_PORT`, and `STOVE_RETENTION_RUNS_PER_APP` before running `just postgres-up`.
+The PostgreSQL volume survives normal restarts. Use `just postgres-logs` to follow Stove, `just postgres-down` to stop both containers, or `just postgres-reset` to stop them and permanently delete the local database volume. Override ports or retention with `STOVE_HTTP_PORT`, `STOVE_GRPC_PORT`, `STOVE_POSTGRES_PORT`, `STOVE_RETENTION_PASSED_RUNS_PER_APP`, `STOVE_RETENTION_FAILED_RUNS_PER_APP`, and `STOVE_RETENTION_RULES` before running `just postgres-up`.
 
 For a shared installation, mount a PostgreSQL URL secret and choose how many completed runs to retain per application:
 
@@ -208,7 +210,8 @@ docker run -d \
   -p 4041:4041 \
   -v /secure/stove/database-url:/run/secrets/stove-database-url:ro \
   -e STOVE_DATABASE_URL_FILE=/run/secrets/stove-database-url \
-  -e STOVE_RETENTION_RUNS_PER_APP=50 \
+  -e STOVE_RETENTION_PASSED_RUNS_PER_APP=3 \
+  -e STOVE_RETENTION_FAILED_RUNS_PER_APP=5 \
   ghcr.io/trendyol/stove-server:0.26.0
 ```
 
@@ -235,7 +238,8 @@ data:
     port = 4040
     grpc_port = 4041
     database_url_file = "/run/secrets/stove/database-url"
-    retention_runs_per_app = 50
+    retention_passed_runs_per_app = 3
+    retention_failed_runs_per_app = 5
     run_idle_timeout_seconds = 3600
 ---
 apiVersion: apps/v1
@@ -370,7 +374,33 @@ Choosing a value narrows the application list and its runs, tests, and evidence.
 
 The sidebar can switch between retained runs and filter them by any number of metadata key/value pairs. Keys and values are selectable from those present in the application's retained runs, so users do not have to type CI identifiers manually. Every pair uses exact string matching and all supplied pairs must match.
 
-By default, Stove retains the newest completed run for each application, preserving the previous local behavior. Set `--retention-runs-per-app N` or `STOVE_RETENTION_RUNS_PER_APP=N` to keep more; `0` keeps unlimited history. Running runs are not removed by automatic retention. Ingestion keeps a just-completed run through its receipt and live-event commit; if it falls outside the retention window, a later retention pass removes it. In PostgreSQL mode the value is shared and persisted; in SQLite mode it belongs to the current process.
+By default, Stove keeps the newest **3 passed runs and 5 failed runs per application**, counted independently. A green run cannot evict a failure. Set `--retention-passed-runs-per-app` / `STOVE_RETENTION_PASSED_RUNS_PER_APP` and `--retention-failed-runs-per-app` / `STOVE_RETENTION_FAILED_RUNS_PER_APP` to change the defaults. A limit of `0` keeps unlimited history for that outcome. Active runs are excluded. Runs are ordered by start time, end time, and the backend's stable tie-breaker. Ingestion protects a just-completed run through its receipt and live-event commit; a later retention pass removes it if it is outside its quota.
+
+Metadata overrides use the same exact matching as dashboard filters: **OR within a key, AND across keys**. Rules are ordered; the first matching rule wins. Each rule gets its own quota per application and outcome, separate from unmatched runs. Values listed together in a rule share that quota. An omitted outcome limit inherits the default; `0` means unlimited. An omitted `app_name` matches across applications, each with a separate quota. For example, keep 12 failures for checkout or payments on the main branch:
+
+```toml
+retention_passed_runs_per_app = 3
+retention_failed_runs_per_app = 5
+
+[[retention_rules]]
+app_name = "checkout-api"
+failed_runs_per_app = 12
+[retention_rules.metadata]
+team = ["checkout", "payments"]
+branch = ["main"]
+```
+
+JSON configuration uses the same fields. CLI and environment variables accept `retention_rules` as a JSON array:
+
+```bash
+stove --retention-rules '[{"metadata":{"team":["checkout"]},"failed_runs_per_app":12}]'
+# Or:
+export STOVE_RETENTION_RULES='[{"metadata":{"team":["checkout"]},"failed_runs_per_app":12}]'
+```
+
+CLI values take precedence over environment variables, then the configuration file. These values initialize a database's policy. Admin changes persist in both SQLite and PostgreSQL and take precedence on later starts; PostgreSQL replicas share the stored policy. Existing PostgreSQL single-limit settings are migrated to equal pass/fail limits. The old single-limit CLI, environment, config, and API fields have been removed.
+
+Use **Admin → Retention** to edit both defaults, add metadata rules, reorder them, or remove them. Select recorded metadata values or enter future values. Applying a policy replaces the entire policy and immediately prunes excess completed runs and their evidence. Rules require at least one metadata key with a non-empty value list and at least one outcome override; at most 100 rules are allowed.
 
 ## Storage backends
 
@@ -476,7 +506,7 @@ PostgreSQL uses the built-in `pg_try_advisory_lock` on a dedicated session so on
 
 ## Administration
 
-Select **Admin** in the dashboard header to open the dedicated `/admin` page, where you can inspect storage, browse the active database, run SQL, change runtime retention, preview and purge matching runs, or clear all data. SQL mutations and destructive administration operations require confirmation. A retention change prunes excess completed runs immediately. It lasts for the current process with SQLite and is persisted as a shared setting with PostgreSQL.
+Select **Admin** in the dashboard header to open the dedicated `/admin` page, where you can inspect storage, browse the active database, run SQL, change runtime retention, preview and purge matching runs, or clear all data. SQL mutations and destructive administration operations require confirmation. A retention change prunes excess completed runs immediately. The complete policy is persisted with SQLite and shared and persisted with PostgreSQL.
 
 Purge preview accepts an optional application and RFC 3339 `older_than` cutoff, then returns the exact run IDs and evidence counts. Purging uses those IDs. Both preview and purge exclude active runs unless `include_running` is explicitly `true`.
 
@@ -487,7 +517,7 @@ Purge preview accepts an optional application and RFC 3339 `older_than` cutoff, 
 | `POST /api/v1/admin/database/query` | run one SQL statement with `sql` and optional `max_rows` |
 | `PUT /api/v1/admin/top-filter` | set the browsing field with `{"metadata_key": "gitlab.team"}`; use `null` to disable |
 | `PUT /api/v1/admin/idle-timeout` | persist idle timeout with `{"run_idle_timeout_seconds": 3600}`; `0` disables expiry |
-| `PUT /api/v1/admin/retention` | set runtime retention with `{"runs_per_app": 50}` |
+| `PUT /api/v1/admin/retention` | replace the policy with `{"passed_runs_per_app": 3, "failed_runs_per_app": 5, "rules": []}` |
 | `POST /api/v1/admin/purge/preview` | preview with `app_name`, `older_than`, and `include_running` |
 | `POST /api/v1/admin/purge` | delete exact `run_ids`; active runs still require `include_running` |
 | `DELETE /api/v1/data` | clear every run and all evidence |
@@ -524,7 +554,9 @@ The explorer has direct write access to Stove's tables. Confirmation in the brow
 | `--database-url` | unset | PostgreSQL URL; replaces SQLite. Also configurable with `STOVE_DATABASE_URL` |
 | `--database-url-file` | unset | file containing the PostgreSQL URL; also `STOVE_DATABASE_URL_FILE` |
 | `--run-idle-timeout-seconds` | 3600 (1 hour) | initial idle timeout; `0` disables expiry. Also `STOVE_RUN_IDLE_TIMEOUT_SECONDS` or file property `run_idle_timeout_seconds`; persisted Admin changes override this seed |
-| `--retention-runs-per-app` | 1 | completed runs kept per app; `0` keeps all runs. Also configurable with `STOVE_RETENTION_RUNS_PER_APP` |
+| `--retention-passed-runs-per-app` | 3 | passed runs kept per app; `0` is unlimited. Env: `STOVE_RETENTION_PASSED_RUNS_PER_APP` |
+| `--retention-failed-runs-per-app` | 5 | failed runs kept per app; `0` is unlimited. Env: `STOVE_RETENTION_FAILED_RUNS_PER_APP` |
+| `--retention-rules` | `[]` | ordered metadata rules as a JSON array. Env: `STOVE_RETENTION_RULES` |
 | `--clear` | off | clear stored runs and exit |
 | `--fresh-start` | off | back up and recreate the SQLite DB before serving; unsupported with PostgreSQL |
 
@@ -561,7 +593,7 @@ The acceptance suite verifies the same ingestion, filtering, retention, administ
 | Events not arriving | Port mismatch. `DashboardIngestion.Grpc(port = ...)` must match `--grpc-port` |
 | "gRPC disabled" warning | Expected if the server started after tests; restart in correct order |
 | Cancelled CI run remains running | After 1 hour without newly committed ingestion, the next sweep deletes the run and its tests and evidence. Check Admin’s idle timeout and worker health if it remains running. |
-| Disk filling up | Set `--retention-runs-per-app` (or `STOVE_RETENTION_RUNS_PER_APP`) to limit completed runs per app |
+| Disk filling up | Set passed/failed retention limits and metadata overrides in Admin |
 
 ## Continuous profiling
 

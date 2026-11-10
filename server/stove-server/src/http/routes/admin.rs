@@ -8,10 +8,7 @@ use crate::error::{AppError, Result};
 use crate::http::server::AppState;
 use crate::storage::models::{PurgePreview, PurgeResult, StorageStats};
 
-#[derive(Debug, Deserialize, ToSchema)]
-pub struct RetentionRequest {
-  pub runs_per_app: usize,
-}
+use crate::storage::repository::RetentionPolicy;
 
 #[derive(Debug, Deserialize, ToSchema)]
 pub struct PurgePreviewRequest {
@@ -45,14 +42,14 @@ pub async fn get_admin_status(State(state): State<AppState>) -> Result<Json<Stor
   put,
   path = "/api/v1/admin/retention",
   tag = "admin",
-  request_body = RetentionRequest,
+  request_body = RetentionPolicy,
   responses((status = 200, description = "Updated storage and retention status", body = StorageStats))
 )]
 pub async fn update_retention(
   State(state): State<AppState>,
-  Json(request): Json<RetentionRequest>,
+  Json(request): Json<RetentionPolicy>,
 ) -> Result<Json<StorageStats>> {
-  state.repository.update_retention(request.runs_per_app)?;
+  state.repository.update_retention_policy(&request)?;
   Ok(Json(state.repository.storage_stats()?))
 }
 

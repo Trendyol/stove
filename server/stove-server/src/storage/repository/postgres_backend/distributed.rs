@@ -7,7 +7,7 @@ use postgres::fallible_iterator::FallibleIterator;
 use tokio::sync::mpsc;
 
 use super::PostgresBackend;
-use super::writes::{apply_event, retention_on};
+use super::writes::{apply_event, retention_for_write_on};
 use crate::error::{AppError, Result};
 use crate::ingest::{CommitOutcome, EventIdentity, PreparedDashboardEvent, StoredLiveEvent};
 use crate::storage::repository::distributed::{
@@ -57,6 +57,15 @@ impl PostgresBackend {
   ) -> Result<CommitOutcome> {
     let sequence = sequence_to_i64(identity.sequence, "PostgreSQL")?;
     self.checkout_write()?.transaction(|conn| {
+      // Completion takes the policy lock before the run lock. Other events do not prune.
+      let retention = if matches!(
+        event.persisted,
+        crate::ingest::PersistedDashboardEvent::RunEnded { .. }
+      ) {
+        Some(retention_for_write_on(conn)?)
+      } else {
+        None
+      };
       self.metrics.wait("advisory_run", "write", || {
         super::lifecycle::lock_run(conn, &event.live.run_id)
       })?;
@@ -75,8 +84,15 @@ impl PostgresBackend {
       }
 
       verify_sequence(conn, &event.live.run_id, sequence, &identity.event_id)?;
-      let retention = retention_on(conn)?;
-      apply_event(conn, &event.persisted, retention)?;
+      apply_event(conn, &event.persisted)?;
+      if let Some(retention) = &retention {
+        super::writes::prune_for_completed_run(
+          conn,
+          &event.live.run_id,
+          retention,
+          Some(&event.live.run_id),
+        )?;
+      }
       super::lifecycle::touch_run(conn, &event.live.run_id)?;
 
       self.metrics.wait("advisory_live_event", "write", || {

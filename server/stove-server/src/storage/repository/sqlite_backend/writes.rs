@@ -1,9 +1,11 @@
 // Diesel generates explicit field initializers in QueryableByName implementations.
 #![allow(clippy::redundant_field_names)]
 
-//! Diesel-backed `SQLite` writes. Explicit SQL is reserved for the set-based
-//! retention query, whose ordering depends on `SQLite`'s `rowid`.
+//! Diesel-backed `SQLite` writes. Explicit SQL supplies retention candidates
+//! ordered using `SQLite`'s `rowid` as a stable tie-breaker.
 
+use super::super::RetentionPolicy;
+use super::super::retention::{Outcome, RetentionCandidate};
 use diesel::prelude::*;
 use diesel::sql_types::Text;
 
@@ -11,7 +13,7 @@ use super::super::write_models::{
   RunEnd, RunStart, SnapshotWrite, TestEnd, TestStart, WriteOperation, non_empty,
 };
 use super::SqliteBackend;
-use crate::error::Result;
+use crate::error::{AppError, Result};
 use crate::ingest::PersistedDashboardEvent;
 use crate::storage::models::{NewEntry, NewMockInteraction, NewMockWarning, NewSpan};
 use crate::storage::schema::sqlite::{
@@ -19,9 +21,13 @@ use crate::storage::schema::sqlite::{
 };
 
 #[derive(QueryableByName)]
-struct RunId {
+struct RetentionRow {
   #[diesel(sql_type = Text)]
   id: String,
+  #[diesel(sql_type = Text)]
+  status: String,
+  #[diesel(sql_type = Text)]
+  metadata: String,
 }
 
 impl SqliteBackend {
@@ -30,11 +36,12 @@ impl SqliteBackend {
     db.conn().transaction(|conn| save_run_start_on(conn, run))
   }
 
-  pub fn save_run_end(&self, run: &RunEnd<'_>, retention_runs_per_app: usize) -> Result<()> {
+  pub fn save_run_end(&self, run: &RunEnd<'_>) -> Result<()> {
     let mut db = self.lock_write();
     db.conn().transaction(|conn| {
+      let retention = super::admin::retention_on(conn)?;
       save_run_end_on(conn, run)?;
-      prune_completed_runs_on(conn, run.run_id, retention_runs_per_app, None)
+      prune_completed_runs_on(conn, run.run_id, &retention, None)
     })
   }
 
@@ -83,13 +90,13 @@ impl SqliteBackend {
 pub(super) fn apply_persisted_event(
   conn: &mut SqliteConnection,
   event: &PersistedDashboardEvent,
-  retention_runs_per_app: usize,
 ) -> Result<()> {
   match WriteOperation::from(event) {
     WriteOperation::RunStarted(run) => save_run_start_on(conn, &run),
     WriteOperation::RunEnded(run) => {
+      let retention = super::admin::retention_on(conn)?;
       save_run_end_on(conn, &run)?;
-      prune_completed_runs_on(conn, run.run_id, retention_runs_per_app, Some(run.run_id))
+      prune_completed_runs_on(conn, run.run_id, &retention, Some(run.run_id))
     }
     WriteOperation::TestStarted(test) => save_test_start_on(conn, &test),
     WriteOperation::TestEnded(test) => save_test_end_on(conn, &test),
@@ -130,10 +137,10 @@ fn save_run_start_on(conn: &mut SqliteConnection, run: &RunStart<'_>) -> Result<
 fn prune_completed_runs_on(
   conn: &mut SqliteConnection,
   completed_run_id: &str,
-  retention_runs_per_app: usize,
+  retention: &RetentionPolicy,
   protected_run: Option<&str>,
 ) -> Result<()> {
-  if retention_runs_per_app == 0 {
+  if retention.disabled() {
     return Ok(());
   }
   let app_name = runs::table
@@ -142,7 +149,7 @@ fn prune_completed_runs_on(
     .first::<String>(conn)
     .optional()?;
   if let Some(app_name) = app_name {
-    prune_completed_runs_for_app_on(conn, &app_name, retention_runs_per_app, protected_run)?;
+    prune_completed_runs_for_app_on(conn, &app_name, retention, protected_run)?;
   }
   Ok(())
 }
@@ -150,44 +157,87 @@ fn prune_completed_runs_on(
 pub(super) fn prune_completed_runs_for_app_on(
   conn: &mut SqliteConnection,
   app_name: &str,
-  retention_runs_per_app: usize,
+  retention: &RetentionPolicy,
   protected_run: Option<&str>,
 ) -> Result<()> {
-  if retention_runs_per_app == 0 {
+  if retention.disabled() {
     return Ok(());
   }
   crate::storage::metrics::retention(|| {
-    let offset = i64::try_from(retention_runs_per_app).unwrap_or(i64::MAX);
-    let expired = diesel::sql_query(
-      "SELECT id FROM runs WHERE app_name = ? AND status <> 'RUNNING' \
-     ORDER BY started_at DESC, ended_at DESC, rowid DESC LIMIT -1 OFFSET ?",
-    )
-    .bind::<Text, _>(app_name)
-    .bind::<diesel::sql_types::BigInt, _>(offset)
-    .load::<RunId>(conn)?
-    .into_iter()
-    .map(|row| row.id)
-    // Retain the completing run until a later retention pass so its receipt and outbox can commit.
-    .filter(|id| Some(id.as_str()) != protected_run)
-    .collect::<Vec<_>>();
+    let expired = if retention.rules.is_empty() {
+      expired_without_rules(conn, app_name, retention, protected_run)?
+    } else {
+      let candidates = diesel::sql_query(
+        "SELECT id, status, metadata FROM runs WHERE app_name = ? AND status <> 'RUNNING' \
+         ORDER BY started_at DESC, ended_at DESC, rowid DESC",
+      )
+      .bind::<Text, _>(app_name)
+      .load::<RetentionRow>(conn)?
+      .into_iter()
+      .map(|row| {
+        Ok(RetentionCandidate {
+          id: row.id,
+          status: row.status,
+          metadata: serde_json::from_str(&row.metadata)
+            .map_err(|_| AppError::InvalidStoredField("runs.metadata"))?,
+        })
+      })
+      .collect::<Result<Vec<_>>>()?;
+      retention.expired(app_name, candidates, protected_run)
+    };
     delete_runs_on(conn, &expired)?;
     Ok(expired.len() as u64)
   })
+}
+
+#[derive(QueryableByName)]
+struct RunId {
+  #[diesel(sql_type = Text)]
+  id: String,
+}
+
+fn expired_without_rules(
+  conn: &mut SqliteConnection,
+  app: &str,
+  policy: &RetentionPolicy,
+  protected: Option<&str>,
+) -> Result<Vec<String>> {
+  let mut expired = Vec::new();
+  for outcome in [Outcome::Passed, Outcome::Failed] {
+    let limit = policy.default_limit(outcome);
+    if limit == 0 {
+      continue;
+    }
+    let status = match outcome {
+      Outcome::Passed => "status = 'PASSED'",
+      Outcome::Failed => "status <> 'PASSED' AND status <> 'RUNNING'",
+    };
+    let rows = diesel::sql_query(format!(
+      "SELECT id FROM runs WHERE app_name = ? AND {status} ORDER BY started_at DESC, ended_at DESC, rowid DESC LIMIT -1 OFFSET ?"
+    )).bind::<Text, _>(app)
+      .bind::<diesel::sql_types::BigInt, _>(i64::try_from(limit).unwrap_or(i64::MAX))
+      .load::<RunId>(conn)?;
+    expired.extend(rows.into_iter().map(|row| row.id));
+  }
+  expired.retain(|id| Some(id.as_str()) != protected);
+  Ok(expired)
 }
 
 pub(super) fn delete_runs_on(conn: &mut SqliteConnection, run_ids: &[String]) -> Result<()> {
   if run_ids.is_empty() {
     return Ok(());
   }
-  diesel::delete(mock_warnings::table.filter(mock_warnings::run_id.eq_any(run_ids)))
-    .execute(conn)?;
-  diesel::delete(mock_interactions::table.filter(mock_interactions::run_id.eq_any(run_ids)))
-    .execute(conn)?;
-  diesel::delete(snapshots::table.filter(snapshots::run_id.eq_any(run_ids))).execute(conn)?;
-  diesel::delete(spans::table.filter(spans::run_id.eq_any(run_ids))).execute(conn)?;
-  diesel::delete(entries::table.filter(entries::run_id.eq_any(run_ids))).execute(conn)?;
-  diesel::delete(tests::table.filter(tests::run_id.eq_any(run_ids))).execute(conn)?;
-  diesel::delete(runs::table.filter(runs::id.eq_any(run_ids))).execute(conn)?;
+  for run_ids in run_ids.chunks(500) {
+    diesel::delete(mock_warnings::table.filter(mock_warnings::run_id.eq_any(run_ids)))
+      .execute(conn)?;
+    diesel::delete(mock_interactions::table.filter(mock_interactions::run_id.eq_any(run_ids)))
+      .execute(conn)?;
+    diesel::delete(snapshots::table.filter(snapshots::run_id.eq_any(run_ids))).execute(conn)?;
+    diesel::delete(spans::table.filter(spans::run_id.eq_any(run_ids))).execute(conn)?;
+    diesel::delete(entries::table.filter(entries::run_id.eq_any(run_ids))).execute(conn)?;
+    diesel::delete(tests::table.filter(tests::run_id.eq_any(run_ids))).execute(conn)?;
+    diesel::delete(runs::table.filter(runs::id.eq_any(run_ids))).execute(conn)?;
+  }
   Ok(())
 }
 

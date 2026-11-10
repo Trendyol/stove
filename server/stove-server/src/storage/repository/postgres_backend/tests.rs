@@ -1,3 +1,5 @@
+#[cfg(test)]
+use crate::storage::repository::equal_retention;
 mod cleanup;
 mod profiles;
 mod recovery;
@@ -32,7 +34,8 @@ impl TestSchema {
   }
 
   fn repository(&self) -> Repository {
-    Repository::connect_postgres(&self.url, 2).expect("initialize PostgreSQL backend")
+    Repository::connect_postgres(&self.url, &equal_retention(2))
+      .expect("initialize PostgreSQL backend")
   }
 }
 

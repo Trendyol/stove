@@ -1,3 +1,4 @@
+use common::retention_support::equal_retention;
 mod common;
 
 use common::TestServer;
@@ -9,7 +10,10 @@ use stove::storage::repository::Repository;
 #[tokio::test]
 async fn top_filter_discovers_historical_values_and_summarizes_matching_runs() {
   let server = TestServer::start().await;
-  server.repo.update_retention(0).unwrap();
+  server
+    .repo
+    .update_retention_policy(&equal_retention(0))
+    .unwrap();
   for (id, app, team, day) in [
     ("old", "shared-api", "checkout", "01"),
     ("match", "shared-api", "checkout", "02"),
@@ -93,7 +97,7 @@ fn top_filter_setting_survives_restart_and_data_cleanup() {
   let directory = tempfile::tempdir().unwrap();
   let database = directory.path().join("dashboard.db");
   let path = database.to_str().unwrap();
-  let repo = Repository::connect_sqlite(path, 0).unwrap();
+  let repo = Repository::connect_sqlite(path, &equal_retention(0)).unwrap();
   repo
     .update_top_filter(&TopFilterSettings {
       metadata_key: Some("gitlab.team".into()),
@@ -101,7 +105,7 @@ fn top_filter_setting_survives_restart_and_data_cleanup() {
     .unwrap();
   repo.clear_all().unwrap();
   drop(repo);
-  let reopened = Repository::connect_sqlite(path, 0).unwrap();
+  let reopened = Repository::connect_sqlite(path, &equal_retention(0)).unwrap();
   assert_eq!(
     reopened
       .top_filter_catalog()

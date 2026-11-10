@@ -1,3 +1,4 @@
+use common::retention_support::equal_retention;
 mod common;
 use common::TestServer;
 use reqwest::StatusCode;
@@ -7,7 +8,10 @@ use std::collections::BTreeMap;
 #[tokio::test]
 async fn metadata_purge_scopes_exact_values_and_preserves_unpreviewed_runs() {
   let server = TestServer::start().await;
-  server.repo.update_retention(0).unwrap();
+  server
+    .repo
+    .update_retention_policy(&equal_retention(0))
+    .unwrap();
   for (id, app, branch, pipeline, started_at, active) in [
     (
       "match-a",

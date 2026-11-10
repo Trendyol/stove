@@ -378,7 +378,7 @@ def main():
         child_env = {key: value for key, value in os.environ.items() if not key.startswith("STOVE_")}
         with (output / "server.log").open("w") as log:
             process = subprocess.Popen([str(binary), "--port", str(port), "--grpc-port", str(grpc_port),
-                "--db", str(directory / "benchmark.sqlite"), "--retention-runs-per-app", "0", "--no-skills-check"],
+                "--db", str(directory / "benchmark.sqlite"), "--retention-passed-runs-per-app", "0", "--retention-failed-runs-per-app", "0", "--no-skills-check"],
                 stdout=log, stderr=log, env={**child_env, "RUST_LOG": "warn"})
             client = Client(port)
             try:

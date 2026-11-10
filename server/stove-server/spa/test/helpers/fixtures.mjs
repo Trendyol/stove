@@ -79,7 +79,7 @@ export const span = {
 export const adminStatus = {
   run_idle_timeout_seconds: 3600,
   backend: "sqlite",
-  retention_runs_per_app: 5,
+  retention: { passed_runs_per_app: 5, failed_runs_per_app: 5, rules: [] },
   runs: 1,
   running_runs: 0,
   evidence: counts,

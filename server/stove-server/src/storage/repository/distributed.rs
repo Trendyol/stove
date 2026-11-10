@@ -39,6 +39,7 @@ pub(super) fn duplicate_outcome(
 }
 
 impl Repository {
+  #[must_use]
   pub fn subscribe_live_event_notifications(&self) -> mpsc::UnboundedReceiver<()> {
     match &self.backend {
       Backend::Sqlite(_) => {
@@ -55,9 +56,7 @@ impl Repository {
     event: &PreparedDashboardEvent,
   ) -> Result<CommitOutcome> {
     let result = self.with_backend("commit_dashboard_event", "write", |backend| match backend {
-      Backend::Sqlite(sqlite) => {
-        sqlite.commit_dashboard_event(identity, event, self.retention_runs_per_app())
-      }
+      Backend::Sqlite(sqlite) => sqlite.commit_dashboard_event(identity, event),
       Backend::Postgres(postgres) => postgres.commit_dashboard_event(identity, event),
     })?;
     self.metrics.increment(

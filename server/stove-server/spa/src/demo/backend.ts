@@ -7,11 +7,14 @@ import type {
   EvidenceCounts,
   FocusedEvidence,
   LiveDashboardEvent,
+  RetentionPolicy,
   Run,
   Test,
 } from "../api/types";
 import { DEFAULT_IDLE_TIMEOUT_SECONDS, isIdleTimeout } from "../utils/idle-timeout";
+import { matchesMetadata } from "../utils/metadata-filter";
 import { metadataOptionsForRuns } from "../utils/metadata-options";
+import { expiredRunIds, parseRetentionPolicy } from "../utils/retention";
 import { createDemoData, type DemoData } from "./fixtures";
 import { demoProfileReport } from "./profiles";
 
@@ -56,7 +59,7 @@ function appSummary(run: Run, stoveVersion = run.stove_version): AppSummary {
 /** A private, in-memory SQLite database; this adapter never contacts a server. */
 export function createDemoBackend(SQL: SqlJsStatic, version: string) {
   let db: Database;
-  let retention = 0;
+  let retention: RetentionPolicy = { passed_runs_per_app: 0, failed_runs_per_app: 0, rules: [] };
   let idleTimeout = DEFAULT_IDLE_TIMEOUT_SECONDS;
   let topFilterKey: string | null = null;
   let seq = 0;
@@ -91,7 +94,7 @@ export function createDemoBackend(SQL: SqlJsStatic, version: string) {
     cancelReplay();
     db?.close();
     db = new SQL.Database();
-    retention = 0;
+    retention = { passed_runs_per_app: 0, failed_runs_per_app: 0, rules: [] };
     idleTimeout = DEFAULT_IDLE_TIMEOUT_SECONDS;
     topFilterKey = null;
     const fixtures = createDemoData(version);
@@ -143,7 +146,7 @@ export function createDemoBackend(SQL: SqlJsStatic, version: string) {
   }
   const status = () => ({
     backend: "SQLite (demo, in browser memory)",
-    retention_runs_per_app: retention,
+    retention,
     run_idle_timeout_seconds: idleTimeout,
     runs: runs().length,
     running_runs: runs().filter((run) => run.status === "RUNNING").length,
@@ -157,15 +160,7 @@ export function createDemoBackend(SQL: SqlJsStatic, version: string) {
         db.run(`DELETE FROM ${quote(table)} WHERE ${table === "runs" ? "id" : "run_id"} = ?`, [id]);
   }
   function prune() {
-    if (retention === 0) return;
-    const seen = new Map<string, number>();
-    const removed = runs().filter((run) => {
-      if (run.status === "RUNNING") return false;
-      const count = (seen.get(run.app_name) ?? 0) + 1;
-      seen.set(run.app_name, count);
-      return count > retention;
-    });
-    removeRuns(removed.map((run) => run.id));
+    removeRuns(expiredRunIds(retention, runs()));
   }
 
   function schema(): DatabaseSchema {
@@ -587,9 +582,9 @@ export function createDemoBackend(SQL: SqlJsStatic, version: string) {
         return ok(status());
       }
       if (method === "PUT" && path === "/admin/retention") {
-        if (!Number.isInteger(body.runs_per_app) || body.runs_per_app < 0)
-          return ok({ error: "Retention must be a non-negative integer" }, 400);
-        retention = body.runs_per_app;
+        const policy = parseRetentionPolicy(body);
+        if (!policy) return ok({ error: "Invalid retention policy" }, 400);
+        retention = policy;
         prune();
         return ok(status());
       }
@@ -599,9 +594,7 @@ export function createDemoBackend(SQL: SqlJsStatic, version: string) {
             (body.include_running || run.status !== "RUNNING") &&
             (!body.app_name || run.app_name === body.app_name) &&
             (!body.older_than || run.started_at < body.older_than) &&
-            Object.entries(body.metadata ?? {}).every(([key, values]) =>
-              (values as string[]).includes(run.metadata[key]),
-            ),
+            matchesMetadata(run.metadata, body.metadata ?? {}),
         );
         const ids = matches.map((run) => run.id);
         return ok({ run_ids: ids, run_count: ids.length, evidence: counts(ids) });

@@ -5,6 +5,7 @@
 //! This gives us true black-box regression coverage of the full request path:
 //! routing -> handler -> repository -> SQLite -> JSON serialization.
 
+use common::retention_support::equal_retention;
 mod common;
 
 use common::TestServer;
@@ -2293,7 +2294,10 @@ async fn run_pages_filter_before_limit_and_survive_anchor_deletion() {
 #[tokio::test]
 async fn admin_status_and_retention_update_prune_completed_runs_immediately() {
   let server = TestServer::start().await;
-  server.repo.update_retention(0).unwrap();
+  server
+    .repo
+    .update_retention_policy(&equal_retention(0))
+    .unwrap();
 
   for (id, started_at) in [
     ("run-old", "2024-01-01T00:00:00Z"),
@@ -2307,21 +2311,21 @@ async fn admin_status_and_retention_update_prune_completed_runs_immediately() {
 
   let initial = server.get_json("/admin/status").await;
   assert_eq!(initial["backend"], "sqlite");
-  assert_eq!(initial["retention_runs_per_app"], 0);
+  assert_eq!(initial["retention"]["passed_runs_per_app"], 0);
   assert_eq!(initial["runs"], 4);
   assert_eq!(initial["running_runs"], 1);
 
   let updated = server
     .client
     .put(server.url("/admin/retention"))
-    .json(&serde_json::json!({ "runs_per_app": 2 }))
+    .json(&serde_json::json!({ "passed_runs_per_app": 2, "failed_runs_per_app": 2 }))
     .send()
     .await
     .unwrap()
     .json::<Value>()
     .await
     .unwrap();
-  assert_eq!(updated["retention_runs_per_app"], 2);
+  assert_eq!(updated["retention"]["passed_runs_per_app"], 2);
   assert_eq!(updated["runs"], 3);
   assert_eq!(updated["running_runs"], 1);
   assert!(server.repo.get_run("run-old").unwrap().is_none());
@@ -2334,7 +2338,7 @@ async fn admin_status_and_retention_update_prune_completed_runs_immediately() {
 async fn unsatisfiable_accept_encoding_rejects_mutations_before_they_apply() {
   let server = TestServer::start().await;
   assert_eq!(
-    server.get_json("/admin/status").await["retention_runs_per_app"],
+    server.get_json("/admin/status").await["retention"]["passed_runs_per_app"],
     1
   );
 
@@ -2342,14 +2346,14 @@ async fn unsatisfiable_accept_encoding_rejects_mutations_before_they_apply() {
     .client
     .put(server.url("/admin/retention"))
     .header("Accept-Encoding", "br, identity;q=0")
-    .json(&serde_json::json!({ "runs_per_app": 7 }))
+    .json(&serde_json::json!({ "passed_runs_per_app": 7, "failed_runs_per_app": 7 }))
     .send()
     .await
     .unwrap();
   assert_eq!(response.status(), StatusCode::NOT_ACCEPTABLE);
   // The handler never ran, so the retention setting is unchanged.
   assert_eq!(
-    server.get_json("/admin/status").await["retention_runs_per_app"],
+    server.get_json("/admin/status").await["retention"]["passed_runs_per_app"],
     1
   );
 
@@ -2358,13 +2362,13 @@ async fn unsatisfiable_accept_encoding_rejects_mutations_before_they_apply() {
     .client
     .put(server.url("/admin/retention"))
     .header("Accept-Encoding", "gzip")
-    .json(&serde_json::json!({ "runs_per_app": 7 }))
+    .json(&serde_json::json!({ "passed_runs_per_app": 7, "failed_runs_per_app": 7 }))
     .send()
     .await
     .unwrap();
   assert_eq!(accepted.status(), StatusCode::OK);
   assert_eq!(
-    server.get_json("/admin/status").await["retention_runs_per_app"],
+    server.get_json("/admin/status").await["retention"]["passed_runs_per_app"],
     7
   );
 }
@@ -2422,7 +2426,10 @@ async fn admin_database_explorer_exposes_schema_and_executes_queries() {
 #[tokio::test]
 async fn admin_preview_and_purge_use_exact_ids_and_protect_running_runs() {
   let server = TestServer::start().await;
-  server.repo.update_retention(0).unwrap();
+  server
+    .repo
+    .update_retention_policy(&equal_retention(0))
+    .unwrap();
 
   server.seed_run_at("run-old", "checkout-api", "2024-01-01T00:00:00Z", &[]);
   server.seed_test("run-old", "test-old", "old test", "CheckoutSpec");

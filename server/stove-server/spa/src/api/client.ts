@@ -7,7 +7,7 @@ import type {
   DatabaseQueryRequest,
   PurgePreviewRequest,
   PurgeRequest,
-  RetentionRequest,
+  RetentionPolicy,
   TopFilterSettings,
 } from "./types";
 import { arrayOf, isRecord, nullable, type Validator } from "./validation";
@@ -208,13 +208,8 @@ export const api = {
     ),
   updateIdleTimeout: (seconds: number) =>
     send("/admin/idle-timeout", "PUT", { run_idle_timeout_seconds: seconds }, schema.isAdminStatus),
-  updateRetention: (runsPerApp: number) =>
-    send(
-      "/admin/retention",
-      "PUT",
-      { runs_per_app: runsPerApp } satisfies RetentionRequest,
-      schema.isAdminStatus,
-    ),
+  updateRetention: (policy: RetentionPolicy) =>
+    send("/admin/retention", "PUT", policy, schema.isAdminStatus),
   previewPurge: (selector: PurgePreviewRequest) =>
     send("/admin/purge/preview", "POST", selector, schema.isPurgePreview),
   purgeRuns: (runIds: string[], includeRunning: boolean) =>

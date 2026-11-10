@@ -1,3 +1,8 @@
+#[path = "../tests/common/retention_contract.rs"]
+mod retention_contract;
+#[path = "../tests/common/retention.rs"]
+mod retention_support;
+use retention_support::equal_retention;
 mod support;
 
 use std::collections::BTreeSet;
@@ -162,7 +167,7 @@ async fn real_server_admin_retention_preview_purge_and_clear_are_safe() -> Resul
 
   let status = stove.get_json("/admin/status").await?;
   assert_eq!(status["backend"], "sqlite");
-  assert_eq!(status["retention_runs_per_app"], 0);
+  assert_eq!(status["retention"]["passed_runs_per_app"], 0);
   assert_eq!(status["runs"], 5);
   assert_eq!(status["running_runs"], 2);
 
@@ -192,9 +197,13 @@ async fn real_server_admin_retention_preview_purge_and_clear_are_safe() -> Resul
   assert_eq!(purge["purged_runs"], 1);
 
   let updated = stove
-    .request_json(Method::PUT, "/admin/retention", json!({"runs_per_app": 1}))
+    .request_json(
+      Method::PUT,
+      "/admin/retention",
+      json!({"passed_runs_per_app": 1, "failed_runs_per_app": 1}),
+    )
     .await?;
-  assert_eq!(updated["retention_runs_per_app"], 1);
+  assert_eq!(updated["retention"]["passed_runs_per_app"], 1);
   assert_eq!(updated["runs"], 3);
   assert_eq!(updated["running_runs"], 2);
 
@@ -266,33 +275,182 @@ async fn real_server_admin_retention_preview_purge_and_clear_are_safe() -> Resul
 }
 
 #[tokio::test]
-async fn local_server_default_retention_keeps_one_completed_run_and_all_active_runs() -> Result<()>
-{
+async fn local_server_default_retention_keeps_three_passed_five_failed_and_active_runs()
+-> Result<()> {
   let stove = RunningStove::start(None).await?;
   let mut grpc = stove.grpc_client().await?;
+  for i in 0..8 {
+    for failed in [false, true] {
+      let id = format!("{}-{i}", if failed { "failed" } else { "passed" });
+      send_events(
+        &mut grpc,
+        [
+          run_started(&id, "default-app", 1_704_067_200 + i * 10, &[]),
+          run_ended(
+            &id,
+            1_704_067_201 + i * 10,
+            1,
+            i32::from(!failed),
+            i32::from(failed),
+          ),
+        ],
+      )
+      .await?;
+    }
+  }
   send_events(
     &mut grpc,
-    [
-      run_started("completed-old", "default-app", 1_704_067_200, &[]),
-      run_ended("completed-old", 1_704_067_201, 0, 0, 0),
-      run_started("active", "default-app", 1_704_153_600, &[]),
-      run_started("completed-new", "default-app", 1_704_240_000, &[]),
-      run_ended("completed-new", 1_704_240_001, 0, 0, 0),
-    ],
+    [run_started("active", "default-app", 1_704_000_000, &[])],
   )
   .await?;
   stove.mcp_tool("stove_runs", json!({})).await?;
-
   let status = stove.get_json("/admin/status").await?;
-  assert_eq!(status["retention_runs_per_app"], 1);
-  assert_eq!(status["runs"], 2);
+  assert_eq!(
+    status["retention"],
+    json!({"passed_runs_per_app": 3, "failed_runs_per_app": 5, "rules": []})
+  );
+  assert_eq!(status["runs"], 9);
   assert_eq!(status["running_runs"], 1);
   assert_eq!(
     run_ids(&stove.get_json("/runs?app=default-app").await?["runs"]),
-    BTreeSet::from(["active".to_string(), "completed-new".to_string()])
+    [
+      "active", "passed-5", "passed-6", "passed-7", "failed-3", "failed-4", "failed-5", "failed-6",
+      "failed-7"
+    ]
+    .map(str::to_owned)
+    .into()
   );
-  assert!(stove.get_json("/runs/completed-old").await?.is_null());
+  Ok(())
+}
 
+#[tokio::test]
+async fn postgres_migrates_stored_retention_once() -> Result<()> {
+  let database = PostgresTestDatabase::start().await?;
+  let initial = RunningStove::start_postgres(&database.url, None).await?;
+  initial
+    .request_json(
+      Method::POST,
+      "/admin/database/query",
+      json!({"sql": "UPDATE dashboard_settings SET setting_key = 'retention_runs_per_app', setting_value = '7' WHERE setting_key = 'retention_policy'"}),
+    )
+    .await?;
+  drop(initial);
+  let migrated = RunningStove::start_postgres(&database.url, None).await?;
+  assert_eq!(
+    migrated.get_json("/admin/status").await?["retention"],
+    json!({"passed_runs_per_app": 7, "failed_runs_per_app": 7, "rules": []})
+  );
+  let policy = json!({"passed_runs_per_app": 3, "failed_runs_per_app": 12, "rules": []});
+  migrated
+    .request_json(Method::PUT, "/admin/retention", policy.clone())
+    .await?;
+  migrated
+    .request_json(
+      Method::POST,
+      "/admin/database/query",
+      json!({"sql": "UPDATE dashboard_settings SET setting_value = 'obsolete' WHERE setting_key = 'retention_runs_per_app'"}),
+    )
+    .await?;
+  drop(migrated);
+  let restarted = RunningStove::start_postgres(&database.url, None).await?;
+  assert_eq!(
+    restarted.get_json("/admin/status").await?["retention"],
+    policy
+  );
+  Ok(())
+}
+
+#[tokio::test]
+async fn metadata_retention_is_shared_by_postgres_replicas_and_survives_restart() -> Result<()> {
+  let database = PostgresTestDatabase::start().await?;
+  let first = RunningStove::start_postgres(&database.url, Some(0)).await?;
+  let second = RunningStove::start_postgres(&database.url, Some(0)).await?;
+  let policy = json!({"passed_runs_per_app": 1, "failed_runs_per_app": 2, "rules": [
+    {"app_name": "app", "metadata": {"team": ["checkout", "payments"], "branch": ["main"]},
+     "failed_runs_per_app": 4, "passed_runs_per_app": null}
+  ]});
+  first
+    .request_json(Method::PUT, "/admin/retention", policy.clone())
+    .await?;
+  assert_eq!(second.get_json("/admin/status").await?["retention"], policy);
+  let mut grpc = second.grpc_client().await?;
+  for i in 0..6 {
+    for team in ["checkout", "catalog"] {
+      for failed in [false, true] {
+        let id = format!("{team}-{}-{i}", if failed { "f" } else { "p" });
+        send_events(
+          &mut grpc,
+          [
+            run_started(
+              &id,
+              "app",
+              1_704_067_200 + i * 10,
+              &[("team", team), ("branch", "main")],
+            ),
+            run_ended(
+              &id,
+              1_704_067_201 + i * 10,
+              1,
+              i32::from(!failed),
+              i32::from(failed),
+            ),
+          ],
+        )
+        .await?;
+      }
+    }
+  }
+  let retained = run_ids(&first.get_json("/runs?app=app").await?["runs"]);
+  assert_eq!(
+    retained,
+    [
+      "checkout-f-2",
+      "checkout-f-3",
+      "checkout-f-4",
+      "checkout-f-5",
+      "checkout-p-5",
+      "catalog-f-4",
+      "catalog-f-5",
+      "catalog-p-5"
+    ]
+    .map(str::to_owned)
+    .into()
+  );
+  for invalid in [
+    json!({"passed_runs_per_app": -1, "failed_runs_per_app": 2}),
+    json!({"passed_runs_per_app": 1}),
+    json!({"runs_per_app": 1}),
+    json!({"passed_runs_per_app": 1, "failed_runs_per_app": 2, "rules": [{"metadata": {"team": []}, "failed_runs_per_app": 1}]}),
+  ] {
+    let response = first
+      .client
+      .put(first.api_url("/admin/retention"))
+      .json(&invalid)
+      .send()
+      .await?;
+    assert!(response.status().is_client_error());
+    assert_eq!(second.get_json("/admin/status").await?["retention"], policy);
+    assert_eq!(
+      run_ids(&second.get_json("/runs?app=app").await?["runs"]),
+      retained
+    );
+  }
+  drop(grpc);
+  drop(first);
+  drop(second);
+  let restarted = RunningStove::start_postgres(&database.url, Some(99)).await?;
+  assert_eq!(
+    restarted.get_json("/admin/status").await?["retention"],
+    policy
+  );
+  restarted
+    .request_json(
+      Method::PUT,
+      "/admin/retention",
+      json!({"passed_runs_per_app": 1, "failed_runs_per_app": 2, "rules": []}),
+    )
+    .await?;
+  assert_eq!(restarted.get_json("/admin/status").await?["runs"], 3);
   Ok(())
 }
 
@@ -408,7 +566,7 @@ async fn postgres_server_runs_migrations_jsonb_filters_retention_and_admin_in_te
 
   let status = stove.get_json("/admin/status").await?;
   assert_eq!(status["backend"], "postgresql");
-  assert_eq!(status["retention_runs_per_app"], 0);
+  assert_eq!(status["retention"]["passed_runs_per_app"], 0);
   assert_eq!(status["runs"], 4);
   assert_eq!(status["running_runs"], 1);
 
@@ -536,7 +694,11 @@ async fn postgres_server_runs_migrations_jsonb_filters_retention_and_admin_in_te
     .await?;
 
   let retained = stove
-    .request_json(Method::PUT, "/admin/retention", json!({"runs_per_app": 1}))
+    .request_json(
+      Method::PUT,
+      "/admin/retention",
+      json!({"passed_runs_per_app": 1, "failed_runs_per_app": 1}),
+    )
     .await?;
   assert_eq!(retained["runs"], 2);
   assert_eq!(retained["running_runs"], 1);
@@ -685,10 +847,14 @@ async fn two_postgres_pods_share_ordered_live_events_deduplication_and_retention
   );
 
   first
-    .request_json(Method::PUT, "/admin/retention", json!({"runs_per_app": 2}))
+    .request_json(
+      Method::PUT,
+      "/admin/retention",
+      json!({"passed_runs_per_app": 2, "failed_runs_per_app": 2}),
+    )
     .await?;
   assert_eq!(
-    second.get_json("/admin/status").await?["retention_runs_per_app"],
+    second.get_json("/admin/status").await?["retention"]["passed_runs_per_app"],
     2
   );
 
@@ -1477,7 +1643,7 @@ async fn postgres_profiles_are_idempotent_bounded_shared_and_purged_with_runs() 
   let database = PostgresTestDatabase::start().await?;
   let url = database.url.clone();
   tokio::task::spawn_blocking(move || -> Result<()> {
-    let repo = stove::storage::repository::Repository::connect_postgres(&url, 0)?;
+    let repo = stove::storage::repository::Repository::connect_postgres(&url, &equal_retention(0))?;
     repo.save_run_start("profile-run", "checkout", "2026-01-01T00:00:00Z", &[])?;
     let mut chunk = stove::profiling::StoredChunk {
       id: "initial".into(),
@@ -1496,13 +1662,27 @@ async fn postgres_profiles_are_idempotent_bounded_shared_and_purged_with_runs() 
       chunk.until_ms = index * 1000;
       repo.save_profile(&chunk)?;
     }
-    let second = stove::storage::repository::Repository::connect_postgres(&url, 0)?;
+    let second =
+      stove::storage::repository::Repository::connect_postgres(&url, &equal_retention(0))?;
     let chunks = second.profile_chunks("profile-run")?;
     assert_eq!(chunks.len(), 128, "64 MiB byte budget is enforced");
     assert!(chunks.iter().all(|c| c.until_ms >= 2000));
     second.purge_runs(&["profile-run".into()], true)?;
     assert!(repo.profile_chunks("profile-run")?.is_empty());
     assert!(repo.save_profile(&chunk).is_err());
+    Ok(())
+  })
+  .await??;
+  Ok(())
+}
+
+#[tokio::test]
+async fn postgres_pruning_matches_shared_contract() -> Result<()> {
+  let database = PostgresTestDatabase::start().await?;
+  let url = database.url.clone();
+  tokio::task::spawn_blocking(move || -> Result<()> {
+    let repo = stove::storage::repository::Repository::connect_postgres(&url, &equal_retention(0))?;
+    retention_contract::assert_pruning_contract(&repo);
     Ok(())
   })
   .await??;

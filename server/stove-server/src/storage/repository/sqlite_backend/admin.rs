@@ -1,3 +1,4 @@
+use super::super::RetentionPolicy;
 use diesel::prelude::*;
 use std::collections::BTreeMap;
 
@@ -7,17 +8,17 @@ use super::writes::{delete_runs_on, prune_completed_runs_for_app_on};
 use crate::error::Result;
 use crate::storage::models::{EvidenceCounts, PurgePreview, PurgeResult, StorageStats};
 use crate::storage::schema::sqlite::{
-  entries, mock_interactions, mock_warnings, runs, snapshots, spans, tests,
+  dashboard_settings, entries, mock_interactions, mock_warnings, runs, snapshots, spans, tests,
 };
 
 impl SqliteBackend {
-  pub fn storage_stats(&self, retention_runs_per_app: usize) -> Result<StorageStats> {
+  pub fn storage_stats(&self) -> Result<StorageStats> {
     let mut db = self.lock_read();
     let conn = db.conn();
     Ok(StorageStats {
       run_idle_timeout_seconds: super::lifecycle::idle_timeout_on(conn)?.seconds(),
       backend: "sqlite".to_string(),
-      retention_runs_per_app,
+      retention: retention_on(conn)?,
       runs: runs::table.count().get_result(conn)?,
       running_runs: runs::table
         .filter(runs::status.eq("RUNNING"))
@@ -27,18 +28,38 @@ impl SqliteBackend {
     })
   }
 
-  pub fn update_retention(&self, runs_per_app: usize) -> Result<()> {
-    if runs_per_app == 0 {
-      return Ok(());
-    }
+  pub fn initialize_retention(&self, policy: &RetentionPolicy) -> Result<()> {
+    diesel::insert_into(dashboard_settings::table)
+      .values((
+        dashboard_settings::setting_key.eq(RetentionPolicy::SETTING_KEY),
+        dashboard_settings::setting_value.eq(serde_json::to_string(policy)?),
+      ))
+      .on_conflict(dashboard_settings::setting_key)
+      .do_nothing()
+      .execute(self.lock_write().conn())?;
+    Ok(())
+  }
+
+  pub fn update_retention(&self, policy: &RetentionPolicy) -> Result<()> {
     let mut db = self.lock_write();
-    db.conn().transaction(|conn| {
-      let apps = runs::table
-        .select(runs::app_name)
-        .distinct()
-        .load::<String>(conn)?;
-      for app_name in apps {
-        prune_completed_runs_for_app_on(conn, &app_name, runs_per_app, None)?;
+    db.conn().immediate_transaction(|conn| {
+      diesel::insert_into(dashboard_settings::table)
+        .values((
+          dashboard_settings::setting_key.eq(RetentionPolicy::SETTING_KEY),
+          dashboard_settings::setting_value.eq(serde_json::to_string(policy)?),
+        ))
+        .on_conflict(dashboard_settings::setting_key)
+        .do_update()
+        .set(dashboard_settings::setting_value.eq(serde_json::to_string(policy)?))
+        .execute(conn)?;
+      if !policy.disabled() {
+        let apps = runs::table
+          .select(runs::app_name)
+          .distinct()
+          .load::<String>(conn)?;
+        for app_name in apps {
+          prune_completed_runs_for_app_on(conn, &app_name, policy, None)?;
+        }
       }
       Ok(())
     })
@@ -150,4 +171,12 @@ fn select_requested_runs(
     available,
     include_running,
   ))
+}
+
+pub(super) fn retention_on(conn: &mut SqliteConnection) -> Result<RetentionPolicy> {
+  let value = dashboard_settings::table
+    .find(RetentionPolicy::SETTING_KEY)
+    .select(dashboard_settings::setting_value)
+    .first::<String>(conn)?;
+  RetentionPolicy::from_stored(&value)
 }

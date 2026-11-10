@@ -1,3 +1,5 @@
+#[cfg(test)]
+use crate::storage::repository::equal_retention;
 use std::sync::Arc;
 use std::time::{Duration, Instant};
 
@@ -7,7 +9,7 @@ use crate::sse::manager::SseManager;
 use crate::storage::repository::Repository;
 
 fn test_service() -> EventIngestor {
-  let repo = Arc::new(Repository::connect_sqlite(":memory:", 1).unwrap());
+  let repo = Arc::new(Repository::connect_sqlite(":memory:", &equal_retention(1)).unwrap());
   let sse = Arc::new(SseManager::new());
   EventIngestor::new(repo, sse)
 }

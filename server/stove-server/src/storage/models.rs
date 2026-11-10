@@ -317,7 +317,7 @@ pub struct EvidenceCounts {
 pub struct StorageStats {
   pub run_idle_timeout_seconds: u64,
   pub backend: String,
-  pub retention_runs_per_app: usize,
+  pub retention: crate::storage::repository::RetentionPolicy,
   pub runs: i64,
   pub running_runs: i64,
   pub evidence: EvidenceCounts,

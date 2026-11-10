@@ -5,6 +5,9 @@
 
 #![allow(dead_code)]
 
+#[path = "retention.rs"]
+pub mod retention_support;
+use retention_support::equal_retention;
 use std::sync::Arc;
 
 use serde_json::Value;
@@ -30,8 +33,10 @@ impl TestServer {
   }
 
   pub async fn start_with_public_url(public_url: Option<String>) -> Self {
-    let repo =
-      Arc::new(Repository::connect_sqlite(":memory:", 1).expect("in-memory database should open"));
+    let repo = Arc::new(
+      Repository::connect_sqlite(":memory:", &equal_retention(1))
+        .expect("in-memory database should open"),
+    );
     let sse_manager = Arc::new(SseManager::new());
     let _live_event_relay = stove::sse::relay::spawn(repo.clone(), sse_manager.clone());
     let ingestor = EventIngestor::new(repo.clone(), sse_manager.clone());

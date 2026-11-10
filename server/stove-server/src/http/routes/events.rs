@@ -8,6 +8,8 @@
 //! HTTPS-only ingress or API gateway that cannot forward plaintext gRPC —
 //! the events travel as an ordinary HTTPS POST instead.
 
+#[cfg(test)]
+use crate::storage::repository::equal_retention;
 use axum::body::Bytes;
 use axum::extract::State;
 use axum::http::header;
@@ -63,7 +65,7 @@ mod tests {
   use crate::storage::repository::Repository;
 
   async fn spawn_server() -> (String, Arc<Repository>) {
-    let repository = Arc::new(Repository::connect_sqlite(":memory:", 1).unwrap());
+    let repository = Arc::new(Repository::connect_sqlite(":memory:", &equal_retention(1)).unwrap());
     let sse_manager = Arc::new(SseManager::new());
     let ingestor = EventIngestor::new(repository.clone(), sse_manager.clone());
     let router = create_router(repository.clone(), sse_manager, ingestor);
@@ -207,7 +209,7 @@ mod tests {
 
   #[tokio::test]
   async fn swagger_ui_documents_protobuf_ingestion() {
-    let repository = Arc::new(Repository::connect_sqlite(":memory:", 1).unwrap());
+    let repository = Arc::new(Repository::connect_sqlite(":memory:", &equal_retention(1)).unwrap());
     let sse_manager = Arc::new(SseManager::new());
     let ingestor = EventIngestor::new(repository.clone(), sse_manager.clone());
     let router = axum::Router::new().nest(

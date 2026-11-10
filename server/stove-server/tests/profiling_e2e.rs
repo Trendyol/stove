@@ -1,3 +1,4 @@
+use common::retention_support::equal_retention;
 mod common;
 
 use common::TestServer;
@@ -248,8 +249,11 @@ async fn counters_sum_but_live_snapshots_use_latest_per_instance_with_exact_filt
 async fn profile_storage_bounds_persists_and_cascades() {
   let temp = tempfile::tempdir().unwrap();
   let path = temp.path().join("profiles.db");
-  let repo =
-    stove::storage::repository::Repository::connect_sqlite(path.to_str().unwrap(), 0).unwrap();
+  let repo = stove::storage::repository::Repository::connect_sqlite(
+    path.to_str().unwrap(),
+    &equal_retention(0),
+  )
+  .unwrap();
   repo
     .save_run_start("run", "app", "2024-01-01T00:00:00Z", &[])
     .unwrap();
@@ -264,8 +268,11 @@ async fn profile_storage_bounds_persists_and_cascades() {
     "chunk-004"
   );
   drop(repo);
-  let repo =
-    stove::storage::repository::Repository::connect_sqlite(path.to_str().unwrap(), 0).unwrap();
+  let repo = stove::storage::repository::Repository::connect_sqlite(
+    path.to_str().unwrap(),
+    &equal_retention(0),
+  )
+  .unwrap();
   assert_eq!(repo.profile_chunks("run").unwrap().len(), 256);
   repo.purge_runs(&["run".into()], true).unwrap();
   assert!(repo.profile_chunks("run").unwrap().is_empty());

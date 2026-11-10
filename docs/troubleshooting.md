@@ -374,7 +374,7 @@ Deep dive: [Provided Instances · isolation](Components/11-provided-instances.md
 | Shared server shows unrelated runs | Attach `metadata` in `DashboardSystemOptions`, then filter by exact key/value pairs in the run picker, `GET /api/v1/runs?metadata=...`, or `stove_runs` |
 | PostgreSQL won't connect | Verify `--database-url` / `STOVE_DATABASE_URL`; TLS is the default. Add `sslmode=disable` only when the server intentionally has no TLS |
 | `stove_trace` returns nothing | [Tracing](Components/15-tracing.md) not enabled |
-| Disk filling with old run data | Set `--retention-runs-per-app` (or `STOVE_RETENTION_RUNS_PER_APP`) to limit completed runs per app; use `stove --clear` for a full wipe |
+| Disk filling with old run data | Set `--retention-passed-runs-per-app` and `--retention-failed-runs-per-app`, or configure metadata retention rules in Admin; use `stove --clear` for a full wipe |
 
 MCP is optional. It gives agents a structured way to read the same failure evidence humans see in the console and
 dashboard.

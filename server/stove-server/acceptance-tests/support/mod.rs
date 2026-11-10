@@ -81,7 +81,7 @@ impl RunningStove {
         .context("write acceptance PostgreSQL URL secret")?;
       let mut file_config = "database_url_file = \"database-url\"\n".to_string();
       if let Some(retention) = retention_runs_per_app {
-        file_config.push_str(&format!("retention_runs_per_app = {retention}\n"));
+        file_config.push_str(&format!("retention_passed_runs_per_app = {retention}\nretention_failed_runs_per_app = {retention}\n"));
       }
       fs::write(&config_path, file_config).context("write acceptance Stove configuration")?;
       command.arg("--config-file").arg(config_path);
@@ -92,7 +92,9 @@ impl RunningStove {
     }
     if !use_config_file && let Some(retention) = retention_runs_per_app {
       command
-        .arg("--retention-runs-per-app")
+        .arg("--retention-passed-runs-per-app")
+        .arg(retention.to_string())
+        .arg("--retention-failed-runs-per-app")
         .arg(retention.to_string());
     }
 

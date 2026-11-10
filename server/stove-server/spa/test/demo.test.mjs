@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
+import { readFile } from "node:fs/promises";
 import initSqlJs from "sql.js";
 import createJiti from "jiti";
 
@@ -98,12 +99,12 @@ test("SQL edits, retention, metadata purge, and reset operate on the same databa
   assert.equal(preview.run_count, 3);
   const purged = await get("/admin/purge", schema.isPurgeResult, "POST", { run_ids: preview.run_ids, include_running: false });
   assert.equal(purged.purged_runs, 3);
-  const retained = await get("/admin/retention", schema.isAdminStatus, "PUT", { runs_per_app: 1 });
+  const retained = await get("/admin/retention", schema.isAdminStatus, "PUT", { passed_runs_per_app: 1, failed_runs_per_app: 1, rules: [] });
   assert.equal(retained.runs, 3);
   backend.reset();
   const restored = await get("/admin/status", schema.isAdminStatus);
   assert.equal(restored.runs, 9);
-  assert.equal(restored.retention_runs_per_app, 0);
+  assert.equal(restored.retention.passed_runs_per_app, 0);
   assert.equal(restored.evidence.tests, 54);
 });
 
@@ -139,7 +140,7 @@ test("replay streams valid events, finishes, and gives each replay a distinct tr
 test("errors and aborted requests do not silently fall through to a real server", async (t) => {
   const { backend, request, get } = setup(t);
   assert.equal((await request("/admin/database/query", "POST", { sql: "invalid SQL" })).status, 400);
-  assert.equal((await request("/admin/retention", "PUT", { runs_per_app: -1 })).status, 400);
+  assert.equal((await request("/admin/retention", "PUT", { passed_runs_per_app: -1, failed_runs_per_app: -1, rules: [] })).status, 400);
   assert.equal((await request("/unknown")).status, 404);
   await assert.rejects(backend.request("/api/v1/runs", { signal: AbortSignal.abort() }), { name: "AbortError" });
   backend.replay();
@@ -229,4 +230,34 @@ test("demo profiling follows replay, SQL deletion, purge, and reset", async (t) 
   assert.equal((await get(`/runs/${run.id}/profiles`, schema.isProfileReport)).series.length, 4);
   await request("/data", "DELETE");
   assert.equal((await request(`/runs/${run.id}/profiles`)).status, 404);
+});
+
+const retentionFixtures = JSON.parse(await readFile(new URL("../../tests/fixtures/retention.json", import.meta.url), "utf8"));
+for (const fixture of retentionFixtures.valid) {
+  if (fixture.protected_run) continue; // Admin updates have no in-flight ingestion receipt.
+  test(`demo retention endpoint: ${fixture.name}`, async (t) => {
+    const { request, get } = setup(t);
+    assert.equal((await request("/data", "DELETE")).status, 204);
+    const literal = value => "'" + String(value).replaceAll("'", "''") + "'";
+    for (const [index, run] of fixture.runs.entries()) {
+      const values = [run.id, run.app_name, new Date(Date.UTC(2024, 0, 1, 0, 0, fixture.runs.length - index)).toISOString(), run.status, JSON.stringify(run.metadata)].map(literal).join(",");
+      await get("/admin/database/query", schema.isDatabaseQueryResult, "POST", {
+        sql: `INSERT INTO runs (id, app_name, started_at, status, metadata) VALUES (${values})`,
+      });
+    }
+    await get("/admin/retention", schema.isAdminStatus, "PUT", fixture.policy);
+    const result = await get("/admin/database/query", schema.isDatabaseQueryResult, "POST", {sql: "SELECT id FROM runs"});
+    assert.deepEqual(result.rows.map(row => row[0]).sort(), fixture.runs.filter(run => !fixture.expired.includes(run.id)).map(run => run.id).sort());
+  });
+}
+
+test("demo rejects shared invalid retention policies without changing saved settings", async (t) => {
+  const { request, get } = setup(t);
+  const original = (await get("/admin/status", schema.isAdminStatus)).retention;
+  for (const fixture of retentionFixtures.invalid) {
+    const policy = structuredClone(fixture.policy);
+    if (fixture.repeat_rules) policy.rules = Array(fixture.repeat_rules).fill(policy.rules[0]);
+    assert.equal((await request("/admin/retention", "PUT", policy)).status, 400, fixture.name);
+    assert.deepEqual((await get("/admin/status", schema.isAdminStatus)).retention, original);
+  }
 });

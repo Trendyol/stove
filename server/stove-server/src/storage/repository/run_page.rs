@@ -3,7 +3,7 @@ use std::collections::BTreeMap;
 use serde::{Deserialize, Serialize};
 use utoipa::ToSchema;
 
-use super::{Backend, Repository, cursor};
+use super::{Backend, MetadataSelectors, Repository, cursor};
 use crate::error::{AppError, Result};
 use crate::storage::models::{Run, RunStatus};
 
@@ -15,52 +15,6 @@ pub struct RunFilter {
   pub app: Option<String>,
   pub status: Option<RunStatus>,
   pub metadata: MetadataSelectors,
-}
-
-/// Canonical OR-within-key, AND-across-keys selectors shared by REST and MCP.
-#[derive(Debug, Clone, Default, PartialEq, Eq, Serialize)]
-#[serde(transparent)]
-pub struct MetadataSelectors(BTreeMap<String, Vec<String>>);
-
-impl MetadataSelectors {
-  pub fn iter(&self) -> impl Iterator<Item = (&String, &Vec<String>)> {
-    self.0.iter()
-  }
-
-  #[must_use]
-  pub fn is_empty(&self) -> bool {
-    self.0.is_empty()
-  }
-}
-
-impl<'de> Deserialize<'de> for MetadataSelectors {
-  fn deserialize<D: serde::Deserializer<'de>>(
-    deserializer: D,
-  ) -> std::result::Result<Self, D::Error> {
-    #[derive(Deserialize)]
-    #[serde(untagged)]
-    enum Values {
-      One(String),
-      Any(Vec<String>),
-    }
-    let raw = BTreeMap::<String, Values>::deserialize(deserializer)?;
-    let mut selectors = BTreeMap::new();
-    for (key, values) in raw {
-      let mut values = match values {
-        Values::One(value) => vec![value],
-        Values::Any(values) => values,
-      };
-      if values.is_empty() {
-        return Err(serde::de::Error::custom(
-          "metadata values must not be empty",
-        ));
-      }
-      values.sort();
-      values.dedup();
-      selectors.insert(key, values);
-    }
-    Ok(Self(selectors))
-  }
 }
 
 #[derive(Debug, Serialize, ToSchema)]
@@ -177,17 +131,6 @@ impl Repository {
 pub(super) struct Position {
   pub started_at: String,
   pub id: String,
-}
-
-impl From<BTreeMap<String, String>> for MetadataSelectors {
-  fn from(values: BTreeMap<String, String>) -> Self {
-    Self(
-      values
-        .into_iter()
-        .map(|(key, value)| (key, vec![value]))
-        .collect(),
-    )
-  }
 }
 
 impl cursor::CursorPosition for Position {

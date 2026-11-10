@@ -1,5 +1,7 @@
 use super::SqliteBackend;
 use crate::storage::metrics::{Capacity, DatabaseDiagnostics, HealthSample};
+#[cfg(test)]
+use crate::storage::repository::equal_retention;
 use diesel::connection::SimpleConnection;
 
 impl SqliteBackend {
@@ -148,7 +150,7 @@ mod tests {
   }
   #[test]
   fn held_writer_does_not_block_capacity_or_scrapes() {
-    let repository = Repository::connect_sqlite(":memory:", 1).unwrap();
+    let repository = Repository::connect_sqlite(":memory:", &equal_retention(1)).unwrap();
     let crate::storage::repository::Backend::Sqlite(backend) = &repository.backend else {
       unreachable!()
     };

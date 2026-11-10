@@ -48,7 +48,7 @@ export type RunStatus = components["schemas"]["RunStatus"];
 export type SpanStatus = components["schemas"]["SpanStatus"];
 export type PurgePreviewRequest = components["schemas"]["PurgePreviewRequest"];
 export type PurgeRequest = components["schemas"]["PurgeRequest"];
-export type RetentionRequest = components["schemas"]["RetentionRequest"];
+
 export type DatabaseQueryRequest = components["schemas"]["DatabaseQueryRequest"];
 
 // Preserve each generated union variant while making its envelope and payload readonly.
@@ -70,3 +70,6 @@ export type ProfileSeries = components["schemas"]["Series"];
 
 export type TestPage = components["schemas"]["TestPage"];
 export type TestSummary = components["schemas"]["TestSummary"];
+
+export type RetentionPolicy = components["schemas"]["RetentionPolicy"];
+export type RetentionRule = components["schemas"]["RetentionRule"];

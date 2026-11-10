@@ -1,3 +1,4 @@
+import { isRetentionPolicy } from "../utils/retention";
 import { payloadSchemas } from "./live-schemas";
 import type {
   AdminStatus,
@@ -108,7 +109,7 @@ const isEvidenceCounts = object<EvidenceCounts>({
 
 export const isAdminStatus = object<AdminStatus>({
   backend: isString,
-  retention_runs_per_app: isNumber,
+  retention: isRetentionPolicy,
   run_idle_timeout_seconds: isNumber,
   runs: isNumber,
   running_runs: isNumber,
