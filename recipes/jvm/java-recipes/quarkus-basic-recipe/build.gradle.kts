@@ -19,9 +19,19 @@ kotlin {
   }
 }
 
+// This recipe is an e2e fixture; preserve CDI beans and share augmented application classes.
+quarkus {
+  quarkusBuildProperties.put("quarkus.profile", "e2e")
+}
+
+val augmentedJar = tasks.named<io.quarkus.gradle.tasks.QuarkusBuild>("quarkusBuild").map { it.runnerJar }
+
 tasks.e2eTest {
-  // Quarkus bootstraps a nested Gradle model; all build plugins require JDK 25.
-  javaLauncher.set(javaToolchains.launcherFor { languageVersion.set(JavaLanguageVersion.of(25)) })
+  dependsOn("quarkusBuild")
+  classpath = files(augmentedJar) +
+    (sourceSets["test-e2e"].runtimeClasspath - sourceSets.main.get().output)
+  systemProperty("quarkus.profile", "e2e")
+  systemProperty("java.util.logging.manager", "org.jboss.logmanager.LogManager")
 }
 
 dependencies {

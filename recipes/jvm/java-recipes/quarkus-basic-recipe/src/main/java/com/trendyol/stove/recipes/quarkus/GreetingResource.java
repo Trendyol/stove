@@ -17,10 +17,6 @@ public class GreetingResource {
   @Inject
   Instance<GreetingService> greetingServices;
 
-  // Inject repository to prevent dead code elimination
-  @Inject
-  ItemRepository itemRepository;
-
   @GET
   @Produces(MediaType.TEXT_PLAIN)
   public String hello() {

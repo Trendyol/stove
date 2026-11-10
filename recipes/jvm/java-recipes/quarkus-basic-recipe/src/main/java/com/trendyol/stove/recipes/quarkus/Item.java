@@ -1,6 +1,6 @@
 package com.trendyol.stove.recipes.quarkus;
 
-/** Simple item class to demonstrate classloader limitations. */
+/** An item shared by the HTTP application and Bridge tests. */
 public class Item {
   private final String id;
   private final String name;

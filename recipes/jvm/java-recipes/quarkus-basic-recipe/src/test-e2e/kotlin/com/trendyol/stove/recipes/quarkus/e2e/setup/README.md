@@ -1,50 +1,40 @@
 # Quarkus Recipe Setup
 
-This package provides Stove integration for the Quarkus recipe. The recipe uses
-HTTP and tracing assertions and does not configure CDI Bridge access.
+This recipe uses Stove `1.0.0.572-SNAPSHOT` with HTTP, tracing, and the Quarkus CDI Bridge.
+Run it from `recipes/jvm`:
 
-## What It Does
-
-- keeps the public `quarkus(runner, withParameters)` DSL unchanged
-- starts Quarkus using its normal `main` entrypoint
-- waits for Quarkus startup to complete before tests run
-- shuts Quarkus down cleanly after the project
-- remains compatible with Stove tracing and failure reporting
-
-## Important Files
-
-| File | Purpose |
-|------|---------|
-| `StoveConfig.kt` | Kotest project config and Stove systems |
-| `stove-quarkus` | `quarkus()` DSL and Quarkus launcher |
-| `IndexTests.kt` | HTTP smoke test and tracing smoke test |
-
-## Usage
-
-```kotlin
-quarkus(
-  runner = { params ->
-    QuarkusMainApp.main(params)
-  },
-  withParameters = listOf(
-    "quarkus.http.port=8040"
-  )
-)
+```shell
+./gradlew :java-recipes:quarkus-basic-recipe:e2eTest
 ```
 
-Stove detects Quarkus startup for both HTTP apps and worker-only apps.
+`StoveConfig` registers `bridge()` and launches the normal `QuarkusMainApp.main`.
+Stove automatically detects Quarkus startup and shuts it down in `afterProject`;
+no custom startup observer, system-property signal, or readiness endpoint is needed.
+
+## Inventory flow
+
+`IndexTests` seeds an `Item` through `using<ItemRepository>`, reads it through
+`GET /items/{id}`, updates it through `PUT /items/{id}`, and checks the typed
+`Item` through Bridge again. Both paths use the same application-scoped repository.
+Unique item IDs keep tests independent. The repository resets when the app stops.
+
+`using<InventorySummary>` resolves a CDI bean that no HTTP resource injects,
+showing that beans used only by tests survive e2e augmentation. Existing greeting
+and tracing checks exercise the real HTTP application.
+
+## Augmented classpath
+
+This dedicated recipe builds with the `e2e` profile, which selects an uber-jar and
+sets `quarkus.arc.remove-unused-beans=false` at build time. The `e2eTest` task
+builds that jar and places it before test dependencies, excluding raw main output
+from the runtime classpath. Test compilation still sees main output. This lets
+Bridge and Quarkus share augmented CDI classes and typed application objects.
+
+Keep production packaging separate when adapting this setup to a production
+module. The isolated fast-jar launcher cannot expose beans through Bridge.
+See the [Quarkus Bridge guide](https://trendyol.github.io/stove/frameworks/quarkus/#bridge).
 
 ## Tracing
 
-If `stove-tracing` is present and the `e2eTest` task is configured with the
-OpenTelemetry Java agent, the recipe can collect spans for Quarkus request flow.
-
-The recipe includes a tracing smoke test that verifies spans are emitted for a real
-HTTP request.
-
-## CDI Bridge
-
-Quarkus supports `using<T>` through `com.trendyol.stove.quarkus.bridge`. This
-recipe does not configure it. Bridge requires an augmented uber-jar on the shared
-test runtime classpath and e2e bean preservation; the isolated fast-jar launcher
-does not support it. See the [Quarkus Bridge guide](https://trendyol.github.io/stove/frameworks/quarkus/#bridge).
+The Stove tracing plugin attaches the OpenTelemetry agent to `e2eTest`. The tracing
+test checks that a real `/hello` request emits spans.
