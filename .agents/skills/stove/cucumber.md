@@ -39,6 +39,7 @@ cases in application glue.
 
 ```properties
 cucumber.glue=your.steps.package,com.trendyol.stove.extensions.cucumber
+cucumber.glue.hint.enabled=false
 cucumber.plugin=com.trendyol.stove.extensions.cucumber.StoveCucumberPlugin
 cucumber.execution.parallel.enabled=true
 cucumber.execution.parallel.config.strategy=fixed
@@ -51,6 +52,11 @@ this plugin once. The backend needs no additional manual registration. The examp
 runs scenarios and outline rows in parallel by default; steps within each scenario
 remain sequential. Stove also supports `cucumber.execution.parallel.enabled=false`
 and respects the engine configuration. Cucumber itself remains sequential when the property is absent.
+
+Keep glue hints disabled with Cucumber 8.0.4. Its optional performance advisor can
+throw `IncompatibleClassChangeError` while inspecting Kotlin inline-coroutine
+classes once scanning exceeds its timing threshold, often only in CI. This
+setting disables advice, not discovery or execution.
 
 Start Stove once using native `io.cucumber.java.BeforeAll` and stop with native
 `AfterAll`. An `object` with `@JvmStatic` hooks works. Startup is an ordinary

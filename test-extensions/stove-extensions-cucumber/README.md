@@ -20,12 +20,18 @@ Include your step package and Stove's diagnostic hooks in the test resources'
 
 ```properties
 cucumber.glue=your.steps.package,com.trendyol.stove.extensions.cucumber
+cucumber.glue.hint.enabled=false
 cucumber.plugin=com.trendyol.stove.extensions.cucumber.StoveCucumberPlugin
 cucumber.execution.parallel.enabled=true
 cucumber.execution.parallel.config.strategy=fixed
 cucumber.execution.parallel.config.fixed.parallelism=4
 cucumber.execution.parallel.config.fixed.max-pool-size=4
 ```
+
+Disable glue hints with Cucumber 8.0.4: its optional performance advisor can throw
+`IncompatibleClassChangeError` while inspecting Kotlin inline-coroutine classes
+when scanning exceeds its timing threshold. This setting disables advice only;
+step discovery and execution are unchanged.
 
 Start Stove once in a native `io.cucumber.java.BeforeAll` hook and stop it in
 `AfterAll`. Hooks are ordinary functions; use `runBlocking` around suspending

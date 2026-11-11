@@ -17,6 +17,11 @@ The JUnit Platform suite selects the Cucumber engine; Kotest supplies assertions
 Gradle selects only the suite engine at the top level to avoid running features twice.
 You can also run `CucumberSuite` in an IDE.
 
+Glue-loading hints are disabled to avoid Cucumber 8.0.4's performance advisor
+crashing on generated Kotlin inline-coroutine classes during slower scans.
+The Gradle test task sets the hint threshold to zero so removing this workaround
+is exercised even on fast machines. Discovery and parallel execution stay enabled.
+
 To select scenarios by tag:
 
 ```shell

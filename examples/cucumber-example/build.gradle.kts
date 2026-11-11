@@ -16,5 +16,7 @@ dependencies {
 // Keeping the Cucumber engine out of top-level discovery prevents duplicate execution.
 tasks.test {
   useJUnitPlatform { includeEngines("junit-platform-suite") }
+  // Exercise the hint workaround even on fast machines if it is accidentally removed.
+  systemProperty("cucumber.glue.hint.threshold", "PT0S")
   systemProperty("cucumber.filter.tags", providers.gradleProperty("cucumber.tags").getOrElse("not @failure-demo"))
 }

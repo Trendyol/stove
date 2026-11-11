@@ -11,6 +11,7 @@ import java.util.Base64
 
 internal val cucumberConfiguration = mapOf(
   "cucumber.glue" to "com.trendyol.stove.extensions.cucumber,com.trendyol.stove.cucumberfixtures.probe",
+  "cucumber.glue.hint.enabled" to "false",
   "cucumber.plugin" to StoveCucumberPlugin::class.java.name,
   "cucumber.execution.parallel.enabled" to "true",
   "cucumber.execution.parallel.config.strategy" to "fixed",

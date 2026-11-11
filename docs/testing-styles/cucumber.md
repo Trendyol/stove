@@ -73,6 +73,12 @@ service loader. Update the glue package for your application. The `cucumber.tags
 Gradle property in the example overrides `cucumber.filter.tags`; the test resources
 provide the default when launching the suite directly in an IDE.
 
+Keep `cucumber.glue.hint.enabled=false` with Cucumber 8.0.4. Its optional
+glue-loading performance advisor can throw `IncompatibleClassChangeError` when
+inspecting Kotlin inline-coroutine classes. The advisor runs only after a timing
+threshold, so this may appear only on slower CI workers. Disabling hints leaves
+step discovery, execution, and reporting unchanged.
+
 ## Start Stove once per run
 
 Use native Cucumber run-level hooks to start and stop Stove. These hooks remain
