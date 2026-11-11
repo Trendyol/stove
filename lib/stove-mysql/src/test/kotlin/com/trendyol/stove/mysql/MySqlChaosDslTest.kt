@@ -6,20 +6,19 @@ import com.trendyol.stove.rdbms.NativeSqlOperations
 import com.trendyol.stove.rdbms.RelationalDatabaseChaosAdapter
 import com.trendyol.stove.system.Stove
 import com.trendyol.stove.system.abstractions.SystemKey
-import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
 import kotliquery.sessionOf
 
 class MySqlChaosDslTest : FunSpec({
-  test("closes native SQL resources when cleanup fails and preserves both failures") {
+  test("closes native SQL resources when cleanup fails and records both failures") {
     val cleanupFailure = IllegalStateException("cleanup failed")
     val closeFailure = IllegalStateException("connection close failed")
     val jdbc = JdbcCloseFailureFixture(closeFailure)
     val fixture = MySqlChaosFixture(cleanupFailure, jdbc)
 
-    shouldThrow<IllegalStateException> { fixture.close() } shouldBe cleanupFailure
+    fixture.close()
     jdbc.closeAttempted shouldBe true
     cleanupFailure.suppressed.toList() shouldBe listOf(closeFailure)
   }

@@ -7,24 +7,27 @@ public final class com/trendyol/stove/chaos/ChaosCapableSystem$DefaultImpls {
 }
 
 public final class com/trendyol/stove/chaos/ChaosDslKt {
-	public static final fun applicationConfiguration (Lcom/trendyol/stove/chaos/ChaosCapableSystem;Ljava/lang/Object;Lcom/trendyol/stove/chaos/ChaosEndpointAdapter;)Ljava/lang/Object;
-	public static final fun awaitStalledTraffic-exY8QGI (Lcom/trendyol/stove/chaos/ChaosCapableSystem;Lcom/trendyol/stove/chaos/TrafficDirection;JLkotlin/coroutines/Continuation;)Ljava/lang/Object;
-	public static final fun chaosExperiment-mGOUYlo (Lcom/trendyol/stove/chaos/ChaosCapableSystem;Ljava/lang/String;Lcom/trendyol/stove/chaos/NetworkFault;JLkotlin/jvm/functions/Function2;Lkotlin/jvm/functions/Function2;Lkotlin/jvm/functions/Function2;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
-	public static final fun duringFault (Lcom/trendyol/stove/chaos/ChaosCapableSystem;Lcom/trendyol/stove/chaos/NetworkFault;Lkotlin/jvm/functions/Function2;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
-	public static synthetic fun duringFault$default (Lcom/trendyol/stove/chaos/ChaosCapableSystem;Lcom/trendyol/stove/chaos/NetworkFault;Lkotlin/jvm/functions/Function2;Lkotlin/coroutines/Continuation;ILjava/lang/Object;)Ljava/lang/Object;
-	public static final fun enableChaosRouting (Lcom/trendyol/stove/chaos/ChaosCapableSystem;)V
-	public static final fun withSystemValidation (Lcom/trendyol/stove/chaos/ChaosCapableSystem;Lkotlin/jvm/functions/Function2;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static final fun awaitStalledTraffic-dWUq8MI (Lcom/trendyol/stove/chaos/ChaosCapableSystem;JLcom/trendyol/stove/chaos/TrafficDirection;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static synthetic fun awaitStalledTraffic-dWUq8MI$default (Lcom/trendyol/stove/chaos/ChaosCapableSystem;JLcom/trendyol/stove/chaos/TrafficDirection;Lkotlin/coroutines/Continuation;ILjava/lang/Object;)Ljava/lang/Object;
+	public static final fun chaosExperiment-mGOUYlo (Lcom/trendyol/stove/chaos/ChaosCapableSystem;Ljava/lang/String;Lcom/trendyol/stove/chaos/NetworkFault;JLkotlin/jvm/functions/Function3;Lkotlin/jvm/functions/Function3;Lkotlin/jvm/functions/Function3;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static final fun duringFault (Lcom/trendyol/stove/chaos/ChaosCapableSystem;Lcom/trendyol/stove/chaos/NetworkFault;Lkotlin/jvm/functions/Function3;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static synthetic fun duringFault$default (Lcom/trendyol/stove/chaos/ChaosCapableSystem;Lcom/trendyol/stove/chaos/NetworkFault;Lkotlin/jvm/functions/Function3;Lkotlin/coroutines/Continuation;ILjava/lang/Object;)Ljava/lang/Object;
+	public static final fun sendIntoStall-WPwdCS8 (Lcom/trendyol/stove/chaos/ChaosCapableSystem;JLcom/trendyol/stove/chaos/TrafficDirection;Lkotlin/jvm/functions/Function2;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static synthetic fun sendIntoStall-WPwdCS8$default (Lcom/trendyol/stove/chaos/ChaosCapableSystem;JLcom/trendyol/stove/chaos/TrafficDirection;Lkotlin/jvm/functions/Function2;Lkotlin/coroutines/Continuation;ILjava/lang/Object;)Ljava/lang/Object;
 }
 
 public abstract interface class com/trendyol/stove/chaos/ChaosEndpointAdapter {
-	public abstract fun applicationConfiguration (Ljava/lang/Object;Lcom/trendyol/stove/chaos/TcpEndpoint;)Ljava/lang/Object;
-	public abstract fun endpoint (Ljava/lang/Object;)Lcom/trendyol/stove/chaos/TcpEndpoint;
+	public abstract fun reroute (Ljava/lang/Object;Lkotlin/jvm/functions/Function1;)Ljava/lang/Object;
 }
 
 public final class com/trendyol/stove/chaos/ChaosSetupScope {
 	public fun <init> ()V
 	public final fun enableChaos ()V
-	public final fun getChaosEnabled ()Z
+}
+
+public final class com/trendyol/stove/chaos/ChaosSpiKt {
+	public static final fun applicationConfiguration (Lcom/trendyol/stove/chaos/ChaosCapableSystem;Ljava/lang/Object;Lcom/trendyol/stove/chaos/ChaosEndpointAdapter;)Ljava/lang/Object;
+	public static final fun registerChaosCapable-SscbJ7Y (Lcom/trendyol/stove/system/Stove;Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function2;)Lcom/trendyol/stove/system/Stove;
 }
 
 public abstract interface class com/trendyol/stove/chaos/NetworkFault {

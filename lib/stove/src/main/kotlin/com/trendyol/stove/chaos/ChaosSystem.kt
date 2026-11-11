@@ -56,23 +56,24 @@ internal class ChaosSystem(
   fun <C> route(system: ChaosCapableSystem, direct: C, adapter: ChaosEndpointAdapter<C>): C = lock.withLock {
     val route = findRoute(system) ?: return direct
     route.checkAvailable(stopping)
-    adapter.applicationConfiguration(direct, route.start(adapter.endpoint(direct)))
+    adapter.reroute(direct, route::start)
   }
 
-  suspend fun <T> duringFault(scope: ChaosValidationScope, fault: NetworkFault, block: suspend () -> T): T = duringFault(
-    scope,
-    fault,
-    experiment = null,
-    block
-  )
+  suspend fun <T> duringFault(
+    scope: ChaosValidationScope,
+    system: ChaosCapableSystem,
+    fault: NetworkFault,
+    block: suspend () -> T
+  ): T = duringFault(scope, system, fault, experiment = null, block)
 
   private suspend fun <T> duringFault(
     scope: ChaosValidationScope,
+    system: ChaosCapableSystem,
     fault: NetworkFault,
     experiment: ExperimentToken?,
     block: suspend () -> T
   ): T {
-    val route = reserve(scope, experiment)
+    val route = reserve(scope, system, experiment)
     val metadata = mapOf("target" to route.name, "fault" to fault.toString())
     return restoring(restore = {
       report(action = "Restore connectivity", metadata = metadata) { heal(route) }
@@ -84,6 +85,7 @@ internal class ChaosSystem(
 
   suspend fun experiment(
     scope: ChaosValidationScope,
+    system: ChaosCapableSystem,
     name: String,
     fault: NetworkFault,
     timeout: Duration,
@@ -94,7 +96,7 @@ internal class ChaosSystem(
     require(name.isNotBlank()) { "Experiment name cannot be blank" }
     require(timeout.isFinite() && timeout.isPositive()) { "Experiment timeout must be positive and finite" }
     val (route, experiment) = lock.withLock {
-      val route = requireRoute(scope.system)
+      val route = requireRoute(system)
       route.checkAvailable(stopping)
       route to route.beginExperiment(scope)
     }
@@ -102,7 +104,7 @@ internal class ChaosSystem(
       withTimeout(timeout) {
         val metadata = mapOf("experiment" to name, "target" to route.name)
         report(action = "Baseline", metadata = metadata) { completePhase(baseline) }
-        report(action = "Fault phase", metadata = metadata) { duringFault(scope, fault, experiment, faulted) }
+        report(action = "Fault phase", metadata = metadata) { duringFault(scope, system, fault, experiment, faulted) }
         report(action = "Recovery", metadata = metadata) { completePhase(recovery) }
       }
     } finally {
@@ -110,13 +112,19 @@ internal class ChaosSystem(
     }
   }
 
-  suspend fun awaitStalledTraffic(scope: ChaosValidationScope, direction: TrafficDirection, timeout: Duration) {
-    val (target, observation) = lock.withLock {
-      val route = requireRoute(scope.system)
+  suspend fun awaitStalledTraffic(
+    scope: ChaosValidationScope,
+    system: ChaosCapableSystem,
+    direction: TrafficDirection?,
+    timeout: Duration
+  ) {
+    val (target, observed, observation) = lock.withLock {
+      val route = requireRoute(system)
       route.checkAvailable(stopping)
-      route.name to route.captureStalledTraffic(scope, direction)
+      val observed = direction ?: route.stalledDirection()
+      Triple(route.name, observed, route.captureStalledTraffic(scope, observed))
     }
-    report(action = "Observe stalled traffic", metadata = mapOf("target" to target, "direction" to direction.name)) {
+    report(action = "Observe stalled traffic", metadata = mapOf("target" to target, "direction" to observed.name)) {
       observation.await(timeout)
     }
   }
@@ -125,8 +133,8 @@ internal class ChaosSystem(
     routes.forEach { it.release(scope) }
   }
 
-  private fun reserve(scope: ChaosValidationScope, experiment: ExperimentToken?): Route = lock.withLock {
-    val route = requireRoute(scope.system)
+  private fun reserve(scope: ChaosValidationScope, system: ChaosCapableSystem, experiment: ExperimentToken?): Route = lock.withLock {
+    val route = requireRoute(system)
     route.checkAvailable(stopping)
     route.reserve(scope, experiment)
     route
@@ -199,6 +207,7 @@ internal class ChaosSystem(
     private var started = false
     private var unknown = false
     private var owner: ChaosValidationScope? = null
+    private var fault: NetworkFault? = null
     var active = false
       private set
     val ownerJob: Job? get() = owner?.job
@@ -248,13 +257,23 @@ internal class ChaosSystem(
       if (owner === scope) owner = null
     }
 
-    fun apply(fault: NetworkFault) = controller.apply(fault)
+    fun apply(fault: NetworkFault) {
+      this.fault = fault
+      controller.apply(fault)
+    }
+
+    /** Request bytes reach a two-way stall first, so they are the default evidence. */
+    fun stalledDirection(): TrafficDirection {
+      val stall = checkNotNull(fault as? NetworkFault.Stall) { "Traffic observation requires an active stall on $name" }
+      return if (stall.direction == TrafficDirection.Both) TrafficDirection.Requests else stall.direction
+    }
 
     fun heal() {
       if (!active) return
       try {
         controller.heal()
         active = false
+        fault = null
       } catch (failure: Throwable) {
         unknown = true
         throw failure

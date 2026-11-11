@@ -1,6 +1,7 @@
 package com.trendyol.stove.system
 
 import arrow.core.*
+import com.trendyol.stove.chaos.withChaosOwnership
 import com.trendyol.stove.reporting.*
 import com.trendyol.stove.system.abstractions.*
 import com.trendyol.stove.system.annotations.StoveDsl
@@ -378,7 +379,10 @@ class Stove(
   @Suppress("UNCHECKED_CAST", "unused")
   fun <TContext> applicationUnderTestContext(): TContext = applicationUnderTestContext as TContext
 
-  override fun close(): Unit = runBlocking { shutdown() }
+  /** Teardown failures are logged, not thrown: a failed cleanup must not fail a passing test run. */
+  override fun close(): Unit = runBlocking {
+    runCatching { shutdown() }.onFailure { logger.warn("got an error while stopping Stove: ${it.message}", it) }
+  }
 
   private suspend fun shutdown() {
     if (!closed.compareAndSet(false, true)) return
@@ -448,6 +452,6 @@ suspend fun stove(
 ) {
   val context = currentCoroutineContext()[StoveContext] ?: StoveContext.capture()
   withContext(context) {
-    validation(ValidationDsl(context.stove))
+    context.stove.withChaosOwnership { validation(ValidationDsl(context.stove)) }
   }
 }

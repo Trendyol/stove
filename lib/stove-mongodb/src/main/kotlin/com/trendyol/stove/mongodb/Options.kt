@@ -114,18 +114,13 @@ fun WithDsl.mongodb(configure: @StoveDsl ChaosSetupScope.() -> MongodbSystemOpti
 fun WithDsl.mongodb(key: SystemKey, configure: @StoveDsl ChaosSetupScope.() -> MongodbSystemOptions): Stove =
   configureMongodb(key, configure)
 
-private fun WithDsl.configureMongodb(key: SystemKey?, configure: ChaosSetupScope.() -> MongodbSystemOptions): Stove {
-  val scope = ChaosSetupScope()
-  val options = configure(scope)
-  if (scope.chaosEnabled && options is ProvidedMongodbSystemOptions) MongodbChaosAdapter.endpoint(options.config)
-  val runtime = options.createRuntime(stove.keepDependenciesRunning)
-  if (key == null) stove.withMongodb(options, runtime) else stove.withMongodb(key, options, runtime)
-  if (scope.chaosEnabled) {
-    val system = if (key == null) stove.mongodb() else stove.mongodb(key)
-    system.enableChaosRouting()
+private fun WithDsl.configureMongodb(key: SystemKey?, configure: ChaosSetupScope.() -> MongodbSystemOptions): Stove =
+  registerChaosCapable(configure) { options, chaosEnabled ->
+    if (chaosEnabled && options is ProvidedMongodbSystemOptions) MongodbChaosAdapter.reroute(options.config) { it }
+    val runtime = options.createRuntime(stove.keepDependenciesRunning)
+    if (key == null) stove.withMongodb(options, runtime) else stove.withMongodb(key, options, runtime)
+    if (key == null) stove.mongodb() else stove.mongodb(key)
   }
-  return stove
-}
 
 private fun MongodbSystemOptions.createRuntime(keepDependenciesRunning: Boolean): SystemRuntime {
   if (this is ProvidedMongodbSystemOptions) return ProvidedRuntime
@@ -144,9 +139,9 @@ private fun MongodbSystemOptions.createRuntime(keepDependenciesRunning: Boolean)
 
 suspend fun ValidationDsl.mongodb(
   validation: @MongoDsl suspend MongodbSystem.() -> Unit
-): Unit = withSystemValidation(this.stove.mongodb(), validation)
+): Unit = validation(this.stove.mongodb())
 
 suspend fun ValidationDsl.mongodb(
   key: SystemKey,
   validation: @MongoDsl suspend MongodbSystem.() -> Unit
-): Unit = withSystemValidation(this.stove.mongodb(key), validation)
+): Unit = validation(this.stove.mongodb(key))

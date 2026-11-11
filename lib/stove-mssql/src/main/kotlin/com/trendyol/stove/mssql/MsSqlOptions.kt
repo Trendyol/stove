@@ -237,17 +237,12 @@ fun WithDsl.mssql(configure: @StoveDsl ChaosSetupScope.() -> MsSqlOptions): Stov
 fun WithDsl.mssql(key: SystemKey, configure: @StoveDsl ChaosSetupScope.() -> MsSqlOptions): Stove =
   configureMsSql(key, configure)
 
-private fun WithDsl.configureMsSql(key: SystemKey?, configure: ChaosSetupScope.() -> MsSqlOptions): Stove {
-  val scope = ChaosSetupScope()
-  val options = configure(scope)
-  val runtime = options.createRuntime(stove.keepDependenciesRunning)
-  if (key == null) stove.withMsSql(options, runtime) else stove.withMsSql(key, options, runtime)
-  if (scope.chaosEnabled) {
-    val system = if (key == null) stove.mssql() else stove.mssql(key)
-    system.enableChaosRouting()
+private fun WithDsl.configureMsSql(key: SystemKey?, configure: ChaosSetupScope.() -> MsSqlOptions): Stove =
+  registerChaosCapable(configure) { options, _ ->
+    val runtime = options.createRuntime(stove.keepDependenciesRunning)
+    if (key == null) stove.withMsSql(options, runtime) else stove.withMsSql(key, options, runtime)
+    if (key == null) stove.mssql() else stove.mssql(key)
   }
-  return stove
-}
 
 private fun MsSqlOptions.createRuntime(keepDependenciesRunning: Boolean): SystemRuntime {
   if (this is ProvidedMsSqlOptions) return ProvidedRuntime
@@ -271,9 +266,9 @@ private fun MsSqlOptions.createRuntime(keepDependenciesRunning: Boolean): System
 
 suspend fun ValidationDsl.mssql(
   validation: @StoveDsl suspend MsSqlSystem.() -> Unit
-): Unit = withSystemValidation(this.stove.mssql(), validation)
+): Unit = validation(this.stove.mssql())
 
 suspend fun ValidationDsl.mssql(
   key: SystemKey,
   validation: @StoveDsl suspend MsSqlSystem.() -> Unit
-): Unit = withSystemValidation(this.stove.mssql(key), validation)
+): Unit = validation(this.stove.mssql(key))

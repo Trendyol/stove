@@ -115,8 +115,8 @@ Each block executes once. For asynchronous reconnection, use the test framework'
 appropriate read-only wait helper around the recovery check. Do not retry an entire flow that publishes messages or
 creates orders. Keep application connection/request timeouts below the test's assertion window.
 
-The route remains reserved until the enclosing system validation block exits, including checks after `duringFault`.
-Another validation block cannot fault that same route during recovery. Nested faults on the same route are rejected.
+The route remains reserved until the enclosing `stove { }` block exits, including checks after `duringFault`.
+Another `stove { }` block cannot fault that same route during recovery. Nested faults on the same route are rejected.
 Calling `duringFault` without enabling chaos fails with a setup instruction.
 
 Reservations coordinate fault ownership; they do not isolate application traffic. A shared application's pooled
@@ -131,8 +131,8 @@ pause with a network fault: the direct connection can no longer verify state or 
 
 Use `chaosExperiment` when the healthy baseline must also be protected from competing fault owners. It reserves the
 route before baseline, applies the fault only after baseline succeeds, heals before recovery, and reports each phase
-with the experiment name and target. Each phase executes exactly once. Ownership remains until the enclosing system
-validation block exits. Nested experiments and standalone `duringFault` calls on the same route are rejected while
+with the experiment name and target. Each phase executes exactly once. Ownership remains until the enclosing
+`stove { }` block exits. Nested experiments and standalone `duringFault` calls on the same route are rejected while
 an experiment runs, including baseline and recovery. Each phase waits for child coroutines attached to its scope before
 advancing; jobs launched in an external scope remain the caller's responsibility.
 
@@ -169,8 +169,10 @@ application fixtures.
 ### Observe a response stall before asserting its effect
 
 `stall(TrafficDirection.Responses)` allows requests to reach the dependency while holding responses. Inside the active
-fault, call `system.awaitStalledTraffic(TrafficDirection.Responses, 2.seconds)` on the enclosing system receiver to wait
-until response bytes encounter this stall. Capture that receiver before entering the cross-system fault block.
+fault, the system passed to the fault block offers two helpers. `sendIntoStall(2.seconds) { ... }` starts the request
+in the background, waits until its traffic reaches the stall and returns a `Deferred` to await later.
+`awaitStalledTraffic(2.seconds)` is the wait alone, for traffic started some other way. Both observe the stalled
+direction by default (requests when both are stalled); pass `direction` to override.
 The observation binds to the fault active when the call begins. It accepts evidence already seen during that fault,
 fails on timeout or when the fault ends first, and never consumes evidence from a later fault. Evidence does not prove
 that bytes are still buffered when the wait returns, or that they first arrived during this fault. Healing permits
@@ -186,26 +188,20 @@ For the HTTP counter fixture, use the same unique operation ID for the request a
 ```kotlin
 // Imports: arrow.core.None, com.trendyol.stove.chaos.*, com.trendyol.stove.http.http,
 // com.trendyol.stove.redis.redis, com.trendyol.stove.redis.RedisSystem.Companion.client,
-// kotlinx.coroutines.*, kotlin.time.Duration.Companion.seconds.
+// kotlin.time.Duration.Companion.seconds.
 // counter and operation are the fixture's unique counter key and operation ID.
 stove {
     redis {
-        val system = this
-        duringFault(stall(TrafficDirection.Responses)) {
-            coroutineScope {
-                val request = async {
-                    http {
-                        postAndExpectBodilessResponse(
-                            "/increment", body = None, headers = mapOf("Idempotency-Key" to operation)
-                        ) { it.status shouldBe 504 }
-                    }
+        duringFault(stall(TrafficDirection.Responses)) { redis ->
+            val request = redis.sendIntoStall(2.seconds) {
+                http {
+                    postAndExpectBodilessResponse(
+                        "/increment", body = None, headers = mapOf("Idempotency-Key" to operation)
+                    ) { it.status shouldBe 504 }
                 }
-                system.awaitStalledTraffic(TrafficDirection.Responses, 2.seconds)
-                redis {
-                    client().connect().use { it.sync().get("$counter:operation:$operation") } shouldBe "1"
-                }
-                request.await()
             }
+            redis.client().connect().use { it.sync().get("$counter:operation:$operation") } shouldBe "1"
+            request.await()
         }
     }
 }

@@ -5,19 +5,14 @@ import com.trendyol.stove.chaos.TcpEndpoint
 
 /** Application-only routing for single-server PostgreSQL, MySQL and SQL Server JDBC URLs. */
 object RelationalDatabaseChaosAdapter : ChaosEndpointAdapter<RelationalDatabaseExposedConfiguration> {
-  override fun endpoint(configuration: RelationalDatabaseExposedConfiguration): TcpEndpoint {
-    validatedUrl(configuration)
-    return TcpEndpoint(configuration.host, configuration.port)
-  }
-
-  override fun applicationConfiguration(
+  override fun reroute(
     direct: RelationalDatabaseExposedConfiguration,
-    endpoint: TcpEndpoint
-  ): RelationalDatabaseExposedConfiguration = direct.copy(
-    host = endpoint.host,
-    port = endpoint.port,
-    jdbcUrl = validatedUrl(direct).routedThrough(endpoint)
-  )
+    proxy: (TcpEndpoint) -> TcpEndpoint
+  ): RelationalDatabaseExposedConfiguration {
+    val url = validatedUrl(direct)
+    val endpoint = proxy(TcpEndpoint(direct.host, direct.port))
+    return direct.copy(host = endpoint.host, port = endpoint.port, jdbcUrl = url.routedThrough(endpoint))
+  }
 
   private fun validatedUrl(configuration: RelationalDatabaseExposedConfiguration): JdbcUrl {
     val url = parseUrl(configuration.jdbcUrl)

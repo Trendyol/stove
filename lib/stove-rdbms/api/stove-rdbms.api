@@ -9,10 +9,8 @@ public final class com/trendyol/stove/rdbms/NativeSqlOperations : java/lang/Auto
 
 public final class com/trendyol/stove/rdbms/RelationalDatabaseChaosAdapter : com/trendyol/stove/chaos/ChaosEndpointAdapter {
 	public static final field INSTANCE Lcom/trendyol/stove/rdbms/RelationalDatabaseChaosAdapter;
-	public fun applicationConfiguration (Lcom/trendyol/stove/rdbms/RelationalDatabaseExposedConfiguration;Lcom/trendyol/stove/chaos/TcpEndpoint;)Lcom/trendyol/stove/rdbms/RelationalDatabaseExposedConfiguration;
-	public synthetic fun applicationConfiguration (Ljava/lang/Object;Lcom/trendyol/stove/chaos/TcpEndpoint;)Ljava/lang/Object;
-	public fun endpoint (Lcom/trendyol/stove/rdbms/RelationalDatabaseExposedConfiguration;)Lcom/trendyol/stove/chaos/TcpEndpoint;
-	public synthetic fun endpoint (Ljava/lang/Object;)Lcom/trendyol/stove/chaos/TcpEndpoint;
+	public fun reroute (Lcom/trendyol/stove/rdbms/RelationalDatabaseExposedConfiguration;Lkotlin/jvm/functions/Function1;)Lcom/trendyol/stove/rdbms/RelationalDatabaseExposedConfiguration;
+	public synthetic fun reroute (Ljava/lang/Object;Lkotlin/jvm/functions/Function1;)Ljava/lang/Object;
 }
 
 public abstract class com/trendyol/stove/rdbms/RelationalDatabaseContext {

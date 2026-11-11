@@ -209,17 +209,12 @@ fun WithDsl.postgresql(configure: @StoveDsl ChaosSetupScope.() -> PostgresqlOpti
 fun WithDsl.postgresql(key: SystemKey, configure: @StoveDsl ChaosSetupScope.() -> PostgresqlOptions): Stove =
   configurePostgresql(key, configure)
 
-private fun WithDsl.configurePostgresql(key: SystemKey?, configure: ChaosSetupScope.() -> PostgresqlOptions): Stove {
-  val scope = ChaosSetupScope()
-  val options = configure(scope)
-  val runtime = options.createRuntime(stove.keepDependenciesRunning)
-  if (key == null) stove.withPostgresql(options, runtime) else stove.withPostgresql(key, options, runtime)
-  if (scope.chaosEnabled) {
-    val system = if (key == null) stove.postgresql() else stove.postgresql(key)
-    system.enableChaosRouting()
+private fun WithDsl.configurePostgresql(key: SystemKey?, configure: ChaosSetupScope.() -> PostgresqlOptions): Stove =
+  registerChaosCapable(configure) { options, _ ->
+    val runtime = options.createRuntime(stove.keepDependenciesRunning)
+    if (key == null) stove.withPostgresql(options, runtime) else stove.withPostgresql(key, options, runtime)
+    if (key == null) stove.postgresql() else stove.postgresql(key)
   }
-  return stove
-}
 
 private fun PostgresqlOptions.createRuntime(keepDependenciesRunning: Boolean): SystemRuntime {
   if (this is ProvidedPostgresqlOptions) return ProvidedRuntime
@@ -240,7 +235,7 @@ private fun PostgresqlOptions.createRuntime(keepDependenciesRunning: Boolean): S
 }
 
 suspend fun ValidationDsl.postgresql(validation: @StoveDsl suspend PostgresqlSystem.() -> Unit): Unit =
-  withSystemValidation(this.stove.postgresql(), validation)
+  validation(this.stove.postgresql())
 
 suspend fun ValidationDsl.postgresql(key: SystemKey, validation: @StoveDsl suspend PostgresqlSystem.() -> Unit): Unit =
-  withSystemValidation(this.stove.postgresql(key), validation)
+  validation(this.stove.postgresql(key))

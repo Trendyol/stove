@@ -108,20 +108,15 @@ fun WithDsl.cassandra(configure: @StoveDsl ChaosSetupScope.() -> CassandraSystem
 fun WithDsl.cassandra(key: SystemKey, configure: @StoveDsl ChaosSetupScope.() -> CassandraSystemOptions): Stove =
   configureCassandra(key, configure)
 
-private fun WithDsl.configureCassandra(key: SystemKey?, configure: ChaosSetupScope.() -> CassandraSystemOptions): Stove {
-  val scope = ChaosSetupScope()
-  val options = configure(scope)
-  require(!scope.chaosEnabled || options !is ProvidedCassandraSystemOptions) {
-    "Cassandra chaos supports only a dedicated single-node container; provided clusters can advertise unproxied peers"
+private fun WithDsl.configureCassandra(key: SystemKey?, configure: ChaosSetupScope.() -> CassandraSystemOptions): Stove =
+  registerChaosCapable(configure) { options, chaosEnabled ->
+    require(!chaosEnabled || options !is ProvidedCassandraSystemOptions) {
+      "Cassandra chaos supports only a dedicated single-node container; provided clusters can advertise unproxied peers"
+    }
+    val runtime = options.createRuntime(stove.keepDependenciesRunning)
+    if (key == null) stove.withCassandra(options, runtime) else stove.withCassandra(key, options, runtime)
+    if (key == null) stove.cassandra() else stove.cassandra(key)
   }
-  val runtime = options.createRuntime(stove.keepDependenciesRunning)
-  if (key == null) stove.withCassandra(options, runtime) else stove.withCassandra(key, options, runtime)
-  if (scope.chaosEnabled) {
-    val system = if (key == null) stove.cassandra() else stove.cassandra(key)
-    system.enableChaosRouting()
-  }
-  return stove
-}
 
 private fun CassandraSystemOptions.createRuntime(keepDependenciesRunning: Boolean): SystemRuntime {
   if (this is ProvidedCassandraSystemOptions) return ProvidedRuntime
@@ -140,9 +135,9 @@ private fun CassandraSystemOptions.createRuntime(keepDependenciesRunning: Boolea
 
 suspend fun ValidationDsl.cassandra(
   validation: @CassandraDsl suspend CassandraSystem.() -> Unit
-): Unit = withSystemValidation(this.stove.cassandra(), validation)
+): Unit = validation(this.stove.cassandra())
 
 suspend fun ValidationDsl.cassandra(
   key: SystemKey,
   validation: @CassandraDsl suspend CassandraSystem.() -> Unit
-): Unit = withSystemValidation(this.stove.cassandra(key), validation)
+): Unit = validation(this.stove.cassandra(key))

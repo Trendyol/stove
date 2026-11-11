@@ -15,24 +15,28 @@ class RedisChaosDslTest : FunSpec({
     val fixture = RedisRegistrationFixture(cleanupFailure)
     val client = fixture.startDirectClient()
 
-    shouldThrow<IllegalStateException> { fixture.close() } shouldBe cleanupFailure
+    fixture.close()
     client.resources.eventExecutorGroup().isTerminated shouldBe true
   }
 
   test("routes the URI authority while preserving TLS, encoded credentials and database") {
     val direct = RedisExposedConfiguration("redis", 6380, "rediss://user:p%40ss@redis:6380/8?timeout=1s", "8", "secret")
-    RedisChaosAdapter.applicationConfiguration(direct, TcpEndpoint("::1", 12345)) shouldBe direct.copy(
+    var dialed: TcpEndpoint? = null
+    RedisChaosAdapter.reroute(direct) {
+      dialed = it
+      TcpEndpoint("::1", 12345)
+    } shouldBe direct.copy(
       host = "::1",
       port = 12345,
       redisUri = "rediss://user:p%40ss@[::1]:12345/8?timeout=1s"
     )
-    RedisChaosAdapter.endpoint(direct) shouldBe TcpEndpoint("redis", 6380)
+    dialed shouldBe TcpEndpoint("redis", 6380)
   }
 
   test("rejects sentinel and mismatched endpoint configurations") {
     listOf("redis-sentinel://redis:6379", "redis://other:6379", "redis://redis:6380").forEach { uri ->
       shouldThrow<IllegalArgumentException> {
-        RedisChaosAdapter.endpoint(RedisExposedConfiguration("redis", 6379, uri, "0", "p"))
+        RedisChaosAdapter.reroute(RedisExposedConfiguration("redis", 6379, uri, "0", "p")) { it }
       }
     }
   }

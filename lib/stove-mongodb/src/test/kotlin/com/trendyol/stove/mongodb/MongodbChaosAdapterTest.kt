@@ -31,7 +31,7 @@ class MongodbChaosAdapterTest :
         port = 27017,
         replicaSetUrl = "mongodb://user:p%40ss@localhost:27017/orders?replicaSet=rs0&retryWrites=false"
       )
-      val routed = MongodbChaosAdapter.applicationConfiguration(direct, TcpEndpoint("127.0.0.1", 32000))
+      val routed = MongodbChaosAdapter.reroute(direct) { TcpEndpoint("127.0.0.1", 32000) }
 
       routed.connectionString shouldBe
         "mongodb://user:p%40ss@127.0.0.1:32000/orders?authSource=admin&directConnection=true"
@@ -47,7 +47,7 @@ class MongodbChaosAdapterTest :
 
     test("routes an IPv6 authority without introducing duplicate direct connection options") {
       val direct = MongodbExposedConfiguration("mongodb://localhost:27017", "localhost", 27017, "mongodb://localhost:27017/?DIRECTCONNECTION=false")
-      val routed = MongodbChaosAdapter.applicationConfiguration(direct, TcpEndpoint("::1", 32000))
+      val routed = MongodbChaosAdapter.reroute(direct) { TcpEndpoint("::1", 32000) }
       routed.connectionString shouldBe "mongodb://[::1]:32000/?directConnection=true"
       routed.replicaSetUrl shouldBe "mongodb://[::1]:32000/?directConnection=true"
     }
@@ -74,7 +74,7 @@ class MongodbChaosAdapterTest :
 
     test("rejects a replica set URL that bypasses the configured endpoint") {
       val direct = MongodbExposedConfiguration("mongodb://localhost:27017", "localhost", 27017, "mongodb://other:27017")
-      shouldThrow<IllegalArgumentException> { MongodbChaosAdapter.endpoint(direct) }
+      shouldThrow<IllegalArgumentException> { MongodbChaosAdapter.reroute(direct) { it } }
     }
 
     test("a real replica set cannot bypass the keyed application proxy during a partition") {

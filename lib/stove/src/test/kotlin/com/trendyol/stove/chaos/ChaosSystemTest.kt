@@ -1,6 +1,8 @@
 package com.trendyol.stove.chaos
 
 import com.trendyol.stove.system.Stove
+import com.trendyol.stove.system.StoveContext
+import com.trendyol.stove.system.stove
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
@@ -21,16 +23,12 @@ class ChaosSystemTest : FunSpec({
     system.stove.close()
   }
 
-  test("requires the matching system validation scope and a started route") {
+  test("requires a started route") {
     ChaosFixture().use { fixture ->
       shouldThrow<IllegalStateException> { fixture.system.duringFault {} }
       shouldThrow<IllegalStateException> {
         withSystemValidation(fixture.system) { duringFault {} }
       }.message shouldBe "Chaos route ChaosTestSystem has not been started"
-      fixture.start()
-      withSystemValidation(ChaosTestSystem(fixture.stove)) {
-        shouldThrow<IllegalStateException> { fixture.system.duringFault {} }
-      }
     }
   }
 
@@ -44,7 +42,7 @@ class ChaosSystemTest : FunSpec({
           chaosExperiment("disabled", stall(), 1.seconds, {}, {}, {})
         }.message shouldBe expected
         shouldThrow<IllegalStateException> {
-          awaitStalledTraffic(TrafficDirection.Requests, 1.seconds)
+          awaitStalledTraffic(1.seconds, TrafficDirection.Requests)
         }.message shouldBe expected
       }
     }
@@ -67,6 +65,39 @@ class ChaosSystemTest : FunSpec({
     }
   }
 
+  test("context-bound validation keeps healed routes reserved until recovery finishes") {
+    ChaosFixture().use { fixture ->
+      fixture.start()
+      withTimeout(5.seconds) {
+        val healed = CompletableDeferred<Unit>()
+        val finishRecovery = CompletableDeferred<Unit>()
+        val owner = launch(StoveContext(fixture.stove)) {
+          stove {
+            this.stove shouldBe fixture.stove
+            fixture.system.duringFault {}
+            stove {
+              this.stove shouldBe fixture.stove
+              fixture.system.duringFault {}
+            }
+            fixture.controller.active shouldBe false
+            healed.complete(Unit)
+            finishRecovery.await()
+          }
+        }
+        try {
+          healed.await()
+          shouldThrow<IllegalStateException> {
+            fixture.system.duringFault { error("must remain reserved during recovery") }
+          }.message shouldBe "Chaos route ChaosTestSystem is reserved by another validation block"
+        } finally {
+          finishRecovery.complete(Unit)
+        }
+        owner.join()
+        fixture.system.duringFault {}
+      }
+    }
+  }
+
   test("experiment reserves before baseline and runs each phase once with healing before recovery") {
     ChaosFixture().use { fixture ->
       fixture.start()
@@ -86,7 +117,7 @@ class ChaosSystemTest : FunSpec({
               fixture.system.chaosExperiment("nested", stall(), 1.seconds, {}, {}, {})
             }
             shouldThrow<IllegalStateException> {
-              fixture.system.awaitStalledTraffic(TrafficDirection.Responses, 1.seconds)
+              fixture.system.awaitStalledTraffic(1.seconds, TrafficDirection.Responses)
             }
             shouldThrow<IllegalStateException> {
               withSystemValidation(fixture.system) { duringFault {} }
@@ -180,7 +211,7 @@ class ChaosSystemTest : FunSpec({
     ChaosFixture().use { fixture ->
       fixture.start()
       coroutineScope {
-        val scope = ChaosValidationScope(fixture.system, currentCoroutineContext().job)
+        val scope = ChaosValidationScope(fixture.coordinator, currentCoroutineContext().job)
         val captured = CompletableDeferred<Unit>()
         val proceed = CompletableDeferred<Unit>()
         fixture.controller.beforeObservationAwait = {
@@ -189,16 +220,16 @@ class ChaosSystemTest : FunSpec({
         }
         lateinit var waiting: Deferred<IllegalStateException>
         try {
-          fixture.coordinator.duringFault(scope, stall()) {
+          fixture.coordinator.duringFault(scope, fixture.system, stall()) {
             // Deliberately external to the fault phase to exercise rollover before handle.await resumes.
             waiting = async(start = CoroutineStart.UNDISPATCHED) {
               shouldThrow<IllegalStateException> {
-                fixture.coordinator.awaitStalledTraffic(scope, TrafficDirection.Requests, 2.seconds)
+                fixture.coordinator.awaitStalledTraffic(scope, fixture.system, TrafficDirection.Requests, 2.seconds)
               }
             }
             captured.await()
           }
-          fixture.coordinator.duringFault(scope, stall()) {
+          fixture.coordinator.duringFault(scope, fixture.system, stall()) {
             proceed.complete(Unit)
             waiting.await().message shouldBe "Fault ended before stalled traffic was observed"
           }
@@ -424,6 +455,29 @@ class ChaosSystemTest : FunSpec({
     }
   }
 
+  test("sendIntoStall returns once traffic reaches the stall and the request outlives the fault") {
+    ChaosFixture().use { fixture ->
+      fixture.start()
+      val release = CompletableDeferred<Unit>()
+      withSystemValidation(fixture.system) {
+        val pending = duringFault(stall(TrafficDirection.Responses)) { system ->
+          system.sendIntoStall(2.seconds) {
+            fixture.controller.stallTraffic(TrafficDirection.Responses)
+            release.await()
+            "done"
+          }
+        }
+        fixture.controller.active shouldBe false
+        pending.isCompleted shouldBe false
+        release.complete(Unit)
+        pending.await() shouldBe "done"
+      }
+      shouldThrow<IllegalStateException> {
+        fixture.system.sendIntoStall(1.seconds) {}
+      }.message shouldBe "sendIntoStall must run inside a fault block"
+    }
+  }
+
   test("shutdown heals before waiting for an owner blocked in synchronous I/O") {
     ChaosFixture().use { fixture ->
       fixture.start()
@@ -470,10 +524,10 @@ private data class ChaosTestSystem(override val stove: Stove) : ChaosCapableSyst
   override fun close() = Unit
 }
 
-private object IdentityEndpointAdapter : ChaosEndpointAdapter<TcpEndpoint> {
-  override fun endpoint(configuration: TcpEndpoint): TcpEndpoint = configuration
-  override fun applicationConfiguration(direct: TcpEndpoint, endpoint: TcpEndpoint): TcpEndpoint = endpoint
-}
+private val IdentityEndpointAdapter = ChaosEndpointAdapter<TcpEndpoint> { direct, proxy -> proxy(direct) }
+
+private suspend fun <S : ChaosCapableSystem, T> withSystemValidation(system: S, block: suspend S.() -> T): T =
+  system.stove.withChaosOwnership { block(system) }
 
 private class ChaosFixture : AutoCloseable {
   val stove = Stove()
@@ -543,5 +597,11 @@ private class RecordingFaultController(
       observation.await(timeout)
     }
   }
+
+  /** Models a forwarding worker whose bytes meet the stall; returns when the fault changes. */
+  fun stallTraffic(direction: TrafficDirection) {
+    kotlin.concurrent.thread(isDaemon = true) { traffic.awaitForwarding(direction) { true } }
+  }
+
   override fun close() = onClose(endpoint)
 }

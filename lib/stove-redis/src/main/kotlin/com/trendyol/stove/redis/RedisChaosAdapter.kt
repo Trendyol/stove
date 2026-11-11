@@ -5,17 +5,11 @@ import com.trendyol.stove.chaos.TcpEndpoint
 import java.net.URI
 
 internal object RedisChaosAdapter : ChaosEndpointAdapter<RedisExposedConfiguration> {
-  override fun endpoint(configuration: RedisExposedConfiguration): TcpEndpoint {
-    validatedUri(configuration)
-    return TcpEndpoint(configuration.host, configuration.port)
+  override fun reroute(direct: RedisExposedConfiguration, proxy: (TcpEndpoint) -> TcpEndpoint): RedisExposedConfiguration {
+    val uri = validatedUri(direct)
+    val endpoint = proxy(TcpEndpoint(direct.host, direct.port))
+    return direct.copy(host = endpoint.host, port = endpoint.port, redisUri = uri.routedThrough(endpoint))
   }
-
-  override fun applicationConfiguration(direct: RedisExposedConfiguration, endpoint: TcpEndpoint): RedisExposedConfiguration =
-    direct.copy(
-      host = endpoint.host,
-      port = endpoint.port,
-      redisUri = validatedUri(direct).routedThrough(endpoint)
-    )
 
   private fun URI.routedThrough(endpoint: TcpEndpoint): String {
     val credentials = rawUserInfo?.let { "$it@" }.orEmpty()

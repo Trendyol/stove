@@ -188,17 +188,12 @@ fun WithDsl.redis(configure: @StoveDsl ChaosSetupScope.() -> RedisOptions): Stov
 fun WithDsl.redis(key: SystemKey, configure: @StoveDsl ChaosSetupScope.() -> RedisOptions): Stove =
   configureRedis(key, configure)
 
-private fun WithDsl.configureRedis(key: SystemKey?, configure: ChaosSetupScope.() -> RedisOptions): Stove {
-  val scope = ChaosSetupScope()
-  val options = configure(scope)
-  val runtime = options.createRuntime(stove.keepDependenciesRunning)
-  if (key == null) stove.withRedis(options, runtime) else stove.withRedis(key, options, runtime)
-  if (scope.chaosEnabled) {
-    val system = if (key == null) stove.redis() else stove.redis(key)
-    system.enableChaosRouting()
+private fun WithDsl.configureRedis(key: SystemKey?, configure: ChaosSetupScope.() -> RedisOptions): Stove =
+  registerChaosCapable(configure) { options, _ ->
+    val runtime = options.createRuntime(stove.keepDependenciesRunning)
+    if (key == null) stove.withRedis(options, runtime) else stove.withRedis(key, options, runtime)
+    if (key == null) stove.redis() else stove.redis(key)
   }
-  return stove
-}
 
 private fun RedisOptions.createRuntime(keepDependenciesRunning: Boolean): SystemRuntime {
   if (this is ProvidedRedisOptions) return ProvidedRuntime
@@ -216,12 +211,9 @@ private fun RedisOptions.createRuntime(keepDependenciesRunning: Boolean): System
   }
 }
 
-suspend fun ValidationDsl.redis(validation: suspend RedisSystem.() -> Unit): Unit = withSystemValidation(this.stove.redis(), validation)
+suspend fun ValidationDsl.redis(validation: suspend RedisSystem.() -> Unit): Unit = validation(this.stove.redis())
 
-suspend fun ValidationDsl.redis(key: SystemKey, validation: suspend RedisSystem.() -> Unit): Unit = withSystemValidation(
-  this.stove.redis(key),
-  validation
-)
+suspend fun ValidationDsl.redis(key: SystemKey, validation: suspend RedisSystem.() -> Unit): Unit = validation(this.stove.redis(key))
 
 internal fun Stove.redis(): RedisSystem =
   getOrNone<RedisSystem>().getOrElse {

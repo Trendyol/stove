@@ -87,7 +87,7 @@ Import `com.trendyol.stove.chaos.duringFault`. The fault defaults to unavailable
 never wrap a publish/create flow in automatic retries. A latency is per TCP chunk, not per application request. A stalled
 request can complete after its caller times out; use stable operation IDs when checking retries or duplicates.
 
-Route reservation lasts until the enclosing system validation block exits. Nested faults on that route and competing
+Route reservation lasts until the enclosing `stove { }` block exits. Nested faults on that route and competing
 fault owners are rejected. This is fault ownership, not isolation of shared application traffic: serialize tests using
 the same application. Successful healing is only connectivity restoration; use explicit application behavior and direct
 state assertions to establish recovery.
@@ -138,8 +138,10 @@ are rejected throughout an experiment. Phases wait for their child coroutines; e
 Poll only read-only observations explicitly.
 Keep client timeouts bounded and shared-AUT tests serial or isolated; route ownership does not isolate ordinary traffic.
 
-`stall(TrafficDirection.Responses)` holds acknowledgements while requests can commit. Capture the outer system receiver
-and call its `awaitStalledTraffic(TrafficDirection.Responses, timeout)` inside the active fault to observe bytes encountered by that stall. This is route-wide transport evidence, not proof of business commit; assert durable state directly and use unique
+`stall(TrafficDirection.Responses)` holds acknowledgements while requests can commit. The fault block receives the faulted system
+(`duringFault(stall(TrafficDirection.Responses)) { redis -> ... }`); never capture it with `val system = this`. Call
+`redis.sendIntoStall(timeout) { http { ... } }` to start a request and get its `Deferred` once its traffic reaches the stall,
+or `redis.awaitStalledTraffic(timeout)` to only wait. This is route-wide transport evidence, not proof of business commit; assert durable state directly and use unique
 operation IDs. Observe one direction at a time. Evidence binds to that fault generation and expires when the fault ends; a later fault cannot satisfy the wait. The unreleased direct model is now
 `NetworkFault.Stall(direction)`; use `stall()` for the default bidirectional behavior.
 

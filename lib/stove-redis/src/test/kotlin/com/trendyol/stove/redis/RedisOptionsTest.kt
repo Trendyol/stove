@@ -46,7 +46,7 @@ class RedisOptionsTest :
     test("provided IPv6 options produce a valid single-server URI for chaos routing") {
       val options = RedisOptions.provided("::1", 6379, "password", configureExposedConfiguration = { emptyList() })
       options.providedConfig.redisUri shouldBe "redis://[::1]:6379"
-      RedisChaosAdapter.endpoint(options.providedConfig) shouldBe TcpEndpoint("::1", 6379)
+      RedisChaosAdapter.reroute(options.providedConfig) { it }.redisUri shouldBe "redis://[::1]:6379"
     }
 
     test("ProvidedRedisOptions should expose correct properties") {

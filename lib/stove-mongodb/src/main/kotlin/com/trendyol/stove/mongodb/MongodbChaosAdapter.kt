@@ -8,17 +8,10 @@ import java.net.URI
 
 /** Pins the application driver to the proxy instead of following replica-set advertisements. */
 internal object MongodbChaosAdapter : ChaosEndpointAdapter<MongodbExposedConfiguration> {
-  override fun endpoint(configuration: MongodbExposedConfiguration): TcpEndpoint {
-    validate(configuration.connectionString, configuration)
-    validate(configuration.replicaSetUrl, configuration)
-    return TcpEndpoint(configuration.host, configuration.port)
-  }
-
-  override fun applicationConfiguration(
-    direct: MongodbExposedConfiguration,
-    endpoint: TcpEndpoint
-  ): MongodbExposedConfiguration {
-    this.endpoint(direct)
+  override fun reroute(direct: MongodbExposedConfiguration, proxy: (TcpEndpoint) -> TcpEndpoint): MongodbExposedConfiguration {
+    validate(direct.connectionString, direct)
+    validate(direct.replicaSetUrl, direct)
+    val endpoint = proxy(TcpEndpoint(direct.host, direct.port))
     return direct.copy(
       host = endpoint.host,
       port = endpoint.port,

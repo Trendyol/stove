@@ -212,17 +212,12 @@ fun WithDsl.mysql(configure: @StoveDsl ChaosSetupScope.() -> MySqlOptions): Stov
 fun WithDsl.mysql(key: SystemKey, configure: @StoveDsl ChaosSetupScope.() -> MySqlOptions): Stove =
   configureMySql(key, configure)
 
-private fun WithDsl.configureMySql(key: SystemKey?, configure: ChaosSetupScope.() -> MySqlOptions): Stove {
-  val scope = ChaosSetupScope()
-  val options = configure(scope)
-  val runtime = options.createRuntime(stove.keepDependenciesRunning)
-  if (key == null) stove.withMySql(options, runtime) else stove.withMySql(key, options, runtime)
-  if (scope.chaosEnabled) {
-    val system = if (key == null) stove.mysql() else stove.mysql(key)
-    system.enableChaosRouting()
+private fun WithDsl.configureMySql(key: SystemKey?, configure: ChaosSetupScope.() -> MySqlOptions): Stove =
+  registerChaosCapable(configure) { options, _ ->
+    val runtime = options.createRuntime(stove.keepDependenciesRunning)
+    if (key == null) stove.withMySql(options, runtime) else stove.withMySql(key, options, runtime)
+    if (key == null) stove.mysql() else stove.mysql(key)
   }
-  return stove
-}
 
 private fun MySqlOptions.createRuntime(keepDependenciesRunning: Boolean): SystemRuntime {
   if (this is ProvidedMySqlOptions) return ProvidedRuntime
@@ -243,7 +238,7 @@ private fun MySqlOptions.createRuntime(keepDependenciesRunning: Boolean): System
 }
 
 suspend fun ValidationDsl.mysql(validation: @StoveDsl suspend MySqlSystem.() -> Unit): Unit =
-  withSystemValidation(this.stove.mysql(), validation)
+  validation(this.stove.mysql())
 
 suspend fun ValidationDsl.mysql(key: SystemKey, validation: @StoveDsl suspend MySqlSystem.() -> Unit): Unit =
-  withSystemValidation(this.stove.mysql(key), validation)
+  validation(this.stove.mysql(key))

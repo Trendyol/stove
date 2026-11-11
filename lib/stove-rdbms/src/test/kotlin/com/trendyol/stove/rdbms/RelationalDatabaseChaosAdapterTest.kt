@@ -14,27 +14,31 @@ class RelationalDatabaseChaosAdapterTest : FunSpec({
       "jdbc:sqlserver://db:1433;password={a;server=literal;}}b};encrypt=true" to 1433
     ).forEach { (url, port) ->
       val direct = RelationalDatabaseExposedConfiguration(url, "db", port, "secret", "user")
-      val routed = RelationalDatabaseChaosAdapter.applicationConfiguration(direct, TcpEndpoint("127.0.0.1", 12345))
+      var dialed: TcpEndpoint? = null
+      val routed = RelationalDatabaseChaosAdapter.reroute(direct) {
+        dialed = it
+        TcpEndpoint("127.0.0.1", 12345)
+      }
       routed shouldBe direct.copy(
         jdbcUrl = url.replace("db:$port", "127.0.0.1:12345"),
         host = "127.0.0.1",
         port = 12345
       )
-      RelationalDatabaseChaosAdapter.endpoint(direct) shouldBe TcpEndpoint("db", port)
+      dialed shouldBe TcpEndpoint("db", port)
       direct.jdbcUrl shouldBe url
     }
   }
 
   test("supports default ports and IPv6 without re-encoding URL contents") {
     val direct = RelationalDatabaseExposedConfiguration("jdbc:postgresql://[::1]/orders?options=a%3Db", "::1", 5432, "p", "u")
-    RelationalDatabaseChaosAdapter.applicationConfiguration(direct, TcpEndpoint("::1", 12345)).jdbcUrl shouldBe
+    RelationalDatabaseChaosAdapter.reroute(direct) { TcpEndpoint("::1", 12345) }.jdbcUrl shouldBe
       "jdbc:postgresql://[::1]:12345/orders?options=a%3Db"
   }
 
   test("rejects SQL Server authority overrides including aliases and whitespace") {
     listOf("server=direct", " serverName =direct", " SERVER =direct", "portNumber =6543").forEach { property ->
       val direct = RelationalDatabaseExposedConfiguration("jdbc:sqlserver://db:1433;$property", "db", 1433, "p", "u")
-      shouldThrow<IllegalArgumentException> { RelationalDatabaseChaosAdapter.endpoint(direct) }
+      shouldThrow<IllegalArgumentException> { RelationalDatabaseChaosAdapter.reroute(direct) { it } }
     }
     val afterPassword = RelationalDatabaseExposedConfiguration(
       "jdbc:sqlserver://db:1433;password={a;server=literal;}}b}; server =direct",
@@ -43,7 +47,7 @@ class RelationalDatabaseChaosAdapterTest : FunSpec({
       "p",
       "u"
     )
-    shouldThrow<IllegalArgumentException> { RelationalDatabaseChaosAdapter.endpoint(afterPassword) }
+    shouldThrow<IllegalArgumentException> { RelationalDatabaseChaosAdapter.reroute(afterPassword) { it } }
   }
 
   test("rejects routes that could bypass the single managed endpoint") {
@@ -58,7 +62,7 @@ class RelationalDatabaseChaosAdapterTest : FunSpec({
       "jdbc:postgresql://db:999999999999/orders"
     ).forEach { url ->
       val direct = RelationalDatabaseExposedConfiguration(url, "db", 5432, "p", "u")
-      shouldThrow<IllegalArgumentException> { RelationalDatabaseChaosAdapter.endpoint(direct) }
+      shouldThrow<IllegalArgumentException> { RelationalDatabaseChaosAdapter.reroute(direct) { it } }
     }
   }
 })

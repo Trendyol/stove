@@ -23,15 +23,19 @@ class CassandraChaosAdapterTest :
     test("only application host and port change for a verified single-node topology") {
       val direct = CassandraExposedConfiguration("localhost", 9042, "datacenter1", "orders")
       val adapter = CassandraChaosAdapter { true }
-      adapter.endpoint(direct) shouldBe TcpEndpoint("localhost", 9042)
-      adapter.applicationConfiguration(direct, TcpEndpoint("127.0.0.1", 32000)) shouldBe
-        CassandraExposedConfiguration("127.0.0.1", 32000, "datacenter1", "orders")
+      var dialed: TcpEndpoint? = null
+      val routed = adapter.reroute(direct) {
+        dialed = it
+        TcpEndpoint("127.0.0.1", 32000)
+      }
+      dialed shouldBe TcpEndpoint("localhost", 9042)
+      routed shouldBe CassandraExposedConfiguration("127.0.0.1", 32000, "datacenter1", "orders")
       direct.host shouldBe "localhost"
     }
 
     test("rejects discovered peers before creating a proxy") {
       shouldThrow<IllegalArgumentException> {
-        CassandraChaosAdapter { false }.endpoint(CassandraExposedConfiguration("localhost", 9042, "dc1", "orders"))
+        CassandraChaosAdapter { false }.reroute(CassandraExposedConfiguration("localhost", 9042, "dc1", "orders")) { it }
       }
     }
 

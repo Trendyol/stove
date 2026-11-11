@@ -21,8 +21,6 @@ import io.lettuce.core.RedisCredentials
 import io.lettuce.core.RedisException
 import io.lettuce.core.RedisURI
 import io.lettuce.core.SocketOptions
-import kotlinx.coroutines.async
-import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.future.await
 import org.testcontainers.containers.GenericContainer
 import org.testcontainers.utility.DockerImageName
@@ -77,36 +75,32 @@ class RedisChaosUseCasesTest : FunSpec({
           val httpValidation = ValidationDsl(httpStove)
           val headers = mapOf("Idempotency-Key" to operation)
           routes.validation.redis(Primary) {
-            val system = this
             chaosExperiment(
               name = "Committed writes survive lost acknowledgements",
               fault = stall(TrafficDirection.Responses),
               timeout = 10.seconds,
-              baseline = {
+              baseline = { redis ->
                 httpValidation.http { getBodilessResponse("/health") { it.status shouldBe 200 } }
-                system.client().connect().use { it.sync().get(counter) } shouldBe null
+                redis.client().connect().use { it.sync().get(counter) } shouldBe null
               },
-              faulted = {
-                coroutineScope {
-                  val response = async {
-                    httpValidation.http {
-                      postAndExpectBodilessResponse("/increment", body = None, headers = headers) {
-                        it.status shouldBe 504
-                      }
+              faulted = { redis ->
+                val response = redis.sendIntoStall(2.seconds) {
+                  httpValidation.http {
+                    postAndExpectBodilessResponse("/increment", body = None, headers = headers) {
+                      it.status shouldBe 504
                     }
                   }
-                  system.awaitStalledTraffic(TrafficDirection.Responses, 2.seconds)
-                  // Transport evidence is not a commit assertion: verify durable state independently.
-                  system.client().connect().use {
-                    it.sync().get(counter) shouldBe "1"
-                    it.sync().get("$counter:operation:$operation") shouldBe "1"
-                  }
-                  response.await()
-                  application.attempts.get() shouldBe 2
-                  system.client().connect().use { it.sync().get(counter) } shouldBe "1"
                 }
+                // Transport evidence is not a commit assertion: verify durable state independently.
+                redis.client().connect().use {
+                  it.sync().get(counter) shouldBe "1"
+                  it.sync().get("$counter:operation:$operation") shouldBe "1"
+                }
+                response.await()
+                application.attempts.get() shouldBe 2
+                redis.client().connect().use { it.sync().get(counter) } shouldBe "1"
               },
-              recovery = {
+              recovery = { redis ->
                 httpValidation.http {
                   postAndExpectBody<Long>("/increment", headers = headers) {
                     it.status shouldBe 200
@@ -122,7 +116,7 @@ class RedisChaosUseCasesTest : FunSpec({
                   }
                 }
                 application.attempts.get() shouldBe 4
-                system.client().connect().use {
+                redis.client().connect().use {
                   it.sync().get(counter) shouldBe "2"
                   it.sync().get("$counter:operation:$operation") shouldBe "1"
                 }

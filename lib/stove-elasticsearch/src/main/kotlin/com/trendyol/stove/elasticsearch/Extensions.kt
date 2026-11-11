@@ -41,17 +41,12 @@ fun WithDsl.elasticsearch(configure: @StoveDsl ChaosSetupScope.() -> Elasticsear
 fun WithDsl.elasticsearch(key: SystemKey, configure: @StoveDsl ChaosSetupScope.() -> ElasticsearchSystemOptions): Stove =
   configureElasticsearch(key, configure)
 
-private fun WithDsl.configureElasticsearch(key: SystemKey?, configure: ChaosSetupScope.() -> ElasticsearchSystemOptions): Stove {
-  val scope = ChaosSetupScope()
-  val options = configure(scope)
-  val runtime = options.createRuntime(stove.keepDependenciesRunning)
-  if (key == null) stove.withElasticsearch(options, runtime) else stove.withElasticsearch(key, options, runtime)
-  if (scope.chaosEnabled) {
-    val system = if (key == null) stove.elasticsearch() else stove.elasticsearch(key)
-    system.enableChaosRouting()
+private fun WithDsl.configureElasticsearch(key: SystemKey?, configure: ChaosSetupScope.() -> ElasticsearchSystemOptions): Stove =
+  registerChaosCapable(configure) { options, _ ->
+    val runtime = options.createRuntime(stove.keepDependenciesRunning)
+    if (key == null) stove.withElasticsearch(options, runtime) else stove.withElasticsearch(key, options, runtime)
+    if (key == null) stove.elasticsearch() else stove.elasticsearch(key)
   }
-  return stove
-}
 
 private fun ElasticsearchSystemOptions.createRuntime(keepDependenciesRunning: Boolean): SystemRuntime {
   if (this is ProvidedElasticsearchSystemOptions) return ProvidedRuntime
@@ -69,7 +64,7 @@ private fun ElasticsearchSystemOptions.createRuntime(keepDependenciesRunning: Bo
 }
 
 suspend fun ValidationDsl.elasticsearch(validation: @ElasticDsl suspend ElasticsearchSystem.() -> Unit): Unit =
-  withSystemValidation(this.stove.elasticsearch(), validation)
+  validation(this.stove.elasticsearch())
 
 suspend fun ValidationDsl.elasticsearch(key: SystemKey, validation: @ElasticDsl suspend ElasticsearchSystem.() -> Unit): Unit =
-  withSystemValidation(this.stove.elasticsearch(key), validation)
+  validation(this.stove.elasticsearch(key))

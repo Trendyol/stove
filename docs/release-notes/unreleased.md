@@ -8,8 +8,11 @@ These changes are under development after `0.27.6`. They are not part of an alre
   executes each phase once, waits for its child coroutines, heals before recovery, and reports named phases under one
   finite coroutine deadline. Standalone faults on the route are rejected while the experiment runs.
 - `stall(direction)` supports request-only and response-only stalls, defaulting to both directions.
-- `awaitStalledTraffic(direction, timeout)` waits for bytes encountered by the current stall. Evidence does not survive
+- `awaitStalledTraffic(timeout)` waits for bytes encountered by the current stall; `sendIntoStall(timeout) { ... }`
+  starts a request in the background and returns it once its traffic reaches the stall. Evidence does not survive
   healing or a new fault, and does not replace direct persisted-state assertions.
+- Fault and experiment blocks receive the faulted system as their parameter (`duringFault { redis -> ... }`), and
+  route reservations last until the enclosing `stove { }` block exits.
 - An executable HTTP/Redis recovery test verifies atomic operation-ID deduplication across committed-but-unacknowledged
   writes, bounded application retries, and fresh operations after healing.
 
@@ -143,7 +146,6 @@ system block, and serialize tests that share the same application.
 
 Stove rolls back resources when startup fails. Shutdown restores active faults, stops the application, closes its
 managed routes, and disposes dependencies in reverse registration order. It attempts the remaining stages when a stage
-fails. `Stove.close()` now throws the first cleanup failure with subsequent failures suppressed; previously it logged
-and swallowed a failure and could skip later resources. Callers that relied on teardown succeeding despite failed
-cleanup should handle or fix that failure explicitly. Database cleanup must also tolerate startup ending before its
+fails. `Stove.close()` still logs cleanup failures instead of throwing; the first failure is logged with subsequent
+failures suppressed. Database cleanup must also tolerate startup ending before its
 client is initialized.
