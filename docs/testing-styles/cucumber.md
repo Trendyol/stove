@@ -1,6 +1,6 @@
 # Cucumber feature tests with suspend steps
 
-Use Gherkin feature files to describe cases and Kotlin suspend functions to execute
+Use Gherkin feature files to describe cases and Kotlin suspend lambdas to execute
 Stove's existing validation DSL. The Cucumber adapter carries the active Stove
 instance, scenario identity, and trace through suspensions and child coroutines.
 
@@ -35,7 +35,8 @@ The example uses local Stove projects and the repository's version catalog:
 
 When adapting this to another project, use a Stove BOM version that includes
 `stove-extensions-cucumber`, along with the runner and systems your application
-needs. The adapter supplies its backend and Kotlin reflection dependency. The
+needs. The adapter supplies Cucumber’s Java8 lambda backend, Stove’s annotated-step backend,
+and Kotlin reflection. The
 additional test dependencies serve these roles:
 
 | Dependency | Purpose |
@@ -100,18 +101,26 @@ runner and systems. Keep startup out of individual steps.
 --8<-- "examples/cucumber-example/src/test/resources/features/inventory.feature"
 ```
 
-Steps import `Given`, `When`, and `Then` from
-**`com.trendyol.stove.extensions.cucumber`** and use the regular `stove {}` DSL:
+Extend `StoveSteps({ ... })` and register steps in its constructor lambda. Each step
+body is a suspend lambda with a `ValidationDsl` receiver, so systems such as `http {}` are directly available:
 
 ```kotlin
 --8<-- "examples/cucumber-example/src/test/kotlin/stove/cucumber/example/InventorySteps.kt"
 ```
 
-Stove's `Given`, `When`, `Then`, `And`, and `But` are aliases for the same `Step`
-annotation. Their keyword spelling does not constrain which Gherkin keyword can
-match a step. Define annotated steps as public suspend members of a class.
-Top-level, static, inherited, and extension-receiver step definitions are unsupported.
-Shared suspend helpers can be top-level functions.
+`Given`, `When`, `Then`, `And`, and `But` share the same registration API and
+accept zero to nine typed arguments. Write `Given<Int>("...") { quantity -> ... }`
+or let Kotlin infer the type from `Given("...") { quantity: Int -> ... }`.
+As with native Cucumber steps, keyword spelling does not constrain matching.
+
+Cucumber's Java8 backend discovers `StoveSteps` subclasses and creates their glue
+per scenario using the configured object factory. Step registration uses its native
+expression matching and argument conversion; Stove adds the suspend execution
+boundary and validation receiver. Keep application operations inside step bodies,
+not directly in the registration lambda. The `StoveSteps() { init { ... } }` form
+is also supported. Constructor lambdas can capture injected constructor parameters
+and declare local scenario state; they run during base-class initialization, before
+subclass properties are initialized.
 
 PicoContainer creates a fresh `InventoryScenario` and `InventorySteps` for each
 scenario, including each outline row. The scenario owns its unique SKU and response
@@ -125,35 +134,169 @@ A helper can use the same DSL without taking a Stove instance or repeating setup
 
 ```kotlin
 import com.trendyol.stove.http.http
-import com.trendyol.stove.system.stove
+import com.trendyol.stove.system.ValidationDsl
 import io.kotest.matchers.shouldBe
 
-suspend fun assertStock(sku: String, expected: Int) = stove {
+suspend fun ValidationDsl.assertStock(sku: String, expected: Int) {
   http {
     get<String>("/inventory/$sku") { it shouldBe expected.toString() }
   }
 }
 ```
 
-Call it from a suspend step. The session's `StoveContext`, reporting context, and
+Call `assertStock(sku, expected)` directly inside a lambda step, or from `stove {}`
+in a Kotest or Jupiter test. The session's `StoveContext`, reporting context, and
 trace propagate through suspensions and structured child coroutines, including
 `withContext(Dispatchers.Default)`. The backend awaits the step and its structured
 children before returning to Cucumber. Exceptions and cancellation remain scenario
 failures. Detached coroutine scopes do not inherit this lifecycle automatically.
 
-### Why Stove annotations?
+### Tables, docstrings, and custom parameters
 
-Cucumber's Java backend treats Kotlin's synthetic `Continuation` as another
-argument. Importing `io.cucumber.java.en.Then` on a suspend function therefore
-produces an argument-count mismatch. Stove's annotations select its suspend-aware
-backend. JUnit Platform launches the Cucumber engine; Jupiter is a separate engine,
-so its coroutine support does not handle Cucumber steps.
+Native `@ParameterType` converters work with typed lambda arguments. For tables,
+accept `io.cucumber.datatable.DataTable` and convert explicitly:
 
-Stove's backend handles only its own annotation, so the Java backend can coexist
-without duplicate registrations. Native synchronous steps, hooks, parameter types,
-and converters retain their `io.cucumber.java.*` imports. Cucumber still handles
-expression matching, custom parameter types, data tables (including `@Transpose`),
-and docstrings.
+```kotlin
+Given<DataTable>("the following products exist") { table ->
+  val products = table.asMaps(String::class.java, String::class.java)
+  // Seed products through the relevant Stove system.
+}
+```
+
+Use `String` for a plain docstring, or `io.cucumber.docstring.DocString` for explicit
+conversion. Cucumber's lambda backend resolves raw argument classes, so generic
+element types in `List`/`Map` arguments are lost. Use `DataTable.asList`, `asLists`,
+`asMap`, `asMaps`, or `convert` for explicit conversion. For transposed data, call `table.transpose()` first.
+
+### The same scenario: lambdas and annotations
+
+Both styles below implement this feature against the inventory application. Choose
+one implementation for your glue package; registering both makes the steps ambiguous.
+
+```gherkin
+Feature: Inventory
+  Scenario: Read the stock we added
+    Given product apple starts with 10 units
+    Then product apple has 10 units
+```
+
+Both implementations use these imports:
+
+```kotlin
+import arrow.core.some
+import com.trendyol.stove.http.http
+import io.kotest.matchers.shouldBe
+```
+
+<div class="grid" markdown>
+
+<div markdown>
+
+#### Lambda style
+
+```kotlin
+import com.trendyol.stove.extensions.cucumber.StoveSteps
+
+class InventorySteps : StoveSteps({
+  Given<String, Int>(
+    "product {word} starts with {int} units"
+  ) { sku, quantity ->
+    http {
+      putAndExpectBodilessResponse(
+        "/inventory/$sku",
+        body = quantity.toString().some()
+      ) { it.status shouldBe 204 }
+    }
+  }
+
+  Then<String, Int>(
+    "product {word} has {int} units"
+  ) { sku, quantity ->
+    http {
+      get<String>("/inventory/$sku") {
+        it shouldBe quantity.toString()
+      }
+    }
+  }
+})
+```
+
+Each step body is already a suspend `ValidationDsl` block. Call `http {}` or
+other configured system DSLs directly.
+
+</div>
+
+<div markdown>
+
+#### Annotation style
+
+```kotlin
+import com.trendyol.stove.extensions.cucumber.Given
+import com.trendyol.stove.extensions.cucumber.Then
+import com.trendyol.stove.system.stove
+
+class InventorySteps {
+  @Given("product {word} starts with {int} units")
+  suspend fun seed(sku: String, quantity: Int) =
+    stove {
+      http {
+        putAndExpectBodilessResponse(
+          "/inventory/$sku",
+          body = quantity.toString().some()
+        ) { it.status shouldBe 204 }
+      }
+    }
+
+  @Then("product {word} has {int} units")
+  suspend fun stock(sku: String, quantity: Int) =
+    stove {
+      http {
+        get<String>("/inventory/$sku") {
+          it shouldBe quantity.toString()
+        }
+      }
+    }
+}
+```
+
+Each method is a suspend function. `stove {}` supplies its `ValidationDsl` receiver.
+Use Stove's step annotation imports as shown above.
+
+</div>
+
+</div>
+
+### How the Stove DSL is embedded
+
+The outer `StoveSteps({ ... })` lambda registers steps synchronously, once per
+scenario. The lambda passed to `Given`, `When`, or `Then` has type
+`suspend ValidationDsl.(...) -> Unit`. When Cucumber executes it, Stove enters
+the scenario's coroutine context and invokes the body inside the standard
+`stove {}` DSL. That is why `http {}`, other system DSLs, and suspend validation
+helpers are available directly in a lambda step.
+
+Annotated methods enter the same scenario context, then call `stove {}` explicitly.
+Both styles reuse the same suspend executor and reporting lifecycle; changing styles
+does not add another session, tracing layer, or report. Suspension and structured
+child coroutines complete before Cucumber moves to the next step.
+
+### Annotated suspend steps
+
+The annotated API remains supported. Use it when you prefer named methods or want
+native generic table conversion and `@Transpose` on parameters.
+
+Stove's `Given`, `When`, `Then`, `And`, and `But` annotations alias `Step`. Use public
+suspend class members; top-level, static, inherited, and extension-receiver annotated
+step definitions are unsupported. Shared suspend helpers can be top-level functions.
+
+Native `io.cucumber.java.en.*` annotations treat Kotlin's synthetic `Continuation`
+as another argument on suspend functions. Use Stove's annotations for those methods.
+JUnit Platform launches Cucumber; Jupiter's coroutine support does not handle its steps.
+
+Both styles use the same scenario session and suspend executor. Native synchronous
+steps can coexist, and hooks and parameter/table/docstring converters retain their
+native Cucumber imports. Hooks remain synchronous; suspend support applies to step
+bodies. Do not register the same expression in both styles.
 
 ## Parallel scenarios
 
@@ -235,6 +378,8 @@ Use the Gradle task from the terminal or IDE so both agents are attached.
 | Stove is not initialized | Start it in a native `@BeforeAll` hook before scenarios |
 | No diagnostic attachment | Include `com.trendyol.stove.extensions.cucumber` in glue; run-level failures have no scenario attachment |
 | Features run twice | Keep `cucumber` out of top-level discovery when launching through the suite engine |
+| Lambda stack trace points beyond the source file | Kotlin inlining can produce synthetic line numbers; use the reported feature URI and scenario line to identify the case |
+| Lambda table values have unexpected types | Accept `DataTable` and convert explicitly; generic `List`/`Map` element types are erased |
 | Annotated step is rejected during discovery | Use a public suspend class member; extract reuse into helpers |
 | State leaks between scenarios | Use scenario-scoped state, unique data, and cleanup limited to that scenario's data |
 | Validate glue without starting the application | `cucumber.execution.dry-run=true` skips step bodies and hooks, including `BeforeAll` / `AfterAll`; no Stove instance or reporting session is needed |

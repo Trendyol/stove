@@ -7,7 +7,6 @@ import io.cucumber.core.backend.SourceReference
 import io.cucumber.core.backend.StepDefinition
 import io.cucumber.core.backend.TypeResolver
 import io.cucumber.java.Transpose
-import kotlinx.coroutines.runBlocking
 import java.lang.reflect.InvocationTargetException
 import java.lang.reflect.Method
 import java.lang.reflect.Modifier
@@ -43,14 +42,9 @@ internal class SuspendingStepDefinition(
   }
 
   override fun execute(args: Array<out Any>) {
-    val session = StoveCucumberPlugin.current().session
     val instance = lookup.getInstance(method.declaringClass)
     try {
-      runBlocking {
-        session.withContext {
-          function.callSuspend(instance, *args)
-        }
-      }
+      executeStoveStep { function.callSuspend(instance, *args) }
     } catch (failure: Throwable) {
       // Reflection may wrap a failure before the first suspension. Cucumber must see its original cause.
       val invocation = failure as? InvocationTargetException ?: InvocationTargetException(failure)

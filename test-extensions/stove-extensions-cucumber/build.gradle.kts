@@ -2,6 +2,7 @@ dependencies {
   testImplementation(testFixtures(projects.testExtensions.stoveExtensionsCommon))
   api(projects.testExtensions.stoveExtensionsCommon)
   api(libs.cucumber.java)
+  api(libs.cucumber.java8)
   api(libs.cucumber.plugin)
   implementation(libs.kotlin.reflect)
   testImplementation(libs.junit.platform.testkit)

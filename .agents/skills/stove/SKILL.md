@@ -15,7 +15,7 @@ Open only the focused guides needed for the user's task. Guide links are relativ
    - Host process: Go, Python, Rust, Node.js, or another binary via `processApp` / `goApp`.
    - Container image: any language via `containerApp`.
    - Already running app: staging/dev smoke tests via `providedApplication`.
-3. Identify test framework: Kotest uses `StoveKotestExtension()` and `kotest.properties`; JUnit uses `StoveJUnitExtension`. Cucumber uses Stove suspend-step annotations and `StoveCucumberPlugin`; read [cucumber.md](cucumber.md). Each needs explicit Stove startup and teardown in the framework lifecycle; the reporting adapter alone does not launch the app.
+3. Identify test framework: Kotest uses `StoveKotestExtension()` and `kotest.properties`; JUnit uses `StoveJUnitExtension`. Cucumber uses `StoveSteps` suspend lambdas (or Stove step annotations) and `StoveCucumberPlugin`; read [cucumber.md](cucumber.md). Each needs explicit Stove startup and teardown in the framework lifecycle; the reporting adapter alone does not launch the app.
 4. Identify needed systems: HTTP, OIDC authentication, databases, Kafka, WireMock, gRPC, tracing, dashboard.
 5. Verify uncertain APIs against the resolved version's source artifacts; see [gradle-config.md](gradle-config.md#resolve-api-ambiguity-from-local-artifacts). In a Stove checkout, source also lives under `lib/`, `starters/`, `test-extensions/`, and `server/stove-server/`.
 

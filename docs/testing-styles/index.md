@@ -28,7 +28,8 @@ All three styles follow the same lifecycle:
 
 1. Configure systems and an application runner with `Stove().with { ... }`.
 2. Call `run()` from the selected framework's startup lifecycle.
-3. Use `stove { ... }` in tests, steps, and shared suspend helpers.
+3. Use `stove { ... }` in tests and annotated steps; Cucumber lambda steps supply
+   its validation receiver directly.
 4. Call `Stove.stop()` from the corresponding teardown lifecycle.
 
 The reporting adapter does not start the application. Application setup remains
@@ -70,7 +71,7 @@ local Ktor example that starts its own application.
 | Cucumber | `StoveCucumberPlugin` and diagnostic glue | Native Cucumber `@BeforeAll` / `@AfterAll` | Scenario diagnostic attachment |
 
 The adapters share the reporting lifecycle through `StoveTestSession`. Cucumber's
-suspend backend also binds the scenario's Stove and trace context during invocation.
+suspend executor also binds the scenario's Stove and trace context during invocation.
 See [Reporting](../Components/13-reporting.md) to configure failure output.
 
 Tests in one suite share the application and systems. Use unique data or explicit

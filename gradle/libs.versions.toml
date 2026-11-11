@@ -284,6 +284,7 @@ kotest-runner-junit6 = { module = "io.kotest:kotest-runner-junit6", version.ref 
 kotest-framework-engine = { module = "io.kotest:kotest-framework-engine", version.ref = "kotest" }
 kotest-assertions-core = { module = "io.kotest:kotest-property", version.ref = "kotest" }
 kotest-arrow = { module = "io.kotest:kotest-assertions-arrow", version.ref = "kotest" }
+cucumber-java8 = { module = "io.cucumber:cucumber-java8", version.ref = "cucumber" }
 cucumber-java = { module = "io.cucumber:cucumber-java", version.ref = "cucumber" }
 cucumber-plugin = { module = "io.cucumber:cucumber-plugin", version.ref = "cucumber" }
 cucumber-engine = { module = "io.cucumber:cucumber-junit-platform-engine", version.ref = "cucumber" }

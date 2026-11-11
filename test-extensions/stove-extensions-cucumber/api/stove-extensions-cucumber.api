@@ -23,3 +23,21 @@ public final class com/trendyol/stove/extensions/cucumber/StoveCucumberPlugin : 
 public final class com/trendyol/stove/extensions/cucumber/StoveCucumberPlugin$Companion {
 }
 
+public final class com/trendyol/stove/extensions/cucumber/StoveStepDsl {
+	public static final field INSTANCE Lcom/trendyol/stove/extensions/cucumber/StoveStepDsl;
+	public final fun execute (Lkotlin/jvm/functions/Function2;)V
+	public final fun invoke (Ljava/lang/String;Lkotlin/jvm/functions/Function2;)V
+	public final fun registration ()Lio/cucumber/java8/En;
+}
+
+public abstract class com/trendyol/stove/extensions/cucumber/StoveSteps : io/cucumber/java8/LambdaGlue {
+	public fun <init> ()V
+	public fun <init> (Lkotlin/jvm/functions/Function1;)V
+	public synthetic fun <init> (Lkotlin/jvm/functions/Function1;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun getAnd ()Lcom/trendyol/stove/extensions/cucumber/StoveStepDsl;
+	public final fun getBut ()Lcom/trendyol/stove/extensions/cucumber/StoveStepDsl;
+	public final fun getGiven ()Lcom/trendyol/stove/extensions/cucumber/StoveStepDsl;
+	public final fun getThen ()Lcom/trendyol/stove/extensions/cucumber/StoveStepDsl;
+	public final fun getWhen ()Lcom/trendyol/stove/extensions/cucumber/StoveStepDsl;
+}
+

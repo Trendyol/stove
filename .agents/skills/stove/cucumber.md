@@ -13,8 +13,9 @@ execution. JUnit Platform launches its engine. Jupiter coroutine support does no
 apply to Cucumber glue; no Jupiter extension or Kotest execution bridge is needed.
 Kotest assertions may still be used.
 
-The Stove backend is a `BackendProviderService` loaded automatically beside the
-Java backend. `StoveCucumberPlugin` manages the shared `StoveTestSession`.
+Cucumber’s Java8 backend discovers `StoveSteps` lambda glue. Stove’s annotated
+backend is also loaded automatically beside the native Java backend. Both styles
+share one suspend executor and reporting lifecycle. `StoveCucumberPlugin` manages the shared `StoveTestSession`.
 Stove's first before hook opens it, and its after hook attaches scenario failures.
 Keep these responsibilities in the adapter; do not implement per-step reporting,
 feature parsing, or copied test cases in application glue.
@@ -62,36 +63,45 @@ Start Stove once using native `io.cucumber.java.BeforeAll` and stop with native
 `AfterAll`. An `object` with `@JvmStatic` hooks works. Startup is an ordinary
 `fun start(): Unit = runBlocking { Stove().with { /* systems and runner */ }.run() }`;
 teardown can call `Stove.stop()`. Neither the backend nor reporting plugin starts
-an application. Hooks are synchronous; suspend support is for step methods.
+an application. Hooks are synchronous; suspend support is for step bodies.
 
 ## Write steps and reuse the DSL
 
 ```kotlin
-import com.trendyol.stove.extensions.cucumber.Then
+import com.trendyol.stove.extensions.cucumber.StoveSteps
 import com.trendyol.stove.http.http
-import com.trendyol.stove.system.stove
 import io.kotest.matchers.shouldBe
 
-class InventorySteps {
-  @Then("product {word} has {int} units")
-  suspend fun remaining(sku: String, quantity: Int) = stove {
+class InventorySteps : StoveSteps({
+  Then<String, Int>("product {word} has {int} units") { sku, quantity ->
     http {
       get<String>("/inventory/$sku") { it shouldBe quantity.toString() }
     }
   }
-}
+})
 ```
 
-- Import `Given`, `When`, `Then`, `And`, or `But` from
-  `com.trendyol.stove.extensions.cucumber`. These alias `Step`. Native
-  `io.cucumber.java.en.*` annotations do not support suspend functions: their backend
-  treats `Continuation` as an extra argument. Native synchronous steps may coexist.
-- Use public suspend member functions for annotated steps. Top-level, inherited,
-  static, and extension-receiver steps are unsupported; shared helpers can be top-level.
-  Leave hooks and custom `@ParameterType`/table/docstring converters on their native
-  Cucumber imports.
-- Use the standard `stove {}` DSL and shared suspend helpers. The backend awaits
-  each step and its structured child coroutines; step code can suspend directly.
+- Prefer `StoveSteps` for new lambda glue. Register `Given`, `When`, `Then`, `And`,
+  and `But` inside `StoveSteps({ ... })`; their suspend bodies have a `ValidationDsl` receiver. System
+  DSLs are directly available. Extract reuse as `suspend fun ValidationDsl.helper(...)`;
+  those helpers also work inside `stove {}` in other testing styles.
+- Capture injected constructor parameters or declare local scenario state in the
+  registration lambda. It runs before subclass properties are initialized. The
+  `StoveSteps() { init { ... } }` form remains supported.
+- Zero to nine typed arguments are supported. Use explicit type arguments or typed
+  lambda parameters. Custom native `@ParameterType` conversion remains available.
+- Lambda tables use `DataTable`, with explicit `asList`/`asLists`/`asMap`/`asMaps` or
+  `convert`. Generic `List`/`Map` element types are erased by the lambda backend. Use
+  `table.transpose()` for transposed tables; use `String` or `DocString` for docstrings.
+- Keep the annotated style when desired: import step annotations from
+  `com.trendyol.stove.extensions.cucumber`, declare public suspend member functions,
+  and call `stove {}` inside them. This supports generic table conversion and
+  `@Transpose`. Top-level, inherited, static, and extension-receiver annotated steps
+  are unsupported. Native `io.cucumber.java.en.*` annotations treat `Continuation`
+  as an extra argument on suspend functions.
+- Both styles await each step and its structured children. Native synchronous steps
+  can coexist. Keep hooks and parameter/table/docstring converters on native
+  Cucumber imports; hooks remain synchronous. Do not register an expression twice.
 - The session propagates `StoveContext`, reporting identity, and tracing through
   suspension and dispatcher changes. Concurrent scenarios have separate report and
   trace sessions while sharing the application. Detached work is outside that

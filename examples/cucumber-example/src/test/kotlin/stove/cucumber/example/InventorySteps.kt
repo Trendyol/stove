@@ -1,11 +1,8 @@
 package stove.cucumber.example
 
 import arrow.core.some
-import com.trendyol.stove.extensions.cucumber.Given
-import com.trendyol.stove.extensions.cucumber.Then
-import com.trendyol.stove.extensions.cucumber.When
+import com.trendyol.stove.extensions.cucumber.StoveSteps
 import com.trendyol.stove.http.http
-import com.trendyol.stove.system.stove
 import io.kotest.matchers.shouldBe
 import java.util.UUID
 
@@ -15,9 +12,8 @@ class InventoryScenario {
   var responseStatus: Int? = null
 }
 
-class InventorySteps(private val scenario: InventoryScenario) {
-  @Given("a product with {int} units in stock")
-  suspend fun stock(quantity: Int) = stove {
+class InventorySteps(scenario: InventoryScenario) : StoveSteps({
+  Given<Int>("a product with {int} units in stock") { quantity ->
     http {
       putAndExpectBodilessResponse("/inventory/${scenario.sku}", body = quantity.toString().some()) {
         it.status shouldBe 204
@@ -25,8 +21,7 @@ class InventorySteps(private val scenario: InventoryScenario) {
     }
   }
 
-  @When("I reserve {int} units")
-  suspend fun reserve(quantity: Int) = stove {
+  When<Int>("I reserve {int} units") { quantity ->
     http {
       postAndExpectBodilessResponse("/inventory/${scenario.sku}/reserve", body = quantity.toString().some()) {
         scenario.responseStatus = it.status
@@ -34,17 +29,15 @@ class InventorySteps(private val scenario: InventoryScenario) {
     }
   }
 
-  @Then("the reservation response is {int}")
-  suspend fun response(status: Int) {
+  Then<Int>("the reservation response is {int}") { status ->
     scenario.responseStatus shouldBe status
   }
 
-  @Then("{int} units remain in stock")
-  suspend fun remaining(quantity: Int) = stove {
+  And<Int>("{int} units remain in stock") { quantity ->
     http {
       get<String>("/inventory/${scenario.sku}") {
         it shouldBe quantity.toString()
       }
     }
   }
-}
+})

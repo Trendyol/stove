@@ -1,7 +1,7 @@
 # Cucumber + Stove: reserve inventory
 
 A Ktor inventory application tested through Gherkin features and Kotlin suspend
-steps using the standard `stove { ... }` DSL. It runs locally without Docker, with dashboard reporting, tracing, and profiling
+lambda steps with an implicit Stove validation receiver. It runs locally without Docker, with dashboard reporting, tracing, and profiling
 enabled by default. Start `stove` in another terminal to view the collected evidence.
 
 From the repository root:
@@ -90,11 +90,11 @@ IDE: a native IDE suite run without the agents will fail the tracing checks.
 - `InventoryEnvironment.kt`: one Stove start/stop pair per Cucumber run.
 - `InventoryScenario`: one fresh state object and unique SKU per scenario/outline row.
 - `InventorySteps.kt`: thin bindings from Gherkin to the existing Stove HTTP DSL.
-- Suspend steps use `Given`/`When`/`Then` from
-  `com.trendyol.stove.extensions.cucumber` and the regular `stove { http { ... } }`
-  DSL. The automatically discovered backend invokes each step inside the scenario
-  session, carrying Stove, reporting, and tracing across suspensions. Shared suspend
-  helpers inherit that context. Lifecycle hooks keep their native Cucumber imports.
+- `InventorySteps` extends `StoveSteps` and registers `Given`/`When`/`Then`/`And`
+  suspend steps in its constructor lambda. Each body calls `http { ... }` directly. Cucumber's
+  Java8 backend discovers the glue; Stove executes each body inside the scenario
+  session, carrying Stove, reporting, and tracing across suspensions. Reuse operations
+  as `suspend fun ValidationDsl...` helpers. Lifecycle hooks keep native Cucumber imports.
 - `junit-platform.properties`: glue, reporting, parallel worker limits, and default tags.
 
 The example uses the local `stove-extensions-cucumber` project. Reporting lifecycle
@@ -113,4 +113,6 @@ Stove's diagnostic hook runs at `Int.MIN_VALUE`, after ordinary `@After` hooks.
 A hook failure after attachment is printed to stderr before the session closes.
 
 See the [Cucumber guide](../../docs/testing-styles/cucumber.md) for dependencies,
-annotation imports, shared helpers, and troubleshooting.
+lambda steps, the annotated alternative, shared helpers, and troubleshooting.
+The [side-by-side comparison](../../docs/testing-styles/cucumber.md#the-same-scenario-lambdas-and-annotations)
+shows the same feature implemented both ways and explains how lambda steps embed the Stove DSL.
