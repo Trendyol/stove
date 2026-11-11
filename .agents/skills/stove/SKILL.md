@@ -1,6 +1,6 @@
 ---
 name: stove
-description: Use when configuring, writing, or debugging Stove end-to-end tests; choosing JVM, process, container, or provided-application runners; wiring Stove systems and OIDC authentication; enabling tracing, profiling, dashboard, or MCP; or extending Stove with custom systems.
+description: Use when configuring, writing, or debugging Stove end-to-end tests, including Cucumber feature files and suspend steps; choosing JVM, process, container, or provided-application runners; wiring Stove systems and OIDC authentication; enabling tracing, profiling, dashboard, or MCP; or extending Stove with custom systems.
 ---
 
 # Stove Skill Router
@@ -15,7 +15,7 @@ Open only the focused guides needed for the user's task. Guide links are relativ
    - Host process: Go, Python, Rust, Node.js, or another binary via `processApp` / `goApp`.
    - Container image: any language via `containerApp`.
    - Already running app: staging/dev smoke tests via `providedApplication`.
-3. Identify test framework: Kotest uses `StoveKotestExtension()` and `kotest.properties`; JUnit uses `StoveJUnitExtension`. Both need explicit Stove startup and teardown in the framework lifecycle; the reporting extension alone does not launch the app.
+3. Identify test framework: Kotest uses `StoveKotestExtension()` and `kotest.properties`; JUnit uses `StoveJUnitExtension`. Cucumber uses Stove suspend-step annotations and `StoveCucumberPlugin`; read [cucumber.md](cucumber.md). Each needs explicit Stove startup and teardown in the framework lifecycle; the reporting adapter alone does not launch the app.
 4. Identify needed systems: HTTP, OIDC authentication, databases, Kafka, WireMock, gRPC, tracing, dashboard.
 5. Verify uncertain APIs against the resolved version's source artifacts; see [gradle-config.md](gradle-config.md#resolve-api-ambiguity-from-local-artifacts). In a Stove checkout, source also lives under `lib/`, `starters/`, `test-extensions/`, and `server/stove-server/`.
 
@@ -36,6 +36,7 @@ Native access is correct when it is the documented API contract: Redis currently
 | Gradle source sets, BOM, `e2eTest`, local artifact ambiguity | [gradle-config.md](gradle-config.md) |
 | JVM setup, system options, provided instances (existing infra), keyed systems (`SystemKey`) | [system-setup.md](system-setup.md) |
 | Quarkus Bridge, CDI bean access, e2e bean preservation, augmented test classpath | [quarkus-bridge.md](quarkus-bridge.md) |
+| Cucumber feature files, suspend steps, scenario reporting | [cucumber.md](cucumber.md) |
 | Writing `stove {}` assertions and validation DSL | [writing-tests.md](writing-tests.md) |
 | OIDC authentication, NAV/Keycloak providers, JWTs, token grants, or keyed issuers | [oidc.md](oidc.md) |
 | Choosing an API, using a native handle, or reviewing SDK-based helpers | [api-selection.md](api-selection.md) |

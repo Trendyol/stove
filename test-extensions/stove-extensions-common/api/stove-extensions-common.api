@@ -1,0 +1,16 @@
+public final class com/trendyol/stove/extensions/StoveTestSession : java/lang/AutoCloseable {
+	public static final field Companion Lcom/trendyol/stove/extensions/StoveTestSession$Companion;
+	public synthetic fun <init> (Lcom/trendyol/stove/reporting/StoveTestContext;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public fun close ()V
+	public final fun getContext ()Lcom/trendyol/stove/reporting/StoveTestContext;
+	public final fun withContext (Lkotlin/jvm/functions/Function1;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+}
+
+public final class com/trendyol/stove/extensions/StoveTestSession$Companion {
+	public final fun failureMessage (Ljava/lang/Throwable;)Ljava/lang/String;
+	public final fun failureReport ()Ljava/lang/String;
+	public final fun open (Lcom/trendyol/stove/reporting/StoveTestContext;)Lcom/trendyol/stove/extensions/StoveTestSession;
+	public final fun reportFailure (Ljava/lang/String;)V
+	public final fun run (Lcom/trendyol/stove/reporting/StoveTestContext;Lkotlin/jvm/functions/Function1;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+}
+

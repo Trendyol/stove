@@ -3,7 +3,6 @@ package com.trendyol.stove.system
 import arrow.core.*
 import com.trendyol.stove.functional.*
 import com.trendyol.stove.reporting.*
-import com.trendyol.stove.system.Stove.Companion.instance
 import com.trendyol.stove.system.abstractions.*
 import com.trendyol.stove.system.annotations.StoveDsl
 import kotlinx.coroutines.*
@@ -407,6 +406,9 @@ class Stove(
  * }
  * ```
  *
+ * Uses the instance bound to [StoveContext], falling back to the initialized suite instance.
+ * The binding is inherited by child coroutines and nested validation helpers.
+ *
  * @param validation The DSL block containing test assertions.
  * @throws IllegalStateException if Stove has not been initialized via [Stove.run].
  * @see ValidationDsl
@@ -414,6 +416,8 @@ class Stove(
 suspend fun stove(
   validation: @StoveDsl suspend ValidationDsl.() -> Unit
 ) {
-  check(Stove.instanceInitialized()) { "Stove is not initialized yet, do not forget to call Stove#run" }
-  validation(ValidationDsl(instance))
+  val context = currentCoroutineContext()[StoveContext] ?: StoveContext.capture()
+  withContext(context) {
+    validation(ValidationDsl(context.stove))
+  }
 }

@@ -46,6 +46,7 @@ io-grpc = "1.85.1"
 io-grpc-kotlin = "1.5.0"
 google-protobuf = "4.36.2"
 hoplite = "3.0.7"
+cucumber = "8.0.4"
 junit-jupiter = "6.1.3"
 kotest = "6.2.6"
 mockito = "6.4.0"
@@ -128,6 +129,7 @@ couchbase-client-metrics = { module = "com.couchbase.client:metrics-micrometer",
 # Jackson
 jackson-kotlin = { module = "com.fasterxml.jackson.module:jackson-module-kotlin", version.ref = "jackson" }
 jackson-databind = { module = "com.fasterxml.jackson.core:jackson-databind", version.ref = "jackson" }
+jackson-jdk8 = { module = "com.fasterxml.jackson.datatype:jackson-datatype-jdk8", version.ref = "jackson" }
 jackson-jsr310 = { module = "com.fasterxml.jackson.datatype:jackson-datatype-jsr310", version.ref = "jackson" }
 
 # Jackson 3
@@ -282,6 +284,14 @@ kotest-runner-junit6 = { module = "io.kotest:kotest-runner-junit6", version.ref 
 kotest-framework-engine = { module = "io.kotest:kotest-framework-engine", version.ref = "kotest" }
 kotest-assertions-core = { module = "io.kotest:kotest-property", version.ref = "kotest" }
 kotest-arrow = { module = "io.kotest:kotest-assertions-arrow", version.ref = "kotest" }
+cucumber-java = { module = "io.cucumber:cucumber-java", version.ref = "cucumber" }
+cucumber-plugin = { module = "io.cucumber:cucumber-plugin", version.ref = "cucumber" }
+cucumber-engine = { module = "io.cucumber:cucumber-junit-platform-engine", version.ref = "cucumber" }
+cucumber-picocontainer = { module = "io.cucumber:cucumber-picocontainer", version.ref = "cucumber" }
+junit-platform-suite = { module = "org.junit.platform:junit-platform-suite", version.ref = "junit-jupiter" }
+junit-platform-testkit = { module = "org.junit.platform:junit-platform-testkit", version.ref = "junit-jupiter" }
+junit-jupiter-engine = { module = "org.junit.jupiter:junit-jupiter-engine", version.ref = "junit-jupiter" }
+junit-jupiter-params = { module = "org.junit.jupiter:junit-jupiter-params", version.ref = "junit-jupiter" }
 junit-jupiter-api = { module = "org.junit.jupiter:junit-jupiter-api", version.ref = "junit-jupiter" }
 
 ### Recipes (consumed by recipes/jvm and recipes/process via the root catalog)

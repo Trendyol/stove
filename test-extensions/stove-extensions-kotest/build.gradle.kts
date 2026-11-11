@@ -1,6 +1,6 @@
 dependencies {
-  api(projects.lib.stove)
-  api(projects.lib.stoveTracing)
+  testImplementation(testFixtures(projects.testExtensions.stoveExtensionsCommon))
+  api(projects.testExtensions.stoveExtensionsCommon)
   api(libs.kotest.framework.engine)
 }
 

@@ -45,6 +45,11 @@ nav:
     - Playground: playground.md
     - Getting Started: getting-started.md
     - Agent Skills and Plugins: agent-setup.md
+  - Testing Styles:
+    - Overview: testing-styles/index.md
+    - Kotest: testing-styles/kotest.md
+    - JUnit Jupiter: testing-styles/junit.md
+    - Cucumber: testing-styles/cucumber.md
   - JVM Frameworks:
     - Overview: frameworks/index.md
     - Spring Boot: frameworks/spring-boot.md

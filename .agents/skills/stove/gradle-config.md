@@ -1,5 +1,8 @@
 # Gradle Configuration
 
+For Cucumber feature suites, use [cucumber.md](cucumber.md) for the adapter, engine
+selection, glue properties, and lifecycle; the setup below illustrates Kotest/Jupiter.
+
 ## Contents
 - [Dependencies (BOM)](#dependencies-bom)
 - [Existing tasks and convention plugins](#existing-tasks-and-convention-plugins)
@@ -241,3 +244,5 @@ These callbacks run once per concrete subclass. Keep classes sharing Stove's glo
 | `stove-container` | Container-based AUT starter (`containerApp`) |
 | `stove-extensions-kotest` | Kotest reporting integration |
 | `stove-extensions-junit` | JUnit reporting integration |
+| `stove-extensions-cucumber` | Incubating suspend steps and scenario reporting; see [Cucumber](cucumber.md) |
+| `stove-extensions-common` | Shared adapter lifecycle, supplied transitively by framework extensions |

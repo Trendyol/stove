@@ -1,6 +1,6 @@
 dependencies {
-  api(projects.lib.stove)
-  api(projects.lib.stoveTracing)
+  testImplementation(testFixtures(projects.testExtensions.stoveExtensionsCommon))
+  api(projects.testExtensions.stoveExtensionsCommon)
   api(libs.junit.jupiter.api)
 }
 
@@ -10,6 +10,9 @@ dependencies {
   testImplementation(libs.kotest.runner.junit6)
   testImplementation(libs.kotest.assertions.core)
   testImplementation(libs.logback.classic)
+  testImplementation(libs.junit.jupiter.params)
+  testImplementation(libs.junit.platform.testkit)
+  testRuntimeOnly(libs.junit.jupiter.engine)
   testImplementation(testFixtures(projects.lib.stove))
 }
 
@@ -31,3 +34,6 @@ kover {
     }
   }
 }
+
+// Deliberately failing fixtures are launched only by the contract test.
+tasks.test { useJUnitPlatform { excludeTags("adapter-fixture") } }

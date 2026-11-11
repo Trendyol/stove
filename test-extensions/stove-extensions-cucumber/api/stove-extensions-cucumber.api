@@ -1,0 +1,24 @@
+public abstract interface annotation class com/trendyol/stove/extensions/cucumber/Step : java/lang/annotation/Annotation {
+	public abstract fun value ()Ljava/lang/String;
+}
+
+public final class com/trendyol/stove/extensions/cucumber/StoveBackendProviderService : io/cucumber/core/backend/BackendProviderService {
+	public fun <init> ()V
+	public fun create (Lio/cucumber/core/backend/Lookup;Lio/cucumber/core/backend/Container;Ljava/util/function/Supplier;)Lio/cucumber/core/backend/Backend;
+}
+
+public final class com/trendyol/stove/extensions/cucumber/StoveCucumberHooks {
+	public fun <init> ()V
+	public final fun attachFailure (Lio/cucumber/java/Scenario;)V
+}
+
+public final class com/trendyol/stove/extensions/cucumber/StoveCucumberPlugin : io/cucumber/plugin/ConcurrentEventListener {
+	public static final field Companion Lcom/trendyol/stove/extensions/cucumber/StoveCucumberPlugin$Companion;
+	public fun <init> ()V
+	public fun setEventPublisher (Lio/cucumber/plugin/event/EventPublisher;)V
+	public fun setEventPublisher (Lio/cucumber/plugin/event/EventPublisher;Z)V
+}
+
+public final class com/trendyol/stove/extensions/cucumber/StoveCucumberPlugin$Companion {
+}
+

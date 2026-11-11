@@ -2,6 +2,11 @@
 
 Stove's agent skill helps with test setup, assertions, and failure investigation. It works with Codex, Claude Code, Cursor, and OpenCode. The optional MCP connection lets the agent inspect evidence recorded by a running [Stove Server](Components/18-dashboard.md).
 
+The skill includes a focused guide for [Cucumber feature tests](testing-styles/cucumber.md):
+suspend-step imports, engine discovery, scenario state, and diagnostic attachments.
+It is bundled inside the existing `stove` skill, so no separate skill installation
+is needed. Check the project's resolved Stove version before using incubating APIs.
+
 ## Install and configure from your project
 
 The dashboard's **Connect agent** button opens setup instructions for Codex, Claude Code, Cursor, and OpenCode. Choose **This project** or **All projects**, then copy the command into a terminal on the machine where your agent runs. The same button is available when the dashboard has no test runs yet.
