@@ -21,10 +21,8 @@ object InventoryEnvironment {
   fun start(): Unit = runBlocking {
     val port = PortFinder.findAvailablePort()
     Stove().with {
-      if (java.lang.Boolean.getBoolean("stove.dashboard.enabled")) {
-        tracing { enableSpanReceiver() }
-        dashboard { DashboardSystemOptions(appName = "cucumber-example") }
-      }
+      tracing { enableSpanReceiver() }
+      dashboard { DashboardSystemOptions(appName = "cucumber-example") }
       httpClient { HttpClientSystemOptions(baseUrl = "http://127.0.0.1:$port") }
       ktor(runner = { startInventoryApplication(port) })
     }.run()
@@ -39,17 +37,15 @@ object InventoryEnvironment {
 class InventoryObservability {
   @After
   fun verifyTraces(scenario: Scenario): Unit = runBlocking {
-    if (java.lang.Boolean.getBoolean("stove.dashboard.enabled")) {
-      stove {
-        tracing {
-          // Three requests, each with one client span and one Ktor server span.
-          waitForSpans(expectedCount = 6, timeoutMs = 5000)
-          if (!scenario.isFailed) {
-            spanCountShouldBeAtLeast(6)
-            shouldContainSpan("PUT /inventory/{sku}")
-            shouldContainSpan("POST /inventory/{sku}/reserve")
-            shouldContainSpan("GET /inventory/{sku}")
-          }
+    stove {
+      tracing {
+        // Three requests, each with one client span and one Ktor server span.
+        waitForSpans(expectedCount = 6, timeoutMs = 5000)
+        if (!scenario.isFailed) {
+          spanCountShouldBeAtLeast(6)
+          shouldContainSpan("PUT /inventory/{sku}")
+          shouldContainSpan("POST /inventory/{sku}/reserve")
+          shouldContainSpan("GET /inventory/{sku}")
         }
       }
     }

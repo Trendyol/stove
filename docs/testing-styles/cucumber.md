@@ -13,7 +13,8 @@ instance, scenario identity, and trace through suspensions and child coroutines.
 
 The [inventory example](https://github.com/Trendyol/stove/tree/main/examples/cucumber-example)
 starts a real Ktor HTTP application with in-memory stock. It needs no Docker or
-external services. From a Stove checkout:
+external application services. Observability is enabled by default; start `stove`
+to view the dashboard. From a Stove checkout:
 
 ```shell
 ./gradlew :examples:cucumber-example:test
@@ -209,11 +210,11 @@ Discovery errors and run-level hook failures remain Cucumber run failures.
 Start the Stove dashboard (`stove`), then run the example with:
 
 ```shell
-./gradlew :examples:cucumber-example:test -Pdashboard --rerun
+./gradlew :examples:cucumber-example:test --rerun
 ```
 
-Open <http://localhost:4040> and select `cucumber-example`. This opt-in switch
-adds dashboard ingestion, OpenTelemetry instrumentation, and Pyroscope profiling.
+Open <http://localhost:4040> and select `cucumber-example`. Every run enables
+dashboard ingestion, OpenTelemetry instrumentation, and Pyroscope profiling.
 Each scenario has an HTTP timeline and six client/server spans in **Trace**.
 **Drill Down** shows CPU, allocation, surviving-object, and contention samples;
 select a server span's **Drill Down · this span** action for correlated samples.
@@ -224,7 +225,6 @@ The example's shared after-hook waits for asynchronous span export before scenar
 cleanup and verifies the server routes for successful scenarios. Expected HTTP
 400/409 responses can mark client spans as errors while their scenarios pass.
 Use the Gradle task from the terminal or IDE so both agents are attached.
-Ordinary runs without `-Pdashboard` need no external observability services.
 
 ## Troubleshooting and limits
 

@@ -1,8 +1,8 @@
 # Cucumber + Stove: reserve inventory
 
 A Ktor inventory application tested through Gherkin features and Kotlin suspend
-steps using the standard `stove { ... }` DSL. It runs locally without Docker or
-external services.
+steps using the standard `stove { ... }` DSL. It runs locally without Docker, with dashboard reporting, tracing, and profiling
+enabled by default. Start `stove` in another terminal to view the collected evidence.
 
 From the repository root:
 
@@ -15,7 +15,7 @@ in parallel, using up to four Cucumber workers. Steps within each row remain seq
 Cucumber owns discovery, outlines, tags, hooks, and scenario-scoped injection.
 The JUnit Platform suite selects the Cucumber engine; Kotest supplies assertions.
 Gradle selects only the suite engine at the top level to avoid running features twice.
-You can also run `CucumberSuite` in an IDE.
+In an IDE, run the Gradle test task so the tracing and profiling agents are attached.
 
 Glue-loading hints are disabled to avoid Cucumber 8.0.4's performance advisor
 crashing on generated Kotlin inline-coroutine classes during slower scans.
@@ -43,17 +43,17 @@ The failure demo is excluded by default, including when running the IDE suite.
 
 ## Dashboard, tracing, and profiling
 
-Start `stove` in another terminal, then enable observability:
+Start `stove` in another terminal, then run the tests:
 
 ```shell
-./gradlew :examples:cucumber-example:test -Pdashboard --rerun
+./gradlew :examples:cucumber-example:test --rerun
 ```
 
 Open <http://localhost:4040> and select `cucumber-example`. The example sends events
 over gRPC to `localhost:4041`. Each outline row has its own scenario and HTTP timeline.
 Select an HTTP event to inspect its result, error, and metadata.
 
-`-Pdashboard` also attaches the OpenTelemetry and Pyroscope agents and enables:
+The Gradle test task attaches the OpenTelemetry and Pyroscope agents and enables:
 
 - **Trace:** HTTP client spans and Ktor server spans for PUT, POST, and GET,
   correlated with each scenario, including request/response metadata.
@@ -76,15 +76,13 @@ in Drill Down to explore the available samples.
 To see passing scenarios alongside an intentional failure:
 
 ```shell
-./gradlew :examples:cucumber-example:test -Pdashboard -Pcucumber.tags='@reservation or @failure-demo'
+./gradlew :examples:cucumber-example:test -Pcucumber.tags='@reservation or @failure-demo'
 ```
 
 The dashboard shows four passed scenarios and one failed scenario, with the failed
 GET reporting `expected:<999> but was:<7>`. This command intentionally fails.
-Observability is disabled by default; ordinary runs need no external server.
-Run the Gradle task above from the terminal or IDE to attach both agents. Setting
-`-Dstove.dashboard.enabled=true` alone on a native IDE suite run does not attach
-the agents and will fail the tracing checks.
+Observability is enabled on every run. Use the Gradle task from the terminal or
+IDE: a native IDE suite run without the agents will fail the tracing checks.
 
 ## How it fits together
 
