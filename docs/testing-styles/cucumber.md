@@ -204,6 +204,28 @@ the attachment, the plugin prints the remaining diagnostics to stderr before
 cleanup. Undefined, ambiguous, and pending steps are also reported as failures.
 Discovery errors and run-level hook failures remain Cucumber run failures.
 
+## Dashboard, tracing, and profiling
+
+Start the Stove dashboard (`stove`), then run the example with:
+
+```shell
+./gradlew :examples:cucumber-example:test -Pdashboard --rerun
+```
+
+Open <http://localhost:4040> and select `cucumber-example`. This opt-in switch
+adds dashboard ingestion, OpenTelemetry instrumentation, and Pyroscope profiling.
+Each scenario has an HTTP timeline and six client/server spans in **Trace**.
+**Drill Down** shows CPU, allocation, surviving-object, and contention samples;
+select a server span's **Drill Down · this span** action for correlated samples.
+Short operations may have no samples. Whole-run profiles include both the
+application and test harness in the shared JVM.
+
+The example's shared after-hook waits for asynchronous span export before scenario
+cleanup and verifies the server routes for successful scenarios. Expected HTTP
+400/409 responses can mark client spans as errors while their scenarios pass.
+Use the Gradle task from the terminal or IDE so both agents are attached.
+Ordinary runs without `-Pdashboard` need no external observability services.
+
 ## Troubleshooting and limits
 
 | Symptom | Check |

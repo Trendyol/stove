@@ -41,9 +41,9 @@ operations, expected/actual values, and the feature's location. The original
 Cucumber failure is preserved. JSON is written to `build/reports/cucumber.json`.
 The failure demo is excluded by default, including when running the IDE suite.
 
-## View the dashboard
+## Dashboard, tracing, and profiling
 
-Start `stove` in another terminal, then enable dashboard ingestion:
+Start `stove` in another terminal, then enable observability:
 
 ```shell
 ./gradlew :examples:cucumber-example:test -Pdashboard --rerun
@@ -53,6 +53,26 @@ Open <http://localhost:4040> and select `cucumber-example`. The example sends ev
 over gRPC to `localhost:4041`. Each outline row has its own scenario and HTTP timeline.
 Select an HTTP event to inspect its result, error, and metadata.
 
+`-Pdashboard` also attaches the OpenTelemetry and Pyroscope agents and enables:
+
+- **Trace:** HTTP client spans and Ktor server spans for PUT, POST, and GET,
+  correlated with each scenario, including request/response metadata.
+- **Drill Down:** CPU, allocation, live allocation, and lock/contention profiles
+  for the test JVM. Profiles include the in-process application and test harness.
+- **Span-to-profile correlation:** server spans carry `pyroscope.profile.id` so
+  the dashboard can filter samples associated with that span.
+
+A shared `@After` hook waits for the three requests' six spans before scenario
+cleanup and asserts the server routes for successful scenarios. Failed scenarios
+still wait for export, preserving their original failure. This matters for this
+small application: scenario execution can finish before asynchronous export.
+Expected HTTP 400/409 responses may appear as error **client spans** even though
+the scenario passes, because the feature explicitly expects those responses.
+
+Profiles are sampled: short requests may have no matching CPU samples, and live
+allocation or contention data depends on GC and workload. Use the whole-run view
+in Drill Down to explore the available samples.
+
 To see passing scenarios alongside an intentional failure:
 
 ```shell
@@ -61,9 +81,10 @@ To see passing scenarios alongside an intentional failure:
 
 The dashboard shows four passed scenarios and one failed scenario, with the failed
 GET reporting `expected:<999> but was:<7>`. This command intentionally fails.
-The example does not enable tracing instrumentation, so the Trace tab has no spans.
-Dashboard ingestion is disabled by default; ordinary runs need no external server.
-For an IDE run, set the VM option `-Dstove.dashboard.enabled=true`.
+Observability is disabled by default; ordinary runs need no external server.
+Run the Gradle task above from the terminal or IDE to attach both agents. Setting
+`-Dstove.dashboard.enabled=true` alone on a native IDE suite run does not attach
+the agents and will fail the tracing checks.
 
 ## How it fits together
 
