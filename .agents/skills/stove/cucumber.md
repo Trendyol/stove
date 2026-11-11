@@ -14,10 +14,10 @@ apply to Cucumber glue; no Jupiter extension or Kotest execution bridge is neede
 Kotest assertions may still be used.
 
 The Stove backend is a `BackendProviderService` loaded automatically beside the
-Java backend. `StoveCucumberPlugin` opens/closes the shared `StoveTestSession`.
-Stove's diagnostic hook attaches scenario failures. Keep these responsibilities in
-the adapter; do not implement per-step reporting, feature parsing, or copied test
-cases in application glue.
+Java backend. `StoveCucumberPlugin` manages the shared `StoveTestSession`.
+Stove's first before hook opens it, and its after hook attaches scenario failures.
+Keep these responsibilities in the adapter; do not implement per-step reporting,
+feature parsing, or copied test cases in application glue.
 
 ## Wire the suite
 
@@ -113,8 +113,8 @@ For a continuation-argument error, check annotation imports first. For “No Sto
 Cucumber scenario,” check plugin registration. For missing attachments, check Stove's
 glue package. If concurrent scenarios interfere, check shared test data and cleanup.
 If features run twice, inspect the suite and top-level engine selection before
-changing feature selectors. Dry runs skip step bodies but still execute native
-run-level startup and teardown hooks.
+changing feature selectors. Dry runs skip step bodies and all hooks, including
+run-level startup and teardown. They need no Stove instance and open no reporting sessions.
 
 In this checkout:
 

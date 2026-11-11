@@ -67,7 +67,7 @@ Add `junit-platform.properties` to the test resources:
 --8<-- "examples/cucumber-example/src/test/resources/junit-platform.properties"
 ```
 
-`cucumber.glue` includes both your steps and Stove's diagnostic hook. The plugin
+`cucumber.glue` includes both your steps and Stove's lifecycle hooks. The plugin
 manages scenario reporting; the backend is discovered automatically through Java's
 service loader. Update the glue package for your application. The `cucumber.tags`
 Gradle property in the example overrides `cucumber.filter.tags`; the test resources
@@ -193,10 +193,10 @@ the failed scenario's hooks, then **Stove diagnostics**. JSON is also written to
 the example forwards it to `cucumber.filter.tags`; configure that forwarding when
 adapting the task.
 
-Each scenario gets its own `StoveTestSession`, opened before scenario hooks and
-closed after them. IDs use the feature URI plus scenario/example line, keeping
-identical outline names distinct. System activity uses the same reporting lifecycle
-as Stove's Kotest and Jupiter adapters.
+Each executed scenario gets its own `StoveTestSession`, opened by Stove's
+`@Before(order = Int.MIN_VALUE)` hook and closed after all scenario hooks. IDs use
+the feature URI plus scenario/example line, keeping identical outline names distinct.
+System activity uses the same reporting lifecycle as Stove's Kotest and Jupiter adapters.
 
 The diagnostic hook attaches plain text without replacing the original exception.
 It runs at `Int.MIN_VALUE` to follow ordinary `@After` hooks. If a hook fails after
@@ -215,7 +215,7 @@ Discovery errors and run-level hook failures remain Cucumber run failures.
 | Features run twice | Keep `cucumber` out of top-level discovery when launching through the suite engine |
 | Annotated step is rejected during discovery | Use a public suspend class member; extract reuse into helpers |
 | State leaks between scenarios | Use scenario-scoped state, unique data, and cleanup limited to that scenario's data |
-| Dry run starts the application | `cucumber.execution.dry-run=true` skips step bodies, but Cucumber still runs `BeforeAll` / `AfterAll` hooks |
+| Validate glue without starting the application | `cucumber.execution.dry-run=true` skips step bodies and hooks, including `BeforeAll` / `AfterAll`; no Stove instance or reporting session is needed |
 
 Lifecycle hooks use native synchronous Cucumber annotations. Scenarios share one
 Stove application lifecycle; `StoveContext` binds validation to that active instance.

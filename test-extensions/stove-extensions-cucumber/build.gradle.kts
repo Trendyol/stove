@@ -15,5 +15,15 @@ dependencies {
 
 tasks.test {
   exclude("**/Mixed*Fixture*")
+  exclude("**/CucumberWithoutStoveTest*")
+  dependsOn("testWithoutStove")
+  useJUnitPlatform { includeEngines("kotest") }
+}
+
+// Stove's global instance cannot be uninitialized after startup; verify this contract in a fresh JVM.
+tasks.register<Test>("testWithoutStove") {
+  testClassesDirs = sourceSets.test.get().output.classesDirs
+  classpath = sourceSets.test.get().runtimeClasspath
+  include("**/CucumberWithoutStoveTest*")
   useJUnitPlatform { includeEngines("kotest") }
 }

@@ -10,6 +10,7 @@ public final class com/trendyol/stove/extensions/cucumber/StoveBackendProviderSe
 public final class com/trendyol/stove/extensions/cucumber/StoveCucumberHooks {
 	public fun <init> ()V
 	public final fun attachFailure (Lio/cucumber/java/Scenario;)V
+	public final fun startScenario ()V
 }
 
 public final class com/trendyol/stove/extensions/cucumber/StoveCucumberPlugin : io/cucumber/plugin/ConcurrentEventListener {

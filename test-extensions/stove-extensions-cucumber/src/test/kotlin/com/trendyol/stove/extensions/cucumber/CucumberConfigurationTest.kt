@@ -98,7 +98,7 @@ class CucumberConfigurationTest : FunSpec({
       .execute()
     result.testEvents().assertStatistics { it.started(2).succeeded(2) }
     Probe.entries.size shouldBe 0
-    Probe.assertBalanced(2)
+    Probe.assertBalanced(0)
     ReportProbe.assertClean()
   }
 

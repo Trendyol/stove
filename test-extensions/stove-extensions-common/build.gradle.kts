@@ -8,6 +8,7 @@ dependencies {
 }
 
 dependencies {
+  testImplementation(libs.opentelemetry.api)
   testFixturesImplementation(libs.kotest.assertions.core)
 }
 

@@ -22,19 +22,24 @@ class StoveCucumberPlugin : ConcurrentEventListener {
 
   override fun setEventPublisher(publisher: EventPublisher) {
     publisher.registerHandlerFor(TestCaseStarted::class.java, ::startScenario)
-    publisher.registerHandlerFor(TestStepFinished::class.java) { current().record(it.result) }
+    publisher.registerHandlerFor(TestStepFinished::class.java) { opened()?.record(it.result) }
     publisher.registerHandlerFor(TestCaseFinished::class.java, ::finishScenario)
   }
 
   private fun startScenario(event: TestCaseStarted) {
-    check(Stove.instanceInitialized()) { "Start Stove in a Cucumber @BeforeAll hook before running scenarios" }
     check(active.get() == null) { "A Stove Cucumber scenario is already active" }
-    active.set(CucumberScenarioSession(StoveTestSession.open(event.testCase.toStoveContext())))
+    // Dry runs emit scenario events but never execute hooks or step bodies.
+    active.set(
+      lazy(LazyThreadSafetyMode.NONE) {
+        check(Stove.instanceInitialized()) { "Start Stove in a Cucumber @BeforeAll hook before running scenarios" }
+        CucumberScenarioSession(StoveTestSession.open(event.testCase.toStoveContext()))
+      }
+    )
   }
 
   private fun finishScenario(event: TestCaseFinished) {
     try {
-      current().use { scenario -> scenario.finish(event.result) }
+      opened()?.use { scenario -> scenario.finish(event.result) }
     } finally {
       active.remove()
     }
@@ -51,10 +56,12 @@ class StoveCucumberPlugin : ConcurrentEventListener {
   }
 
   companion object {
-    private val active = ThreadLocal<CucumberScenarioSession>()
+    private val active = ThreadLocal<Lazy<CucumberScenarioSession>>()
+
+    private fun opened(): CucumberScenarioSession? = active.get()?.takeIf { it.isInitialized() }?.value
 
     internal fun current(): CucumberScenarioSession = checkNotNull(active.get()) {
       "No Stove Cucumber scenario. Register com.trendyol.stove.extensions.cucumber.StoveCucumberPlugin"
-    }
+    }.value
   }
 }
