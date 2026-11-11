@@ -44,7 +44,9 @@ Start from the production incident you want to rehearse, then pick the tool.
 
 ### Story 1: the database goes down
 
-The search page should degrade, not crash, and should come back by itself.
+Friday evening, the search cluster restarts in the middle of a deploy. Shoppers should see "search is temporarily
+unavailable", not a stack trace, and search should work again by itself once the cluster is back. Nobody should have
+to restart the application.
 
 ```mermaid
 sequenceDiagram
@@ -83,10 +85,44 @@ elasticsearch {
 }
 ```
 
-Swap in `latency(...)` or `stall()` for the slow and hanging variants; the shape of the test stays the same.
-Details: [Fault the selected system](#fault-the-selected-system-then-verify-recovery) and [Choose the fault](#choose-the-fault).
+Details: [Fault the selected system](#fault-the-selected-system-then-verify-recovery).
 
-### Story 2: the write landed, the answer was lost
+### Story 2: the database gets slow
+
+Black Friday. The database is alive, but every query takes almost a second longer. Nothing fails, so nothing alerts.
+Request threads pile up waiting, and soon the whole site stops answering, including pages that never touch that
+database. A slow dependency hurts more than a dead one.
+
+The test adds the delay and proves the application answers quickly anyway: a timeout fires, a fallback or a clear
+error comes back, and the caller is not held.
+
+```kotlin
+redis {
+    duringFault(latency(800.milliseconds)) {
+        http { /* GET /products/1, expect the fallback answer well under 800 ms */ }
+    }
+}
+```
+
+### Story 3: the connection hangs without an error
+
+A firewall rule changes and packets are silently dropped. The connection is not closed and no error arrives: there is
+only silence. A client without a socket timeout waits forever, and the user watches a spinner.
+
+`stall()` holds the bytes and keeps the connection open. The test proves the application gives up on its own timeout
+instead of waiting.
+
+```kotlin
+redis {
+    duringFault(stall()) {
+        http { /* GET /products/1, expect 504 within the configured timeout */ }
+    }
+}
+```
+
+Details: [Choose the fault](#choose-the-fault).
+
+### Story 4: the write landed, the answer was lost
 
 A customer pays. The database saves the payment, but its reply never reaches the application. The application times
 out and retries. The customer must be charged once.
@@ -128,14 +164,35 @@ redis {
 }
 ```
 
-If the test does not send the request itself (a Kafka consumer or a scheduled job does), use
-`redis.awaitStalledTraffic(2.seconds)` instead: it is the same wait without starting anything.
 Details and limits: [Observe a response stall](#observe-a-response-stall-before-asserting-its-effect).
 
-### Story 3: healthy, broken, healed
+### Story 5: a consumer hangs in the middle of its work
 
-When the baseline matters as much as the failure, `chaosExperiment` runs the three phases in order and names them in
-the report.
+An "order created" event arrives. The consumer starts reserving stock, and the database hangs halfway through. The
+broker sees no acknowledgement and delivers the event again. The stock must be reserved once, not twice and not zero
+times.
+
+Here the test does not send the request: the consumer does, some time after the event is published. So there is
+nothing to hand to `sendIntoStall`. `awaitStalledTraffic` is the same wait without starting anything: it returns once
+the consumer's traffic is stuck.
+
+```kotlin
+redis {
+    duringFault(stall()) { redis ->
+        kafka { /* publish the "order created" event */ }
+        redis.awaitStalledTraffic(2.seconds) // the consumer is now stuck mid-write
+    }
+    // healed: the event is processed, assert the stock was reserved exactly once
+}
+```
+
+### Story 6: the post-incident proof
+
+After an outage, someone asks: "can you prove search survives losing its cluster?" A test that only shows a `503`
+during the fault proves little. Maybe search was already broken before the fault, or maybe it never came back after.
+
+`chaosExperiment` answers the whole question in one report: it was healthy, it degraded the way we expect, and it
+recovered. The three phases run in order, each one named, all under one deadline.
 
 ```mermaid
 flowchart LR
