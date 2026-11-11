@@ -24,10 +24,11 @@ and tracing checks exercise the real HTTP application.
 
 ## Augmented classpath
 
-This dedicated recipe builds with the `e2e` profile, which selects an uber-jar and
-sets `quarkus.arc.remove-unused-beans=false` at build time. Gradle also declares
-both build settings explicitly so Quarkus selects the correct packaging before
-`processResources` runs on clean builds. The `e2eTest` task
+This dedicated recipe builds with the `e2e` profile. Its `application.properties`
+fixes uber-jar packaging and `quarkus.arc.remove-unused-beans=false` for every
+profile. Quarkus can finalize its packaging configuration before Gradle's
+`quarkus` block selects `e2e`, so these settings must be available without a
+profile prefix, including on clean and cached builds. The `e2eTest` task
 builds that jar and places it before test dependencies, excluding raw main output
 from the runtime classpath. Test compilation still sees main output. This lets
 Bridge and Quarkus share augmented CDI classes and typed application objects.
