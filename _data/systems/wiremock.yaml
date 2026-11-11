@@ -21,3 +21,6 @@
   wiremock {
     mockGet("/inventory/item-1", statusCode = 200, responseBody = mapOf("inStock" to true).some())
   }
+testImports:
+  - com.trendyol.stove.wiremock.*
+  - arrow.core.some
