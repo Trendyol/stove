@@ -12,6 +12,13 @@ Answer a few questions and the wizard composes a complete Stove setup for your p
 - a ready-to-paste **`StoveConfig.kt`**
 - a **sample test** that exercises every system you picked
 
+Choose **Cucumber / Gherkin** for feature files backed by suspend Kotlin steps.
+The output includes a JUnit Platform suite, Cucumber properties, run-level Stove
+hooks, and an `e2eTest` Gradle task. Lambda steps extend `StoveSteps({ ... })` and
+call `http {}`, `postgresql {}`, and other selected systems directly.
+See [Cucumber testing style](testing-styles/cucumber.md) for typed steps,
+annotation-style alternatives, and scenario isolation.
+
 The wizard runs entirely in your browser. Nothing is sent anywhere. Your selections are reflected in the URL, so you can share or bookmark a configuration.
 
 !!! note "Review before pasting"

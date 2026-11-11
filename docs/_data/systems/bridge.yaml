@@ -12,3 +12,5 @@
       repo.findAll() shouldHaveSize 1
     }
   }
+testImports:
+  - io.kotest.matchers.collections.shouldHaveSize

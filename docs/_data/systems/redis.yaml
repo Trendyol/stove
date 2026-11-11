@@ -27,3 +27,6 @@
       configureExposedConfiguration = { cfg -> emptyList() }
     )
   }
+testImports:
+  - com.trendyol.stove.redis.*
+  - io.kotest.matchers.shouldNotBe

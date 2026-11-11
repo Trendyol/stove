@@ -24,3 +24,5 @@
   httpClient {
     HttpClientSystemOptions(baseUrl = "https://staging.myapp.com")   // remote AUT
   }
+testImports:
+  - com.trendyol.stove.http.http

@@ -219,7 +219,10 @@
         entries.forEach((e) => (e.gradle || []).forEach((d) => deps.add(d)));
         (runner?.gradle || []).forEach((d) => deps.add(d));
         (test?.gradle || []).forEach((d) => deps.add(d));
-        const depLines = Array.from(deps).map((d) => `    testImplementation("${d}")`).join("\n");
+        const depLines = [
+          ...Array.from(deps).map((d) => `    testImplementation("${d}")`),
+          ...(test?.runtimeGradle || []).map((d) => `    testRuntimeOnly("${d}")`),
+        ].join("\n");
 
         const tracing = entries.find((e) => e.id === "obs.tracing");
         const pluginsBlock = tracing
@@ -230,7 +233,7 @@
     testImplementation(platform("com.trendyol:stove-bom:${s.stoveVersion}"))
 
 ${depLines}
-}`;
+}${test?.gradleSetup ? "\n\n" + test.gradleSetup : ""}`;
       },
 
       renderStoveConfig() {
@@ -242,8 +245,14 @@ ${depLines}
 
         const imports = new Set([
           "com.trendyol.stove.system.Stove",
-          "io.kotest.core.config.AbstractProjectConfig",
-          "io.kotest.core.extensions.Extension",
+          ...(s.test === "cucumber" ? [
+            "io.cucumber.java.BeforeAll",
+            "io.cucumber.java.AfterAll",
+            "kotlinx.coroutines.runBlocking",
+          ] : [
+            "io.kotest.core.config.AbstractProjectConfig",
+            "io.kotest.core.extensions.Extension",
+          ]),
         ]);
         entries.forEach((e) => (e.imports || []).forEach((i) => imports.add(i)));
         (runner?.imports || []).forEach((i) => imports.add(i));
@@ -270,6 +279,28 @@ ${depLines}
         const extensionsLine = test.extensionLine
           ? `  override val extensions: List<Extension> = listOf(${test.extensionLine})`
           : "  // JUnit: extend BaseE2ETest in your test classes";
+
+        if (s.test === "cucumber") {
+          return `package ${s.pkg}.e2e.setup
+
+${importBlock}
+
+object StoveConfig {
+  @JvmStatic
+  @BeforeAll
+  fun start(): Unit = runBlocking {
+    Stove().with {
+${systemBlocks}
+
+${runnerBlock}
+    }.run()
+  }
+
+  @JvmStatic
+  @AfterAll
+  fun stop() = Stove.stop()
+}`;
+        }
 
         return `package ${s.pkg}.e2e.setup
 
@@ -300,14 +331,18 @@ ${runnerBlock}
           .filter((e) => e.kind === "system" || e.kind === "mock")
           .map((e) => fill(e.testDsl, {}))
           .filter(Boolean)
-          .map((c) => indent(dedent(c), "      "))
+          .map((c) => indent(dedent(c), s.test === "cucumber" ? "    " : "      "))
           .join("\n\n");
 
         const classImports = new Set([
-          "com.trendyol.stove.system.stove",
+          ...(s.test === "cucumber" ? [] : ["com.trendyol.stove.system.stove"]),
           "io.kotest.matchers.shouldBe",
           "io.kotest.matchers.string.shouldContain",
         ]);
+        entries.filter((e) => e.testDsl).forEach((e) => {
+          (e.testImports || e.imports || []).forEach((i) => classImports.add(i));
+        });
+        if (s.bridge && this.bridgeSupportedInJvm()) classImports.add(this.bridgeImportForFramework());
         if (test.classImport) classImports.add(test.classImport);
         const imp = Array.from(classImports).sort().map((i) => `import ${i}`).join("\n");
 
@@ -316,6 +351,11 @@ ${runnerBlock}
 ${imp}
 
 ${fill(test.sample, { body })}`;
+      },
+
+      renderCucumberFile(name) {
+        if (this.state.test !== "cucumber" || !this.data) return null;
+        return fill(this.data.tests.cucumber[name], { pkg: this.state.pkg });
       },
 
       renderKotestProps() {
@@ -499,6 +539,11 @@ ${fill(test.sample, { body })}`;
                 <strong>JUnit 5</strong>
                 <p>Uses a <code>BaseE2ETest</code> pattern.</p>
               </label>
+              <label class="sw-card" :class="{ selected: state.test === 'cucumber' }">
+                <input type="radio" name="test" value="cucumber" x-model="state.test">
+                <strong>Cucumber / Gherkin</strong>
+                <p>Feature files with suspend Kotlin steps and Stove's DSL embedded in each step.</p>
+              </label>
             </div>
           </section>
 
@@ -648,9 +693,31 @@ ${fill(test.sample, { body })}`;
               <pre><code class="language-properties" x-html="hl(renderKotestProps(), 'properties')"></code></pre>
             </div>
 
+            <div class="sw-callout" x-show="state.test === 'cucumber'">
+              Put Kotlin files under <code>src/test-e2e/kotlin</code>, following their package paths.
+              Run <code>./gradlew e2eTest</code>. Use a Stove BOM that includes
+              <code>stove-extensions-cucumber</code> (incubating in 0.28.0).
+              Adapt the sample operations into reusable Given/When/Then steps for your application.
+              Give parallel scenarios independent test data.
+            </div>
+
+            <template x-for="file in [
+              { key: 'suite', path: 'CucumberSuite.kt', lang: 'kotlin' },
+              { key: 'properties', path: 'src/test-e2e/resources/junit-platform.properties', lang: 'properties' },
+              { key: 'feature', path: 'src/test-e2e/resources/features/application.feature', lang: 'gherkin' }
+            ]" :key="file.key">
+              <div class="sw-output" x-show="state.test === 'cucumber'">
+                <div class="sw-output-head">
+                  <h4 x-text="file.path"></h4>
+                  <button class="sw-copy" @click="copy(renderCucumberFile(file.key), $event.target)">copy</button>
+                </div>
+                <pre><code x-html="hl(renderCucumberFile(file.key), file.lang)"></code></pre>
+              </div>
+            </template>
+
             <div class="sw-output">
               <div class="sw-output-head">
-                <h4>SampleE2ETest.kt</h4>
+                <h4 x-text="state.test === 'cucumber' ? 'SampleSteps.kt' : 'SampleE2ETest.kt'"></h4>
                 <button class="sw-copy" @click="copy(renderSampleTest(), $event.target)">copy</button>
               </div>
               <pre><code class="language-kotlin" x-html="hl(renderSampleTest(), 'kotlin')"></code></pre>
