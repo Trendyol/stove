@@ -50,9 +50,17 @@ class StoveConfig : AbstractProjectConfig() {
         }
 
         applicationUnderTest(NoApplication())
-      }.run()
+      }.run().also { Stove.reporter().addListener(styleReports) }
 
-  override suspend fun afterProject(): Unit = Stove.stop()
+  override suspend fun afterProject() {
+    try {
+      styleReports.assertBalanced(styleReports.started.size)
+      styleReports.entries.size shouldBe styleReports.started.size
+      com.trendyol.stove.extensions.ReportProbe.assertClean()
+    } finally {
+      Stove.stop()
+    }
+  }
 }
 
 data class TestDto(
@@ -250,19 +258,6 @@ class StoveKotestExtensionTest :
       failures shouldHaveSize 1
       failures.single().first shouldContain "StoveKotestExtensionTest"
       failures.single().second shouldBe "Original assertion failure"
-    }
-
-    test("intercept should pass through when Stove is not initialized") {
-      // This test verifies the early return path when Stove IS initialized
-      // (since we can't easily uninitialize Stove in this test context,
-      // we verify the normal path works correctly)
-      val extension = StoveKotestExtension()
-
-      val result = extension.intercept(testCase) {
-        TestResult.Success(2.milliseconds)
-      }
-
-      result.shouldBeInstanceOf<TestResult.Success>()
     }
 
     test("withTestContext should clear report state between repeated executions") {

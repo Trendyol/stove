@@ -6,7 +6,7 @@ Recipes complement the [Setup Wizard](../index.md) (which composes systems) and 
 
 <div class="stove-tldr" markdown>
 <span class="stove-tldr-title">Working source on GitHub</span>
-Every recipe on this page is a tightened walkthrough of a project in the Stove repo's <a href="https://github.com/Trendyol/stove/tree/main/recipes" target="_blank"><code>recipes/</code></a> folder. Clone, open in your IDE, run the documented test task, then adapt the wiring to your application.
+Recipes walk through projects in the Stove repo's <a href="https://github.com/Trendyol/stove/tree/main/recipes" target="_blank"><code>recipes/</code></a> folder or incubating integrations in <a href="https://github.com/Trendyol/stove/tree/main/examples" target="_blank"><code>examples/</code></a>. Clone, open in your IDE, run the documented test task, then adapt the wiring to your application.
 </div>
 
 ## Available recipes
@@ -18,6 +18,12 @@ Every recipe on this page is a tightened walkthrough of a project in the Stove r
     HTTP POST → Postgres write → WireMock external call → Kafka event published.
 
     [Walkthrough](order-flow.md) · [source ↗](https://github.com/Trendyol/stove/tree/main/recipes/jvm/kotlin-recipes/spring-showcase)
+
+-   :material-test-tube: **Cucumber suspend steps (incubating)**
+
+    Gherkin Scenario Outlines → Kotlin suspend steps → Stove HTTP validation and shared reporting.
+
+    [Walkthrough](../testing-styles/cucumber.md) · [source ↗](https://github.com/Trendyol/stove/tree/main/examples/cucumber-example)
 
 </div>
 

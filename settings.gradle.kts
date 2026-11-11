@@ -35,6 +35,8 @@ include(
   "lib:stove-dashboard"
 )
 include(
+  "test-extensions:stove-extensions-common",
+  "test-extensions:stove-extensions-cucumber",
   "test-extensions:stove-extensions-kotest",
   "test-extensions:stove-extensions-junit"
 )
@@ -64,6 +66,7 @@ include(
   "examples:spring-standalone-example",
   "examples:spring-4x-example",
   "examples:ktor-example",
+  "examples:cucumber-example",
   "examples:ktor-oidc-bff",
   "examples:quarkus-example",
   "examples:spring-streams-example",

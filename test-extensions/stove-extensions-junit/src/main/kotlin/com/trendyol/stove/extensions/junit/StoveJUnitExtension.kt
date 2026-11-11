@@ -1,12 +1,10 @@
 package com.trendyol.stove.extensions.junit
 
+import com.trendyol.stove.extensions.StoveTestSession
 import com.trendyol.stove.reporting.StoveTestContext
-import com.trendyol.stove.reporting.StoveTestContextHolder
 import com.trendyol.stove.reporting.StoveTestFailureException
 import com.trendyol.stove.system.Stove
 import com.trendyol.stove.tracing.TraceContext
-import com.trendyol.stove.tracing.TraceReportBuilder
-import com.trendyol.stove.tracing.TraceReportBuilder.shouldEnrichFailures
 import org.junit.jupiter.api.extension.AfterEachCallback
 import org.junit.jupiter.api.extension.BeforeEachCallback
 import org.junit.jupiter.api.extension.ExtensionContext
@@ -40,27 +38,26 @@ class StoveJUnitExtension :
   BeforeEachCallback,
   AfterEachCallback,
   TestExecutionExceptionHandler {
+  private val namespace = ExtensionContext.Namespace.create(StoveJUnitExtension::class.java)
+  private val sessionKey = "stove.session"
+
   override fun beforeEach(context: ExtensionContext) {
     if (!Stove.instanceInitialized()) return
 
     val ctx = context.toStoveContext()
-    StoveTestContextHolder.set(ctx)
-    Stove.reporter().startTest(ctx)
-    TraceContext.start(ctx.testId)
+    context.getStore(namespace).put(sessionKey, StoveTestSession.open(ctx))
   }
 
   override fun handleTestExecutionException(context: ExtensionContext, throwable: Throwable) {
     if (!Stove.instanceInitialized()) throw throwable
 
-    Stove.reporter().reportFailure(throwable.message ?: throwable::class.simpleName ?: "Test failed")
+    val message = StoveTestSession.failureMessage(throwable)
+    StoveTestSession.reportFailure(message)
 
-    val options = Stove.options()
-    if (!options.shouldEnrichFailures()) throw throwable
-
-    val fullReport = TraceReportBuilder.buildFullReport()
+    val fullReport = StoveTestSession.failureReport()
     if (fullReport.isNotEmpty()) {
       throw StoveTestFailureException(
-        originalMessage = throwable.message ?: TraceReportBuilder.DEFAULT_ERROR_MESSAGE,
+        originalMessage = message,
         stoveReport = fullReport,
         cause = throwable
       )
@@ -72,12 +69,7 @@ class StoveJUnitExtension :
   override fun afterEach(context: ExtensionContext) {
     if (!Stove.instanceInitialized()) return
 
-    TraceContext.clear()
-    Stove.reporter().run {
-      endTest()
-      clear()
-    }
-    StoveTestContextHolder.clear()
+    context.getStore(namespace).remove(sessionKey, StoveTestSession::class.java)?.close()
   }
 
   private fun ExtensionContext.toStoveContext(): StoveTestContext {
@@ -87,7 +79,8 @@ class StoveJUnitExtension :
     val rootClass = hierarchy.firstOrNull { it.testClass.isPresent }?.requiredTestClass?.simpleName
       ?: requiredTestClass.simpleName
     return StoveTestContext(
-      testId = TraceContext.sanitizeToAscii("$rootClass::$fullName"),
+      // Display names may repeat across template invocations and nested classes.
+      testId = TraceContext.sanitizeToAscii("$rootClass::$fullName::$uniqueId"),
       testName = displayName,
       specName = rootClass,
       testPath = path

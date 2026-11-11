@@ -8,6 +8,8 @@ on:
       - 'go/stove-profiler/**'
       - 'lib/stove-dashboard/**'
       - 'starters/container/stove-container/**'
+      - 'test-extensions/stove-extensions-common/**'
+      - 'test-extensions/stove-extensions-kotest/**'
       - 'gradle.properties'
       - 'gradle/libs.versions.toml'
       - '.github/workflows/build-process-recipes.yml'
@@ -18,6 +20,8 @@ on:
       - 'go/stove-profiler/**'
       - 'lib/stove-dashboard/**'
       - 'starters/container/stove-container/**'
+      - 'test-extensions/stove-extensions-common/**'
+      - 'test-extensions/stove-extensions-kotest/**'
       - 'gradle.properties'
       - 'gradle/libs.versions.toml'
       - '.github/workflows/build-process-recipes.yml'
@@ -77,6 +81,7 @@ jobs:
             :lib:stove-postgres:publishToMavenLocal :lib:stove-rdbms:publishToMavenLocal \
             :lib:stove-tracing:publishToMavenLocal :starters:process:stove-process:publishToMavenLocal \
             :starters:container:stove-container:publishToMavenLocal \
+            :test-extensions:stove-extensions-common:publishToMavenLocal \
             :test-extensions:stove-extensions-kotest:publishToMavenLocal
 
       - name: Run process and container E2E tests

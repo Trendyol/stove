@@ -4,7 +4,7 @@ Every Stove test failure ships with structured execution context. The reporter c
 
 <div class="stove-tldr" markdown>
 <span class="stove-tldr-title">In 30 seconds</span>
-Add the Kotest or JUnit extension. Failures print a timeline by default (pretty console). Add <code>reporting { }</code> in <code>Stove().with</code> to tune output or use machine-readable JSON. Reporting pairs with <a href="../15-tracing/">Tracing</a> and the <a href="../18-dashboard/">Dashboard</a>; it does not require either one.
+Add the Kotest or JUnit extension, or the incubating Cucumber adapter. Kotest and Jupiter include the timeline in failures; Cucumber attaches it to the scenario report. Add <code>reporting { }</code> in <code>Stove().with</code> to tune output or use machine-readable JSON. Reporting pairs with <a href="../15-tracing/">Tracing</a> and the <a href="../18-dashboard/">Dashboard</a>; it does not require either one.
 </div>
 
 ## Setup
@@ -33,7 +33,23 @@ Add the Kotest or JUnit extension. Failures print a timeline by default (pretty 
     abstract class BaseE2ETest { /* ... */ }
     ```
 
-The extension registers an `AfterTestListener` that intercepts failures and prints the report.
+=== "Cucumber (incubating)"
+
+    Register the plugin and diagnostic glue in `junit-platform.properties`:
+
+    ```properties
+    cucumber.plugin=com.trendyol.stove.extensions.cucumber.StoveCucumberPlugin
+    cucumber.glue=your.steps.package,com.trendyol.stove.extensions.cucumber
+    cucumber.execution.parallel.enabled=true
+    ```
+
+    The adapter attaches **Stove diagnostics** to failed scenarios without replacing
+    the original exception. See the [Cucumber guide](../testing-styles/cucumber.md) for
+    dependencies, suspend-step imports, lifecycle hooks, and HTML/JSON reports.
+
+The adapters share `StoveTestSession` for scenario/test reporting and trace context.
+Kotest and Jupiter enrich failures with the execution report; Cucumber attaches it
+to the scenario. Each adapter still needs explicit application startup and teardown.
 
 ## Configure
 

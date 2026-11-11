@@ -33,13 +33,15 @@ The [Setup Wizard](wizard.md) generates the dependency block, `StoveConfig.kt`, 
   </div>
   <div class="stove-ribbon-item">
     <div class="icon">🧪</div>
-    <strong>Kotest 6.1.3+ or JUnit Jupiter 6.x</strong>
-    <p>Either test framework. Kotest gets first-class wiring.</p>
+    <strong>Kotest, JUnit Jupiter, or Cucumber</strong>
+    <p>Choose a <a href="../testing-styles/">testing style</a>. Cucumber support is incubating.</p>
   </div>
 </div>
 
 !!! tip "IDE setup"
     IntelliJ IDEA + the Kotest plugin = run buttons on every `test {}` block. Worth installing on day one.
+
+For framework-specific discovery and lifecycle setup, see [Testing Styles](testing-styles/index.md). The quick start below shows Kotest and Jupiter; the [Cucumber guide](testing-styles/cucumber.md) walks through feature files and suspend steps.
 
 ## The five steps
 

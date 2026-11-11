@@ -10,6 +10,8 @@ Runner startup, readiness behavior, DI/test-dependency hooks, and bridge support
 the assertion DSL, reporting, tracing, dashboard, and MCP keep the same shape across Spring · Ktor · Micronaut · Quarkus.
 </div>
 
+Choose how to write and discover tests separately in [Testing Styles](../testing-styles/index.md). The starter below determines how Stove boots your application.
+
 ## The four starters
 
 <div class="stove-catalog">

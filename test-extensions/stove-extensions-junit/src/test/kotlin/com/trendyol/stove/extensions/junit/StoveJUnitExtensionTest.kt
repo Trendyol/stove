@@ -85,13 +85,6 @@ class StoveJUnitExtensionTest {
   }
 
   @Test
-  fun `afterEach should clear test context`() {
-    val context = StoveTestContextHolder.get()
-    context.shouldNotBeNull()
-    // Context should be cleared after test execution
-  }
-
-  @Test
   suspend fun `extension should integrate with WireMock and HTTP systems`() {
     val expectedName = "test-integration"
     stove {
@@ -108,7 +101,7 @@ class StoveJUnitExtensionTest {
   }
 
   @Test
-  suspend fun `handleTestExecutionException should enrich failures with Stove report`() {
+  suspend fun `HTTP assertion exposes the expected mismatch`() {
     val exception = shouldThrow<AssertionError> {
       stove {
         wiremock {
@@ -123,7 +116,6 @@ class StoveJUnitExtensionTest {
       }
     }
 
-    // The exception should be enriched with Stove report
     exception.message.shouldNotBeNull()
     exception.message shouldContain "wrong-value"
   }

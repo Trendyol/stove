@@ -1299,6 +1299,16 @@ public final class com/trendyol/stove/system/Stove$Companion {
 	public final fun stop ()V
 }
 
+public final class com/trendyol/stove/system/StoveContext : kotlin/coroutines/AbstractCoroutineContextElement {
+	public static final field Key Lcom/trendyol/stove/system/StoveContext$Key;
+	public fun <init> (Lcom/trendyol/stove/system/Stove;)V
+	public final fun getStove ()Lcom/trendyol/stove/system/Stove;
+}
+
+public final class com/trendyol/stove/system/StoveContext$Key : kotlin/coroutines/CoroutineContext$Key {
+	public final fun capture ()Lcom/trendyol/stove/system/StoveContext;
+}
+
 public final class com/trendyol/stove/system/StoveKt {
 	public static final fun stove (Lkotlin/jvm/functions/Function2;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 }

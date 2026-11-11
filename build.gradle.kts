@@ -25,6 +25,7 @@ version = CI.version(project)
 apiValidation {
   ignoredProjects += listOf(
     "ktor-example",
+    "cucumber-example",
     "ktor-oidc-bff",
     "micronaut-example",
     "spring-example",
@@ -208,6 +209,8 @@ val publishedProjects = listOf(
   projects.starters.micronaut.stoveMicronaut.name,
   projects.starters.container.stoveContainer.name,
   projects.starters.process.stoveProcess.name,
+  projects.testExtensions.stoveExtensionsCommon.name,
+  projects.testExtensions.stoveExtensionsCucumber.name,
   projects.testExtensions.stoveExtensionsKotest.name,
   projects.testExtensions.stoveExtensionsJunit.name,
   projects.plugins.stoveTracingGradlePlugin.name,

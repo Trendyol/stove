@@ -42,6 +42,8 @@ dependencies {
     api(projects.starters.process.stoveProcess)
 
     // Extensions
+    api(projects.testExtensions.stoveExtensionsCommon)
+    api(projects.testExtensions.stoveExtensionsCucumber)
     api(projects.testExtensions.stoveExtensionsKotest)
     api(projects.testExtensions.stoveExtensionsJunit)
 
