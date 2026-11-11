@@ -5,6 +5,7 @@ dependencies {
   testImplementation(projects.testExtensions.stoveExtensionsCucumber)
   testImplementation(projects.starters.ktor.stoveKtor)
   testImplementation(projects.lib.stoveHttp)
+  testImplementation(projects.lib.stoveDashboard)
   testImplementation(libs.cucumber.engine)
   testImplementation(libs.cucumber.picocontainer)
   testImplementation(libs.junit.platform.suite)
@@ -19,4 +20,5 @@ tasks.test {
   // Exercise the hint workaround even on fast machines if it is accidentally removed.
   systemProperty("cucumber.glue.hint.threshold", "PT0S")
   systemProperty("cucumber.filter.tags", providers.gradleProperty("cucumber.tags").getOrElse("not @failure-demo"))
+  systemProperty("stove.dashboard.enabled", providers.gradleProperty("dashboard").isPresent)
 }

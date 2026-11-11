@@ -1,5 +1,7 @@
 package stove.cucumber.example
 
+import com.trendyol.stove.dashboard.DashboardSystemOptions
+import com.trendyol.stove.dashboard.dashboard
 import com.trendyol.stove.http.HttpClientSystemOptions
 import com.trendyol.stove.http.httpClient
 import com.trendyol.stove.ktor.ktor
@@ -15,6 +17,9 @@ object InventoryEnvironment {
   fun start(): Unit = runBlocking {
     val port = PortFinder.findAvailablePort()
     Stove().with {
+      if (java.lang.Boolean.getBoolean("stove.dashboard.enabled")) {
+        dashboard { DashboardSystemOptions(appName = "cucumber-example") }
+      }
       httpClient { HttpClientSystemOptions(baseUrl = "http://127.0.0.1:$port") }
       ktor(runner = { startInventoryApplication(port) })
     }.run()

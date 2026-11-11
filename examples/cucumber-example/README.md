@@ -41,6 +41,30 @@ operations, expected/actual values, and the feature's location. The original
 Cucumber failure is preserved. JSON is written to `build/reports/cucumber.json`.
 The failure demo is excluded by default, including when running the IDE suite.
 
+## View the dashboard
+
+Start `stove` in another terminal, then enable dashboard ingestion:
+
+```shell
+./gradlew :examples:cucumber-example:test -Pdashboard --rerun
+```
+
+Open <http://localhost:4040> and select `cucumber-example`. The example sends events
+over gRPC to `localhost:4041`. Each outline row has its own scenario and HTTP timeline.
+Select an HTTP event to inspect its result, error, and metadata.
+
+To see passing scenarios alongside an intentional failure:
+
+```shell
+./gradlew :examples:cucumber-example:test -Pdashboard -Pcucumber.tags='@reservation or @failure-demo'
+```
+
+The dashboard shows four passed scenarios and one failed scenario, with the failed
+GET reporting `expected:<999> but was:<7>`. This command intentionally fails.
+The example does not enable tracing instrumentation, so the Trace tab has no spans.
+Dashboard ingestion is disabled by default; ordinary runs need no external server.
+For an IDE run, set the VM option `-Dstove.dashboard.enabled=true`.
+
 ## How it fits together
 
 - `InventoryApplication.kt`: the real HTTP API, with atomic stock reservations.
