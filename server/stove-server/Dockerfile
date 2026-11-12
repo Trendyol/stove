@@ -1,4 +1,4 @@
-# syntax=docker/dockerfile:1.28
+# syntax=docker/dockerfile:1.29
 
 ARG STOVE_VERSION=dev
 ARG BINARY_SOURCE=rust-builder
