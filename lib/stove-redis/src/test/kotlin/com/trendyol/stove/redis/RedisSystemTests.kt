@@ -1,6 +1,7 @@
 package com.trendyol.stove.redis
 
 import com.trendyol.stove.chaos.duringFault
+import com.trendyol.stove.chaos.enableChaos
 import com.trendyol.stove.extensions.kotest.StoveKotestExtension
 import com.trendyol.stove.redis.RedisSystem.Companion.client
 import com.trendyol.stove.system.Stove
@@ -79,8 +80,7 @@ class ContainerRedisStrategy : RedisTestStrategy {
     Stove()
       .with {
         redis {
-          enableChaos()
-          options
+          options.enableChaos()
         }
         applicationUnderTest(NoOpApplication())
       }.run()
@@ -132,8 +132,7 @@ class ProvidedRedisStrategy : RedisTestStrategy {
     Stove()
       .with {
         redis {
-          enableChaos()
-          options
+          options.enableChaos()
         }
         applicationUnderTest(NoOpApplication())
       }.run()

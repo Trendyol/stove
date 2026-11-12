@@ -1,9 +1,11 @@
 package com.trendyol.stove.redis
 
 import com.trendyol.stove.chaos.TcpEndpoint
+import com.trendyol.stove.chaos.enableChaos
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
+import io.kotest.matchers.types.shouldBeSameInstanceAs
 
 class RedisOptionsTest :
   FunSpec({
@@ -47,6 +49,29 @@ class RedisOptionsTest :
       val options = RedisOptions.provided("::1", 6379, "password", configureExposedConfiguration = { emptyList() })
       options.providedConfig.redisUri shouldBe "redis://[::1]:6379"
       RedisChaosAdapter.reroute(options.providedConfig) { it }.redisUri shouldBe "redis://[::1]:6379"
+    }
+
+    test("chaos opt-in preserves provided options and composes with migrations in either order") {
+      val original = RedisOptions.provided(
+        "localhost",
+        6379,
+        "password",
+        database = 3,
+        runMigrations = false,
+        configureExposedConfiguration = { listOf("redis.uri=${it.redisUri}") }
+      )
+      val enabled: ProvidedRedisOptions = original.enableChaos()
+      enabled shouldBeSameInstanceAs original
+      enabled.runMigrationsForProvided shouldBe false
+      enabled.providedConfig.database shouldBe "3"
+      enabled.configureExposedConfiguration(enabled.providedConfig) shouldBe listOf("redis.uri=redis://localhost:6379")
+
+      var configured = 0
+      enabled.migrations { configured++ }.enableChaos() shouldBeSameInstanceAs original
+      enabled.enableChaos().migrations { configured++ } shouldBeSameInstanceAs original
+      configured shouldBe 2
+      original.chaosOptions.enabled shouldBe true
+      RedisOptions { emptyList() }.chaosOptions.enabled shouldBe false
     }
 
     test("ProvidedRedisOptions should expose correct properties") {

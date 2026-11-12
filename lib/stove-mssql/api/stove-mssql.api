@@ -14,11 +14,12 @@ public final class com/trendyol/stove/mssql/MsSqlContext {
 	public fun toString ()Ljava/lang/String;
 }
 
-public class com/trendyol/stove/mssql/MsSqlOptions : com/trendyol/stove/database/migrations/SupportsMigrations, com/trendyol/stove/system/abstractions/ConfiguresExposedConfiguration, com/trendyol/stove/system/abstractions/SystemOptions {
+public class com/trendyol/stove/mssql/MsSqlOptions : com/trendyol/stove/chaos/SupportChaos, com/trendyol/stove/database/migrations/SupportsMigrations, com/trendyol/stove/system/abstractions/ConfiguresExposedConfiguration, com/trendyol/stove/system/abstractions/SystemOptions {
 	public static final field Companion Lcom/trendyol/stove/mssql/MsSqlOptions$Companion;
 	public fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Lcom/trendyol/stove/mssql/MssqlContainerOptions;Lkotlin/jvm/functions/Function2;Lkotlin/jvm/functions/Function1;)V
 	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Lcom/trendyol/stove/mssql/MssqlContainerOptions;Lkotlin/jvm/functions/Function2;Lkotlin/jvm/functions/Function1;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
 	public fun getApplicationName ()Ljava/lang/String;
+	public fun getChaosOptions ()Lcom/trendyol/stove/chaos/ChaosOptions;
 	public fun getCleanup ()Lkotlin/jvm/functions/Function2;
 	public fun getConfigureExposedConfiguration ()Lkotlin/jvm/functions/Function1;
 	public fun getContainer ()Lcom/trendyol/stove/mssql/MssqlContainerOptions;
@@ -38,8 +39,8 @@ public final class com/trendyol/stove/mssql/MsSqlOptions$Companion {
 public final class com/trendyol/stove/mssql/MsSqlOptionsKt {
 	public static final fun mssql-JSkDyPw (Lcom/trendyol/stove/system/Stove;Lkotlin/jvm/functions/Function2;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public static final fun mssql-QljV9L8 (Lcom/trendyol/stove/system/Stove;Lcom/trendyol/stove/system/abstractions/SystemKey;Lkotlin/jvm/functions/Function2;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
-	public static final fun mssql-SscbJ7Y (Lcom/trendyol/stove/system/Stove;Lcom/trendyol/stove/system/abstractions/SystemKey;Lkotlin/jvm/functions/Function1;)Lcom/trendyol/stove/system/Stove;
-	public static final fun mssql-ypJx7X8 (Lcom/trendyol/stove/system/Stove;Lkotlin/jvm/functions/Function1;)Lcom/trendyol/stove/system/Stove;
+	public static final fun mssql-SscbJ7Y (Lcom/trendyol/stove/system/Stove;Lcom/trendyol/stove/system/abstractions/SystemKey;Lkotlin/jvm/functions/Function0;)Lcom/trendyol/stove/system/Stove;
+	public static final fun mssql-ypJx7X8 (Lcom/trendyol/stove/system/Stove;Lkotlin/jvm/functions/Function0;)Lcom/trendyol/stove/system/Stove;
 }
 
 public final class com/trendyol/stove/mssql/MsSqlSystem : com/trendyol/stove/chaos/ChaosCapableSystem, com/trendyol/stove/reporting/Reports, com/trendyol/stove/system/abstractions/ExposesConfiguration, com/trendyol/stove/system/abstractions/RunAware {

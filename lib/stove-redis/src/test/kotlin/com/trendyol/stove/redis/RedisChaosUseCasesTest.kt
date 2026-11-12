@@ -168,7 +168,6 @@ private class RedisChaosRoutes {
     stove.with {
       listOf(Primary, Secondary).forEach { key ->
         redis(key) {
-          enableChaos()
           RedisOptions.provided(
             host = container.host,
             port = container.firstMappedPort,
@@ -178,7 +177,7 @@ private class RedisChaosRoutes {
               applications[key] = applicationClient(configuration)
               emptyList()
             }
-          )
+          ).enableChaos()
         }
       }
     }

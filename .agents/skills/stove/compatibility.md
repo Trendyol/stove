@@ -32,9 +32,9 @@ When a version-mismatch banner appears, align the Stove BOM and all Stove test d
 the server build. Do not edit `gradle.properties` to silence the warning.
 ## Unreleased database setup and chaos migration
 
-For receiver-based setup callbacks, removed zero-argument registration overloads, and managed database chaos, use
-[the focused migration guide](setup-chaos-migration.md). These changes are unreleased after `0.27.6`; verify the resolved
-artifact before migrating.
+For options-based `enableChaos()` and managed database chaos, use
+[the focused migration guide](setup-chaos-migration.md). Existing zero-argument setup callbacks are preserved. These changes
+are unreleased after `0.27.6`; verify the resolved artifact before adopting them.
 
 ## Known runtime pitfalls (0.25.x)
 

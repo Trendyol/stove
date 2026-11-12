@@ -96,7 +96,7 @@ internal suspend fun <T> Stove.withChaosOwnership(block: suspend () -> T): T {
 
 private suspend fun <T> ChaosCapableSystem.owned(block: suspend (ChaosSystem, ChaosValidationScope) -> T): T {
   val coordinator = checkNotNull(stove.existingChaosSystem()) {
-    "Chaos is not enabled for this system; call enableChaos() in its setup block"
+    "Chaos is not enabled for this system; call enableChaos() on its options before registration"
   }
   return stove.withChaosOwnership { block(coordinator, checkNotNull(currentCoroutineContext()[ChaosValidationScope])) }
 }

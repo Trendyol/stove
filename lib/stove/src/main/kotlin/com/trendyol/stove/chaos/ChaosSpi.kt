@@ -5,17 +5,6 @@ import com.trendyol.stove.system.WithDsl
 import com.trendyol.stove.system.abstractions.PluggedSystem
 import com.trendyol.stove.system.annotations.StoveDsl
 
-/** Registration-local capabilities. Enabling chaos allocates no sockets until configuration is exposed. */
-@StoveDsl
-class ChaosSetupScope {
-  internal var chaosEnabled: Boolean = false
-    private set
-
-  fun enableChaos() {
-    chaosEnabled = true
-  }
-}
-
 /** Implemented by modules with an application endpoint adapter. */
 @StoveDsl
 interface ChaosCapableSystem : PluggedSystem
@@ -30,16 +19,17 @@ fun interface ChaosEndpointAdapter<C> {
 }
 
 /**
- * Module setup hook: runs the user's setup block, lets the module register its system, then enables chaos if requested.
+ * Module setup hook: reads the options' chaos setting, registers the system, then enables routing if requested.
  * [register] receives whether chaos was requested so it can reject options that cannot be routed.
  */
-fun <O> WithDsl.registerChaosCapable(
-  configure: ChaosSetupScope.() -> O,
+fun <O : SupportChaos> WithDsl.registerChaosCapable(
+  configure: () -> O,
   register: (options: O, chaosEnabled: Boolean) -> ChaosCapableSystem
 ): Stove {
-  val scope = ChaosSetupScope()
-  val system = register(configure(scope), scope.chaosEnabled)
-  if (scope.chaosEnabled) system.enableChaosRouting()
+  val options = configure()
+  val chaosEnabled = options.chaosOptions.enabled
+  val system = register(options, chaosEnabled)
+  if (chaosEnabled) system.enableChaosRouting()
   return stove
 }
 

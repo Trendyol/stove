@@ -1,6 +1,7 @@
 package com.trendyol.stove.mysql
 
 import com.trendyol.stove.chaos.applicationConfiguration
+import com.trendyol.stove.chaos.enableChaos
 import com.trendyol.stove.database.JdbcCloseFailureFixture
 import com.trendyol.stove.rdbms.NativeSqlOperations
 import com.trendyol.stove.rdbms.RelationalDatabaseChaosAdapter
@@ -55,11 +56,9 @@ private class MySqlChaosFixture(
 
   init {
     stove.with {
-      mysql { options }
-      mysql(PrimaryDatabase) {
-        enableChaos()
-        options
-      }
+      val configure: () -> MySqlOptions = { options }
+      mysql(configure)
+      mysql(PrimaryDatabase, options::enableChaos)
     }
     if (jdbc != null) stove.mysql().sqlOperations = NativeSqlOperations(sessionOf(jdbc.dataSource))
   }

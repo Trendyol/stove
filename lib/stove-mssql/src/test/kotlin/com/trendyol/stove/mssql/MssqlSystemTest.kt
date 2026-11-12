@@ -2,6 +2,7 @@ package com.trendyol.stove.mssql
 
 import com.trendyol.stove.ConcurrentProjectConfig
 import com.trendyol.stove.chaos.duringFault
+import com.trendyol.stove.chaos.enableChaos
 import com.trendyol.stove.database.migrations.*
 import com.trendyol.stove.extensions.kotest.StoveKotestExtension
 import com.trendyol.stove.functional.*
@@ -122,8 +123,7 @@ class ContainerMsSqlStrategy : MsSqlTestStrategy {
     Stove()
       .with {
         mssql {
-          enableChaos()
-          options
+          options.enableChaos()
         }
         applicationUnderTest(NoOpApplication())
       }.run()
@@ -181,8 +181,7 @@ class ProvidedMsSqlStrategy : MsSqlTestStrategy {
     Stove()
       .with {
         mssql {
-          enableChaos()
-          options
+          options.enableChaos()
         }
         applicationUnderTest(NoOpApplication())
       }.run()

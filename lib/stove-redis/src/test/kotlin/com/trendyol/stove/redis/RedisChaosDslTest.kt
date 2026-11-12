@@ -70,11 +70,9 @@ private class RedisRegistrationFixture(cleanupFailure: RuntimeException? = null)
 
   init {
     stove.with {
-      redis { options }
-      redis(PrimaryRedis) {
-        enableChaos()
-        options
-      }
+      val configure: () -> RedisOptions = { options }
+      redis(configure)
+      redis(PrimaryRedis, options::enableChaos)
     }
   }
 

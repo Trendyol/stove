@@ -102,13 +102,13 @@ internal fun Stove.cassandra(key: SystemKey): CassandraSystem =
  * The application must use the exposed contact point as its only seed. Cluster discovery, topology
  * changes, provided clusters and alternate contact points are unsupported.
  */
-fun WithDsl.cassandra(configure: @StoveDsl ChaosSetupScope.() -> CassandraSystemOptions): Stove =
+fun WithDsl.cassandra(configure: @StoveDsl () -> CassandraSystemOptions): Stove =
   configureCassandra(null, configure)
 
-fun WithDsl.cassandra(key: SystemKey, configure: @StoveDsl ChaosSetupScope.() -> CassandraSystemOptions): Stove =
+fun WithDsl.cassandra(key: SystemKey, configure: @StoveDsl () -> CassandraSystemOptions): Stove =
   configureCassandra(key, configure)
 
-private fun WithDsl.configureCassandra(key: SystemKey?, configure: ChaosSetupScope.() -> CassandraSystemOptions): Stove =
+private fun WithDsl.configureCassandra(key: SystemKey?, configure: () -> CassandraSystemOptions): Stove =
   registerChaosCapable(configure) { options, chaosEnabled ->
     require(!chaosEnabled || options !is ProvidedCassandraSystemOptions) {
       "Cassandra chaos supports only a dedicated single-node container; provided clusters can advertise unproxied peers"

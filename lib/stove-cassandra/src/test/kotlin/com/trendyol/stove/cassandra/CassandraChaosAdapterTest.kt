@@ -6,6 +6,7 @@ import com.datastax.oss.driver.api.core.config.DefaultDriverOption
 import com.datastax.oss.driver.api.core.config.DriverConfigLoader
 import com.trendyol.stove.chaos.TcpEndpoint
 import com.trendyol.stove.chaos.duringFault
+import com.trendyol.stove.chaos.enableChaos
 import com.trendyol.stove.system.Stove
 import com.trendyol.stove.system.ValidationDsl
 import com.trendyol.stove.system.abstractions.SystemKey
@@ -43,8 +44,7 @@ class CassandraChaosAdapterTest :
       shouldThrow<IllegalArgumentException> {
         Stove().with {
           cassandra {
-            enableChaos()
-            CassandraSystemOptions.provided(host = "localhost") { emptyList() }
+            CassandraSystemOptions.provided(host = "localhost") { emptyList() }.enableChaos()
           }
         }
       }
@@ -82,11 +82,10 @@ private suspend fun withSingleNodeCassandra(block: suspend (ValidationDsl, CqlSe
     lateinit var application: CassandraExposedConfiguration
     fixture.with {
       cassandra(PrimaryCassandra) {
-        enableChaos()
         CassandraSystemOptions { configuration ->
           application = configuration
           emptyList()
-        }
+        }.enableChaos()
       }
     }
     fixture.cassandra(PrimaryCassandra).run()

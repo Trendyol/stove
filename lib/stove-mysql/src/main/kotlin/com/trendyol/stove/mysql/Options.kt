@@ -44,8 +44,11 @@ open class MySqlOptions(
   open val cleanup: suspend (NativeSqlOperations) -> Unit = {},
   override val configureExposedConfiguration: (RelationalDatabaseExposedConfiguration) -> List<String>
 ) : SystemOptions,
+  SupportChaos,
   ConfiguresExposedConfiguration<RelationalDatabaseExposedConfiguration>,
   SupportsMigrations<MySqlMigrationContext, MySqlOptions> {
+  override val chaosOptions: ChaosOptions = ChaosOptions()
+
   override val migrationCollection: MigrationCollection<MySqlMigrationContext> = MigrationCollection()
 
   companion object {
@@ -206,13 +209,13 @@ internal fun Stove.mysql(key: SystemKey): MySqlSystem =
  * }
  * ```
  */
-fun WithDsl.mysql(configure: @StoveDsl ChaosSetupScope.() -> MySqlOptions): Stove =
+fun WithDsl.mysql(configure: @StoveDsl () -> MySqlOptions): Stove =
   configureMySql(null, configure)
 
-fun WithDsl.mysql(key: SystemKey, configure: @StoveDsl ChaosSetupScope.() -> MySqlOptions): Stove =
+fun WithDsl.mysql(key: SystemKey, configure: @StoveDsl () -> MySqlOptions): Stove =
   configureMySql(key, configure)
 
-private fun WithDsl.configureMySql(key: SystemKey?, configure: ChaosSetupScope.() -> MySqlOptions): Stove =
+private fun WithDsl.configureMySql(key: SystemKey?, configure: () -> MySqlOptions): Stove =
   registerChaosCapable(configure) { options, _ ->
     val runtime = options.createRuntime(stove.keepDependenciesRunning)
     if (key == null) stove.withMySql(options, runtime) else stove.withMySql(key, options, runtime)

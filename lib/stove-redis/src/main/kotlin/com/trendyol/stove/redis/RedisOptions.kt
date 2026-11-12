@@ -65,8 +65,11 @@ open class RedisOptions(
   open val cleanup: suspend (RedisClient) -> Unit = {},
   override val configureExposedConfiguration: (RedisExposedConfiguration) -> List<String>
 ) : SystemOptions,
+  SupportChaos,
   ConfiguresExposedConfiguration<RedisExposedConfiguration>,
   SupportsMigrations<RedisMigrationContext, RedisOptions> {
+  override val chaosOptions: ChaosOptions = ChaosOptions()
+
   override val migrationCollection: MigrationCollection<RedisMigrationContext> = MigrationCollection()
 
   companion object {
@@ -182,13 +185,13 @@ data class RedisContext(
  * }
  * ```
  */
-fun WithDsl.redis(configure: @StoveDsl ChaosSetupScope.() -> RedisOptions): Stove =
+fun WithDsl.redis(configure: @StoveDsl () -> RedisOptions): Stove =
   configureRedis(null, configure)
 
-fun WithDsl.redis(key: SystemKey, configure: @StoveDsl ChaosSetupScope.() -> RedisOptions): Stove =
+fun WithDsl.redis(key: SystemKey, configure: @StoveDsl () -> RedisOptions): Stove =
   configureRedis(key, configure)
 
-private fun WithDsl.configureRedis(key: SystemKey?, configure: ChaosSetupScope.() -> RedisOptions): Stove =
+private fun WithDsl.configureRedis(key: SystemKey?, configure: () -> RedisOptions): Stove =
   registerChaosCapable(configure) { options, _ ->
     val runtime = options.createRuntime(stove.keepDependenciesRunning)
     if (key == null) stove.withRedis(options, runtime) else stove.withRedis(key, options, runtime)

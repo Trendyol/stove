@@ -132,8 +132,7 @@ private class ElasticsearchRegistrationFixture : AutoCloseable {
   private val stove = Stove().with {
     elasticsearch { ElasticsearchSystemOptions { emptyList() } }
     elasticsearch(PrimarySearch) {
-      enableChaos()
-      ElasticsearchSystemOptions { emptyList() }
+      ElasticsearchSystemOptions { emptyList() }.enableChaos()
     }
   }
   val direct = ElasticSearchExposedConfiguration("localhost", 9200, "secret", ElasticsearchExposedCertificate(byteArrayOf(1, 2, 3)))

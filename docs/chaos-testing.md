@@ -6,7 +6,7 @@ stays alive, and Stove keeps its direct connection for migrations, seeding, and 
 
 <div class="stove-tldr" markdown>
 <span class="stove-tldr-title">In 30 seconds</span>
-Call <code>enableChaos()</code> in a supported system's setup block, return your usual options, then call
+Return <code>Options(...).enableChaos()</code> from a supported system's setup block, then call
 <code>duringFault { ... }</code> inside that system's validation block. The default fault makes the application's
 connection unavailable. Connectivity is restored when the block succeeds, fails, or is cancelled.
 </div>
@@ -214,6 +214,7 @@ This example configures two Elasticsearch systems. Only `Dc1` is routed through 
 the endpoint supplied by `configureExposedConfiguration`; an independently configured direct endpoint bypasses the fault.
 
 ```kotlin
+import com.trendyol.stove.chaos.enableChaos
 import com.trendyol.stove.elasticsearch.ElasticsearchSystemOptions
 import com.trendyol.stove.elasticsearch.elasticsearch
 import com.trendyol.stove.http.HttpClientSystemOptions
@@ -230,12 +231,11 @@ Stove().with {
     httpClient { HttpClientSystemOptions(baseUrl = "http://localhost:8080") }
 
     elasticsearch(Dc1) {
-        enableChaos()
         ElasticsearchSystemOptions(
             configureExposedConfiguration = { cfg ->
                 listOf("elasticsearch.dc1.url=http://${cfg.host}:${cfg.port}")
             }
-        )
+        ).enableChaos()
     }
     elasticsearch(Dc2) {
         ElasticsearchSystemOptions(
@@ -249,8 +249,13 @@ Stove().with {
 }.run()
 ```
 
-Options remain the last expression in the setup block. Existing migrations, cleanup callbacks, and provided-instance
-options still apply. Without `enableChaos()`, the application receives the direct configuration as before.
+Call `enableChaos()` on the options returned by the setup block. Supported options implement `SupportChaos`;
+the extension returns the same concrete instance and chains with `migrations { ... }` in either order.
+Setup callbacks remain `() -> Options`, so existing saved factories and function references still work.
+
+The opt-in is read during registration. Configure options before returning them; changing them later does not
+reconfigure an existing system. Use separate options for registrations with different settings. Existing cleanup
+callbacks and provided-instance options still apply. Without `enableChaos()`, the application receives the direct configuration.
 
 Pair startup with `Stove.stop()` in the framework's teardown hook. Stove owns the proxies: it restores active faults,
 stops the application, closes the proxies, and disposes dependencies. No extra proxy singleton or manual `close()` is

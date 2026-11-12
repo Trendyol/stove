@@ -19,7 +19,7 @@ class ChaosSystemTest : FunSpec({
     system.applicationConfiguration(direct, IdentityEndpointAdapter) shouldBe direct
     shouldThrow<IllegalStateException> {
       withSystemValidation(system) { duringFault { error("must not execute") } }
-    }.message shouldBe "Chaos is not enabled for this system; call enableChaos() in its setup block"
+    }.message shouldBe "Chaos is not enabled for this system; call enableChaos() on its options before registration"
     system.stove.close()
   }
 
@@ -35,7 +35,7 @@ class ChaosSystemTest : FunSpec({
   test("all chaos operations reject a disabled target consistently when another route is enabled") {
     ChaosFixture().use { fixture ->
       val disabled = ChaosTestSystem(fixture.stove)
-      val expected = "Chaos is not enabled for this system; call enableChaos() in its setup block"
+      val expected = "Chaos is not enabled for this system; call enableChaos() on its options before registration"
       withSystemValidation(disabled) {
         shouldThrow<IllegalStateException> { duringFault {} }.message shouldBe expected
         shouldThrow<IllegalStateException> {

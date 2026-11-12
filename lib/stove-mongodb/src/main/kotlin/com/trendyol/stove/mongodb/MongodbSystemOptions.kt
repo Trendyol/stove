@@ -4,6 +4,8 @@ import com.fasterxml.jackson.databind.*
 import com.fasterxml.jackson.module.kotlin.KotlinModule
 import com.mongodb.MongoClientSettings
 import com.mongodb.kotlin.client.coroutine.MongoClient
+import com.trendyol.stove.chaos.ChaosOptions
+import com.trendyol.stove.chaos.SupportChaos
 import com.trendyol.stove.database.migrations.*
 import com.trendyol.stove.serialization.StoveSerde
 import com.trendyol.stove.system.abstractions.*
@@ -56,8 +58,11 @@ open class MongodbSystemOptions(
   open val cleanup: suspend (MongoClient) -> Unit = {},
   override val configureExposedConfiguration: (MongodbExposedConfiguration) -> List<String>
 ) : SystemOptions,
+  SupportChaos,
   ConfiguresExposedConfiguration<MongodbExposedConfiguration>,
   SupportsMigrations<MongodbMigrationContext, MongodbSystemOptions> {
+  override val chaosOptions: ChaosOptions = ChaosOptions()
+
   override val migrationCollection: MigrationCollection<MongodbMigrationContext> = MigrationCollection()
 
   companion object {

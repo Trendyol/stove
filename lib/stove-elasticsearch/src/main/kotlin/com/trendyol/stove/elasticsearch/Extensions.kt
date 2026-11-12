@@ -35,13 +35,13 @@ internal fun Stove.elasticsearch(key: SystemKey): ElasticsearchSystem =
   }
 
 /** Registers Elasticsearch; call enableChaos() to route application configuration through a managed TCP proxy. */
-fun WithDsl.elasticsearch(configure: @StoveDsl ChaosSetupScope.() -> ElasticsearchSystemOptions): Stove =
+fun WithDsl.elasticsearch(configure: @StoveDsl () -> ElasticsearchSystemOptions): Stove =
   configureElasticsearch(null, configure)
 
-fun WithDsl.elasticsearch(key: SystemKey, configure: @StoveDsl ChaosSetupScope.() -> ElasticsearchSystemOptions): Stove =
+fun WithDsl.elasticsearch(key: SystemKey, configure: @StoveDsl () -> ElasticsearchSystemOptions): Stove =
   configureElasticsearch(key, configure)
 
-private fun WithDsl.configureElasticsearch(key: SystemKey?, configure: ChaosSetupScope.() -> ElasticsearchSystemOptions): Stove =
+private fun WithDsl.configureElasticsearch(key: SystemKey?, configure: () -> ElasticsearchSystemOptions): Stove =
   registerChaosCapable(configure) { options, _ ->
     val runtime = options.createRuntime(stove.keepDependenciesRunning)
     if (key == null) stove.withElasticsearch(options, runtime) else stove.withElasticsearch(key, options, runtime)

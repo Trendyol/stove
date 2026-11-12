@@ -3,6 +3,7 @@
 package com.trendyol.stove.mysql
 
 import com.trendyol.stove.ConcurrentProjectConfig
+import com.trendyol.stove.chaos.enableChaos
 import com.trendyol.stove.extensions.kotest.StoveKotestExtension
 import com.trendyol.stove.rdbms.RelationalDatabaseExposedConfiguration
 import com.trendyol.stove.system.Stove
@@ -93,8 +94,7 @@ class ContainerMySqlStrategy : MySqlTestStrategy {
     Stove()
       .with {
         mysql {
-          enableChaos()
-          options
+          options.enableChaos()
         }
         applicationUnderTest(NoOpApplication())
       }.run()
@@ -149,8 +149,7 @@ class ProvidedMySqlStrategy : MySqlTestStrategy {
     Stove()
       .with {
         mysql {
-          enableChaos()
-          options
+          options.enableChaos()
         }
         applicationUnderTest(NoOpApplication())
       }.run()

@@ -1,6 +1,7 @@
 package com.trendyol.stove.mssql
 
 import com.trendyol.stove.chaos.applicationConfiguration
+import com.trendyol.stove.chaos.enableChaos
 import com.trendyol.stove.database.JdbcCloseFailureFixture
 import com.trendyol.stove.rdbms.NativeSqlOperations
 import com.trendyol.stove.rdbms.RelationalDatabaseChaosAdapter
@@ -59,11 +60,9 @@ private class MsSqlChaosFixture(
 
   init {
     stove.with {
-      mssql { options }
-      mssql(PrimaryDatabase) {
-        enableChaos()
-        options
-      }
+      val configure: () -> MsSqlOptions = { options }
+      mssql(configure)
+      mssql(PrimaryDatabase, options::enableChaos)
     }
     if (jdbc != null) stove.mssql().sqlOperations = NativeSqlOperations(sessionOf(jdbc.dataSource))
   }

@@ -1,6 +1,7 @@
 package com.trendyol.stove.postgres
 
 import com.trendyol.stove.chaos.applicationConfiguration
+import com.trendyol.stove.chaos.enableChaos
 import com.trendyol.stove.database.JdbcCloseFailureFixture
 import com.trendyol.stove.rdbms.NativeSqlOperations
 import com.trendyol.stove.rdbms.RelationalDatabaseChaosAdapter
@@ -55,11 +56,9 @@ private class PostgresqlChaosFixture(
 
   init {
     stove.with {
-      postgresql { options }
-      postgresql(PrimaryDatabase) {
-        enableChaos()
-        options
-      }
+      val configure: () -> PostgresqlOptions = { options }
+      postgresql(configure)
+      postgresql(PrimaryDatabase, options::enableChaos)
     }
     if (jdbc != null) stove.postgresql().sqlOperations = NativeSqlOperations(sessionOf(jdbc.dataSource))
   }

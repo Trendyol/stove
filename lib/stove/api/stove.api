@@ -20,14 +20,14 @@ public abstract interface class com/trendyol/stove/chaos/ChaosEndpointAdapter {
 	public abstract fun reroute (Ljava/lang/Object;Lkotlin/jvm/functions/Function1;)Ljava/lang/Object;
 }
 
-public final class com/trendyol/stove/chaos/ChaosSetupScope {
+public final class com/trendyol/stove/chaos/ChaosOptions {
 	public fun <init> ()V
-	public final fun enableChaos ()V
+	public final fun getEnabled ()Z
 }
 
 public final class com/trendyol/stove/chaos/ChaosSpiKt {
 	public static final fun applicationConfiguration (Lcom/trendyol/stove/chaos/ChaosCapableSystem;Ljava/lang/Object;Lcom/trendyol/stove/chaos/ChaosEndpointAdapter;)Ljava/lang/Object;
-	public static final fun registerChaosCapable-SscbJ7Y (Lcom/trendyol/stove/system/Stove;Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function2;)Lcom/trendyol/stove/system/Stove;
+	public static final fun registerChaosCapable-SscbJ7Y (Lcom/trendyol/stove/system/Stove;Lkotlin/jvm/functions/Function0;Lkotlin/jvm/functions/Function2;)Lcom/trendyol/stove/system/Stove;
 }
 
 public abstract interface class com/trendyol/stove/chaos/NetworkFault {
@@ -82,6 +82,14 @@ public abstract interface class com/trendyol/stove/chaos/NetworkPartitionTarget 
 	public abstract fun getName ()Ljava/lang/String;
 	public abstract fun heal ()V
 	public abstract fun partition ()V
+}
+
+public abstract interface class com/trendyol/stove/chaos/SupportChaos : com/trendyol/stove/system/abstractions/SystemOptions {
+	public abstract fun getChaosOptions ()Lcom/trendyol/stove/chaos/ChaosOptions;
+}
+
+public final class com/trendyol/stove/chaos/SupportChaosKt {
+	public static final fun enableChaos (Lcom/trendyol/stove/chaos/SupportChaos;)Lcom/trendyol/stove/chaos/SupportChaos;
 }
 
 public final class com/trendyol/stove/chaos/TcpChaosProxy : com/trendyol/stove/chaos/NetworkPartitionTarget, java/io/Closeable {

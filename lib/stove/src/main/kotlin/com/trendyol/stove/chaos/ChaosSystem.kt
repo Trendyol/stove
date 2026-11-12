@@ -146,7 +146,7 @@ internal class ChaosSystem(
   }
 
   private fun requireRoute(system: ChaosCapableSystem): Route = checkNotNull(findRoute(system)) {
-    "Chaos is not enabled for this system; call enableChaos() in its setup block"
+    "Chaos is not enabled for this system; call enableChaos() on its options before registration"
   }
 
   // Route state is always accessed under lock. Identity keeps equal keyed systems independent.

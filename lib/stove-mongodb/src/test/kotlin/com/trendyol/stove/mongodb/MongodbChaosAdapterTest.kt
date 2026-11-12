@@ -9,6 +9,7 @@ import com.mongodb.kotlin.client.coroutine.MongoClient
 import com.mongodb.kotlin.client.coroutine.MongoDatabase
 import com.trendyol.stove.chaos.TcpEndpoint
 import com.trendyol.stove.chaos.duringFault
+import com.trendyol.stove.chaos.enableChaos
 import com.trendyol.stove.system.Stove
 import com.trendyol.stove.system.ValidationDsl
 import com.trendyol.stove.system.abstractions.SystemKey
@@ -64,8 +65,7 @@ class MongodbChaosAdapterTest :
         shouldThrow<IllegalArgumentException> {
           Stove().with {
             mongodb {
-              enableChaos()
-              MongodbSystemOptions.provided(uri, "localhost", 27017) { emptyList() }
+              MongodbSystemOptions.provided(uri, "localhost", 27017) { emptyList() }.enableChaos()
             }
           }
         }
@@ -110,7 +110,6 @@ private suspend fun withMongoReplicaSet(block: suspend (ValidationDsl, MongoData
       lateinit var application: MongodbExposedConfiguration
       fixture.with {
         mongodb(PrimaryMongo) {
-          enableChaos()
           MongodbSystemOptions.provided(
             connectionString = container.connectionString + "?directConnection=true",
             host = container.host,
@@ -119,7 +118,7 @@ private suspend fun withMongoReplicaSet(block: suspend (ValidationDsl, MongoData
           ) { configuration ->
             application = configuration
             emptyList()
-          }
+          }.enableChaos()
         }
       }
       fixture.mongodb(PrimaryMongo).run()

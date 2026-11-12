@@ -5,6 +5,7 @@ import co.elastic.clients.elasticsearch.ElasticsearchClient
 import co.elastic.clients.elasticsearch._types.query_dsl.QueryBuilders
 import co.elastic.clients.elasticsearch.indices.CreateIndexRequest
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties
+import com.trendyol.stove.chaos.enableChaos
 import com.trendyol.stove.database.migrations.*
 import com.trendyol.stove.extensions.kotest.StoveKotestExtension
 import com.trendyol.stove.system.Stove
@@ -124,8 +125,7 @@ class ContainerElasticsearchStrategy : ElasticsearchTestStrategy {
     Stove()
       .with {
         elasticsearch {
-          enableChaos()
-          options
+          options.enableChaos()
         }
         applicationUnderTest(NoOpApplication())
       }.run()
@@ -180,8 +180,7 @@ class ProvidedElasticsearchStrategy : ElasticsearchTestStrategy {
     Stove()
       .with {
         elasticsearch {
-          enableChaos()
-          options
+          options.enableChaos()
         }
         applicationUnderTest(NoOpApplication())
       }.run()

@@ -132,10 +132,11 @@ public final class com/trendyol/stove/mongodb/MongodbSystem$Companion {
 	public final fun filterById (Ljava/lang/String;)Lorg/bson/conversions/Bson;
 }
 
-public class com/trendyol/stove/mongodb/MongodbSystemOptions : com/trendyol/stove/database/migrations/SupportsMigrations, com/trendyol/stove/system/abstractions/ConfiguresExposedConfiguration, com/trendyol/stove/system/abstractions/SystemOptions {
+public class com/trendyol/stove/mongodb/MongodbSystemOptions : com/trendyol/stove/chaos/SupportChaos, com/trendyol/stove/database/migrations/SupportsMigrations, com/trendyol/stove/system/abstractions/ConfiguresExposedConfiguration, com/trendyol/stove/system/abstractions/SystemOptions {
 	public static final field Companion Lcom/trendyol/stove/mongodb/MongodbSystemOptions$Companion;
 	public fun <init> (Lcom/trendyol/stove/mongodb/DatabaseOptions;Lcom/trendyol/stove/mongodb/MongoContainerOptions;Lkotlin/jvm/functions/Function1;Lcom/trendyol/stove/serialization/StoveSerde;Lorg/bson/json/JsonWriterSettings;Lkotlin/jvm/functions/Function2;Lkotlin/jvm/functions/Function1;)V
 	public synthetic fun <init> (Lcom/trendyol/stove/mongodb/DatabaseOptions;Lcom/trendyol/stove/mongodb/MongoContainerOptions;Lkotlin/jvm/functions/Function1;Lcom/trendyol/stove/serialization/StoveSerde;Lorg/bson/json/JsonWriterSettings;Lkotlin/jvm/functions/Function2;Lkotlin/jvm/functions/Function1;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public fun getChaosOptions ()Lcom/trendyol/stove/chaos/ChaosOptions;
 	public fun getCleanup ()Lkotlin/jvm/functions/Function2;
 	public fun getConfigureClient ()Lkotlin/jvm/functions/Function1;
 	public fun getConfigureExposedConfiguration ()Lkotlin/jvm/functions/Function1;
@@ -172,8 +173,8 @@ public final class com/trendyol/stove/mongodb/ObjectIdSerializer : com/fasterxml
 public final class com/trendyol/stove/mongodb/OptionsKt {
 	public static final fun mongodb-JSkDyPw (Lcom/trendyol/stove/system/Stove;Lkotlin/jvm/functions/Function2;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public static final fun mongodb-QljV9L8 (Lcom/trendyol/stove/system/Stove;Lcom/trendyol/stove/system/abstractions/SystemKey;Lkotlin/jvm/functions/Function2;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
-	public static final fun mongodb-SscbJ7Y (Lcom/trendyol/stove/system/Stove;Lcom/trendyol/stove/system/abstractions/SystemKey;Lkotlin/jvm/functions/Function1;)Lcom/trendyol/stove/system/Stove;
-	public static final fun mongodb-ypJx7X8 (Lcom/trendyol/stove/system/Stove;Lkotlin/jvm/functions/Function1;)Lcom/trendyol/stove/system/Stove;
+	public static final fun mongodb-SscbJ7Y (Lcom/trendyol/stove/system/Stove;Lcom/trendyol/stove/system/abstractions/SystemKey;Lkotlin/jvm/functions/Function0;)Lcom/trendyol/stove/system/Stove;
+	public static final fun mongodb-ypJx7X8 (Lcom/trendyol/stove/system/Stove;Lkotlin/jvm/functions/Function0;)Lcom/trendyol/stove/system/Stove;
 }
 
 public final class com/trendyol/stove/mongodb/ProvidedMongodbSystemOptions : com/trendyol/stove/mongodb/MongodbSystemOptions, com/trendyol/stove/system/abstractions/ProvidedSystemOptions {

@@ -41,8 +41,11 @@ open class PostgresqlOptions(
   open val cleanup: suspend (NativeSqlOperations) -> Unit = {},
   override val configureExposedConfiguration: (RelationalDatabaseExposedConfiguration) -> List<String>
 ) : SystemOptions,
+  SupportChaos,
   ConfiguresExposedConfiguration<RelationalDatabaseExposedConfiguration>,
   SupportsMigrations<PostgresSqlMigrationContext, PostgresqlOptions> {
+  override val chaosOptions: ChaosOptions = ChaosOptions()
+
   override val migrationCollection: MigrationCollection<PostgresSqlMigrationContext> = MigrationCollection()
 
   companion object {
@@ -203,13 +206,13 @@ internal fun Stove.postgresql(key: SystemKey): PostgresqlSystem =
  * }
  * ```
  */
-fun WithDsl.postgresql(configure: @StoveDsl ChaosSetupScope.() -> PostgresqlOptions): Stove =
+fun WithDsl.postgresql(configure: @StoveDsl () -> PostgresqlOptions): Stove =
   configurePostgresql(null, configure)
 
-fun WithDsl.postgresql(key: SystemKey, configure: @StoveDsl ChaosSetupScope.() -> PostgresqlOptions): Stove =
+fun WithDsl.postgresql(key: SystemKey, configure: @StoveDsl () -> PostgresqlOptions): Stove =
   configurePostgresql(key, configure)
 
-private fun WithDsl.configurePostgresql(key: SystemKey?, configure: ChaosSetupScope.() -> PostgresqlOptions): Stove =
+private fun WithDsl.configurePostgresql(key: SystemKey?, configure: () -> PostgresqlOptions): Stove =
   registerChaosCapable(configure) { options, _ ->
     val runtime = options.createRuntime(stove.keepDependenciesRunning)
     if (key == null) stove.withPostgresql(options, runtime) else stove.withPostgresql(key, options, runtime)

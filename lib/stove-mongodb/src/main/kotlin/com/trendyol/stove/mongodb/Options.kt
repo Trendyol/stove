@@ -108,13 +108,13 @@ internal fun Stove.mongodb(key: SystemKey): MongodbSystem =
  * forces directConnection=true. SRV, multiple seeds, load balancing and TLS are unsupported.
  * Use the exposed connectionString or replicaSetUrl; rebuilding a URI from host/port loses direct mode.
  */
-fun WithDsl.mongodb(configure: @StoveDsl ChaosSetupScope.() -> MongodbSystemOptions): Stove =
+fun WithDsl.mongodb(configure: @StoveDsl () -> MongodbSystemOptions): Stove =
   configureMongodb(null, configure)
 
-fun WithDsl.mongodb(key: SystemKey, configure: @StoveDsl ChaosSetupScope.() -> MongodbSystemOptions): Stove =
+fun WithDsl.mongodb(key: SystemKey, configure: @StoveDsl () -> MongodbSystemOptions): Stove =
   configureMongodb(key, configure)
 
-private fun WithDsl.configureMongodb(key: SystemKey?, configure: ChaosSetupScope.() -> MongodbSystemOptions): Stove =
+private fun WithDsl.configureMongodb(key: SystemKey?, configure: () -> MongodbSystemOptions): Stove =
   registerChaosCapable(configure) { options, chaosEnabled ->
     if (chaosEnabled && options is ProvidedMongodbSystemOptions) MongodbChaosAdapter.reroute(options.config) { it }
     val runtime = options.createRuntime(stove.keepDependenciesRunning)

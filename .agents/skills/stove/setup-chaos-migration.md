@@ -1,37 +1,30 @@
 # Migrate database setup and chaos tests
 
-Use this guide when upgrading a suite to the receiver-based setup callbacks and system-local managed chaos. These changes
-are currently **unreleased after 0.27.6**. First verify the resolved source/artifact actually contains `ChaosSetupScope`
-and `duringFault`; do not apply this guide to an older release merely because the local skill is newer.
+Use this guide when adopting system-local managed chaos. These changes are currently **unreleased after 0.27.6**.
+First verify the resolved source/artifact actually contains `SupportChaos`, the `enableChaos` extension, and `duringFault`;
+do not apply this guide to an older release merely because the local skill is newer.
 
-Affected registrations: `elasticsearch`, `postgresql`, `mysql`, `mssql`, `redis`, `mongodb`, and `cassandra`, keyed and unkeyed.
+Supported registrations: `elasticsearch`, `postgresql`, `mysql`, `mssql`, `redis`, `mongodb`, and `cassandra`, keyed and unkeyed.
 Cassandra chaos is limited to dedicated fixed single-node containers; Couchbase is not part of this managed-chaos rollout.
 
-## Migrate the setup signature
+## Preserve existing setup callbacks
 
-The old `() -> Options` registration overloads have been removed. They are not deprecated aliases. The replacement is
-`ChaosSetupScope.() -> Options`. Ordinary inline blocks continue to return their immutable options as the final expression.
-
-For a saved factory or function reference, wrap the call:
+Registrations still accept `() -> Options`, with the same JVM `Function0` signatures. Existing inline blocks, stored
+factories, function references, shared helpers, and Java callback shapes continue to work:
 
 ```kotlin
-// Existing factory stays unchanged.
 val makeOptions: () -> ElasticsearchSystemOptions = { existingOptions }
-
-// Replace elasticsearch(makeOptions) with:
-elasticsearch { makeOptions() }
-// Keyed equivalent:
-elasticsearch(Dc1) { makeOptions() }
+elasticsearch(makeOptions)
+elasticsearch(Dc1, makeOptions)
 ```
 
-If a shared helper should expose setup capabilities, change its parameter to
-`ChaosSetupScope.() -> ElasticsearchSystemOptions` and forward that receiver callback. Import
-`com.trendyol.stove.chaos.ChaosSetupScope`. If it only builds options, preserve its zero-argument factory and wrap the call.
-Java setup lambdas now take the scope argument. Recompile shared test-fixture libraries and consumers: the JVM method
-parameter changed from `Function0` to `Function1`, so updating runtime jars alone is insufficient.
+Supported database options implement `SupportChaos`. Import `com.trendyol.stove.chaos.enableChaos` and call
+`makeOptions().enableChaos()` when opting in. This returns the same concrete options instance, including provided-instance
+subclasses, and composes with `migrations { ... }` in either order. It configures the options in place before registration.
+Each registration reads the setting once; later options changes do not reconfigure existing systems. Create separate options
+for registrations that need different settings. Without the opt-in, application routing remains direct.
 
-Do not rewrite options constructors, migration registrations, or `provided(...)` factories to mutable builders. They retain
-their purpose and API. Without `enableChaos()`, application routing remains direct.
+Options constructors, migration registrations, and `provided(...)` factories retain their signatures.
 
 ## Check Redis database selection
 
@@ -42,18 +35,19 @@ intend to keep using database `0`. Verify application writes through a direct St
 ## Adopt managed chaos when requested
 
 ```kotlin
+import com.trendyol.stove.chaos.enableChaos
+
 elasticsearch(Dc1) {
-    enableChaos()
     ElasticsearchSystemOptions(
         configureExposedConfiguration = { cfg ->
             listOf("search.url=http://${cfg.host}:${cfg.port}")
         }
-    )
+    ).enableChaos()
 }
 ```
 
-`enableChaos()` belongs to the registration scope, before the options expression. Keep the application's connection
-configuration derived from `configureExposedConfiguration`; this callback receives the proxied endpoint. Keep seeding,
+`enableChaos()` is called on the returned options. Keep the application's connection configuration derived from
+`configureExposedConfiguration`; this callback receives the proxied endpoint. Keep seeding,
 migrations, and checks on the normal Stove system DSL, which retains its direct connection.
 
 For a concrete application contract, suppose `/search/health` reports `503` while its primary search dependency is
@@ -113,12 +107,12 @@ not reconfigure an already deployed application to use it.
 
 ## Migrate a manually owned proxy
 
-Only when adopting managed routing: remove setup `proxy.start(...)` and manual endpoint substitution, enable chaos in the
-selected registration, move the experiment to that system's `duringFault`, and remove the now-unused proxy shutdown.
+Only when adopting managed routing: remove setup `proxy.start(...)` and manual endpoint substitution, call `enableChaos()` on the
+selected registration's options, move the experiment to that system's `duringFault`, and remove the now-unused proxy shutdown.
 Retain `Stove.stop()` in framework teardown. Do not stack both routing schemes.
 
 `TcpChaosProxy`, `NetworkPartitionTarget`, and `withNetworkPartition` remain valid for manually managed topologies; migrating
-the setup callback does not require rewriting those experiments.
+to managed routing is optional.
 
 Use the [executable recovery use cases](https://github.com/Trendyol/stove/blob/main/docs/chaos-testing.md#executable-recovery-use-cases)
 for working examples of keyed primary/secondary isolation, three fault/recovery cycles, and a queued write that completes

@@ -1,6 +1,7 @@
 package com.trendyol.stove.postgres
 
 import com.trendyol.stove.ConcurrentProjectConfig
+import com.trendyol.stove.chaos.enableChaos
 import com.trendyol.stove.extensions.kotest.StoveKotestExtension
 import com.trendyol.stove.rdbms.RelationalDatabaseExposedConfiguration
 import com.trendyol.stove.system.Stove
@@ -87,8 +88,7 @@ class ContainerPostgresStrategy : PostgresTestStrategy {
     Stove()
       .with {
         postgresql {
-          enableChaos()
-          options
+          options.enableChaos()
         }
         applicationUnderTest(NoOpApplication())
       }.run()
@@ -144,8 +144,7 @@ class ProvidedPostgresStrategy : PostgresTestStrategy {
     Stove()
       .with {
         postgresql {
-          enableChaos()
-          options
+          options.enableChaos()
         }
         applicationUnderTest(NoOpApplication())
       }.run()
