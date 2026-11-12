@@ -127,8 +127,10 @@ Details: [Choose the fault](#choose-the-fault).
 A customer pays. The database saves the payment, but its reply never reaches the application. The application times
 out and retries. The customer must be charged once.
 
-The hard part is timing: the request must be stuck *before* you assert. `sendIntoStall` starts the request, waits until
-its bytes have reached the stall, and hands back a `Deferred` to await later.
+The hard part is timing. `sendIntoStall` starts the request, waits for route-wide stall evidence, and hands back a
+`Deferred` to await later. Earlier traffic within the current fault or unrelated traffic can satisfy this wait; it does
+not identify this request. The diagram shows an isolated request; the direct assertion for its unique payment ID proves
+that this payment was saved.
 
 ```mermaid
 sequenceDiagram
@@ -143,7 +145,7 @@ sequenceDiagram
     P->>D: save payment
     D-->>P: ok
     Note over P: reply held here
-    P-->>T: sendIntoStall returns (traffic is stuck)
+    P-->>T: sendIntoStall returns (route stall observed)
     T->>D: direct assertion: payment saved once
     A-->>T: 504 after its own timeout and retries
     Note over P: healed
@@ -173,14 +175,15 @@ broker sees no acknowledgement and delivers the event again. The stock must be r
 times.
 
 Here the test does not send the request: the consumer does, some time after the event is published. So there is
-nothing to hand to `sendIntoStall`. `awaitStalledTraffic` is the same wait without starting anything: it returns once
-the consumer's traffic is stuck.
+nothing to hand to `sendIntoStall`. `awaitStalledTraffic` waits for route-wide stall evidence without starting work.
+It cannot identify the consumer: earlier or unrelated traffic within this fault can satisfy it. Use an isolated fixture
+and verify the stock reservation for this order independently after healing.
 
 ```kotlin
 redis {
     duringFault(stall()) { redis ->
         kafka { /* publish the "order created" event */ }
-        redis.awaitStalledTraffic(2.seconds) // the consumer is now stuck mid-write
+        redis.awaitStalledTraffic(2.seconds) // route stall observed; verify this order independently
     }
     // healed: the event is processed, assert the stock was reserved exactly once
 }
@@ -372,7 +375,8 @@ application fixtures.
 
 `stall(TrafficDirection.Responses)` allows requests to reach the dependency while holding responses. Inside the active
 fault, the system passed to the fault block offers two helpers. `sendIntoStall(2.seconds) { ... }` starts the request
-in the background, waits until its traffic reaches the stall and returns a `Deferred` to await later.
+in the background, waits for route-wide stall evidence and returns a `Deferred` to await later. The evidence does not
+identify the started request.
 `awaitStalledTraffic(2.seconds)` is the wait alone, for traffic started some other way. Both observe the stalled
 direction by default (requests when both are stalled); pass `direction` to override.
 The observation binds to the fault active when the call begins. It accepts evidence already seen during that fault,
@@ -477,7 +481,7 @@ data stores or isolate shared application background work.
 | PostgreSQL | Exposed `jdbcUrl`, or its exposed `host` and `port` | Standard single-server PostgreSQL JDBC URL. |
 | MySQL | Exposed `jdbcUrl`, or its exposed `host` and `port` | Standard single-server MySQL JDBC URL; load-balancing/replication URLs are rejected. |
 | SQL Server | Exposed `jdbcUrl`, or its exposed `host` and `port` | Standard single-server SQL Server JDBC URL; named instances and failover overrides are rejected. |
-| Redis | Exposed `redisUri` | Standalone `redis://` or `rediss://`; Sentinel and cluster discovery are not routed by this adapter. |
+| Redis | Exposed `redisUri`, plus `database` and `password` as required by the application client | Standalone `redis://` or `rediss://`; do not assume the URI includes the selected database or password. Sentinel and cluster discovery are not routed by this adapter. |
 | MongoDB | Exposed `connectionString` / `replicaSetUrl` | A single seed with `directConnection=true`; SRV, multiple seeds, load-balanced mode, and TLS are rejected. Preserve the exposed URI instead of rebuilding it from host and port. |
 | Cassandra | Exposed contact-point `host` and `port` | A dedicated fixed single-node container using the Java driver 4.x. Provided instances and discovered peers are rejected. No alternative seeds, topology changes, or custom discovery; other language drivers are not covered. |
 
@@ -521,8 +525,8 @@ withNetworkPartition(proxy) {
 }
 ```
 
-The helper partitions each distinct target in argument order and restores successfully partitioned targets in reverse
-order, including on failure or cancellation. For manually routed proxies, keep Stove on the direct endpoint and close
+The helper partitions each distinct target in argument order and attempts to restore every attempted target in reverse
+order, including the target whose activation partially failed, and also on failure or cancellation. For manually routed proxies, keep Stove on the direct endpoint and close
 proxies after `Stove.stop()`. Avoid wrapping an already managed route in another proxy.
 
 See the [setup and chaos migration notes](release-notes/unreleased.md) when upgrading existing setup helpers.

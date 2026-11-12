@@ -12,7 +12,7 @@ interface NetworkPartitionTarget {
 }
 
 /**
- * Partitions each distinct target and restores successfully partitioned targets in reverse order.
+ * Partitions each distinct target and restores attempted targets in reverse order, including partial activation failures.
  * Restoration runs even on cancellation; secondary failures are attached to the original failure.
  */
 suspend fun <T> withNetworkPartition(
@@ -22,8 +22,8 @@ suspend fun <T> withNetworkPartition(
   val partitioned = mutableListOf<NetworkPartitionTarget>()
   return restoring(restore = { closeAll(partitioned.asReversed()) { it.heal() } }) {
     targets.distinct().forEach { target ->
-      target.partition()
       partitioned += target
+      target.partition()
     }
     experiment()
   }

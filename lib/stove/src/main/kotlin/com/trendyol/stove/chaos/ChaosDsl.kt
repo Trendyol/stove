@@ -56,8 +56,10 @@ suspend fun ChaosCapableSystem.awaitStalledTraffic(timeout: Duration, direction:
   owned { coordinator, frame -> coordinator.awaitStalledTraffic(frame, this, direction, timeout) }
 
 /**
- * Starts [block] in the background, waits until its traffic reaches the current stall and returns the pending result.
- * The request outlives the fault phase, so await it in recovery; its failure surfaces only from [Deferred.await].
+ * Starts [block] in the background and returns the pending result after observing traffic at the current stall.
+ * Evidence is route-wide and may predate [block] within this fault; it does not identify this operation.
+ * Verify operation-specific state independently. The request can outlive the fault phase: await it during the fault
+ * to check application timeouts, or after healing to check delayed completion. Its failure surfaces from [Deferred.await].
  */
 suspend fun <T> ChaosCapableSystem.sendIntoStall(
   timeout: Duration,

@@ -9,7 +9,8 @@ These changes are under development after `0.27.6`. They are not part of an alre
   finite coroutine deadline. Standalone faults on the route are rejected while the experiment runs.
 - `stall(direction)` supports request-only and response-only stalls, defaulting to both directions.
 - `awaitStalledTraffic(timeout)` waits for bytes encountered by the current stall; `sendIntoStall(timeout) { ... }`
-  starts a request in the background and returns it once its traffic reaches the stall. Evidence does not survive
+  starts a request in the background and returns its pending result after route-wide stall evidence is observed. Earlier
+  or unrelated traffic within that fault can satisfy the wait; it does not identify the request. Evidence does not survive
   healing or a new fault, and does not replace direct persisted-state assertions.
 - Fault and experiment blocks receive the faulted system as their parameter (`duringFault { redis -> ... }`), and
   route reservations last until the enclosing `stove { }` block exits.
@@ -63,8 +64,10 @@ container-networking restrictions.
 ## Redis database selection
 
 Stove's native Redis client now honors the configured database number for migrations and direct assertions. Previously
-it connected to database `0` even when the options selected another database (the default is `8`). Application traffic
-and direct assertions now address the same configured database. Remove any manual database-selection workaround, or set
+it connected to database `0` even when the options selected another database (the default is `8`). Configure the application
+client to use the exposed `database` and `password` alongside `redisUri` where needed: the URI from `RedisOptions.provided`
+contains only the host and port. URI-only application configuration may still select database `0` or omit authentication.
+Verify an application write with a direct Stove read on the selected database before removing selection workarounds. Set
 `database = 0` explicitly if the suite intends to use database `0`.
 
 ## Opt in through database options

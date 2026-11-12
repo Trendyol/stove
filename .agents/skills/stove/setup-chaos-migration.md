@@ -29,8 +29,10 @@ Options constructors, migration registrations, and `provided(...)` factories ret
 ## Check Redis database selection
 
 The native Redis client now uses the configured database for migrations and assertions; earlier versions always used
-`0`. The options default is `8`. Remove manual selection workarounds, or explicitly set `database = 0` for suites that
-intend to keep using database `0`. Verify application writes through a direct Stove read on the selected database.
+`0`. The options default is `8`. Configure the application client with the exposed `database` and `password` alongside
+`redisUri` where needed; `RedisOptions.provided` builds a host/port URI without those fields. Verify application writes
+through a direct Stove read on the selected database before removing selection workarounds. Explicitly set `database = 0`
+for suites that intend to keep using database `0`.
 
 ## Adopt managed chaos when requested
 
@@ -134,8 +136,9 @@ Keep client timeouts bounded and shared-AUT tests serial or isolated; route owne
 
 `stall(TrafficDirection.Responses)` holds acknowledgements while requests can commit. The fault block receives the faulted system
 (`duringFault(stall(TrafficDirection.Responses)) { redis -> ... }`); never capture it with `val system = this`. Call
-`redis.sendIntoStall(timeout) { http { ... } }` to start a request and get its `Deferred` once its traffic reaches the stall,
-or `redis.awaitStalledTraffic(timeout)` to only wait. This is route-wide transport evidence, not proof of business commit; assert durable state directly and use unique
+`redis.sendIntoStall(timeout) { http { ... } }` to start a request and get its `Deferred` after route-wide stall evidence,
+or `redis.awaitStalledTraffic(timeout)` to only wait. Earlier or unrelated traffic within the fault can satisfy either
+wait; neither identifies the operation or proves business commit. Assert durable state directly and use unique
 operation IDs. Observe one direction at a time. Evidence binds to that fault generation and expires when the fault ends; a later fault cannot satisfy the wait. The unreleased direct model is now
 `NetworkFault.Stall(direction)`; use `stall()` for the default bidirectional behavior.
 
