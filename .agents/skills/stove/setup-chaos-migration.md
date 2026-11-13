@@ -1,6 +1,6 @@
 # Migrate database setup and chaos tests
 
-Use this guide when adopting system-local managed chaos. These changes are currently **unreleased after 0.27.6**.
+Use this guide when adopting system-local managed chaos. These changes are available in **0.28.0**. Verify the project’s resolved Stove version before adopting them.
 First verify the resolved source/artifact actually contains `SupportChaos`, the `enableChaos` extension, and `duringFault`;
 do not apply this guide to an older release merely because the local skill is newer.
 
@@ -122,7 +122,7 @@ once after a stall heals. Do not use an empty fault block or a changed endpoint 
 
 Verify the migrated suite with a healthy application request, a faulted application request plus a successful direct Stove
 assertion, and a fresh application request after healing. Exercise failure/cancellation cleanup where the suite owns custom
-resources. Read [release migration notes](https://github.com/Trendyol/stove/blob/main/docs/release-notes/unreleased.md) and
+resources. Read [release migration notes](https://github.com/Trendyol/stove/blob/main/docs/release-notes/0.28.0.md) and
 [chaos routing limits](https://github.com/Trendyol/stove/blob/main/docs/chaos-testing.md) for the matching source revision.
 
 ## Named experiments and directional stall observations
@@ -139,7 +139,7 @@ Keep client timeouts bounded and shared-AUT tests serial or isolated; route owne
 `redis.sendIntoStall(timeout) { http { ... } }` to start a request and get its `Deferred` after route-wide stall evidence,
 or `redis.awaitStalledTraffic(timeout)` to only wait. Earlier or unrelated traffic within the fault can satisfy either
 wait; neither identifies the operation or proves business commit. Assert durable state directly and use unique
-operation IDs. Observe one direction at a time. Evidence binds to that fault generation and expires when the fault ends; a later fault cannot satisfy the wait. The unreleased direct model is now
+operation IDs. Observe one direction at a time. Evidence binds to that fault generation and expires when the fault ends; a later fault cannot satisfy the wait. The direct model in 0.28.0 is
 `NetworkFault.Stall(direction)`; use `stall()` for the default bidirectional behavior.
 
 The HTTP counter application in `lib/stove-redis/src/test` demonstrates bounded AUT retries with atomic Redis operation-ID

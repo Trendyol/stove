@@ -14,7 +14,7 @@ Banner on `stove` shows the endpoint:
 ```
 stove
 
-Stove Server v0.26.0 running
+Stove Server v0.28.0 running
 UI:   http://localhost:4040
 REST: http://localhost:4040/api/v1
 MCP:  http://localhost:4040/mcp
@@ -25,7 +25,7 @@ Or hit `GET /api/v1/meta` for metadata:
 
 ```json
 {
-  "stove_server_version": "0.26.0",
+  "stove_server_version": "0.28.0",
   "mcp": {
     "enabled": true,
     "transport": "streamable-http",
@@ -287,7 +287,7 @@ CI should publish its Stove run ID with the job output/artifacts. Otherwise atta
 
 ## Profiling evidence
 
-Available in **0.28.0 (upcoming)**. See [Profiling and Drill Down](../observability/profiling.md)
+Available in **0.28.0**. See [Profiling and Drill Down](../observability/profiling.md)
 for collection setup, supported runtimes, and interpretation.
 
 `stove_profiles` returns run-scoped method hotspots, units, sampling settings,

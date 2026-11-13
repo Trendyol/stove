@@ -390,6 +390,7 @@ The server intentionally has no authentication or authorization and accepts remo
 | `0.21.2 → 0.22` | Mordant console reporting; `stove-quarkus` module | No breaking changes |
 | `0.22 → 0.23` | Dashboard launched | Opt-in, non-blocking |
 | `0.23 → 0.24` | Polyglot leap (provided app, keyed systems, process/container, Go, MCP) | All additive |
+| `0.27.x → 0.28.0` | Managed database chaos, Cucumber suspend steps, Quarkus Bridge, JVM/Go profiling, Redis database selection fix | [Release notes and migration guidance](release-notes/0.28.0.md) |
 
 Pin the BOM, all `com.trendyol:stove-*` dependencies, the tracing Gradle plugin, and `stove-server` to one Stove version.
 Mixed versions are a common cause of class-load errors and empty dashboard data.

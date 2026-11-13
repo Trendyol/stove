@@ -15,7 +15,7 @@ Use MCP as an optimization, not a dependency. If MCP is unavailable, fall back t
 When `stove` is running, the startup banner prints the endpoint:
 
 ```text
-Stove Server v0.26.0 running
+Stove Server v0.28.0 running
 UI:   http://localhost:4040
 REST: http://localhost:4040/api/v1
 MCP:  http://localhost:4040/mcp
@@ -30,7 +30,7 @@ curl -s http://localhost:4040/api/v1/meta
 
 ```json
 {
-  "stove_server_version": "0.26.0",
+  "stove_server_version": "0.28.0",
   "mcp": {
     "enabled": true,
     "transport": "streamable-http",
@@ -221,7 +221,7 @@ until the execution can be identified; do not silently switch runs.
 
 ## Profile-driven investigation
 
-Introduced in 0.28.0 (upcoming). For collection setup and JVM/Go support boundaries,
+Introduced in 0.28.0. For collection setup and JVM/Go support boundaries,
 read [profiling.md](profiling.md) before changing application configuration.
 
 Use `stove_profiles(run_id, service?, metric?, instance?, from_ms?, until_ms?)`

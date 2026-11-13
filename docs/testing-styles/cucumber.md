@@ -5,9 +5,9 @@ Stove's existing validation DSL. The Cucumber adapter carries the active Stove
 instance, scenario identity, and trace through suspensions and child coroutines.
 
 !!! info "Incubating in 0.28.0"
-    The adapter is incubating in the 0.28.0 source tree. Start with the local example
-    and check module availability before using a published Stove version. The example
-    is verified with Cucumber **8.0.4** and JUnit Platform **6.1.3**.
+    The adapter is published as `com.trendyol:stove-extensions-cucumber` in 0.28.0
+    and remains incubating. The example is verified with Cucumber **8.0.4** and
+    JUnit Platform **6.1.3**.
 
 ## Run the example
 
@@ -33,8 +33,8 @@ The example uses local Stove projects and the repository's version catalog:
 --8<-- "examples/cucumber-example/build.gradle.kts"
 ```
 
-When adapting this to another project, use a Stove BOM version that includes
-`stove-extensions-cucumber`, along with the runner and systems your application
+When adapting this to another project, use the Stove BOM at `0.28.0` or newer and add
+`com.trendyol:stove-extensions-cucumber`, along with the runner and systems your application
 needs. The adapter supplies Cucumber’s Java8 lambda backend, Stove’s annotated-step backend,
 and Kotlin reflection. The
 additional test dependencies serve these roles:
@@ -46,6 +46,22 @@ additional test dependencies serve these roles:
 | `io.cucumber:cucumber-picocontainer` | Scenario-scoped constructor injection in this example |
 | `io.kotest:kotest-assertions-core` | Assertions such as `shouldBe`; supplied by this repository's test conventions |
 | `com.fasterxml.jackson.datatype:jackson-datatype-jdk8` | Supports the example's Jackson 2 runtime for Cucumber HTML/JSON reports |
+
+For a project using published artifacts, the dependency block is:
+
+```kotlin
+dependencies {
+  testImplementation(platform("com.trendyol:stove-bom:0.28.0"))
+  testImplementation("com.trendyol:stove-extensions-cucumber")
+  // Add the Stove runner and systems used by your application.
+  testImplementation("io.cucumber:cucumber-junit-platform-engine:8.0.4")
+  testImplementation("org.junit.platform:junit-platform-suite:6.1.3")
+  testRuntimeOnly("org.junit.platform:junit-platform-launcher:6.1.3")
+}
+```
+
+Add the object factory and assertion/reporting dependencies your glue requires,
+using the table above. The inventory example uses PicoContainer and Kotest assertions.
 
 Keep Cucumber artifacts aligned, and use a supported JSON provider for Cucumber 8.
 Reuse an existing Cucumber object factory if your project already has one.

@@ -62,10 +62,10 @@ See the [monitoring guide, scrape configuration, alert rules, and PromQL example
     Pull a versioned multi-platform image from GHCR:
 
     ```bash
-    docker pull ghcr.io/trendyol/stove-server:0.26.0
+    docker pull ghcr.io/trendyol/stove-server:0.28.0
     ```
 
-    Replace `0.26.0` with the Stove version used by your tests.
+    Replace `0.28.0` with the Stove version used by your tests.
 
 Verify: `stove --version`.
 
@@ -167,7 +167,7 @@ docker run -d \
   -p 4040:4040 \
   -p 4041:4041 \
   -v stove-data:/data \
-  ghcr.io/trendyol/stove-server:0.26.0
+  ghcr.io/trendyol/stove-server:0.28.0
 ```
 
 ### Build the image
@@ -212,7 +212,7 @@ docker run -d \
   -e STOVE_DATABASE_URL_FILE=/run/secrets/stove-database-url \
   -e STOVE_RETENTION_PASSED_RUNS_PER_APP=3 \
   -e STOVE_RETENTION_FAILED_RUNS_PER_APP=5 \
-  ghcr.io/trendyol/stove-server:0.26.0
+  ghcr.io/trendyol/stove-server:0.28.0
 ```
 
 The container applies database migrations when it starts. PostgreSQL uses TLS by default; append `?sslmode=disable` only when the database intentionally has no TLS and the connection stays inside a trusted private network. No `/data` volume is needed with PostgreSQL.
@@ -255,7 +255,7 @@ spec:
       terminationGracePeriodSeconds: 15
       containers:
         - name: stove
-          image: ghcr.io/trendyol/stove-server:0.26.0
+          image: ghcr.io/trendyol/stove-server:0.28.0
           args: ["--config-file", "/etc/stove/stove.toml", "--no-skills-check"]
           ports:
             - { name: http, containerPort: 4040 }
@@ -284,7 +284,7 @@ After deployment:
 - Agents connect to the Streamable HTTP MCP endpoint at `http://stove.internal:4040/mcp`.
 - Test processes set `ingestion = DashboardIngestion.Grpc(host = "stove.internal", port = 4041)` so events reach the exposed gRPC port.
 
-The release workflow publishes exact (`0.26.0`), minor (`0.26`), major (`0`), and `latest` tags for stable releases. Pin the exact tag in production so a restart cannot pull a different server version. Keep that version aligned with the Stove dependencies used by the test process.
+The release workflow publishes exact (`0.28.0`), minor (`0.28`), major (`0`), and `latest` tags for stable releases. Pin the exact tag in production so a restart cannot pull a different server version. Keep that version aligned with the Stove dependencies used by the test process.
 
 !!! warning "Trusted networks only"
     The container does not add authentication or authorization. Expose ports `4040` and `4041` only through an internal network, firewall, VPN, or private ingress. Do not publish either port directly to the internet.
@@ -597,7 +597,7 @@ The acceptance suite verifies the same ingestion, filtering, retention, administ
 
 ## Continuous profiling
 
-In **0.28.0 (upcoming)**, Stove Server receives Pyroscope Java JFR and native Go pprof recordings and
+In **0.28.0**, Stove Server receives Pyroscope Java JFR and native Go pprof recordings and
 provides **Drill Down** for CPU and memory investigation, with no separate
 profiling backend. Enable collection in the tracing Gradle plugin and keep the
 normal dashboard integration. The plugin profiles the test JVM; Go applications use `go/stove-profiler`

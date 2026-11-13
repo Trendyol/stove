@@ -79,11 +79,11 @@ Tests are written in **Kotlin**, even when the application is Java, Scala, Go, P
 
 ### Add Stove to your application
 
-Replace `x.y.z` with the latest release from the [Releases page](https://github.com/Trendyol/stove/releases) or the badge above.
+The current release is **0.28.0**. Keep the libraries, tracing plugin, and Stove Server on the same version; see the [release notes](https://trendyol.github.io/stove/release-notes/0.28.0/).
 
 ```kotlin
 // build.gradle.kts
-val stoveVersion = "x.y.z"
+val stoveVersion = "0.28.0"
 
 dependencies {
   testImplementation(platform("com.trendyol:stove-bom:$stoveVersion"))

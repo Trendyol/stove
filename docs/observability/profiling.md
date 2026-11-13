@@ -1,6 +1,6 @@
 # Profiling and Drill Down
 
-**Available in 0.28.0 (upcoming).** Use matching Stove libraries, tracing Gradle plugin, and Stove Server builds that include profiling. These instructions describe the upcoming release; 0.27.x does not include this feature.
+**Available in 0.28.0.** Use matching Stove libraries, tracing Gradle plugin, and Stove Server builds that include profiling. Stove 0.27.x does not include this feature.
 
 Stove collects continuous JVM and Go profiles during end-to-end tests and shows them in **Drill Down**. CPU, allocation, surviving-object, and lock samples help locate methods worth investigating before a performance problem reaches production. The existing Stove Server receives, converts, stores, and queries the recordings. Downstream users do not need to deploy Pyroscope or another profiling backend.
 
@@ -29,9 +29,15 @@ Having Gradle in a project does not make the application a JVM process. `stoveTr
 
 ### Go developers
 
-Stove 0.28.0 (upcoming) supports native Go profiles through the small [`go/stove-profiler`](https://github.com/Trendyol/stove/tree/main/go/stove-profiler) module, following the `stove-kafka` integration pattern. It wraps Grafana `pyroscope-go` **1.5.0**, pushes directly to Stove Server, and is inactive when no profiling URL is configured. `stoveTracing.profiling` remains the Java-agent configuration; it is unnecessary for profiling a Go binary.
+Stove 0.28.0 supports native Go profiles through the small [`go/stove-profiler`](https://github.com/Trendyol/stove/tree/main/go/stove-profiler) module, following the `stove-kafka` integration pattern. It wraps Grafana `pyroscope-go` **1.5.0**, pushes directly to Stove Server, and is inactive when no profiling URL is configured. `stoveTracing.profiling` remains the Java-agent configuration; it is unnecessary for profiling a Go binary.
 
-After 0.28.0 is published, install `github.com/trendyol/stove/go/stove-profiler@v0.28.0`. Before release, use the matching checkout with a local Go `replace`, as the showcase does. The module requires Go 1.26.2 or newer.
+Install the published module:
+
+```shell
+go get github.com/trendyol/stove/go/stove-profiler@v0.28.0
+```
+
+The showcase uses a local Go `replace` to test the checkout’s source. The module requires Go 1.26.2 or newer.
 
 Initialize it once in the Go application's `main` and close it after the server and workers shut down:
 
@@ -123,7 +129,7 @@ The embedded converter uses Grafana's generated `google.v1.Profile` protobuf, va
 
 ## Configure an in-process JVM application
 
-Keep versions in the project's Gradle version catalog. For the upcoming release, the relevant catalog entries are:
+Keep versions in the project's Gradle version catalog. For 0.28.0, the relevant catalog entries are:
 
 ```toml
 [versions]
@@ -133,7 +139,7 @@ stove = "0.28.0"
 stove-tracing = { id = "com.trendyol.stove.tracing", version.ref = "stove" }
 ```
 
-Merge these into the existing sections in `gradle/libs.versions.toml`. Until 0.28.0 is published, use your locally built artifacts or your team's pre-release build that contains this feature. Keep the server, libraries, and plugin aligned.
+Merge these into the existing sections in `gradle/libs.versions.toml`. Keep the server, libraries, and plugin aligned.
 
 In the test project's `build.gradle.kts`:
 

@@ -2,8 +2,8 @@
 
 Use this guide when adding or debugging feature files, Kotlin suspend steps, or
 the Stove Cucumber backend. Preserve the user's chosen application runner and
-existing Cucumber object factory. This adapter is incubating in the 0.28.0 source
-tree; first verify the resolved Stove version contains `stove-extensions-cucumber`.
+existing Cucumber object factory. This adapter is published in 0.28.0 and remains incubating; first verify the
+resolved Stove version contains `stove-extensions-cucumber`.
 Do not infer availability from newer docs or the skill installation.
 
 ## Execution model

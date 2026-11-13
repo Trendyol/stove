@@ -1,6 +1,6 @@
 # Release Notes
 
-**Upcoming:** [0.28.0 — Quarkus Bridge, JVM and Go profiling, and Drill Down](0.28.0.md).
+**Latest release:** [0.28.0 — database chaos, Cucumber, Quarkus Bridge, JVM and Go profiling, and Drill Down](0.28.0.md).
 
 Choose a version from the navigation for release highlights, migration guides, and compatibility changes.
 

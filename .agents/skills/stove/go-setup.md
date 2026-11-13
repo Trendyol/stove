@@ -8,7 +8,7 @@ The same `StoveConfig.kt` can serve both modes by branching on a system property
 
 ## Native profiling
 
-Stove 0.28.0 (upcoming) supports native Go profiling through `go/stove-profiler` and dashboard-exposed run configuration. Follow [profiling.md](profiling.md#native-go-application) for the wrapper, process/container environment mappings, graceful shutdown, and HTTPS/authentication. `stoveTracing.profiling` configures the Kotlin test JVM's Java agent; use the Go wrapper for the Go AUT. See [tracing.md](tracing.md) for application spans.
+Stove 0.28.0 supports native Go profiling through `go/stove-profiler` and dashboard-exposed run configuration. Follow [profiling.md](profiling.md#native-go-application) for the wrapper, process/container environment mappings, graceful shutdown, and HTTPS/authentication. `stoveTracing.profiling` configures the Kotlin test JVM's Java agent; use the Go wrapper for the Go AUT. See [tracing.md](tracing.md) for application spans.
 
 ## Setup Checklist
 

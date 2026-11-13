@@ -57,6 +57,8 @@ Start with the smallest set that proves the wiring works: BOM + core + one AUT r
     All examples use Gradle (Kotlin DSL). Maven works for Stove dependencies; the **`stoveTracing`** Gradle plugin is the easiest path to OTel tracing and is the recommended setup for observability.
 
 ```kotlin
+val stoveVersion = "0.28.0"
+
 dependencies {
     testImplementation(platform("com.trendyol:stove-bom:$stoveVersion"))
     testImplementation("com.trendyol:stove")

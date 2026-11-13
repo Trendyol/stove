@@ -1,6 +1,6 @@
 # Stove profiler for Go
 
-Native Go profiling for Stove 0.28.0 (upcoming), using Grafana `pyroscope-go` 1.5.0. Uploads go directly to the existing Stove Server; no separate profiling backend is required.
+Native Go profiling for Stove 0.28.0, using Grafana `pyroscope-go` 1.5.0. Uploads go directly to the existing Stove Server; no separate profiling backend is required.
 
 ```go
 import stoveprofiler "github.com/trendyol/stove/go/stove-profiler"
@@ -16,4 +16,10 @@ CPU is always included for SDK final-flush support. Allocation, in-use heap, gor
 
 `Start(Config)` supports explicit configuration. `StartFromEnv(func(*Config))` can supply custom headers, an HTTP client for CA trust/mTLS, and a logger. Identity headers cannot be overridden; redirects are refused. Uploads have a five-second deadline and up to three attempts for temporary errors.
 
-See [the profiling guide](https://trendyol.github.io/stove/observability/profiling/#go-developers) and [the Go showcase](../../recipes/process/golang/go-showcase) for Kotlin environment mappings, HTTPS, authentication, shutdown, supported sample semantics, and Drill Down/MCP investigation. Before publication, use a local module replacement as in the showcase; after publication install `github.com/trendyol/stove/go/stove-profiler@v0.28.0`.
+See [the profiling guide](https://trendyol.github.io/stove/observability/profiling/#go-developers) and [the Go showcase](../../recipes/process/golang/go-showcase) for Kotlin environment mappings, HTTPS, authentication, shutdown, supported sample semantics, and Drill Down/MCP investigation. Install the published module with:
+
+```shell
+go get github.com/trendyol/stove/go/stove-profiler@v0.28.0
+```
+
+The showcase uses a local module replacement to test checkout sources.

@@ -1,6 +1,6 @@
 # Chaos Testing
 
-Chaos tests introduce a controlled failure and verify application behavior during the failure and after recovery.
+Available in **0.28.0**. Chaos tests introduce a controlled failure and verify application behavior during the failure and after recovery.
 Enable chaos on a database system to route the application's connection through a Stove-managed TCP proxy. The database
 stays alive, and Stove keeps its direct connection for migrations, seeding, and assertions.
 
@@ -529,4 +529,4 @@ The helper partitions each distinct target in argument order and attempts to res
 order, including the target whose activation partially failed, and also on failure or cancellation. For manually routed proxies, keep Stove on the direct endpoint and close
 proxies after `Stove.stop()`. Avoid wrapping an already managed route in another proxy.
 
-See the [setup and chaos migration notes](release-notes/unreleased.md) when upgrading existing setup helpers.
+See the [setup and chaos migration notes](release-notes/0.28.0.md) when upgrading existing setup helpers.
