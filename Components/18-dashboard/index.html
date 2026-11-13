@@ -3535,7 +3535,7 @@
   <span class="md-ellipsis">
     
   
-    0.28.0 (upcoming)
+    0.28.0
   
 
     
@@ -4366,9 +4366,9 @@ Install <code>stove-server</code>, run <code>stove</code>, add <code>dashboard {
 </div>
 <div class="tabbed-block">
 <p>Pull a versioned multi-platform image from GHCR:</p>
-<div class="language-bash highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>docker<span class="w"> </span>pull<span class="w"> </span>ghcr.io/trendyol/stove-server:0.26.0
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>docker<span class="w"> </span>pull<span class="w"> </span>ghcr.io/trendyol/stove-server:0.28.0
 </span></code></pre></div>
-<p>Replace <code>0.26.0</code> with the Stove version used by your tests.</p>
+<p>Replace <code>0.28.0</code> with the Stove version used by your tests.</p>
 </div>
 </div>
 </div>
@@ -4437,7 +4437,7 @@ Install <code>stove-server</code>, run <code>stove</code>, add <code>dashboard {
 </span><span id="__span-9-4"><a id="__codelineno-9-4" name="__codelineno-9-4" href="#__codelineno-9-4"></a><span class="w">  </span>-p<span class="w"> </span><span class="m">4040</span>:4040<span class="w"> </span><span class="se">\</span>
 </span><span id="__span-9-5"><a id="__codelineno-9-5" name="__codelineno-9-5" href="#__codelineno-9-5"></a><span class="w">  </span>-p<span class="w"> </span><span class="m">4041</span>:4041<span class="w"> </span><span class="se">\</span>
 </span><span id="__span-9-6"><a id="__codelineno-9-6" name="__codelineno-9-6" href="#__codelineno-9-6"></a><span class="w">  </span>-v<span class="w"> </span>stove-data:/data<span class="w"> </span><span class="se">\</span>
-</span><span id="__span-9-7"><a id="__codelineno-9-7" name="__codelineno-9-7" href="#__codelineno-9-7"></a><span class="w">  </span>ghcr.io/trendyol/stove-server:0.26.0
+</span><span id="__span-9-7"><a id="__codelineno-9-7" name="__codelineno-9-7" href="#__codelineno-9-7"></a><span class="w">  </span>ghcr.io/trendyol/stove-server:0.28.0
 </span></code></pre></div>
 <h3 id="build-the-image">Build the image<a class="headerlink" href="#build-the-image" title="Permanent link">&para;</a></h3>
 <p>Build from source at the repository root:</p>
@@ -4468,7 +4468,7 @@ Install <code>stove-server</code>, run <code>stove</code>, add <code>dashboard {
 </span><span id="__span-12-7"><a id="__codelineno-12-7" name="__codelineno-12-7" href="#__codelineno-12-7"></a><span class="w">  </span>-e<span class="w"> </span><span class="nv">STOVE_DATABASE_URL_FILE</span><span class="o">=</span>/run/secrets/stove-database-url<span class="w"> </span><span class="se">\</span>
 </span><span id="__span-12-8"><a id="__codelineno-12-8" name="__codelineno-12-8" href="#__codelineno-12-8"></a><span class="w">  </span>-e<span class="w"> </span><span class="nv">STOVE_RETENTION_PASSED_RUNS_PER_APP</span><span class="o">=</span><span class="m">3</span><span class="w"> </span><span class="se">\</span>
 </span><span id="__span-12-9"><a id="__codelineno-12-9" name="__codelineno-12-9" href="#__codelineno-12-9"></a><span class="w">  </span>-e<span class="w"> </span><span class="nv">STOVE_RETENTION_FAILED_RUNS_PER_APP</span><span class="o">=</span><span class="m">5</span><span class="w"> </span><span class="se">\</span>
-</span><span id="__span-12-10"><a id="__codelineno-12-10" name="__codelineno-12-10" href="#__codelineno-12-10"></a><span class="w">  </span>ghcr.io/trendyol/stove-server:0.26.0
+</span><span id="__span-12-10"><a id="__codelineno-12-10" name="__codelineno-12-10" href="#__codelineno-12-10"></a><span class="w">  </span>ghcr.io/trendyol/stove-server:0.28.0
 </span></code></pre></div>
 <p>The container applies database migrations when it starts. PostgreSQL uses TLS by default; append <code>?sslmode=disable</code> only when the database intentionally has no TLS and the connection stays inside a trusted private network. No <code>/data</code> volume is needed with PostgreSQL.</p>
 <h3 id="run-multiple-replicas">Run multiple replicas<a class="headerlink" href="#run-multiple-replicas" title="Permanent link">&para;</a></h3>
@@ -4502,7 +4502,7 @@ Install <code>stove-server</code>, run <code>stove</code>, add <code>dashboard {
 </span><span id="__span-13-23"><a id="__codelineno-13-23" name="__codelineno-13-23" href="#__codelineno-13-23"></a><span class="w">      </span><span class="nt">terminationGracePeriodSeconds</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">15</span>
 </span><span id="__span-13-24"><a id="__codelineno-13-24" name="__codelineno-13-24" href="#__codelineno-13-24"></a><span class="w">      </span><span class="nt">containers</span><span class="p">:</span>
 </span><span id="__span-13-25"><a id="__codelineno-13-25" name="__codelineno-13-25" href="#__codelineno-13-25"></a><span class="w">        </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">stove</span>
-</span><span id="__span-13-26"><a id="__codelineno-13-26" name="__codelineno-13-26" href="#__codelineno-13-26"></a><span class="w">          </span><span class="nt">image</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">ghcr.io/trendyol/stove-server:0.26.0</span>
+</span><span id="__span-13-26"><a id="__codelineno-13-26" name="__codelineno-13-26" href="#__codelineno-13-26"></a><span class="w">          </span><span class="nt">image</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">ghcr.io/trendyol/stove-server:0.28.0</span>
 </span><span id="__span-13-27"><a id="__codelineno-13-27" name="__codelineno-13-27" href="#__codelineno-13-27"></a><span class="w">          </span><span class="nt">args</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="s">"--config-file"</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="s">"/etc/stove/stove.toml"</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="s">"--no-skills-check"</span><span class="p p-Indicator">]</span>
 </span><span id="__span-13-28"><a id="__codelineno-13-28" name="__codelineno-13-28" href="#__codelineno-13-28"></a><span class="w">          </span><span class="nt">ports</span><span class="p">:</span>
 </span><span id="__span-13-29"><a id="__codelineno-13-29" name="__codelineno-13-29" href="#__codelineno-13-29"></a><span class="w">            </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="p p-Indicator">{</span><span class="nt"> name</span><span class="p">:</span><span class="w"> </span><span class="nv">http</span><span class="p p-Indicator">,</span><span class="nt"> containerPort</span><span class="p">:</span><span class="w"> </span><span class="nv">4040</span><span class="w"> </span><span class="p p-Indicator">}</span>
@@ -4529,7 +4529,7 @@ Install <code>stove-server</code>, run <code>stove</code>, add <code>dashboard {
 <li>Agents connect to the Streamable HTTP MCP endpoint at <code>http://stove.internal:4040/mcp</code>.</li>
 <li>Test processes set <code>ingestion = DashboardIngestion.Grpc(host = "stove.internal", port = 4041)</code> so events reach the exposed gRPC port.</li>
 </ul>
-<p>The release workflow publishes exact (<code>0.26.0</code>), minor (<code>0.26</code>), major (<code>0</code>), and <code>latest</code> tags for stable releases. Pin the exact tag in production so a restart cannot pull a different server version. Keep that version aligned with the Stove dependencies used by the test process.</p>
+<p>The release workflow publishes exact (<code>0.28.0</code>), minor (<code>0.28</code>), major (<code>0</code>), and <code>latest</code> tags for stable releases. Pin the exact tag in production so a restart cannot pull a different server version. Keep that version aligned with the Stove dependencies used by the test process.</p>
 <div class="admonition warning">
 <p class="admonition-title">Trusted networks only</p>
 <p>The container does not add authentication or authorization. Expose ports <code>4040</code> and <code>4041</code> only through an internal network, firewall, VPN, or private ingress. Do not publish either port directly to the internet.</p>
@@ -4967,7 +4967,7 @@ stored <code>stove_version</code>; if it is absent, the UI says "not reported" i
 </tbody>
 </table>
 <h2 id="continuous-profiling">Continuous profiling<a class="headerlink" href="#continuous-profiling" title="Permanent link">&para;</a></h2>
-<p>In <strong>0.28.0 (upcoming)</strong>, Stove Server receives Pyroscope Java JFR and native Go pprof recordings and
+<p>In <strong>0.28.0</strong>, Stove Server receives Pyroscope Java JFR and native Go pprof recordings and
 provides <strong>Drill Down</strong> for CPU and memory investigation, with no separate
 profiling backend. Enable collection in the tracing Gradle plugin and keep the
 normal dashboard integration. The plugin profiles the test JVM; Go applications use <code>go/stove-profiler</code>

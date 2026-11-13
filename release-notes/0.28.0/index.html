@@ -25,7 +25,7 @@
     
     
       
-        <title>0.28.0 (upcoming) - Stove</title>
+        <title>0.28.0 - Stove</title>
       
     
     
@@ -111,7 +111,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              0.28.0 (upcoming)
+              0.28.0
             
           </span>
         </div>
@@ -3159,7 +3159,7 @@
   <span class="md-ellipsis">
     
   
-    0.28.0 (upcoming)
+    0.28.0
   
 
     
@@ -3177,7 +3177,7 @@
   <span class="md-ellipsis">
     
   
-    0.28.0 (upcoming)
+    0.28.0
   
 
     
@@ -3291,10 +3291,93 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#named-chaos-experiments-and-directional-stalls" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Named chaos experiments and directional stalls
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#system-local-database-chaos" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        System-local database chaos
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#redis-database-selection" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Redis database selection
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#opt-in-through-database-options" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Opt in through database options
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Opt in through database options">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#move-manual-experiments-only-when-adopting-managed-routing" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Move manual experiments only when adopting managed routing
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#lifecycle-behavior" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Lifecycle behavior
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#upgrade-and-operation" class="md-nav__link">
     <span class="md-ellipsis">
       
         Upgrade and operation
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#release-links" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Release links
       
     </span>
   </a>
@@ -3768,10 +3851,93 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#named-chaos-experiments-and-directional-stalls" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Named chaos experiments and directional stalls
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#system-local-database-chaos" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        System-local database chaos
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#redis-database-selection" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Redis database selection
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#opt-in-through-database-options" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Opt in through database options
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Opt in through database options">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#move-manual-experiments-only-when-adopting-managed-routing" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Move manual experiments only when adopting managed routing
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#lifecycle-behavior" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Lifecycle behavior
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#upgrade-and-operation" class="md-nav__link">
     <span class="md-ellipsis">
       
         Upgrade and operation
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#release-links" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Release links
       
     </span>
   </a>
@@ -3847,9 +4013,9 @@
 
 
 <h1 id="0280">0.28.0<a class="headerlink" href="#0280" title="Permanent link">&para;</a></h1>
-<p><strong>Status: Upcoming — not yet released.</strong></p>
+<p><strong>Released:</strong> November 13, 2026. <a href="https://github.com/Trendyol/stove/releases/tag/v0.28.0">GitHub release</a>.</p>
 <p>Stove 0.28.0 adds continuous JVM and Go profiling to the existing Stove Server. Enable the JVM profiler in the tracing Gradle plugin or configure the native Go wrapper, run your end-to-end tests, and use <strong>Drill Down</strong> or MCP to investigate sampled CPU cost, allocation pressure, surviving objects, and lock waits. No separate Pyroscope backend or additional deployed service is required.</p>
-<p>This release also adds Quarkus Bridge for direct CDI bean access from end-to-end tests.</p>
+<p>This release also adds managed database chaos with named fault/recovery experiments, Cucumber suspend steps, and Quarkus Bridge for direct CDI bean access from end-to-end tests.</p>
 <h2 id="cucumber-suspend-steps-incubating">Cucumber suspend steps (incubating)<a class="headerlink" href="#cucumber-suspend-steps-incubating" title="Permanent link">&para;</a></h2>
 <p><code>stove-extensions-cucumber</code> runs Gherkin feature files with public Kotlin suspend
 steps using Stove's <code>Given</code>/<code>When</code>/<code>Then</code> annotations and the existing <code>stove {}</code> DSL.
@@ -3907,16 +4073,114 @@ The bundled Stove skill includes a focused Cucumber setup and troubleshooting gu
 <p>Allocation profiles indicate memory pressure. Live profiles use the latest recording per instance and report sampled surviving objects, not retained heap or reference paths. Neither high CPU share nor surviving allocations prove a defect, regression, or memory leak. Compare equivalent workloads and corroborate findings with source and heap/GC evidence.</p>
 <h2 id="container-shutdown">Container shutdown<a class="headerlink" href="#container-shutdown" title="Permanent link">&para;</a></h2>
 <p>Container runners now ask Docker to stop the application within <code>gracefulShutdownTimeout</code> before Testcontainers removes it. This lets signal handlers flush profiles and other buffered evidence; previously cleanup could kill the application immediately. Applications that ignore the stop signal are still terminated after the timeout.</p>
+<h2 id="named-chaos-experiments-and-directional-stalls">Named chaos experiments and directional stalls<a class="headerlink" href="#named-chaos-experiments-and-directional-stalls" title="Permanent link">&para;</a></h2>
+<ul>
+<li><code>chaosExperiment(name, fault, timeout, baseline, faulted, recovery)</code> reserves the application route before baseline,
+  executes each phase once, waits for its child coroutines, heals before recovery, and reports named phases under one
+  finite coroutine deadline. Standalone faults on the route are rejected while the experiment runs.</li>
+<li><code>stall(direction)</code> supports request-only and response-only stalls, defaulting to both directions.</li>
+<li><code>awaitStalledTraffic(timeout)</code> waits for bytes encountered by the current stall; <code>sendIntoStall(timeout) { ... }</code>
+  starts a request in the background and returns its pending result after route-wide stall evidence is observed. Earlier
+  or unrelated traffic within that fault can satisfy the wait; it does not identify the request. Evidence does not survive
+  healing or a new fault, and does not replace direct persisted-state assertions.</li>
+<li>Fault and experiment blocks receive the faulted system as their parameter (<code>duringFault { redis -&gt; ... }</code>), and
+  route reservations last until the enclosing <code>stove { }</code> block exits.</li>
+<li>An executable HTTP/Redis recovery test verifies atomic operation-ID deduplication across committed-but-unacknowledged
+  writes, bounded application retries, and fresh operations after healing.</li>
+</ul>
+<p>For callers adopting the pre-release model directly, <code>NetworkFault.Stall</code> is now a value with a direction:
+use <code>NetworkFault.Stall()</code> or <code>stall()</code> for the previous bidirectional behavior. Recompile consumers of the changed API.</p>
+<h2 id="system-local-database-chaos">System-local database chaos<a class="headerlink" href="#system-local-database-chaos" title="Permanent link">&para;</a></h2>
+<p>Elasticsearch, PostgreSQL, MySQL, SQL Server, Redis, MongoDB, and single-node Cassandra can route the application's database connection through a
+Stove-managed TCP proxy. Enable it on the system's options, then inject faults inside that system's validation
+block:</p>
+<div class="language-kotlin highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="k">import</span><span class="w"> </span><span class="nn">com.trendyol.stove.chaos.enableChaos</span>
+</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>
+</span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="n">Stove</span><span class="p">().</span><span class="na">with</span><span class="w"> </span><span class="p">{</span>
+</span><span id="__span-0-4"><a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="w">    </span><span class="n">elasticsearch</span><span class="w"> </span><span class="p">{</span>
+</span><span id="__span-0-5"><a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a><span class="w">        </span><span class="n">ElasticsearchSystemOptions</span><span class="p">(</span>
+</span><span id="__span-0-6"><a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a><span class="w">            </span><span class="n">configureExposedConfiguration</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="n">cfg</span><span class="w"> </span><span class="o">-&gt;</span>
+</span><span id="__span-0-7"><a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a><span class="w">                </span><span class="n">listOf</span><span class="p">(</span><span class="s">"search.url=http://</span><span class="si">${</span><span class="n">cfg</span><span class="p">.</span><span class="na">host</span><span class="si">}</span><span class="s">:</span><span class="si">${</span><span class="n">cfg</span><span class="p">.</span><span class="na">port</span><span class="si">}</span><span class="s">"</span><span class="p">)</span>
+</span><span id="__span-0-8"><a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a><span class="w">            </span><span class="p">}</span>
+</span><span id="__span-0-9"><a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a><span class="w">        </span><span class="p">).</span><span class="na">enableChaos</span><span class="p">()</span>
+</span><span id="__span-0-10"><a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a><span class="w">    </span><span class="p">}</span>
+</span><span id="__span-0-11"><a id="__codelineno-0-11" name="__codelineno-0-11" href="#__codelineno-0-11"></a><span class="w">    </span><span class="c1">// Register your application runner here.</span>
+</span><span id="__span-0-12"><a id="__codelineno-0-12" name="__codelineno-0-12" href="#__codelineno-0-12"></a><span class="p">}.</span><span class="na">run</span><span class="p">()</span>
+</span></code></pre></div>
+<div class="language-kotlin highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="n">stove</span><span class="w"> </span><span class="p">{</span>
+</span><span id="__span-1-2"><a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="w">    </span><span class="n">elasticsearch</span><span class="w"> </span><span class="p">{</span>
+</span><span id="__span-1-3"><a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a><span class="w">        </span><span class="n">duringFault</span><span class="w"> </span><span class="p">{</span>
+</span><span id="__span-1-4"><a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a><span class="w">            </span><span class="c1">// Ordinary cross-system assertions while the application's connection is unavailable.</span>
+</span><span id="__span-1-5"><a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a><span class="w">        </span><span class="p">}</span>
+</span><span id="__span-1-6"><a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a><span class="w">        </span><span class="c1">// Recovery checks; the route remains reserved until this system block exits.</span>
+</span><span id="__span-1-7"><a id="__codelineno-1-7" name="__codelineno-1-7" href="#__codelineno-1-7"></a><span class="w">    </span><span class="p">}</span>
+</span><span id="__span-1-8"><a id="__codelineno-1-8" name="__codelineno-1-8" href="#__codelineno-1-8"></a><span class="p">}</span>
+</span></code></pre></div>
+<p><code>duringFault</code> defaults to <code>NetworkFault.Unavailable</code>; <code>stall()</code> and <code>latency(duration, direction)</code> are also available.
+Stove retains direct database access and restores connectivity on completion, failure, or cancellation. Fault application
+and restoration appear in reports. Managed proxy startup rollback and shutdown are owned by Stove.</p>
+<p>The initial adapters support specific single-endpoint topologies. Cassandra is limited to a fixed single-node container;
+Couchbase is not included. See the
+<a href="../../chaos-testing/#supported-systems-and-routing-limits">chaos guide</a> for discovery, TLS, provided-instance, and
+container-networking restrictions.</p>
+<h2 id="redis-database-selection">Redis database selection<a class="headerlink" href="#redis-database-selection" title="Permanent link">&para;</a></h2>
+<p>Stove's native Redis client now honors the configured database number for migrations and direct assertions. Previously
+it connected to database <code>0</code> even when the options selected another database (the default is <code>8</code>). Configure the application
+client to use the exposed <code>database</code> and <code>password</code> alongside <code>redisUri</code> where needed: the URI from <code>RedisOptions.provided</code>
+contains only the host and port. URI-only application configuration may still select database <code>0</code> or omit authentication.
+Verify an application write with a direct Stove read on the selected database before removing selection workarounds. Set
+<code>database = 0</code> explicitly if the suite intends to use database <code>0</code>.</p>
+<h2 id="opt-in-through-database-options">Opt in through database options<a class="headerlink" href="#opt-in-through-database-options" title="Permanent link">&para;</a></h2>
+<p><code>elasticsearch</code>, <code>postgresql</code>, <code>mysql</code>, <code>mssql</code>, <code>redis</code>, <code>mongodb</code>, and <code>cassandra</code> keep their existing
+<code>() -&gt; Options</code> setup callbacks, for both keyed and unkeyed registrations. Their JVM <code>Function0</code> signatures,
+options constructors, <code>provided(...)</code> factories, and migration APIs are preserved. Existing saved factories,
+function references, shared helpers, and Java callback shapes continue to work.</p>
+<p>The supported options implement <code>SupportChaos</code>. Import <code>com.trendyol.stove.chaos.enableChaos</code> and chain the opt-in
+on the options returned by the setup block:</p>
+<div class="language-kotlin highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="k">import</span><span class="w"> </span><span class="nn">com.trendyol.stove.chaos.enableChaos</span>
+</span><span id="__span-2-2"><a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>
+</span><span id="__span-2-3"><a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a><span class="kd">val</span><span class="w"> </span><span class="nv">makeOptions</span><span class="p">:</span><span class="w"> </span><span class="p">()</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="n">ElasticsearchSystemOptions</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="n">existingOptions</span><span class="w"> </span><span class="p">}</span>
+</span><span id="__span-2-4"><a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a>
+</span><span id="__span-2-5"><a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a><span class="c1">// Existing setup remains valid.</span>
+</span><span id="__span-2-6"><a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a><span class="n">elasticsearch</span><span class="p">(</span><span class="n">makeOptions</span><span class="p">)</span>
+</span><span id="__span-2-7"><a id="__codelineno-2-7" name="__codelineno-2-7" href="#__codelineno-2-7"></a>
+</span><span id="__span-2-8"><a id="__codelineno-2-8" name="__codelineno-2-8" href="#__codelineno-2-8"></a><span class="c1">// Opt in for a subsequent registration.</span>
+</span><span id="__span-2-9"><a id="__codelineno-2-9" name="__codelineno-2-9" href="#__codelineno-2-9"></a><span class="n">elasticsearch</span><span class="p">(</span><span class="n">Dc1</span><span class="p">)</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="n">makeOptions</span><span class="p">().</span><span class="na">enableChaos</span><span class="p">()</span><span class="w"> </span><span class="p">}</span>
+</span></code></pre></div>
+<p><code>enableChaos()</code> returns the same concrete options instance, including provided-instance subclasses. It can be
+chained before or after <code>migrations { ... }</code>. Like migration configuration, it changes the options in place.
+The setting is read during registration; later changes do not reconfigure systems already registered. Build
+separate options when registrations need different settings.</p>
+<p>Keep the application wired from <code>configureExposedConfiguration</code>. With chaos enabled, that callback receives the
+application-facing endpoint. The system's own native client, migrations, and validation DSL retain direct configuration.
+For MongoDB, use the exposed connection URI to retain the adapter's required direct-connection mode.</p>
+<h3 id="move-manual-experiments-only-when-adopting-managed-routing">Move manual experiments only when adopting managed routing<a class="headerlink" href="#move-manual-experiments-only-when-adopting-managed-routing" title="Permanent link">&para;</a></h3>
+<p>Replace the setup-time <code>proxy.start(...)</code> and proxy URL substitution with <code>options.enableChaos()</code> and the usual exposed
+configuration. Replace <code>withNetworkPartition(proxy) { ... }</code> with <code>duringFault { ... }</code> inside the selected system's
+validation block. Remove manual proxy shutdown only after that proxy is no longer used.</p>
+<p>The low-level <code>TcpChaosProxy</code>, <code>NetworkPartitionTarget</code>, and <code>withNetworkPartition</code> APIs remain available and do not
+require migration. Do not stack a manual proxy over managed routing. Keep recovery assertions within the enclosing
+system block, and serialize tests that share the same application.</p>
+<h3 id="lifecycle-behavior">Lifecycle behavior<a class="headerlink" href="#lifecycle-behavior" title="Permanent link">&para;</a></h3>
+<p>Stove rolls back resources when startup fails. Shutdown restores active faults, stops the application, closes its
+managed routes, and disposes dependencies in reverse registration order. It attempts the remaining stages when a stage
+fails. <code>Stove.close()</code> still logs cleanup failures instead of throwing; the first failure is logged with subsequent
+failures suppressed. Database cleanup must also tolerate startup ending before its
+client is initialized.</p>
 <h2 id="upgrade-and-operation">Upgrade and operation<a class="headerlink" href="#upgrade-and-operation" title="Permanent link">&para;</a></h2>
 <ul>
-<li>Align the Stove libraries, tracing plugin, agent plugin package, and Stove Server on <strong>0.28.0</strong> when it is released. Before release, use matching source/pre-release builds containing profiling.</li>
+<li>Align the Stove libraries, tracing plugin, agent plugin package, and Stove Server on <strong>0.28.0</strong>.</li>
 <li>Profiling is disabled by default; existing tests do not start collecting unless enabled.</li>
 <li>IntelliJ users must delegate tests to the configured Gradle <code>Test</code> task for automatic attachment. Native Run Test does not execute the plugin's agent wiring.</li>
 <li>Shared ingress must forward <code>POST /ingest</code>, preserve <code>X-Stove-*</code> headers, and allow the server's 16 MiB upload limit. HTTPS certificate trust must be configured in the test JVM. Custom authentication headers are not exposed by the JVM profiling DSL yet; the Go wrapper accepts headers and a custom HTTP client.</li>
 <li>Profile tables are introduced by storage migration V12. Normal server migration handling applies for SQLite and PostgreSQL.</li>
 <li>Source builds now need Go (the version in <code>profiling-bridge/go.mod</code>) and a C toolchain for the embedded parser. Published server binaries bundle it, including third-party notices; downstream deployments need no Go service.</li>
 </ul>
-<p>The repository version and bundled agent plugin manifests are set to <code>0.28.0</code>. These notes describe upcoming changes and do not announce published artifacts.</p>
+<h2 id="release-links">Release links<a class="headerlink" href="#release-links" title="Permanent link">&para;</a></h2>
+<ul>
+<li><a href="https://github.com/Trendyol/stove/releases/tag/v0.28.0">Published artifacts, server binaries, and agent plugin bundle</a></li>
+<li><a href="https://github.com/Trendyol/stove/compare/v0.27.6...v0.28.0">Changes from 0.27.6 to 0.28.0</a></li>
+</ul>
 
 
 

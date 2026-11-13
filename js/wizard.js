@@ -67,7 +67,7 @@
         keyed: false,
         pkg: "com.yourcompany.yourapp",
         appClass: "MyApp",
-        stoveVersion: "$stoveVersion",
+        stoveVersion: "0.28.0",
       },
 
       async init() {
@@ -226,7 +226,7 @@
 
         const tracing = entries.find((e) => e.id === "obs.tracing");
         const pluginsBlock = tracing
-          ? `plugins {\n    ${tracing.pluginLine}\n}\n\n${tracing.pluginBlock}\n\n`
+          ? `plugins {\n    ${tracing.pluginLine.replaceAll("$stoveVersion", s.stoveVersion)}\n}\n\n${tracing.pluginBlock}\n\n`
           : "";
 
         return `${pluginsBlock}dependencies {

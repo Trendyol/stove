@@ -3396,7 +3396,7 @@
   <span class="md-ellipsis">
     
   
-    0.28.0 (upcoming)
+    0.28.0
   
 
     
@@ -4047,7 +4047,7 @@
 
 
 <h1 id="chaos-testing">Chaos Testing<a class="headerlink" href="#chaos-testing" title="Permanent link">&para;</a></h1>
-<p>Chaos tests introduce a controlled failure and verify application behavior during the failure and after recovery.
+<p>Available in <strong>0.28.0</strong>. Chaos tests introduce a controlled failure and verify application behavior during the failure and after recovery.
 Enable chaos on a database system to route the application's connection through a Stove-managed TCP proxy. The database
 stays alive, and Stove keeps its direct connection for migrations, seeding, and assertions.</p>
 <div class="stove-tldr">
@@ -4587,7 +4587,7 @@ and custom controllers. Their lifecycle remains the caller's responsibility:</p>
 <p>The helper partitions each distinct target in argument order and attempts to restore every attempted target in reverse
 order, including the target whose activation partially failed, and also on failure or cancellation. For manually routed proxies, keep Stove on the direct endpoint and close
 proxies after <code>Stove.stop()</code>. Avoid wrapping an already managed route in another proxy.</p>
-<p>See the <a href="../release-notes/unreleased/">setup and chaos migration notes</a> when upgrading existing setup helpers.</p>
+<p>See the <a href="../release-notes/0.28.0/">setup and chaos migration notes</a> when upgrading existing setup helpers.</p>
 
 
 

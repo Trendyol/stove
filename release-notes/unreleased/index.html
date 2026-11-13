@@ -3150,7 +3150,7 @@
   <span class="md-ellipsis">
     
   
-    0.28.0 (upcoming)
+    0.28.0
   
 
     
@@ -3180,24 +3180,6 @@
         
       
       
-        <label class="md-nav__link md-nav__link--active" for="__toc">
-          
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Unreleased
-  
-
-    
-  </span>
-  
-  
-
-          <span class="md-nav__icon md-icon"></span>
-        </label>
-      
       <a href="./" class="md-nav__link md-nav__link--active">
         
   
@@ -3214,97 +3196,6 @@
   
 
       </a>
-      
-        
-
-<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
-  
-  
-  
-    
-  
-  
-    <label class="md-nav__title" for="__toc">
-      <span class="md-nav__icon md-icon"></span>
-      Table of contents
-    </label>
-    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
-      
-        <li class="md-nav__item">
-  <a href="#named-chaos-experiments-and-directional-stalls" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Named chaos experiments and directional stalls
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#system-local-database-chaos" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        System-local database chaos
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#redis-database-selection" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Redis database selection
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#opt-in-through-database-options" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Opt in through database options
-      
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="Opt in through database options">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#move-manual-experiments-only-when-adopting-managed-routing" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Move manual experiments only when adopting managed routing
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#lifecycle-behavior" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Lifecycle behavior
-      
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-    </ul>
-  
-</nav>
       
     </li>
   
@@ -3646,86 +3537,6 @@
     
   
   
-    <label class="md-nav__title" for="__toc">
-      <span class="md-nav__icon md-icon"></span>
-      Table of contents
-    </label>
-    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
-      
-        <li class="md-nav__item">
-  <a href="#named-chaos-experiments-and-directional-stalls" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Named chaos experiments and directional stalls
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#system-local-database-chaos" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        System-local database chaos
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#redis-database-selection" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Redis database selection
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#opt-in-through-database-options" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Opt in through database options
-      
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="Opt in through database options">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#move-manual-experiments-only-when-adopting-managed-routing" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Move manual experiments only when adopting managed routing
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#lifecycle-behavior" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Lifecycle behavior
-      
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-    </ul>
-  
 </nav>
                   </div>
                 </div>
@@ -3793,101 +3604,8 @@
 
 
 <h1 id="unreleased">Unreleased<a class="headerlink" href="#unreleased" title="Permanent link">&para;</a></h1>
-<p>These changes are under development after <code>0.27.6</code>. They are not part of an already published release.</p>
-<h2 id="named-chaos-experiments-and-directional-stalls">Named chaos experiments and directional stalls<a class="headerlink" href="#named-chaos-experiments-and-directional-stalls" title="Permanent link">&para;</a></h2>
-<ul>
-<li><code>chaosExperiment(name, fault, timeout, baseline, faulted, recovery)</code> reserves the application route before baseline,
-  executes each phase once, waits for its child coroutines, heals before recovery, and reports named phases under one
-  finite coroutine deadline. Standalone faults on the route are rejected while the experiment runs.</li>
-<li><code>stall(direction)</code> supports request-only and response-only stalls, defaulting to both directions.</li>
-<li><code>awaitStalledTraffic(timeout)</code> waits for bytes encountered by the current stall; <code>sendIntoStall(timeout) { ... }</code>
-  starts a request in the background and returns its pending result after route-wide stall evidence is observed. Earlier
-  or unrelated traffic within that fault can satisfy the wait; it does not identify the request. Evidence does not survive
-  healing or a new fault, and does not replace direct persisted-state assertions.</li>
-<li>Fault and experiment blocks receive the faulted system as their parameter (<code>duringFault { redis -&gt; ... }</code>), and
-  route reservations last until the enclosing <code>stove { }</code> block exits.</li>
-<li>An executable HTTP/Redis recovery test verifies atomic operation-ID deduplication across committed-but-unacknowledged
-  writes, bounded application retries, and fresh operations after healing.</li>
-</ul>
-<p>For callers using the unreleased model directly, <code>NetworkFault.Stall</code> is now a value with a direction:
-use <code>NetworkFault.Stall()</code> or <code>stall()</code> for the previous bidirectional behavior. Recompile consumers of the changed API.</p>
-<h2 id="system-local-database-chaos">System-local database chaos<a class="headerlink" href="#system-local-database-chaos" title="Permanent link">&para;</a></h2>
-<p>Elasticsearch, PostgreSQL, MySQL, SQL Server, Redis, MongoDB, and single-node Cassandra can route the application's database connection through a
-Stove-managed TCP proxy. Enable it on the system's options, then inject faults inside that system's validation
-block:</p>
-<div class="language-kotlin highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="k">import</span><span class="w"> </span><span class="nn">com.trendyol.stove.chaos.enableChaos</span>
-</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>
-</span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="n">Stove</span><span class="p">().</span><span class="na">with</span><span class="w"> </span><span class="p">{</span>
-</span><span id="__span-0-4"><a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="w">    </span><span class="n">elasticsearch</span><span class="w"> </span><span class="p">{</span>
-</span><span id="__span-0-5"><a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a><span class="w">        </span><span class="n">ElasticsearchSystemOptions</span><span class="p">(</span>
-</span><span id="__span-0-6"><a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a><span class="w">            </span><span class="n">configureExposedConfiguration</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="n">cfg</span><span class="w"> </span><span class="o">-&gt;</span>
-</span><span id="__span-0-7"><a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a><span class="w">                </span><span class="n">listOf</span><span class="p">(</span><span class="s">"search.url=http://</span><span class="si">${</span><span class="n">cfg</span><span class="p">.</span><span class="na">host</span><span class="si">}</span><span class="s">:</span><span class="si">${</span><span class="n">cfg</span><span class="p">.</span><span class="na">port</span><span class="si">}</span><span class="s">"</span><span class="p">)</span>
-</span><span id="__span-0-8"><a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a><span class="w">            </span><span class="p">}</span>
-</span><span id="__span-0-9"><a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a><span class="w">        </span><span class="p">).</span><span class="na">enableChaos</span><span class="p">()</span>
-</span><span id="__span-0-10"><a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a><span class="w">    </span><span class="p">}</span>
-</span><span id="__span-0-11"><a id="__codelineno-0-11" name="__codelineno-0-11" href="#__codelineno-0-11"></a><span class="w">    </span><span class="c1">// Register your application runner here.</span>
-</span><span id="__span-0-12"><a id="__codelineno-0-12" name="__codelineno-0-12" href="#__codelineno-0-12"></a><span class="p">}.</span><span class="na">run</span><span class="p">()</span>
-</span></code></pre></div>
-<div class="language-kotlin highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="n">stove</span><span class="w"> </span><span class="p">{</span>
-</span><span id="__span-1-2"><a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="w">    </span><span class="n">elasticsearch</span><span class="w"> </span><span class="p">{</span>
-</span><span id="__span-1-3"><a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a><span class="w">        </span><span class="n">duringFault</span><span class="w"> </span><span class="p">{</span>
-</span><span id="__span-1-4"><a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a><span class="w">            </span><span class="c1">// Ordinary cross-system assertions while the application's connection is unavailable.</span>
-</span><span id="__span-1-5"><a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a><span class="w">        </span><span class="p">}</span>
-</span><span id="__span-1-6"><a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a><span class="w">        </span><span class="c1">// Recovery checks; the route remains reserved until this system block exits.</span>
-</span><span id="__span-1-7"><a id="__codelineno-1-7" name="__codelineno-1-7" href="#__codelineno-1-7"></a><span class="w">    </span><span class="p">}</span>
-</span><span id="__span-1-8"><a id="__codelineno-1-8" name="__codelineno-1-8" href="#__codelineno-1-8"></a><span class="p">}</span>
-</span></code></pre></div>
-<p><code>duringFault</code> defaults to <code>NetworkFault.Unavailable</code>; <code>stall()</code> and <code>latency(duration, direction)</code> are also available.
-Stove retains direct database access and restores connectivity on completion, failure, or cancellation. Fault application
-and restoration appear in reports. Managed proxy startup rollback and shutdown are owned by Stove.</p>
-<p>The initial adapters support specific single-endpoint topologies. Cassandra is limited to a fixed single-node container;
-Couchbase is not included. See the
-<a href="../../chaos-testing/#supported-systems-and-routing-limits">chaos guide</a> for discovery, TLS, provided-instance, and
-container-networking restrictions.</p>
-<h2 id="redis-database-selection">Redis database selection<a class="headerlink" href="#redis-database-selection" title="Permanent link">&para;</a></h2>
-<p>Stove's native Redis client now honors the configured database number for migrations and direct assertions. Previously
-it connected to database <code>0</code> even when the options selected another database (the default is <code>8</code>). Configure the application
-client to use the exposed <code>database</code> and <code>password</code> alongside <code>redisUri</code> where needed: the URI from <code>RedisOptions.provided</code>
-contains only the host and port. URI-only application configuration may still select database <code>0</code> or omit authentication.
-Verify an application write with a direct Stove read on the selected database before removing selection workarounds. Set
-<code>database = 0</code> explicitly if the suite intends to use database <code>0</code>.</p>
-<h2 id="opt-in-through-database-options">Opt in through database options<a class="headerlink" href="#opt-in-through-database-options" title="Permanent link">&para;</a></h2>
-<p><code>elasticsearch</code>, <code>postgresql</code>, <code>mysql</code>, <code>mssql</code>, <code>redis</code>, <code>mongodb</code>, and <code>cassandra</code> keep their existing
-<code>() -&gt; Options</code> setup callbacks, for both keyed and unkeyed registrations. Their JVM <code>Function0</code> signatures,
-options constructors, <code>provided(...)</code> factories, and migration APIs are preserved. Existing saved factories,
-function references, shared helpers, and Java callback shapes continue to work.</p>
-<p>The supported options implement <code>SupportChaos</code>. Import <code>com.trendyol.stove.chaos.enableChaos</code> and chain the opt-in
-on the options returned by the setup block:</p>
-<div class="language-kotlin highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="k">import</span><span class="w"> </span><span class="nn">com.trendyol.stove.chaos.enableChaos</span>
-</span><span id="__span-2-2"><a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>
-</span><span id="__span-2-3"><a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a><span class="kd">val</span><span class="w"> </span><span class="nv">makeOptions</span><span class="p">:</span><span class="w"> </span><span class="p">()</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="n">ElasticsearchSystemOptions</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="n">existingOptions</span><span class="w"> </span><span class="p">}</span>
-</span><span id="__span-2-4"><a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a>
-</span><span id="__span-2-5"><a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a><span class="c1">// Existing setup remains valid.</span>
-</span><span id="__span-2-6"><a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a><span class="n">elasticsearch</span><span class="p">(</span><span class="n">makeOptions</span><span class="p">)</span>
-</span><span id="__span-2-7"><a id="__codelineno-2-7" name="__codelineno-2-7" href="#__codelineno-2-7"></a>
-</span><span id="__span-2-8"><a id="__codelineno-2-8" name="__codelineno-2-8" href="#__codelineno-2-8"></a><span class="c1">// Opt in for a subsequent registration.</span>
-</span><span id="__span-2-9"><a id="__codelineno-2-9" name="__codelineno-2-9" href="#__codelineno-2-9"></a><span class="n">elasticsearch</span><span class="p">(</span><span class="n">Dc1</span><span class="p">)</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="n">makeOptions</span><span class="p">().</span><span class="na">enableChaos</span><span class="p">()</span><span class="w"> </span><span class="p">}</span>
-</span></code></pre></div>
-<p><code>enableChaos()</code> returns the same concrete options instance, including provided-instance subclasses. It can be
-chained before or after <code>migrations { ... }</code>. Like migration configuration, it changes the options in place.
-The setting is read during registration; later changes do not reconfigure systems already registered. Build
-separate options when registrations need different settings.</p>
-<p>Keep the application wired from <code>configureExposedConfiguration</code>. With chaos enabled, that callback receives the
-application-facing endpoint. The system's own native client, migrations, and validation DSL retain direct configuration.
-For MongoDB, use the exposed connection URI to retain the adapter's required direct-connection mode.</p>
-<h3 id="move-manual-experiments-only-when-adopting-managed-routing">Move manual experiments only when adopting managed routing<a class="headerlink" href="#move-manual-experiments-only-when-adopting-managed-routing" title="Permanent link">&para;</a></h3>
-<p>Replace the setup-time <code>proxy.start(...)</code> and proxy URL substitution with <code>options.enableChaos()</code> and the usual exposed
-configuration. Replace <code>withNetworkPartition(proxy) { ... }</code> with <code>duringFault { ... }</code> inside the selected system's
-validation block. Remove manual proxy shutdown only after that proxy is no longer used.</p>
-<p>The low-level <code>TcpChaosProxy</code>, <code>NetworkPartitionTarget</code>, and <code>withNetworkPartition</code> APIs remain available and do not
-require migration. Do not stack a manual proxy over managed routing. Keep recovery assertions within the enclosing
-system block, and serialize tests that share the same application.</p>
-<h3 id="lifecycle-behavior">Lifecycle behavior<a class="headerlink" href="#lifecycle-behavior" title="Permanent link">&para;</a></h3>
-<p>Stove rolls back resources when startup fails. Shutdown restores active faults, stops the application, closes its
-managed routes, and disposes dependencies in reverse registration order. It attempts the remaining stages when a stage
-fails. <code>Stove.close()</code> still logs cleanup failures instead of throwing; the first failure is logged with subsequent
-failures suppressed. Database cleanup must also tolerate startup ending before its
-client is initialized.</p>
+<p>No unreleased changes are documented yet after <code>0.28.0</code>.</p>
+<p>See <a href="../0.28.0/">0.28.0</a> for the released features and migration instructions.</p>
 
 
 
@@ -3925,7 +3643,7 @@ client is initialized.</p>
       <nav class="md-footer__inner md-grid" aria-label="Footer" >
         
           
-          <a href="../0.28.0/" class="md-footer__link md-footer__link--prev" aria-label="Previous: 0.28.0 (upcoming)">
+          <a href="../0.28.0/" class="md-footer__link md-footer__link--prev" aria-label="Previous: 0.28.0">
             <div class="md-footer__button md-icon">
               
               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
@@ -3935,7 +3653,7 @@ client is initialized.</p>
                 Previous
               </span>
               <div class="md-ellipsis">
-                0.28.0 (upcoming)
+                0.28.0
               </div>
             </div>
           </a>
