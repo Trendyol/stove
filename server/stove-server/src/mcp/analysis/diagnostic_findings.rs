@@ -116,13 +116,9 @@ impl Findings {
       .iter()
       .filter(|span| span.status == SpanStatus::Error || span.exception_type.is_some())
     {
-      let stack: Vec<String> = span
-        .exception_stack_trace
-        .as_deref()
-        .map(|raw| {
-          serde_json::from_str(raw).unwrap_or_else(|_| raw.lines().map(str::to_owned).collect())
-        })
-        .unwrap_or_default();
+      let stack: Vec<String> = span.exception_stack_trace.as_deref().map_or_default(|raw| {
+        serde_json::from_str(raw).unwrap_or_else(|_| raw.lines().map(str::to_owned).collect())
+      });
       self.push(if span.status == SpanStatus::Error {Priority::ErrorSpan} else {Priority::Exception}, json!({
         "kind": "exception", "message": self.text(span.exception_message.as_deref().unwrap_or("Span recorded an error without an exception message")),
         "exception_type": clip_opt(span.exception_type.as_deref(), self.budget.string_chars),

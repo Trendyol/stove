@@ -354,17 +354,14 @@ fn live_entry(
 }
 
 fn new_span(run_id: &str, event: &proto::SpanRecordedEvent) -> AppResult<NewSpan> {
-  let (exception_type, exception_message, exception_stack_trace) = event
-    .exception
-    .as_ref()
-    .map(|exception| {
+  let (exception_type, exception_message, exception_stack_trace) =
+    event.exception.as_ref().map_or_default(|exception| {
       (
         exception.r#type.clone(),
         exception.message.clone(),
         exception.stack_trace.join("\n"),
       )
-    })
-    .unwrap_or_default();
+    });
   Ok(NewSpan {
     run_id: run_id.to_string(),
     trace_id: event.trace_id.clone(),

@@ -26,13 +26,11 @@ pub(super) fn run_status(failed: i32) -> RunStatus {
 }
 
 pub(super) fn format_timestamp(ts: Option<&prost_types::Timestamp>) -> String {
-  ts.map(|timestamp| {
+  ts.map_or_default(|timestamp| {
     #[allow(clippy::cast_sign_loss)]
     chrono::DateTime::from_timestamp(timestamp.seconds, timestamp.nanos as u32)
-      .map(|datetime| datetime.to_rfc3339())
-      .unwrap_or_default()
+      .map_or_default(|datetime| datetime.to_rfc3339())
   })
-  .unwrap_or_default()
 }
 
 pub(super) fn non_empty(value: &str) -> Option<String> {
