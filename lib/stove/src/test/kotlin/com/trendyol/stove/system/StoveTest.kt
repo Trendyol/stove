@@ -43,10 +43,10 @@ class StoveTest :
       Stove.instanceInitialized() shouldBe true
       stove { this.stove shouldBe stove }
       stove.close()
-      events.takeLast(2) shouldBe listOf("system.close", "application.stop")
+      events.takeLast(2) shouldBe listOf("application.stop", "system.close")
     }
 
-    test("a failed resource close still releases later resources and stops the application") {
+    test("a failed resource close still releases the remaining resources and stops the application") {
       val closed = mutableListOf<String>()
       val stove = Stove()
       stove.registerForDispose(
@@ -61,7 +61,7 @@ class StoveTest :
 
       stove.close()
 
-      closed shouldBe listOf("first resource", "second resource", "application")
+      closed shouldBe listOf("application", "second resource", "first resource")
     }
   })
 

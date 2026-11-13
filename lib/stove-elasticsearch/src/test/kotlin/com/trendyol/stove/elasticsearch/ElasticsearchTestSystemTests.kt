@@ -5,6 +5,7 @@ import co.elastic.clients.elasticsearch.ElasticsearchClient
 import co.elastic.clients.elasticsearch._types.query_dsl.QueryBuilders
 import co.elastic.clients.elasticsearch.indices.CreateIndexRequest
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties
+import com.trendyol.stove.chaos.enableChaos
 import com.trendyol.stove.database.migrations.*
 import com.trendyol.stove.extensions.kotest.StoveKotestExtension
 import com.trendyol.stove.system.Stove
@@ -40,7 +41,10 @@ object ElasticsearchTestRuntimeConfig {
 }
 
 class NoOpApplication : ApplicationUnderTest<Unit> {
-  override suspend fun start(configurations: List<String>) = Unit
+  override suspend fun start(configurations: List<String>) {
+    ElasticsearchChaosTestEndpoint.url = configurations.single { it.startsWith("chaos.elasticsearch.url=") }
+      .substringAfter("=")
+  }
 
   override suspend fun stop() = Unit
 }
@@ -112,7 +116,7 @@ class ContainerElasticsearchStrategy : ElasticsearchTestStrategy {
         restClientOverrideFn = Some { cfg -> RestClient.builder(HttpHost(cfg.host, cfg.port)).build() }
       ),
       ElasticContainerOptions(tag = ElasticsearchTestRuntimeConfig.tag),
-      configureExposedConfiguration = { _ -> listOf() }
+      configureExposedConfiguration = { cfg -> listOf("chaos.elasticsearch.url=http://${cfg.host}:${cfg.port}") }
     ).migrations {
       register<TestIndexMigrator>()
       register<AnotherIndexMigrator>()
@@ -120,7 +124,9 @@ class ContainerElasticsearchStrategy : ElasticsearchTestStrategy {
 
     Stove()
       .with {
-        elasticsearch { options }
+        elasticsearch {
+          options.enableChaos()
+        }
         applicationUnderTest(NoOpApplication())
       }.run()
   }
@@ -165,7 +171,7 @@ class ProvidedElasticsearchStrategy : ElasticsearchTestStrategy {
           logger.info("Running cleanup on provided instance")
           // Clean up test data if needed
         },
-        configureExposedConfiguration = { _ -> listOf() }
+        configureExposedConfiguration = { cfg -> listOf("chaos.elasticsearch.url=http://${cfg.host}:${cfg.port}") }
       ).migrations {
         register<TestIndexMigrator>()
         register<AnotherIndexMigrator>()
@@ -173,7 +179,9 @@ class ProvidedElasticsearchStrategy : ElasticsearchTestStrategy {
 
     Stove()
       .with {
-        elasticsearch { options }
+        elasticsearch {
+          options.enableChaos()
+        }
         applicationUnderTest(NoOpApplication())
       }.run()
   }

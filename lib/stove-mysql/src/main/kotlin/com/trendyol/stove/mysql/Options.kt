@@ -3,6 +3,7 @@
 package com.trendyol.stove.mysql
 
 import arrow.core.getOrElse
+import com.trendyol.stove.chaos.*
 import com.trendyol.stove.containers.*
 import com.trendyol.stove.database.migrations.*
 import com.trendyol.stove.rdbms.*
@@ -43,8 +44,11 @@ open class MySqlOptions(
   open val cleanup: suspend (NativeSqlOperations) -> Unit = {},
   override val configureExposedConfiguration: (RelationalDatabaseExposedConfiguration) -> List<String>
 ) : SystemOptions,
+  SupportChaos,
   ConfiguresExposedConfiguration<RelationalDatabaseExposedConfiguration>,
   SupportsMigrations<MySqlMigrationContext, MySqlOptions> {
+  override val chaosOptions: ChaosOptions = ChaosOptions()
+
   override val migrationCollection: MigrationCollection<MySqlMigrationContext> = MigrationCollection()
 
   companion object {
@@ -205,24 +209,18 @@ internal fun Stove.mysql(key: SystemKey): MySqlSystem =
  * }
  * ```
  */
-fun WithDsl.mysql(
-  configure: () -> MySqlOptions
-): Stove {
-  val options = configure()
+fun WithDsl.mysql(configure: @StoveDsl () -> MySqlOptions): Stove =
+  configureMySql(null, configure)
 
-  val runtime = options.createRuntime(stove.keepDependenciesRunning)
-  return stove.withMySql(options, runtime)
-}
+fun WithDsl.mysql(key: SystemKey, configure: @StoveDsl () -> MySqlOptions): Stove =
+  configureMySql(key, configure)
 
-fun WithDsl.mysql(
-  key: SystemKey,
-  configure: () -> MySqlOptions
-): Stove {
-  val options = configure()
-
-  val runtime = options.createRuntime(stove.keepDependenciesRunning)
-  return stove.withMySql(key, options, runtime)
-}
+private fun WithDsl.configureMySql(key: SystemKey?, configure: () -> MySqlOptions): Stove =
+  registerChaosCapable(configure) { options, _ ->
+    val runtime = options.createRuntime(stove.keepDependenciesRunning)
+    if (key == null) stove.withMySql(options, runtime) else stove.withMySql(key, options, runtime)
+    if (key == null) stove.mysql() else stove.mysql(key)
+  }
 
 private fun MySqlOptions.createRuntime(keepDependenciesRunning: Boolean): SystemRuntime {
   if (this is ProvidedMySqlOptions) return ProvidedRuntime

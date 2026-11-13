@@ -1,6 +1,6 @@
 ---
 name: stove
-description: Use when configuring, writing, or debugging Stove end-to-end tests, including Cucumber feature files and suspend steps; choosing JVM, process, container, or provided-application runners; wiring Stove systems and OIDC authentication; enabling tracing, profiling, dashboard, or MCP; or extending Stove with custom systems.
+description: Use when configuring, writing, debugging, or migrating Stove end-to-end tests and database chaos setup, including Cucumber feature files and suspend steps; choosing JVM, process, container, or provided-application runners; wiring Stove systems and OIDC authentication; enabling tracing, profiling, dashboard, or MCP; or extending Stove with custom systems.
 ---
 
 # Stove Skill Router
@@ -49,6 +49,7 @@ Native access is correct when it is the documented API contract: Redis currently
 | New Stove system implementation | [custom-systems.md](custom-systems.md) |
 | Integration examples and full flows | [Stove recipes](https://github.com/Trendyol/stove/tree/main/docs/recipes) |
 | Dependency conflicts or upgrade behavior changes | [compatibility.md](compatibility.md) |
+| Enabling database chaos on options or migrating manually managed faults | [setup-chaos-migration.md](setup-chaos-migration.md) |
 | Failure diagnosis and common symptoms | [Stove troubleshooting](https://github.com/Trendyol/stove/blob/main/docs/troubleshooting.md) |
 
 ## Current API anchors

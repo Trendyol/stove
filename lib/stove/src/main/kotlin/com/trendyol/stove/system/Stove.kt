@@ -1,7 +1,7 @@
 package com.trendyol.stove.system
 
 import arrow.core.*
-import com.trendyol.stove.functional.*
+import com.trendyol.stove.chaos.withChaosOwnership
 import com.trendyol.stove.reporting.*
 import com.trendyol.stove.system.abstractions.*
 import com.trendyol.stove.system.annotations.StoveDsl
@@ -85,7 +85,9 @@ class Stove(
     configure(optionsDsl)
   }
 
-  private val cleanup = mutableListOf<suspend () -> Unit>()
+  private val cleanup = mutableListOf<AutoCloseable>()
+  private val closed = java.util.concurrent.atomic.AtomicBoolean(false)
+  private var applicationStartAttempted = false
 
   @PublishedApi
   internal val activeSystems: MutableMap<KClass<*>, PluggedSystem> = mutableMapOf()
@@ -93,7 +95,7 @@ class Stove(
   @PublishedApi
   internal val keyedSystems: MutableMap<Pair<KClass<*>, SystemKey>, PluggedSystem> = mutableMapOf()
 
-  private lateinit var applicationUnderTest: ApplicationUnderTest<*>
+  private lateinit var applicationRunner: ApplicationUnderTest<*>
   private val logger: Logger = LoggerFactory.getLogger(javaClass)
 
   @PublishedApi
@@ -245,7 +247,7 @@ class Stove(
    * Usually a spring or generic application that can be hosted
    */
   fun applicationUnderTest(applicationUnderTest: ApplicationUnderTest<*>): Stove {
-    this.applicationUnderTest = applicationUnderTest
+    this.applicationRunner = applicationUnderTest
     return this
   }
 
@@ -257,27 +259,46 @@ class Stove(
   private lateinit var applicationUnderTestContext: Any
 
   /**
-   * Starts registered systems in lifecycle phases: [BeforeRunAware.beforeRun], then [RunAware.run].
-   * Systems within each phase run in parallel. Their exposed configurations are passed to the
-   * application before [AfterRunAware.afterRun] initializes systems that need its context.
+   * Starts each lifecycle phase in parallel, then exposes dependency configuration to the application.
+   * A failed startup rolls back resources, including a partially started application.
    */
   override suspend fun run() {
-    startRegisteredSystems()
-    instance = this
+    check(!closed.get()) { "Stove has been closed" }
+    check(this::applicationRunner.isInitialized) { "Register an application runner before starting Stove" }
+    try {
+      startRegisteredSystems()
+      instance = this
+    } catch (failure: Throwable) {
+      rollbackStartup(failure)
+      throw failure
+    }
   }
 
   private suspend fun startRegisteredSystems(): Unit = coroutineScope {
     val systems = allRegisteredSystems()
     systems.filterIsInstance<BeforeRunAware>().runInParallel { it.beforeRun() }
     systems.filterIsInstance<RunAware>().runInParallel { it.run() }
-    val configurations = systems.filterIsInstance<ExposesConfiguration>().flatMap { it.configuration() }
-    applicationUnderTestContext = applicationUnderTest.start(configurations)
+    startApplication(systems)
     systems.filterIsInstance<AfterRunAware>().runInParallel { it.afterRun() }
-    cleanup.add { applicationUnderTest.stop() }
   }
 
   private suspend fun <T> Iterable<T>.runInParallel(action: suspend (T) -> Unit): Unit = coroutineScope {
     map { system -> async(Dispatchers.IO) { action(system) } }.awaitAll()
+  }
+
+  private suspend fun startApplication(systems: Collection<PluggedSystem>) {
+    val configurations = systems.filterIsInstance<ExposesConfiguration>().flatMap { it.configuration() }
+    // Own shutdown before user startup: startup and afterRun may partially succeed then fail.
+    applicationStartAttempted = true
+    applicationUnderTestContext = applicationRunner.start(configurations)
+  }
+
+  private suspend fun rollbackStartup(failure: Throwable): Unit = withContext(NonCancellable) {
+    try {
+      shutdown()
+    } catch (cleanupFailure: Throwable) {
+      if (cleanupFailure !== failure) failure.addSuppressed(cleanupFailure)
+    }
   }
 
   /**
@@ -350,28 +371,41 @@ class Stove(
     keyedSystems.getOrNone(T::class to key).map { it as T }
 
   fun <T : AutoCloseable> registerForDispose(closeable: T): T {
-    cleanup.add { closeable.close() }
+    check(!closed.get()) { "Cannot register resources on a closed Stove" }
+    cleanup.add(closeable)
     return closeable
   }
 
   @Suppress("UNCHECKED_CAST", "unused")
   fun <TContext> applicationUnderTestContext(): TContext = applicationUnderTestContext as TContext
 
+  /** Teardown failures are logged, not thrown: a failed cleanup must not fail a passing test run. */
   override fun close(): Unit = runBlocking {
-    Try {
-      closeAll(
-        { dumpFailureReport() },
-        { closeAll(cleanup) { it() } }
-      )
-    }.recover { logger.warn("got an error while stopping Stove: ${it.message}", it) }
+    runCatching { shutdown() }.onFailure { logger.warn("got an error while stopping Stove: ${it.message}", it) }
+  }
+
+  private suspend fun shutdown() {
+    if (!closed.compareAndSet(false, true)) return
+    closeAll(takeShutdownActions()) { it() }
+  }
+
+  private fun takeShutdownActions(): List<suspend () -> Unit> = buildList {
+    val resources = cleanup.filterIsInstance<ApplicationResource>()
+    resources.forEach { resource -> add { resource.beforeApplicationStop() } }
+    if (applicationStartAttempted) {
+      applicationStartAttempted = false
+      add { applicationRunner.stop() }
+    }
+    resources.asReversed().forEach { resource -> add { resource.close() } }
+    cleanup.asReversed().filterNot { it is ApplicationResource }.forEach { resource -> add { resource.close() } }
+    cleanup.clear()
+    add { dumpFailureReport() }
   }
 
   private fun dumpFailureReport() {
     if (!options.dumpReportOnStop || !options.reportingEnabled) return
     val report = reporter.dumpIfFailed(options.defaultRenderer)
-    if (report.isEmpty()) return
-    logger.info("=== Stove Test Report (Failures Detected) ===")
-    logger.info(report)
+    if (report.isNotEmpty()) logger.info("=== Stove Test Report (Failures Detected) ===\n$report")
   }
 }
 
@@ -418,6 +452,6 @@ suspend fun stove(
 ) {
   val context = currentCoroutineContext()[StoveContext] ?: StoveContext.capture()
   withContext(context) {
-    validation(ValidationDsl(context.stove))
+    context.stove.withChaosOwnership { validation(ValidationDsl(context.stove)) }
   }
 }

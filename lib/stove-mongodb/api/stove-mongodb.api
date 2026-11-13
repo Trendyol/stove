@@ -99,7 +99,7 @@ public final class com/trendyol/stove/mongodb/MongodbMigrationContext {
 	public fun toString ()Ljava/lang/String;
 }
 
-public final class com/trendyol/stove/mongodb/MongodbSystem : com/trendyol/stove/reporting/Reports, com/trendyol/stove/system/abstractions/ExposesConfiguration, com/trendyol/stove/system/abstractions/PluggedSystem, com/trendyol/stove/system/abstractions/RunAware {
+public final class com/trendyol/stove/mongodb/MongodbSystem : com/trendyol/stove/chaos/ChaosCapableSystem, com/trendyol/stove/reporting/Reports, com/trendyol/stove/system/abstractions/ExposesConfiguration, com/trendyol/stove/system/abstractions/RunAware {
 	public static final field Companion Lcom/trendyol/stove/mongodb/MongodbSystem$Companion;
 	public static final field RESERVED_ID Ljava/lang/String;
 	public field mongoClient Lcom/mongodb/kotlin/client/coroutine/MongoClient;
@@ -132,10 +132,11 @@ public final class com/trendyol/stove/mongodb/MongodbSystem$Companion {
 	public final fun filterById (Ljava/lang/String;)Lorg/bson/conversions/Bson;
 }
 
-public class com/trendyol/stove/mongodb/MongodbSystemOptions : com/trendyol/stove/database/migrations/SupportsMigrations, com/trendyol/stove/system/abstractions/ConfiguresExposedConfiguration, com/trendyol/stove/system/abstractions/SystemOptions {
+public class com/trendyol/stove/mongodb/MongodbSystemOptions : com/trendyol/stove/chaos/SupportChaos, com/trendyol/stove/database/migrations/SupportsMigrations, com/trendyol/stove/system/abstractions/ConfiguresExposedConfiguration, com/trendyol/stove/system/abstractions/SystemOptions {
 	public static final field Companion Lcom/trendyol/stove/mongodb/MongodbSystemOptions$Companion;
 	public fun <init> (Lcom/trendyol/stove/mongodb/DatabaseOptions;Lcom/trendyol/stove/mongodb/MongoContainerOptions;Lkotlin/jvm/functions/Function1;Lcom/trendyol/stove/serialization/StoveSerde;Lorg/bson/json/JsonWriterSettings;Lkotlin/jvm/functions/Function2;Lkotlin/jvm/functions/Function1;)V
 	public synthetic fun <init> (Lcom/trendyol/stove/mongodb/DatabaseOptions;Lcom/trendyol/stove/mongodb/MongoContainerOptions;Lkotlin/jvm/functions/Function1;Lcom/trendyol/stove/serialization/StoveSerde;Lorg/bson/json/JsonWriterSettings;Lkotlin/jvm/functions/Function2;Lkotlin/jvm/functions/Function1;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public fun getChaosOptions ()Lcom/trendyol/stove/chaos/ChaosOptions;
 	public fun getCleanup ()Lkotlin/jvm/functions/Function2;
 	public fun getConfigureClient ()Lkotlin/jvm/functions/Function1;
 	public fun getConfigureExposedConfiguration ()Lkotlin/jvm/functions/Function1;

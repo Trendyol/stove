@@ -2,6 +2,7 @@ package com.trendyol.stove.cassandra
 
 import com.datastax.oss.driver.api.core.CqlSession
 import com.trendyol.stove.system.Stove
+import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
 import org.testcontainers.utility.DockerImageName
@@ -9,9 +10,9 @@ import java.io.Closeable
 import java.lang.reflect.Proxy
 
 class CassandraShutdownTest : FunSpec({
-  test("cleanup and session failures still stop the container without escaping close") {
+  test("cleanup and session failures still stop the container and propagate the primary failure") {
     CassandraShutdownFixture().use { fixture ->
-      fixture.system.close()
+      shouldThrow<IllegalStateException> { fixture.system.close() }
       fixture.events shouldBe listOf("cleanup", "session.close", "container.stop")
       fixture.cleanupFailure.suppressed.toList() shouldBe listOf(fixture.closeFailure)
     }

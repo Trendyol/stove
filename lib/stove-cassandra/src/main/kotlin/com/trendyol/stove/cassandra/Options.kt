@@ -3,6 +3,7 @@
 package com.trendyol.stove.cassandra
 
 import arrow.core.getOrElse
+import com.trendyol.stove.chaos.*
 import com.trendyol.stove.containers.*
 import com.trendyol.stove.system.*
 import com.trendyol.stove.system.abstractions.*
@@ -95,24 +96,27 @@ internal fun Stove.cassandra(key: SystemKey): CassandraSystem =
  * }
  * ```
  */
-fun WithDsl.cassandra(
-  configure: () -> CassandraSystemOptions
-): Stove {
-  val options = configure()
 
-  val runtime = options.createRuntime(stove.keepDependenciesRunning)
-  return stove.withCassandra(options, runtime)
-}
+/**
+ * Enables application-link faults for a dedicated single-node container when enableChaos() is called.
+ * The application must use the exposed contact point as its only seed. Cluster discovery, topology
+ * changes, provided clusters and alternate contact points are unsupported.
+ */
+fun WithDsl.cassandra(configure: @StoveDsl () -> CassandraSystemOptions): Stove =
+  configureCassandra(null, configure)
 
-fun WithDsl.cassandra(
-  key: SystemKey,
-  configure: () -> CassandraSystemOptions
-): Stove {
-  val options = configure()
+fun WithDsl.cassandra(key: SystemKey, configure: @StoveDsl () -> CassandraSystemOptions): Stove =
+  configureCassandra(key, configure)
 
-  val runtime = options.createRuntime(stove.keepDependenciesRunning)
-  return stove.withCassandra(key, options, runtime)
-}
+private fun WithDsl.configureCassandra(key: SystemKey?, configure: () -> CassandraSystemOptions): Stove =
+  registerChaosCapable(configure) { options, chaosEnabled ->
+    require(!chaosEnabled || options !is ProvidedCassandraSystemOptions) {
+      "Cassandra chaos supports only a dedicated single-node container; provided clusters can advertise unproxied peers"
+    }
+    val runtime = options.createRuntime(stove.keepDependenciesRunning)
+    if (key == null) stove.withCassandra(options, runtime) else stove.withCassandra(key, options, runtime)
+    if (key == null) stove.cassandra() else stove.cassandra(key)
+  }
 
 private fun CassandraSystemOptions.createRuntime(keepDependenciesRunning: Boolean): SystemRuntime {
   if (this is ProvidedCassandraSystemOptions) return ProvidedRuntime

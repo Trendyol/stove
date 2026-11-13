@@ -40,8 +40,13 @@ class InventoryObservability {
     stove {
       tracing {
         // Three requests, each with one client span and one Ktor server span.
-        waitForSpans(expectedCount = 6, timeoutMs = 5000)
+        // Export can lag behind completed requests on a busy CI worker.
+        val spans = waitForSpans(expectedCount = 6, timeoutMs = 15_000)
         if (!scenario.isFailed) {
+          check(spans.size >= 6) {
+            "Timed out waiting for six HTTP spans after 15 seconds; collected ${spans.size}: " +
+              spans.joinToString { "${it.operationName} (${it.spanId})" }
+          }
           spanCountShouldBeAtLeast(6)
           shouldContainSpan("PUT /inventory/{sku}")
           shouldContainSpan("POST /inventory/{sku}/reserve")

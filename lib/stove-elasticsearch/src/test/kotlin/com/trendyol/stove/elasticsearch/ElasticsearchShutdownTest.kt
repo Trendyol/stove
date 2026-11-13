@@ -4,6 +4,7 @@ import co.elastic.clients.elasticsearch.ElasticsearchClient
 import co.elastic.clients.transport.ElasticsearchTransport
 import co.elastic.clients.transport.rest_client.RestClientOptions
 import com.trendyol.stove.system.Stove
+import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
 import org.elasticsearch.client.RequestOptions
@@ -12,9 +13,9 @@ import java.io.Closeable
 import java.lang.reflect.Proxy
 
 class ElasticsearchShutdownTest : FunSpec({
-  test("cleanup and transport failures still stop the container without escaping close") {
+  test("cleanup and transport failures still stop the container and propagate the primary failure") {
     ElasticsearchShutdownFixture().use { fixture ->
-      fixture.system.close()
+      shouldThrow<IllegalStateException> { fixture.system.close() }
       fixture.events shouldBe listOf("cleanup", "transport.close", "container.stop")
       fixture.cleanupFailure.suppressed.toList() shouldBe listOf(fixture.closeFailure)
     }

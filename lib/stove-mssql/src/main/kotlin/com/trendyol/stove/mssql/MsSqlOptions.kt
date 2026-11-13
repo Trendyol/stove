@@ -3,6 +3,7 @@
 package com.trendyol.stove.mssql
 
 import arrow.core.getOrElse
+import com.trendyol.stove.chaos.*
 import com.trendyol.stove.containers.*
 import com.trendyol.stove.database.migrations.*
 import com.trendyol.stove.rdbms.*
@@ -57,8 +58,11 @@ open class MsSqlOptions(
   open val cleanup: suspend (NativeSqlOperations) -> Unit = {},
   override val configureExposedConfiguration: (RelationalDatabaseExposedConfiguration) -> List<String>
 ) : SystemOptions,
+  SupportChaos,
   ConfiguresExposedConfiguration<RelationalDatabaseExposedConfiguration>,
   SupportsMigrations<SqlMigrationContext, MsSqlOptions> {
+  override val chaosOptions: ChaosOptions = ChaosOptions()
+
   override val migrationCollection: MigrationCollection<SqlMigrationContext> = MigrationCollection()
 
   companion object {
@@ -230,24 +234,18 @@ internal fun Stove.mssql(key: SystemKey): MsSqlSystem =
  * }
  * ```
  */
-fun WithDsl.mssql(
-  configure: () -> MsSqlOptions
-): Stove {
-  val options = configure()
+fun WithDsl.mssql(configure: @StoveDsl () -> MsSqlOptions): Stove =
+  configureMsSql(null, configure)
 
-  val runtime = options.createRuntime(stove.keepDependenciesRunning)
-  return stove.withMsSql(options, runtime)
-}
+fun WithDsl.mssql(key: SystemKey, configure: @StoveDsl () -> MsSqlOptions): Stove =
+  configureMsSql(key, configure)
 
-fun WithDsl.mssql(
-  key: SystemKey,
-  configure: () -> MsSqlOptions
-): Stove {
-  val options = configure()
-
-  val runtime = options.createRuntime(stove.keepDependenciesRunning)
-  return stove.withMsSql(key, options, runtime)
-}
+private fun WithDsl.configureMsSql(key: SystemKey?, configure: () -> MsSqlOptions): Stove =
+  registerChaosCapable(configure) { options, _ ->
+    val runtime = options.createRuntime(stove.keepDependenciesRunning)
+    if (key == null) stove.withMsSql(options, runtime) else stove.withMsSql(key, options, runtime)
+    if (key == null) stove.mssql() else stove.mssql(key)
+  }
 
 private fun MsSqlOptions.createRuntime(keepDependenciesRunning: Boolean): SystemRuntime {
   if (this is ProvidedMsSqlOptions) return ProvidedRuntime

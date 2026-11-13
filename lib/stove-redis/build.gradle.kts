@@ -6,6 +6,7 @@ dependencies {
 
 dependencies {
   testImplementation(project(":test-extensions:stove-extensions-kotest"))
+  testImplementation(projects.lib.stoveHttp)
 }
 
 val testWithProvided = tasks.register<Test>("testWithProvided") {

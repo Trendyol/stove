@@ -1,6 +1,7 @@
 package com.trendyol.stove.mongodb
 
 import arrow.core.getOrElse
+import com.trendyol.stove.chaos.*
 import com.trendyol.stove.containers.*
 import com.trendyol.stove.system.*
 import com.trendyol.stove.system.abstractions.*
@@ -101,24 +102,25 @@ internal fun Stove.mongodb(key: SystemKey): MongodbSystem =
  * }
  * ```
  */
-fun WithDsl.mongodb(
-  configure: () -> MongodbSystemOptions
-): Stove {
-  val options = configure()
 
-  val runtime = options.createRuntime(stove.keepDependenciesRunning)
-  return stove.withMongodb(options, runtime)
-}
+/**
+ * Registers MongoDB. enableChaos() routes the application through one managed TCP endpoint and
+ * forces directConnection=true. SRV, multiple seeds, load balancing and TLS are unsupported.
+ * Use the exposed connectionString or replicaSetUrl; rebuilding a URI from host/port loses direct mode.
+ */
+fun WithDsl.mongodb(configure: @StoveDsl () -> MongodbSystemOptions): Stove =
+  configureMongodb(null, configure)
 
-fun WithDsl.mongodb(
-  key: SystemKey,
-  configure: () -> MongodbSystemOptions
-): Stove {
-  val options = configure()
+fun WithDsl.mongodb(key: SystemKey, configure: @StoveDsl () -> MongodbSystemOptions): Stove =
+  configureMongodb(key, configure)
 
-  val runtime = options.createRuntime(stove.keepDependenciesRunning)
-  return stove.withMongodb(key, options, runtime)
-}
+private fun WithDsl.configureMongodb(key: SystemKey?, configure: () -> MongodbSystemOptions): Stove =
+  registerChaosCapable(configure) { options, chaosEnabled ->
+    if (chaosEnabled && options is ProvidedMongodbSystemOptions) MongodbChaosAdapter.reroute(options.config) { it }
+    val runtime = options.createRuntime(stove.keepDependenciesRunning)
+    if (key == null) stove.withMongodb(options, runtime) else stove.withMongodb(key, options, runtime)
+    if (key == null) stove.mongodb() else stove.mongodb(key)
+  }
 
 private fun MongodbSystemOptions.createRuntime(keepDependenciesRunning: Boolean): SystemRuntime {
   if (this is ProvidedMongodbSystemOptions) return ProvidedRuntime

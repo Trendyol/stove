@@ -1,6 +1,8 @@
 package com.trendyol.stove.mssql
 
 import com.trendyol.stove.ConcurrentProjectConfig
+import com.trendyol.stove.chaos.duringFault
+import com.trendyol.stove.chaos.enableChaos
 import com.trendyol.stove.database.migrations.*
 import com.trendyol.stove.extensions.kotest.StoveKotestExtension
 import com.trendyol.stove.functional.*
@@ -10,6 +12,7 @@ import com.trendyol.stove.system.ValidationDsl
 import com.trendyol.stove.system.abstractions.ApplicationUnderTest
 import com.trendyol.stove.system.abstractions.ProvidedRuntime
 import com.trendyol.stove.system.stove
+import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.extensions.Extension
 import io.kotest.core.spec.style.ShouldSpec
 import io.kotest.matchers.shouldBe
@@ -17,10 +20,16 @@ import kotliquery.param
 import org.slf4j.*
 import org.testcontainers.mssqlserver.MSSQLServerContainer
 import org.testcontainers.utility.DockerImageName
+import java.sql.Connection
+import java.sql.DriverManager
+import java.sql.SQLException
+import java.util.Properties
 
 // ============================================================================
 // Shared components
 // ============================================================================
+
+internal lateinit var applicationDatabaseConfiguration: RelationalDatabaseExposedConfiguration
 
 class NoOpApplication : ApplicationUnderTest<Unit> {
   override suspend fun start(configurations: List<String>) = Unit
@@ -113,7 +122,9 @@ class ContainerMsSqlStrategy : MsSqlTestStrategy {
 
     Stove()
       .with {
-        mssql { options }
+        mssql {
+          options.enableChaos()
+        }
         applicationUnderTest(NoOpApplication())
       }.run()
   }
@@ -169,7 +180,9 @@ class ProvidedMsSqlStrategy : MsSqlTestStrategy {
 
     Stove()
       .with {
-        mssql { options }
+        mssql {
+          options.enableChaos()
+        }
         applicationUnderTest(NoOpApplication())
       }.run()
   }
@@ -203,6 +216,24 @@ class StoveConfig : ConcurrentProjectConfig(concurrentTests = true) {
 class MssqlSystemTests :
   ShouldSpec({
     blockingTest = true
+    should("faults application JDBC traffic while direct assertions remain available and recovers") {
+      stove {
+        mssql {
+          applicationConnection().use { applicationConnection ->
+            applicationConnection.query() shouldBe 1
+            duringFault {
+              shouldThrow<SQLException> { applicationConnection.query() }
+              shouldThrow<SQLException> { applicationConnection().use { it.query() } }
+              mssql {
+                shouldQuery("SELECT 1", mapper = { it.int(1) }) { it shouldBe listOf(1) }
+              }
+            }
+          }
+          applicationConnection().use { it.query() } shouldBe 1
+        }
+      }
+    }
+
     should("work") {
       stove {
         isolatedMssql { personTable ->
@@ -322,15 +353,14 @@ class MssqlSystemTests :
   })
 
 // Written once during project startup, before any concurrent tests run.
-private lateinit var sqlConfiguration: RelationalDatabaseExposedConfiguration
 
 private fun captureSqlConfiguration(config: RelationalDatabaseExposedConfiguration): List<String> {
-  sqlConfiguration = config
+  applicationDatabaseConfiguration = config
   return emptyList()
 }
 
 internal suspend fun ValidationDsl.isolatedMssql(scenario: suspend MsSqlSystem.(String) -> Unit) {
-  val config = sqlConfiguration
+  val config = stove.mssql().exposedConfiguration
   val options = MsSqlOptions.provided(
     jdbcUrl = config.jdbcUrl, host = config.host, port = config.port,
     applicationName = "test", databaseName = "test", userName = config.username,
@@ -348,5 +378,26 @@ internal suspend fun ValidationDsl.isolatedMssql(scenario: suspend MsSqlSystem.(
     } finally {
       system.shouldExecute("DROP TABLE $personTable")
     }
+  }
+}
+
+// Native JDBC connections model the application route; direct assertions stay on Stove's SQL DSL.
+private fun applicationConnection(): Connection {
+  val configuration = applicationDatabaseConfiguration
+  val properties = Properties().apply {
+    setProperty("user", configuration.username)
+    setProperty("password", configuration.password)
+    setProperty("loginTimeout", "2")
+    setProperty("socketTimeout", "2000")
+    setProperty("connectRetryCount", "0")
+  }
+  return DriverManager.getConnection(configuration.jdbcUrl, properties)
+}
+
+private fun Connection.query(): Int = createStatement().use { statement ->
+  statement.queryTimeout = 2
+  statement.executeQuery("SELECT 1").use { result ->
+    check(result.next())
+    result.getInt(1)
   }
 }

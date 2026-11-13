@@ -71,7 +71,7 @@ public final class com/trendyol/stove/cassandra/CassandraMigrationContext {
 	public fun toString ()Ljava/lang/String;
 }
 
-public final class com/trendyol/stove/cassandra/CassandraSystem : com/trendyol/stove/reporting/Reports, com/trendyol/stove/system/abstractions/ExposesConfiguration, com/trendyol/stove/system/abstractions/PluggedSystem, com/trendyol/stove/system/abstractions/RunAware {
+public final class com/trendyol/stove/cassandra/CassandraSystem : com/trendyol/stove/chaos/ChaosCapableSystem, com/trendyol/stove/reporting/Reports, com/trendyol/stove/system/abstractions/ExposesConfiguration, com/trendyol/stove/system/abstractions/RunAware {
 	public static final field CASSANDRA_PORT I
 	public static final field Companion Lcom/trendyol/stove/cassandra/CassandraSystem$Companion;
 	public field cqlSession Lcom/datastax/oss/driver/api/core/CqlSession;
@@ -100,10 +100,11 @@ public final class com/trendyol/stove/cassandra/CassandraSystem$Companion {
 	public final fun session (Lcom/trendyol/stove/cassandra/CassandraSystem;)Lcom/datastax/oss/driver/api/core/CqlSession;
 }
 
-public class com/trendyol/stove/cassandra/CassandraSystemOptions : com/trendyol/stove/database/migrations/SupportsMigrations, com/trendyol/stove/system/abstractions/ConfiguresExposedConfiguration, com/trendyol/stove/system/abstractions/SystemOptions {
+public class com/trendyol/stove/cassandra/CassandraSystemOptions : com/trendyol/stove/chaos/SupportChaos, com/trendyol/stove/database/migrations/SupportsMigrations, com/trendyol/stove/system/abstractions/ConfiguresExposedConfiguration, com/trendyol/stove/system/abstractions/SystemOptions {
 	public static final field Companion Lcom/trendyol/stove/cassandra/CassandraSystemOptions$Companion;
 	public fun <init> (Ljava/lang/String;Ljava/lang/String;Lcom/trendyol/stove/cassandra/CassandraContainerOptions;Lkotlin/jvm/functions/Function2;Lkotlin/jvm/functions/Function1;)V
 	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/String;Lcom/trendyol/stove/cassandra/CassandraContainerOptions;Lkotlin/jvm/functions/Function2;Lkotlin/jvm/functions/Function1;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public fun getChaosOptions ()Lcom/trendyol/stove/chaos/ChaosOptions;
 	public fun getCleanup ()Lkotlin/jvm/functions/Function2;
 	public fun getConfigureExposedConfiguration ()Lkotlin/jvm/functions/Function1;
 	public fun getContainer ()Lcom/trendyol/stove/cassandra/CassandraContainerOptions;

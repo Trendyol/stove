@@ -4,6 +4,7 @@ package com.trendyol.stove.redis
 
 import arrow.core.getOrElse
 import com.redis.testcontainers.RedisContainer
+import com.trendyol.stove.chaos.*
 import com.trendyol.stove.containers.*
 import com.trendyol.stove.database.migrations.*
 import com.trendyol.stove.system.*
@@ -64,8 +65,11 @@ open class RedisOptions(
   open val cleanup: suspend (RedisClient) -> Unit = {},
   override val configureExposedConfiguration: (RedisExposedConfiguration) -> List<String>
 ) : SystemOptions,
+  SupportChaos,
   ConfiguresExposedConfiguration<RedisExposedConfiguration>,
   SupportsMigrations<RedisMigrationContext, RedisOptions> {
+  override val chaosOptions: ChaosOptions = ChaosOptions()
+
   override val migrationCollection: MigrationCollection<RedisMigrationContext> = MigrationCollection()
 
   companion object {
@@ -93,7 +97,7 @@ open class RedisOptions(
       config = RedisExposedConfiguration(
         host = host,
         port = port,
-        redisUri = "redis://$host:$port",
+        redisUri = TcpEndpoint(host, port).uri("redis").toString(),
         database = database.toString(),
         password = password
       ),
@@ -181,24 +185,18 @@ data class RedisContext(
  * }
  * ```
  */
-fun WithDsl.redis(
-  configure: () -> RedisOptions
-): Stove {
-  val options = configure()
+fun WithDsl.redis(configure: @StoveDsl () -> RedisOptions): Stove =
+  configureRedis(null, configure)
 
-  val runtime = options.createRuntime(stove.keepDependenciesRunning)
-  return stove.withRedis(options, runtime)
-}
+fun WithDsl.redis(key: SystemKey, configure: @StoveDsl () -> RedisOptions): Stove =
+  configureRedis(key, configure)
 
-fun WithDsl.redis(
-  key: SystemKey,
-  configure: () -> RedisOptions
-): Stove {
-  val options = configure()
-
-  val runtime = options.createRuntime(stove.keepDependenciesRunning)
-  return stove.withRedis(key, options, runtime)
-}
+private fun WithDsl.configureRedis(key: SystemKey?, configure: () -> RedisOptions): Stove =
+  registerChaosCapable(configure) { options, _ ->
+    val runtime = options.createRuntime(stove.keepDependenciesRunning)
+    if (key == null) stove.withRedis(options, runtime) else stove.withRedis(key, options, runtime)
+    if (key == null) stove.redis() else stove.redis(key)
+  }
 
 private fun RedisOptions.createRuntime(keepDependenciesRunning: Boolean): SystemRuntime {
   if (this is ProvidedRedisOptions) return ProvidedRuntime

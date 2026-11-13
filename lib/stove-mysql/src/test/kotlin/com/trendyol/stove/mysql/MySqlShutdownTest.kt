@@ -3,6 +3,7 @@ package com.trendyol.stove.mysql
 import com.trendyol.stove.database.JdbcCloseFailureFixture
 import com.trendyol.stove.rdbms.NativeSqlOperations
 import com.trendyol.stove.system.Stove
+import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
 import kotliquery.sessionOf
@@ -10,9 +11,9 @@ import org.testcontainers.utility.DockerImageName
 import java.io.Closeable
 
 class MySqlShutdownTest : FunSpec({
-  test("cleanup and connection failures still stop the container without escaping close") {
+  test("cleanup and connection failures still stop the container and propagate the primary failure") {
     ShutdownFixture().use { fixture ->
-      fixture.system.close()
+      shouldThrow<IllegalStateException> { fixture.system.close() }
       fixture.jdbc.events shouldBe listOf("cleanup", "connection.close", "container.stop")
       fixture.jdbc.cleanupFailure.suppressed.toList() shouldBe listOf(fixture.jdbc.closeFailure)
     }

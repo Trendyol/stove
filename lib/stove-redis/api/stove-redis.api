@@ -80,10 +80,11 @@ public final class com/trendyol/stove/redis/RedisMigrationContext {
 	public fun toString ()Ljava/lang/String;
 }
 
-public class com/trendyol/stove/redis/RedisOptions : com/trendyol/stove/database/migrations/SupportsMigrations, com/trendyol/stove/system/abstractions/ConfiguresExposedConfiguration, com/trendyol/stove/system/abstractions/SystemOptions {
+public class com/trendyol/stove/redis/RedisOptions : com/trendyol/stove/chaos/SupportChaos, com/trendyol/stove/database/migrations/SupportsMigrations, com/trendyol/stove/system/abstractions/ConfiguresExposedConfiguration, com/trendyol/stove/system/abstractions/SystemOptions {
 	public static final field Companion Lcom/trendyol/stove/redis/RedisOptions$Companion;
 	public fun <init> (ILjava/lang/String;Lcom/trendyol/stove/redis/RedisContainerOptions;Lkotlin/jvm/functions/Function2;Lkotlin/jvm/functions/Function1;)V
 	public synthetic fun <init> (ILjava/lang/String;Lcom/trendyol/stove/redis/RedisContainerOptions;Lkotlin/jvm/functions/Function2;Lkotlin/jvm/functions/Function1;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public fun getChaosOptions ()Lcom/trendyol/stove/chaos/ChaosOptions;
 	public fun getCleanup ()Lkotlin/jvm/functions/Function2;
 	public fun getConfigureExposedConfiguration ()Lkotlin/jvm/functions/Function1;
 	public fun getContainer ()Lcom/trendyol/stove/redis/RedisContainerOptions;
@@ -106,7 +107,7 @@ public final class com/trendyol/stove/redis/RedisOptionsKt {
 	public static final fun redis-ypJx7X8 (Lcom/trendyol/stove/system/Stove;Lkotlin/jvm/functions/Function0;)Lcom/trendyol/stove/system/Stove;
 }
 
-public final class com/trendyol/stove/redis/RedisSystem : com/trendyol/stove/reporting/Reports, com/trendyol/stove/system/abstractions/ExposesConfiguration, com/trendyol/stove/system/abstractions/PluggedSystem, com/trendyol/stove/system/abstractions/RunAware {
+public final class com/trendyol/stove/redis/RedisSystem : com/trendyol/stove/chaos/ChaosCapableSystem, com/trendyol/stove/reporting/Reports, com/trendyol/stove/system/abstractions/ExposesConfiguration, com/trendyol/stove/system/abstractions/RunAware {
 	public static final field Companion Lcom/trendyol/stove/redis/RedisSystem$Companion;
 	public fun <init> (Lcom/trendyol/stove/system/Stove;Lcom/trendyol/stove/redis/RedisContext;)V
 	public fun close ()V

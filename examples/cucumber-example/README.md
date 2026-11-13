@@ -62,10 +62,11 @@ The Gradle test task attaches the OpenTelemetry and Pyroscope agents and enables
 - **Span-to-profile correlation:** server spans carry `pyroscope.profile.id` so
   the dashboard can filter samples associated with that span.
 
-A shared `@After` hook waits for the three requests' six spans before scenario
+A shared `@After` hook waits up to 15 seconds for the three requests' six spans before scenario
 cleanup and asserts the server routes for successful scenarios. Failed scenarios
 still wait for export, preserving their original failure. This matters for this
-small application: scenario execution can finish before asynchronous export.
+small application: scenario execution can finish before asynchronous export, especially on busy CI workers.
+An export timeout reports the collected span names and IDs; the six-span requirement remains unchanged.
 Expected HTTP 400/409 responses may appear as error **client spans** even though
 the scenario passes, because the feature explicitly expects those responses.
 

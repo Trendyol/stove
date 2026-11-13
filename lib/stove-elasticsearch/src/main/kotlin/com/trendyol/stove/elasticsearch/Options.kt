@@ -4,6 +4,8 @@ import arrow.core.*
 import co.elastic.clients.elasticsearch.ElasticsearchClient
 import co.elastic.clients.json.JsonpMapper
 import co.elastic.clients.json.jackson.JacksonJsonpMapper
+import com.trendyol.stove.chaos.ChaosOptions
+import com.trendyol.stove.chaos.SupportChaos
 import com.trendyol.stove.containers.*
 import com.trendyol.stove.database.migrations.*
 import com.trendyol.stove.serialization.StoveSerde
@@ -31,8 +33,11 @@ open class ElasticsearchSystemOptions(
   open val cleanup: suspend (ElasticsearchClient) -> Unit = {},
   override val configureExposedConfiguration: (ElasticSearchExposedConfiguration) -> List<String>
 ) : SystemOptions,
+  SupportChaos,
   ConfiguresExposedConfiguration<ElasticSearchExposedConfiguration>,
   SupportsMigrations<ElasticsearchClient, ElasticsearchSystemOptions> {
+  override val chaosOptions: ChaosOptions = ChaosOptions()
+
   override val migrationCollection: MigrationCollection<ElasticsearchClient> = MigrationCollection()
 
   companion object {

@@ -102,7 +102,7 @@ public final class com/trendyol/stove/elasticsearch/ElasticsearchExposedCertific
 	public final fun create ([B)Lcom/trendyol/stove/elasticsearch/ElasticsearchExposedCertificate;
 }
 
-public final class com/trendyol/stove/elasticsearch/ElasticsearchSystem : com/trendyol/stove/reporting/Reports, com/trendyol/stove/system/abstractions/AfterRunAware, com/trendyol/stove/system/abstractions/ExposesConfiguration, com/trendyol/stove/system/abstractions/PluggedSystem, com/trendyol/stove/system/abstractions/RunAware {
+public final class com/trendyol/stove/elasticsearch/ElasticsearchSystem : com/trendyol/stove/chaos/ChaosCapableSystem, com/trendyol/stove/reporting/Reports, com/trendyol/stove/system/abstractions/AfterRunAware, com/trendyol/stove/system/abstractions/ExposesConfiguration, com/trendyol/stove/system/abstractions/RunAware {
 	public static final field Companion Lcom/trendyol/stove/elasticsearch/ElasticsearchSystem$Companion;
 	public field esClient Lco/elastic/clients/elasticsearch/ElasticsearchClient;
 	public fun afterRun (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
@@ -130,10 +130,11 @@ public final class com/trendyol/stove/elasticsearch/ElasticsearchSystem$Companio
 	public final fun client (Lcom/trendyol/stove/elasticsearch/ElasticsearchSystem;)Lco/elastic/clients/elasticsearch/ElasticsearchClient;
 }
 
-public class com/trendyol/stove/elasticsearch/ElasticsearchSystemOptions : com/trendyol/stove/database/migrations/SupportsMigrations, com/trendyol/stove/system/abstractions/ConfiguresExposedConfiguration, com/trendyol/stove/system/abstractions/SystemOptions {
+public class com/trendyol/stove/elasticsearch/ElasticsearchSystemOptions : com/trendyol/stove/chaos/SupportChaos, com/trendyol/stove/database/migrations/SupportsMigrations, com/trendyol/stove/system/abstractions/ConfiguresExposedConfiguration, com/trendyol/stove/system/abstractions/SystemOptions {
 	public static final field Companion Lcom/trendyol/stove/elasticsearch/ElasticsearchSystemOptions$Companion;
 	public fun <init> (Lcom/trendyol/stove/elasticsearch/ElasticClientConfigurer;Lcom/trendyol/stove/elasticsearch/ElasticContainerOptions;Lco/elastic/clients/json/JsonpMapper;Lkotlin/jvm/functions/Function2;Lkotlin/jvm/functions/Function1;)V
 	public synthetic fun <init> (Lcom/trendyol/stove/elasticsearch/ElasticClientConfigurer;Lcom/trendyol/stove/elasticsearch/ElasticContainerOptions;Lco/elastic/clients/json/JsonpMapper;Lkotlin/jvm/functions/Function2;Lkotlin/jvm/functions/Function1;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public fun getChaosOptions ()Lcom/trendyol/stove/chaos/ChaosOptions;
 	public fun getCleanup ()Lkotlin/jvm/functions/Function2;
 	public fun getClientConfigurer ()Lcom/trendyol/stove/elasticsearch/ElasticClientConfigurer;
 	public fun getConfigureExposedConfiguration ()Lkotlin/jvm/functions/Function1;

@@ -2,6 +2,7 @@
 
 package com.trendyol.stove.postgres
 
+import com.trendyol.stove.chaos.*
 import com.trendyol.stove.functional.*
 import com.trendyol.stove.rdbms.*
 import com.trendyol.stove.reporting.Reports
@@ -153,7 +154,7 @@ import org.slf4j.*
 class PostgresqlSystem internal constructor(
   override val stove: Stove,
   private val postgresContext: PostgresqlContext
-) : PluggedSystem,
+) : ChaosCapableSystem,
   RunAware,
   ExposesConfiguration,
   Reports {
@@ -162,7 +163,8 @@ class PostgresqlSystem internal constructor(
 
   override val reportSystemName: String = "PostgreSQL" + (postgresContext.keyName?.let { " [$it]" } ?: "")
 
-  private lateinit var exposedConfiguration: RelationalDatabaseExposedConfiguration
+  internal lateinit var exposedConfiguration: RelationalDatabaseExposedConfiguration
+    private set
   private val logger: Logger = LoggerFactory.getLogger(javaClass)
   private val state: StateStorage<RelationalDatabaseExposedConfiguration> =
     stove.createStateStorage<RelationalDatabaseExposedConfiguration, PostgresqlSystem>(postgresContext.keyName)
@@ -176,17 +178,15 @@ class PostgresqlSystem internal constructor(
   override suspend fun stop(): Unit = whenContainer { it.stop() }
 
   override fun close(): Unit = runBlocking {
-    Try {
-      closeAll(
-        { if (::sqlOperations.isInitialized) postgresContext.options.cleanup(sqlOperations) },
-        { if (::sqlOperations.isInitialized) sqlOperations.close() },
-        { executeWithReuseCheck { stop() } }
-      )
-    }.recover { logger.warn("PostgreSQL stop failed", it) }
+    closeAll(
+      { if (::sqlOperations.isInitialized) postgresContext.options.cleanup(sqlOperations) },
+      { if (::sqlOperations.isInitialized) sqlOperations.close() },
+      { executeWithReuseCheck { stop() } }
+    )
   }
 
   override fun configuration(): List<String> =
-    postgresContext.options.configureExposedConfiguration(exposedConfiguration)
+    postgresContext.options.configureExposedConfiguration(applicationConfiguration(exposedConfiguration, RelationalDatabaseChaosAdapter))
 
   suspend inline fun <reified T : Any> shouldQuery(
     query: String,

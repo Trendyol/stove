@@ -3,6 +3,7 @@
 package com.trendyol.stove.postgres
 
 import arrow.core.getOrElse
+import com.trendyol.stove.chaos.*
 import com.trendyol.stove.containers.*
 import com.trendyol.stove.database.migrations.*
 import com.trendyol.stove.rdbms.*
@@ -40,8 +41,11 @@ open class PostgresqlOptions(
   open val cleanup: suspend (NativeSqlOperations) -> Unit = {},
   override val configureExposedConfiguration: (RelationalDatabaseExposedConfiguration) -> List<String>
 ) : SystemOptions,
+  SupportChaos,
   ConfiguresExposedConfiguration<RelationalDatabaseExposedConfiguration>,
   SupportsMigrations<PostgresSqlMigrationContext, PostgresqlOptions> {
+  override val chaosOptions: ChaosOptions = ChaosOptions()
+
   override val migrationCollection: MigrationCollection<PostgresSqlMigrationContext> = MigrationCollection()
 
   companion object {
@@ -202,24 +206,18 @@ internal fun Stove.postgresql(key: SystemKey): PostgresqlSystem =
  * }
  * ```
  */
-fun WithDsl.postgresql(
-  configure: () -> PostgresqlOptions
-): Stove {
-  val options = configure()
+fun WithDsl.postgresql(configure: @StoveDsl () -> PostgresqlOptions): Stove =
+  configurePostgresql(null, configure)
 
-  val runtime = options.createRuntime(stove.keepDependenciesRunning)
-  return stove.withPostgresql(options, runtime)
-}
+fun WithDsl.postgresql(key: SystemKey, configure: @StoveDsl () -> PostgresqlOptions): Stove =
+  configurePostgresql(key, configure)
 
-fun WithDsl.postgresql(
-  key: SystemKey,
-  configure: () -> PostgresqlOptions
-): Stove {
-  val options = configure()
-
-  val runtime = options.createRuntime(stove.keepDependenciesRunning)
-  return stove.withPostgresql(key, options, runtime)
-}
+private fun WithDsl.configurePostgresql(key: SystemKey?, configure: () -> PostgresqlOptions): Stove =
+  registerChaosCapable(configure) { options, _ ->
+    val runtime = options.createRuntime(stove.keepDependenciesRunning)
+    if (key == null) stove.withPostgresql(options, runtime) else stove.withPostgresql(key, options, runtime)
+    if (key == null) stove.postgresql() else stove.postgresql(key)
+  }
 
 private fun PostgresqlOptions.createRuntime(keepDependenciesRunning: Boolean): SystemRuntime {
   if (this is ProvidedPostgresqlOptions) return ProvidedRuntime

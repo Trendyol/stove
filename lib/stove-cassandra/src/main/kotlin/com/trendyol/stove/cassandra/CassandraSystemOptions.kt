@@ -1,6 +1,8 @@
 package com.trendyol.stove.cassandra
 
 import com.datastax.oss.driver.api.core.CqlSession
+import com.trendyol.stove.chaos.ChaosOptions
+import com.trendyol.stove.chaos.SupportChaos
 import com.trendyol.stove.database.migrations.*
 import com.trendyol.stove.system.abstractions.*
 import com.trendyol.stove.system.annotations.StoveDsl
@@ -44,8 +46,11 @@ open class CassandraSystemOptions(
   open val cleanup: suspend (CqlSession) -> Unit = {},
   override val configureExposedConfiguration: (CassandraExposedConfiguration) -> List<String>
 ) : SystemOptions,
+  SupportChaos,
   ConfiguresExposedConfiguration<CassandraExposedConfiguration>,
   SupportsMigrations<CassandraMigrationContext, CassandraSystemOptions> {
+  override val chaosOptions: ChaosOptions = ChaosOptions()
+
   override val migrationCollection: MigrationCollection<CassandraMigrationContext> = MigrationCollection()
 
   var requestTimeout: Duration = 30.seconds
