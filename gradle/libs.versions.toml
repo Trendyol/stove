@@ -69,7 +69,7 @@ scala2x = "2.13.18"
 kotlinLogging = "8.0.7"
 kediatr = "4.4.0"
 db-scheduler = "17.0.0"
-flyway = "13.12.1"
+flyway = "13.12.2"
 lombok = "1.18.48"
 
 [libraries]
