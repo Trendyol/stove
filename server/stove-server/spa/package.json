@@ -26,7 +26,7 @@
   },
   "devDependencies": {
     "@biomejs/biome": "2.6.8",
-    "@tailwindcss/postcss": "^4.0.0",
+    "@tailwindcss/postcss": "^4.3.5",
     "@testing-library/react": "^16.3.3",
     "@types/react": "^19.1.0",
     "@types/react-dom": "^19.1.0",
@@ -34,7 +34,7 @@
     "@vitejs/plugin-react": "^6.0.0",
     "jsdom": "^31.0.0",
     "sql.js": "^1.14.2",
-    "tailwindcss": "^4.0.0",
+    "tailwindcss": "^4.3.5",
     "typescript": "~7.0.2",
     "vite": "^8.0.0"
   },
