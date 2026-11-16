@@ -20,7 +20,7 @@
   "dependencies": {
     "@dagrejs/dagre": "^3.0.0",
     "@tanstack/react-query": "^5.80.0",
-    "@xyflow/react": "^12.10.2",
+    "@xyflow/react": "^13.0.0",
     "react": "^19.1.0",
     "react-dom": "^19.1.0"
   },
