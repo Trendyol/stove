@@ -84,7 +84,7 @@ configurations[e2eSourceSet.runtimeOnlyConfigurationName]
 ## Register e2eTest task
 
 For Quarkus Bridge, adapt the runtime classpath below using the
-[augmented uber-jar recipe](quarkus-bridge.md#build-and-load-the-augmented-application).
+[augmented uber-jar recipe](system-setup.md#build-and-load-the-augmented-application).
 The ordinary source set runtime classpath alone is insufficient: the augmented jar
 must come first, raw main output must be excluded, and the e2e build must preserve
 unused beans. Keep the normal main output on the test compile classpath.

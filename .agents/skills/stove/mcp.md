@@ -93,14 +93,15 @@ For local discovery, `stove_failures` remains a lightweight survey. On servers w
 
 ### Selecting a shared-server run
 
-`stove_runs.metadata` accepts dynamic string key/value pairs. Matching is exact, every supplied pair is AND-combined, and only retained runs can be returned:
+`stove_runs.metadata` accepts a string or non-empty list of strings per key. Matching is exact: OR within each key,
+AND across keys. Only retained runs can be returned. For a survey of checkout or payments in one pipeline:
 
 ```json
 {
   "app_name": "checkout-api",
   "status": "FAILED",
   "metadata": {
-    "team": "checkout",
+    "team": ["checkout", "payments"],
     "gitlab.project": "commerce/checkout-api",
     "gitlab.pipeline_id": "12345"
   }
@@ -163,6 +164,7 @@ Interactions with no `test_id` are unattributed by design (attribution is proven
 | `stove_snapshot` | System snapshot summaries with targeted JSON drill-down |
 | `stove_interactions` | Mock exchanges + warnings for a test or whole run, incl. the unattributed lane |
 | `stove_raw_evidence` | Capped raw lookup for one entry, span, snapshot, interaction, or warning |
+| `stove_profiles` | Discover correlated recordings and bounded profiling queries; see [profiling.md](profiling.md) |
 
 ## Token Budgeting
 

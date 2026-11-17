@@ -29,11 +29,31 @@ Keep these invariants:
 - Keys are dynamic; the server does not require a schema.
 - Keys and values must be strings. Convert numeric pipeline or job IDs to strings.
 - Prefer stable, namespaced keys such as `gitlab.project`, `gitlab.pipeline_id`, `team`, and `environment`.
-- Filtering uses exact string equality and AND-combines every supplied pair.
+- Filters accept a string or non-empty list of strings per key: exact equality, OR within a key, AND across keys. Published run metadata remains one string per key.
 - A pipeline can contain several jobs, shards, or retries. Include job/shard/attempt identifiers when available, then select the returned `run_id`; team and pipeline alone may be ambiguous.
 - Metadata is a selector, not a security boundary. Stove has no authentication or authorization.
 
 `DashboardIngestion.Grpc(host, port)` identifies the Stove gRPC ingestion endpoint. Point it at the shared server and its gRPC port when the tests and server run on different hosts.
+
+### Shared server behind an HTTP(S) gateway
+
+For an HTTPS-only ingress, use HTTP event ingestion with the externally reachable base URL:
+
+```kotlin
+dashboard {
+    DashboardSystemOptions(
+        appName = "checkout-api",
+        ingestion = DashboardIngestion.Http("https://stove.internal/observe")
+    )
+}
+```
+
+Set `public_url = "https://stove.internal/observe"` in the server configuration, or use
+`--public-url` / `STOVE_PUBLIC_URL`, so MCP citations and browser links use that address. The server serves root paths
+and prefixed paths; the gateway can preserve or strip `/observe`. Public URLs accept HTTP(S) without credentials,
+query, or fragment. Event ingestion posts to `<baseUrl>/api/v1/events`; its base URL must not already include that
+endpoint, a query, or a fragment. Verify ingestion with a real test and open its returned citation through the gateway.
+Configure profiling uploads separately as described in [profiling.md](profiling.md).
 
 ## Choose a storage backend
 
@@ -69,11 +89,11 @@ Use only PostgreSQL when running more than one Stove server replica, and configu
 
 PostgreSQL coordinates per-run event ordering, live-event commit order, and per-application retention with advisory locks. Each ACK follows one transaction containing the domain write, event inbox record, and durable live event. UUID-based retry deduplication prevents a retried event from being applied twice. Cross-pod SSE uses `LISTEN/NOTIFY` for wake-ups and durable polling plus `Last-Event-ID` replay for correctness. No Redis or broker is needed.
 
-Budget four PostgreSQL connections per replica (read, write, database explorer, and live-event listener) plus headroom. The first replica on a new database seeds the shared retention setting; Admin-page changes persist in PostgreSQL and all replicas observe them. Use `/api/v1/meta` for startup/readiness and allow at least 10 seconds after SIGTERM for graceful drain.
+Budget up to eight PostgreSQL connections per replica (four readers, one writer, two database explorer connections, and a dedicated live-event listener) plus headroom. The first replica on a new database seeds the shared retention setting; Admin-page changes persist in PostgreSQL and all replicas observe them. Use `/api/v1/meta` for startup/readiness and allow at least 10 seconds after SIGTERM for graceful drain.
 
 ## Run the packaged server
 
-Stable releases publish `ghcr.io/trendyol/stove-server` for Linux AMD64 and ARM64. Set `STOVE_VERSION` to the exact released version resolved by the tests, from the project's version catalog or Gradle build, before running either command below.
+The current release workflow publishes `ghcr.io/trendyol/stove-server` for Linux AMD64; ARM64 publishing is disabled. Check a particular tag with `docker buildx imagetools inspect ghcr.io/trendyol/stove-server:$STOVE_VERSION` before selecting another architecture. Set `STOVE_VERSION` to the exact released version resolved by the tests, from the project's version catalog or Gradle build, before running the commands below.
 
 For SQLite, mount `/data`; the image defaults to `/data/stove.db`:
 
@@ -93,7 +113,8 @@ docker run -d --name stove --restart unless-stopped \
   -p 4040:4040 -p 4041:4041 \
   -v /secure/stove/database-url:/run/secrets/stove-database-url:ro \
   -e STOVE_DATABASE_URL_FILE=/run/secrets/stove-database-url \
-  -e STOVE_RETENTION_RUNS_PER_APP=50 \
+  -e STOVE_RETENTION_PASSED_RUNS_PER_APP=50 \
+  -e STOVE_RETENTION_FAILED_RUNS_PER_APP=50 \
   "ghcr.io/trendyol/stove-server:${STOVE_VERSION:?Set STOVE_VERSION to the project Stove version}"
 ```
 
@@ -101,26 +122,52 @@ Port `4040` serves the UI, REST, admin page, and Streamable HTTP MCP endpoint (`
 
 ## Configure retention
 
-Stove retains the newest completed run per application by default, preserving its original local behavior. Running runs are never pruned by automatic retention.
+Stove keeps the newest **3 passed and 5 failed runs per application**, counted independently. A passed run cannot evict
+a failure. Set a quota to `0` for unlimited history of that outcome. Completed-run retention excludes active runs.
 
 ```bash
-stove --retention-runs-per-app 50
-STOVE_RETENTION_RUNS_PER_APP=50 stove
-stove --retention-runs-per-app 0  # unlimited
+stove --retention-passed-runs-per-app 50 --retention-failed-runs-per-app 50
+STOVE_RETENTION_PASSED_RUNS_PER_APP=50 STOVE_RETENTION_FAILED_RUNS_PER_APP=50 stove
+stove --retention-passed-runs-per-app 0 --retention-failed-runs-per-app 0
 ```
 
-Only retained runs are visible to the UI, REST, and MCP. A runtime Admin change prunes excess completed runs immediately. It is process-local for SQLite and shared and persistent for PostgreSQL.
+Ordered metadata rules override the defaults: the first matching rule wins, with separate quotas per application,
+outcome, and rule. Values listed together share a quota. Omitted limits inherit defaults; omitted `app_name` matches
+all applications. Each rule requires non-empty metadata values and at least one outcome override:
+
+```toml
+retention_passed_runs_per_app = 3
+retention_failed_runs_per_app = 5
+
+[[retention_rules]]
+app_name = "checkout-api"
+failed_runs_per_app = 12
+[retention_rules.metadata]
+team = ["checkout", "payments"]
+branch = ["main"]
+```
+
+CLI `--retention-rules` and `STOVE_RETENTION_RULES` accept a JSON array of these rules. Startup configuration seeds
+a new database. Admin changes replace the complete policy, persist in both SQLite and PostgreSQL, take precedence
+on subsequent starts, and immediately prune excess completed runs and evidence. PostgreSQL replicas share the policy.
+Only retained runs are visible to the UI, REST, and MCP. The former single-limit CLI, environment, and API fields are removed.
+
+Running runs have an independent idle expiry: **3600 seconds without newly committed ingestion**, checked at startup
+and every 60 seconds. It can delete long, silent tests as well as abandoned jobs. `--run-idle-timeout-seconds`,
+`STOVE_RUN_IDLE_TIMEOUT_SECONDS`, or config-file `run_idle_timeout_seconds` seeds a new database; `0` disables expiry.
+The Admin idle timeout persists and overrides later startup settings. Deletion removes the run and its evidence;
+duplicate retries do not refresh activity, and late events cannot revive an expired run.
 
 ## Find runs
 
 The dashboard run picker builds selectable metadata keys and values from the application's retained runs. Users can combine selections instead of typing arbitrary values.
 
-REST accepts a URL-encoded JSON object:
+REST accepts a URL-encoded JSON object. For a survey covering checkout or payments in one pipeline:
 
 ```bash
 curl --get 'http://stove.internal:4040/api/v1/runs' \
   --data-urlencode 'app=checkout-api' \
-  --data-urlencode 'metadata={"team":"checkout","gitlab.pipeline_id":"12345"}'
+  --data-urlencode 'metadata={"team":["checkout","payments"],"gitlab.pipeline_id":"12345"}'
 ```
 
 MCP applies the same semantics through `stove_runs`:
@@ -149,7 +196,8 @@ Open the dedicated `/admin` page to inspect storage, browse tables, run SQL, cha
 | `GET /api/v1/admin/status` | Backend, retention, run, and evidence counts |
 | `GET /api/v1/admin/database/schema` | Active backend, tables, columns, nullability, and primary keys |
 | `POST /api/v1/admin/database/query` | Execute one statement with `{"sql":"SELECT ...","max_rows":100}` |
-| `PUT /api/v1/admin/retention` | Set runtime retention with `{"runs_per_app": 50}` |
+| `PUT /api/v1/admin/retention` | Replace policy with `{"passed_runs_per_app": 3, "failed_runs_per_app": 5, "rules": []}` |
+| `PUT /api/v1/admin/idle-timeout` | Persist idle expiry with `{"run_idle_timeout_seconds": 3600}`; `0` disables it |
 | `POST /api/v1/admin/purge/preview` | Preview by optional `app_name`, RFC 3339 `older_than`, and `include_running` |
 | `POST /api/v1/admin/purge` | Delete exact `run_ids`, optionally including active runs |
 | `DELETE /api/v1/data` | Clear all runs and evidence |
@@ -164,7 +212,7 @@ Stove intentionally has no authentication or authorization. The HTTP server, MCP
 
 ## Verify changes
 
-For downstream dashboard setup, run a small test suite and verify that its app, metadata, tests, and final status appear on the intended server. Check both the gRPC ingestion address and HTTP/MCP address from the hosts that use them.
+For downstream dashboard setup, run a small test suite and verify that its app, metadata, tests, and final status appear on the intended server. Check the configured ingestion transport and HTTP/MCP address from the hosts that use them; with a gateway, verify the public URL and prefix too.
 
 For changes to Stove server storage, APIs, or ingestion itself, run the relevant server checks. From `server/stove-server`, with a Docker-compatible daemon running:
 

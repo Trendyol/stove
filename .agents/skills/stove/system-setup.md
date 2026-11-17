@@ -18,6 +18,7 @@
 - [gRPC Mock](#grpc-mock)
 - [gRPC Client](#grpc-client)
 - [Bridge](#bridge)
+- [Quarkus Bridge setup](#quarkus-bridge-setup)
 - [Dashboard](#dashboard)
 - [Reporting](#reporting)
 - [Application runner](#application-runner)
@@ -319,12 +320,10 @@ Stove().with {
 
 All systems support keyed registration: PostgreSQL, MySQL, MSSQL, Cassandra, MongoDB, Redis, Elasticsearch, Couchbase, Kafka (core), WireMock, gRPC, gRPC Mock, HTTP.
 
-Each keyed instance gets:
-- Its own container with a unique dynamic port (no conflicts)
-- Independent `configureExposedConfiguration` — all configs are aggregated and passed to the AUT
-- Isolated state storage (separate lock files per key)
-- Its own `cleanup` lambda
-- Distinct reporting name (e.g., `"PostgreSQL [AppDb]"`)
+Keys identify separate registrations and reporting names (e.g., `"PostgreSQL [AppDb]"`).
+Container-backed registrations create their own containers and mapped ports; provided instances remain externally owned.
+Configuration callbacks, state files, and cleanup options depend on the selected system. HTTP clients, for example,
+have no container or container state file. All exposed configuration is aggregated and passed to the AUT.
 
 A single key can be shared across protocol types:
 
@@ -434,7 +433,7 @@ configureExposedConfiguration = { cfg ->
 
 ```kotlin
 mysql {
-    MySqlSystemOptions(
+    MySqlOptions(
         databaseName = "testdb",
         configureExposedConfiguration = { cfg ->
             listOf(
@@ -455,8 +454,11 @@ Same migration pattern as PostgreSQL, using `MySqlMigrationContext`.
 
 ```kotlin
 mssql {
-    MsSqlSystemOptions(
+    MsSqlOptions(
+        applicationName = "stove-e2e",
         databaseName = "testdb",
+        userName = "sa",
+        password = "Stove_test_password1!",
         configureExposedConfiguration = { cfg ->
             listOf(
                 "spring.datasource.url=${cfg.jdbcUrl}",
@@ -470,7 +472,7 @@ mssql {
 }
 ```
 
-Same migration pattern, using `MsSqlMigrationContext`.
+Same migration pattern, using `SqlMigrationContext`.
 
 ## Cassandra
 
@@ -603,13 +605,18 @@ redis {
         password = "secret",
         database = 0,
         configureExposedConfiguration = { cfg ->
-            listOf("spring.redis.url=${cfg.redisUri}")
+            listOf(
+                "spring.data.redis.url=${cfg.redisUri}",
+                "spring.data.redis.password=${cfg.password}",
+                "spring.data.redis.database=${cfg.database}"
+            )
         }
     )
 }
 ```
 
-Container operations: `pause()` / `unpause()`.
+The provided URI contains host/port only. Forward password and database separately using the application's actual
+bindings; the example uses Spring Boot 3+ property names. Container operations: `pause()` / `unpause()`.
 
 ## Elasticsearch
 
@@ -722,7 +729,7 @@ does not require DI `bridge()` solely for `shouldBeConsumed`. Process/container
 apps use Kafka observation bridges without gaining DI `using<T>` access;
 Quarkus also provides `com.trendyol.stove.quarkus.bridge`, with an augmented
 uber-jar on the shared test classpath and unused-bean removal disabled in the
-e2e build. See the [Quarkus Bridge setup](quarkus-bridge.md).
+e2e build. See the [Quarkus Bridge setup](#quarkus-bridge-setup).
 
 ### Standalone Kafka
 
@@ -835,9 +842,6 @@ Import `bridge` from the selected framework's package and register it before the
 bridge()  // Uses the selected framework-specific import
 ```
 
-Quarkus requires an augmented shared runtime classpath and e2e bean preservation;
-follow [Quarkus Bridge setup](quarkus-bridge.md) before using `using<T>`.
-
 ### Ktor DI support
 
 Ktor Bridge auto-detects your DI framework:
@@ -855,9 +859,167 @@ bridge { application, type ->
 }
 ```
 
+### Quarkus Bridge setup
+
+#### Check applicability
+
+Quarkus Bridge exposes the running application's ArC CDI beans through Stove's
+`using<T>` DSL. Use it with the in-process Quarkus runner and a shared, augmented
+runtime classpath. Process, container, native executable, and provided-application
+runners cannot expose application objects this way. The isolated Quarkus fast-jar
+launcher is also unsupported with Bridge.
+
+Check the resolved `stove-quarkus` artifact for
+`com.trendyol.stove.quarkus.bridge` before adding the import. Do not infer a minimum
+published version from the repository's current version or upgrade dependencies
+just to match this guide. See [API verification](gradle-config.md#resolve-api-ambiguity-from-local-artifacts).
+Reuse the project's Quarkus plugin, Quarkus BOM, Kotlin test support, and test engine;
+align Stove dependencies with the existing Stove BOM.
+
+#### Build and load the augmented application
+
+Check that `io.quarkus:quarkus-arc` is in the application's dependency graph,
+directly or transitively through another Quarkus extension. Add
+`implementation("io.quarkus:quarkus-arc")` only if missing, using the application's
+Quarkus BOM for its version. ArC must be available to `quarkusBuild` during
+application augmentation; a `testImplementation` dependency, even one exposed
+transitively by a Stove test dependency, does not satisfy this requirement.
+`stove-quarkus` uses the application's ArC and does not supply it transitively.
+
+ArC transforms application classes during the Quarkus build. Loading raw main
+classes in tests while the application uses another classloader breaks shared CDI
+access and type identity. Build an augmented uber-jar, place it first on the actual
+Gradle `Test` task's runtime classpath, and exclude raw main output from that
+classpath. Keep main output available when compiling tests.
+
+In `src/main/resources/application.properties`, preserve all discoverable beans
+for e2e builds as a fixed default:
+
+```properties
+%e2e.quarkus.package.jar.type=uber-jar
+%e2e.quarkus.arc.remove-unused-beans=false
+```
+
+Unused-bean removal is a **build-time** setting. Supplying it only through
+`quarkus(withParameters = ...)` cannot restore removed beans. Do not introduce a
+Gradle property switch or conditional tests for bean preservation. This retains
+beans referenced only by tests; it does not make arbitrary test classes CDI beans.
+
+For a **dedicated e2e application module**, use this Gradle Kotlin DSL recipe after
+applying the existing Quarkus plugin, checking the application dependencies above,
+and declaring test dependency `com.trendyol:stove-quarkus`:
+
+```kotlin
+// This module builds only the e2e application fixture.
+quarkus {
+    quarkusBuildProperties.put("quarkus.profile", "e2e")
+}
+
+val augmentedJar = tasks.named<io.quarkus.gradle.tasks.QuarkusBuild>("quarkusBuild")
+    .map { it.runnerJar }
+
+tasks.test {
+    dependsOn("quarkusBuild")
+    classpath = files(augmentedJar) +
+        (sourceSets.test.get().runtimeClasspath - sourceSets.main.get().output)
+    systemProperty("quarkus.profile", "e2e")
+    systemProperty("java.util.logging.manager", "org.jboss.logmanager.LogManager")
+}
+```
+
+In a module that also builds production artifacts, restrict the e2e profile and
+packaging selection to the e2e build invocation using the project's existing build
+conventions. Do not apply the dedicated-fixture profile block globally to production
+builds. The build and test runtime must both select `e2e`.
+
+For an existing `e2eTest` or `integrationTest`, configure the real `Test` task and use
+its source set's runtime classpath in place of `sourceSets.test`. Preserve its test
+classes, resources, dependencies, test engine, and lifecycle configuration. Do not
+create another source set just for Bridge. Apply the classpath replacement after
+any convention that sets the task's classpath. See [Gradle configuration](gradle-config.md).
+
+#### Register Bridge and access beans
+
+Keep the application's normal `@QuarkusMain` entrypoint, for example a Java main
+method that calls `Quarkus.run(args)`. Register the Quarkus-specific Bridge before
+the runner in the existing suite startup lifecycle. Stove detects completed Quarkus
+startup automatically; no custom readiness signal or HTTP endpoint is required:
+
+```kotlin
+import com.trendyol.stove.quarkus.bridge
+import com.trendyol.stove.quarkus.quarkus
+import com.trendyol.stove.system.Stove
+import com.trendyol.stove.system.stove
+import com.trendyol.stove.system.using
+
+// Suite startup; replace the entrypoint with the application's own main.
+Stove().with {
+    bridge()
+    // Register HTTP and any other required systems here.
+    quarkus(
+        runner = { args -> com.example.BridgeApplication.main(args) },
+        withParameters = listOf("quarkus.http.port=8080")
+    )
+}.run()
+
+// Inside a test; replace CounterService with an application bean.
+stove {
+    using<CounterService> {
+        increment()
+    }
+}
+
+// Suite teardown, including after failures.
+Stove.stop()
+```
+
+Call `using<T>` directly inside `stove {}`; there is no `bridge { using<T> { ... } }`
+assertion wrapper. Reuse Kotest/JUnit startup and teardown hooks, rather than
+starting an application per assertion. The reporting extension does not start Stove.
+
+#### CDI behavior
+
+- Lookup uses default CDI qualifiers. Missing or ambiguous beans fail; there is no
+  qualifier-selection or bean-replacement API in this Bridge.
+- Generic types are preserved: `using<List<String>>` resolves that parameterized
+  type when an eligible CDI producer or bean exists.
+- Request scopes must already be active. Bridge does not activate a request context.
+- Each dependent lookup can create a new instance. Bridge retains those handles
+  and destroys them at `Stove.stop()`, not when a `using` block ends.
+- Access is valid only after `Stove.run()` and before `Stove.stop()`.
+
+DI access and Kafka observation are separate. Bridge does not install Kafka
+interceptors. Kafka parent-first classloading configuration does not replace the
+augmented shared classpath required here. See [Kafka observation wiring](#wire-observation-before-asserting-consumption).
+
+#### Troubleshooting
+
+| Symptom | Check and fix |
+|---|---|
+| Unresolved `com.trendyol.stove.quarkus.bridge` | Verify the resolved starter API and the test source set's dependencies. |
+| `Quarkus Bridge cannot use the packaged fast-jar runtime` | Build an e2e uber-jar and replace the actual test runtime classpath as above. |
+| `Quarkus Bridge cannot access the running ArC container` | Check that build and runtime use `e2e`, the augmented jar comes first, and ArC/application classes share the test classloader. |
+| Class cast, missing constructor, or proxy/transformation errors | Exclude raw main output from runtime, retain it for test compilation, and inspect class origins. Reflection or casting across loaders will not repair class identity. |
+| `No unique CDI bean found for ...` | Rebuild with e2e bean preservation; then check CDI discovery, default qualifiers, generic type arguments, and ambiguity. |
+| `Quarkus Bridge is not running` | Resolve only after startup completes and before teardown; do not retain Bridge references across runs. |
+| Request context is inactive | Use the application's existing context activation or exercise that behavior through HTTP. |
+
+#### Verify the setup
+
+Run the actual e2e test task and inspect its results; a successful build or task
+discovery alone does not demonstrate Bridge access. Verify a bean referenced only
+by tests can be resolved. For shared state, mutate an application-scoped service
+through `using<T>` and observe the same state through the application's HTTP route.
+Use typed return values to catch class identity problems.
+
+The [Quarkus Bridge fixture](https://github.com/Trendyol/stove/tree/main/starters/quarkus/tests/quarkus-bridge)
+also verifies augmented class loading, generic lookup, missing/ambiguous beans,
+dependent destruction, and access rejection after shutdown. In a Stove checkout,
+run `./gradlew :starters:quarkus:tests:quarkus-bridge:test` to exercise it.
+
 ## Dashboard
 
-Streams test events to the Stove Server for real-time visualization. Requires `stove-dashboard` and `stove-extensions-kotest` or `stove-extensions-junit` — see [Reporting](#reporting).
+Streams test events to the Stove Server for real-time visualization. Requires `stove-dashboard` and the test framework's reporting adapter: `stove-extensions-kotest`, `stove-extensions-junit`, or `stove-extensions-cucumber`. See [Reporting](#reporting) or [Cucumber setup](cucumber.md).
 
 ```kotlin
 dashboard {
@@ -987,7 +1149,7 @@ Supports both direct main runner and packaged runtime. Configurable startup time
 Quarkus specifics:
 - Stove detects Quarkus lifecycle startup automatically in both direct and fast-jar modes, including apps without HTTP. Do not add a `StoveStartupSignal` bean or `stove.quarkus.ready` property.
 - Kafka interceptors need shared classloading — add to `application.properties`: `quarkus.class-loading.parent-first-artifacts=org.apache.kafka:kafka-clients`. Without it, Stove's Kafka interceptor can't attach.
-- For CDI access, register `com.trendyol.stove.quarkus.bridge` and follow [Quarkus Bridge setup](quarkus-bridge.md). Bridge requires the augmented uber-jar on the shared test classpath; the isolated fast-jar runner supports system DSL assertions but cannot provide `using<T>` access.
+- For CDI access, register `com.trendyol.stove.quarkus.bridge` and follow [Quarkus Bridge setup](#quarkus-bridge-setup). Bridge requires the augmented uber-jar on the shared test classpath; the isolated fast-jar runner supports system DSL assertions but cannot provide `using<T>` access.
 
 ### Micronaut
 
@@ -1114,21 +1276,26 @@ The `containerFn` lambda receives the container instance before startup, so you 
 ## Fault injection (pause/unpause)
 
 All container-backed systems support `pause()` / `unpause()` for simulating outages. Both are idempotent.
+For automatically healed database network faults and direct state checks, use [managed chaos](chaos-testing.md).
+Manual container pause freezes the database itself; always restore it even after failure or cancellation.
 
 ```kotlin
 stove {
     postgresql { pause() }
 
-    http {
-        getResponse<Any>("/health") { response ->
-            response.status shouldBe 503
+    try {
+        http {
+            getBodilessResponse("/health") { response ->
+                response.status shouldBe 503
+            }
         }
+    } finally {
+        // Import kotlinx.coroutines.NonCancellable and withContext.
+        withContext(NonCancellable) { postgresql { unpause() } }
     }
 
-    postgresql { unpause() }
-
     http {
-        getResponse<Any>("/health") { response ->
+        getBodilessResponse("/health") { response ->
             response.status shouldBe 200
         }
     }
@@ -1240,7 +1407,7 @@ kafka {
 
 redis {
     RedisOptions(
-        cleanup = { client -> client.connect().sync().flushdb() },
+        cleanup = { client -> client.connect().use { it.sync().flushdb() } },
         configureExposedConfiguration = { cfg -> listOf("redis.host=${cfg.host}") }
     )
 }
@@ -1254,6 +1421,7 @@ elasticsearch {
 
 couchbase {
     CouchbaseSystemOptions(
+        defaultBucket = "test-bucket",
         cleanup = { cluster -> cluster.query("DELETE FROM `test-bucket`") },
         configureExposedConfiguration = { cfg -> listOf("cb.conn=${cfg.connectionString}") }
     )
@@ -1267,14 +1435,18 @@ cassandra {
 }
 
 mysql {
-    MySqlSystemOptions(
+    MySqlOptions(
         cleanup = { ops -> ops.execute("TRUNCATE orders") },
         configureExposedConfiguration = { cfg -> listOf("spring.datasource.url=${cfg.jdbcUrl}") }
     )
 }
 
 mssql {
-    MsSqlSystemOptions(
+    MsSqlOptions(
+        applicationName = "stove-e2e",
+        databaseName = "testdb",
+        userName = "sa",
+        password = "Stove_test_password1!",
         cleanup = { ops -> ops.execute("TRUNCATE TABLE orders") },
         configureExposedConfiguration = { cfg -> listOf("spring.datasource.url=${cfg.jdbcUrl}") }
     )

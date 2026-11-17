@@ -4,8 +4,9 @@ Write Cucumber feature files and bind them to Kotlin suspend steps using the
 standard `stove { ... }` DSL. Cucumber owns discovery, argument conversion, and
 scenario execution. Stove supplies the coroutine context and scenario reporting.
 
-This integration is incubating in 0.28.0 and is verified with Cucumber 8.0.4 and
-JUnit Platform 6.1.3. For dependencies, application setup, and a complete feature,
+This integration is incubating in 0.28.0. Its recorded verification baseline is
+Cucumber 8.0.4 and JUnit Platform 6.1.3; the current catalog selects Cucumber 8.1.0
+and Platform 6.1.3. Run the suite with your resolved versions. For dependencies, application setup, and a complete feature,
 follow the [Cucumber guide](../../docs/testing-styles/cucumber.md) or run the
 [inventory example](../../examples/cucumber-example):
 

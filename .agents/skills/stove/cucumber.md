@@ -26,8 +26,9 @@ feature parsing, or copied test cases in application glue.
   systems, aligned through its BOM when using published artifacts. In this checkout,
   use the local project dependency as `examples/cucumber-example` does.
 - Add aligned Cucumber engine and object-factory dependencies plus JUnit Platform
-  suite support. The example is tested with Cucumber 8.0.4 and Platform 6.1.3. Read
-  the resolved versions before changing an existing project. For HTML/JSON reports,
+  suite support. The recorded verification baseline is Cucumber 8.0.4 and Platform
+  6.1.3; the current catalog selects Cucumber 8.1.0 and Platform 6.1.3. Read the
+  resolved versions and run the suite before changing an existing project. For HTML/JSON reports,
   Cucumber 8 needs a supported JSON provider; this repo uses Jackson 2 plus its
   `jackson-datatype-jdk8` module.
 - Put features in the test resource directory. The example's suite uses `@Suite`,

@@ -1,6 +1,6 @@
 ---
 name: stove
-description: Use when configuring, writing, debugging, or migrating Stove end-to-end tests and database chaos setup, including Cucumber feature files and suspend steps; choosing JVM, process, container, or provided-application runners; wiring Stove systems and OIDC authentication; enabling tracing, profiling, dashboard, or MCP; or extending Stove with custom systems.
+description: Use when configuring, writing, debugging, or migrating Stove end-to-end tests and database chaos testing, including Cucumber feature files and suspend steps; choosing JVM, process, container, or provided-application runners; wiring Stove systems and OIDC authentication; enabling tracing, profiling, dashboard, or MCP; or extending Stove with custom systems.
 ---
 
 # Stove Skill Router
@@ -35,7 +35,7 @@ Native access is correct when it is the documented API contract: Redis currently
 |---|---|
 | Gradle source sets, BOM, `e2eTest`, local artifact ambiguity | [gradle-config.md](gradle-config.md) |
 | JVM setup, system options, provided instances (existing infra), keyed systems (`SystemKey`) | [system-setup.md](system-setup.md) |
-| Quarkus Bridge, CDI bean access, e2e bean preservation, augmented test classpath | [quarkus-bridge.md](quarkus-bridge.md) |
+| Quarkus Bridge, CDI bean access, e2e bean preservation, augmented test classpath | [system-setup.md#quarkus-bridge-setup](system-setup.md#quarkus-bridge-setup) |
 | Cucumber feature files, suspend steps, scenario reporting | [cucumber.md](cucumber.md) |
 | Writing `stove {}` assertions and validation DSL | [writing-tests.md](writing-tests.md) |
 | OIDC authentication, NAV/Keycloak providers, JWTs, token grants, or keyed issuers | [oidc.md](oidc.md) |
@@ -49,7 +49,7 @@ Native access is correct when it is the documented API contract: Redis currently
 | New Stove system implementation | [custom-systems.md](custom-systems.md) |
 | Integration examples and full flows | [Stove recipes](https://github.com/Trendyol/stove/tree/main/docs/recipes) |
 | Dependency conflicts or upgrade behavior changes | [compatibility.md](compatibility.md) |
-| Enabling database chaos on options or migrating manually managed faults | [setup-chaos-migration.md](setup-chaos-migration.md) |
+| Chaos testing setup, fault and experiment DSLs, recovery assertions, or migration | [chaos-testing.md](chaos-testing.md) |
 | Failure diagnosis and common symptoms | [Stove troubleshooting](https://github.com/Trendyol/stove/blob/main/docs/troubleshooting.md) |
 
 ## Current API anchors
@@ -123,7 +123,8 @@ Run the server with `stove`.
 | UI / REST / MCP | `http://localhost:4040` |
 | gRPC event ingestion | `localhost:4041` |
 | Storage | SQLite at `~/.stove-dashboard.db`; set `--database-url` for PostgreSQL |
-| Completed-run retention | `1` per app; set `--retention-runs-per-app`, where `0` means unlimited |
+| Completed-run retention | `3` passed and `5` failed per app; set `--retention-passed-runs-per-app` / `--retention-failed-runs-per-app`; `0` means unlimited per outcome |
+| Idle running-run expiry | `3600` seconds without ingestion; set `--run-idle-timeout-seconds`; `0` disables expiry |
 | Administration | dedicated `/admin` page |
 
 In test code, `DashboardIngestion.Grpc(host, port)` defaults to `localhost:4041`. Shared servers intentionally have no authentication or authorization, so expose every Stove surface only on a trusted internal network.
@@ -134,7 +135,7 @@ In test code, `DashboardIngestion.Grpc(host, port)` defaults to `localhost:4041`
 - With current dependencies, do not use removed runner types such as `ContainerAppOptions`, `ProcessAppOptions`, or `GoAppOptions`; legacy maintenance follows the resolved release.
 - `ReadinessStrategy.HttpGet` takes `url = "..."`, not `path = "..."`.
 - `bridge()` is JVM-framework-specific. Import `com.trendyol.stove.spring.bridge`, `com.trendyol.stove.ktor.bridge`, `com.trendyol.stove.micronaut.bridge`, or `com.trendyol.stove.quarkus.bridge` based on the selected framework and resolved Stove version.
-- Quarkus Bridge requires an augmented uber-jar first on the test runtime classpath, raw main output excluded, and `quarkus.arc.remove-unused-beans=false` as a fixed e2e build default. The isolated fast-jar launcher does not support Bridge. See [Quarkus Bridge setup](quarkus-bridge.md).
+- Quarkus Bridge requires an augmented uber-jar first on the test runtime classpath, raw main output excluded, and `quarkus.arc.remove-unused-beans=false` as a fixed e2e build default. The isolated fast-jar launcher does not support Bridge. See [Quarkus Bridge setup](system-setup.md#quarkus-bridge-setup).
 - Configure `Stove().with { ... }.run()` in the framework lifecycle, usually `beforeProject()` for Kotest, and pair it with `Stove.stop()` in teardown. Reuse the existing setup rather than starting Stove inside individual tests.
 - System `cleanup` callbacks run at `Stove.stop()`, not between tests. Use unique test data or explicit per-test cleanup when tests share state.
 - Keep examples minimal and app-specific. Add only the systems the user actually needs.

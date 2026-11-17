@@ -339,7 +339,7 @@ class GoShowcaseTest : FunSpec({
 
             kafka {
                 shouldBePublished<ProductCreatedEvent>(10.seconds) {
-                    actual.name == "Test"
+                    actual.id == productId && actual.name == "Test" && metadata.topic == "product.created"
                 }
             }
 
@@ -365,7 +365,7 @@ class GoShowcaseTest : FunSpec({
             kafka {
                 publish("product.update", ProductUpdateEvent(id = productId!!, name = "Updated", price = 99.99))
                 shouldBeConsumed<ProductUpdateEvent>(10.seconds) {
-                    actual.id == productId && actual.name == "Updated"
+                    actual.id == productId && actual.name == "Updated" && metadata.topic == "product.update"
                 }
             }
 

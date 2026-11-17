@@ -36,9 +36,9 @@ Stove().with {
 ## Migrations
 
 ```kotlin
-class CreateOrdersTable : DatabaseMigration<MsSqlMigrationContext> {
+class CreateOrdersTable : DatabaseMigration<SqlMigrationContext> {
   override val order = 1
-  override suspend fun execute(ctx: MsSqlMigrationContext) {
+  override suspend fun execute(ctx: SqlMigrationContext) {
     ctx.operations.execute(
       """
       CREATE TABLE orders (

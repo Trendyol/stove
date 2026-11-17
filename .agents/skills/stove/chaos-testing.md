@@ -1,6 +1,6 @@
-# Migrate database setup and chaos tests
+# Chaos testing
 
-Use this guide when adopting system-local managed chaos. These changes are available in **0.28.0**. Verify the project’s resolved Stove version before adopting them.
+Use this guide for database chaos setup, fault and experiment DSLs, recovery assertions, and migration to system-local managed chaos. These APIs are available in **0.28.0**. Verify the project’s resolved Stove version before adopting them.
 First verify the resolved source/artifact actually contains `SupportChaos`, the `enableChaos` extension, and `duringFault`;
 do not apply this guide to an older release merely because the local skill is newer.
 
@@ -88,6 +88,97 @@ fault owners are rejected. This is fault ownership, not isolation of shared appl
 the same application. Successful healing is only connectivity restoration; use explicit application behavior and direct
 state assertions to establish recovery.
 
+## Examples: timeouts, recovery, and keyed isolation
+
+These examples assume the selected systems were registered with `enableChaos()` and the application uses their exposed
+endpoints. Import `com.trendyol.stove.system.stove`, the selected system's DSL extension, `com.trendyol.stove.chaos.*`,
+`com.trendyol.stove.http.http`, `io.kotest.matchers.shouldBe`,
+`io.kotest.assertions.nondeterministic.eventually`, and the required Kotlin duration units.
+Endpoint paths and status codes are application contracts to adapt, not behavior supplied by Stove.
+
+### Slow or silent dependency: the application answers within its timeout
+
+Suppose `/products/1` always reads Redis, the application's dependency timeout is 200 ms, and it returns `504` on timeout.
+Configure Stove's HTTP timeout above the 2-second assertion budget so the test observes the application's response.
+An injected response delay and a bidirectional stall should both trigger that contract. This is a read-only request;
+the test sends it once for each fault and polls only the healthy recovery check.
+
+```kotlin
+// Also import kotlin.time.measureTime and Duration.Companion.milliseconds / seconds.
+stove {
+    redis {
+        stove { http { getBodilessResponse("/products/1") { it.status shouldBe 200 } } }
+        for (fault in listOf(latency(800.milliseconds, TrafficDirection.Responses), stall())) {
+            duringFault(fault) {
+                val elapsed = measureTime {
+                    http { getBodilessResponse("/products/1") { it.status shouldBe 504 } }
+                }
+                (elapsed < 2.seconds) shouldBe true
+            }
+            eventually(10.seconds) {
+                stove { http { getBodilessResponse("/products/1") { it.status shouldBe 200 } } }
+            }
+        }
+    }
+}
+```
+
+### Named experiment: healthy search, outage, reconnection
+
+Use the `/search/health` contract above. The experiment deadline covers baseline, fault, and recovery together;
+configure the HTTP client's timeout below that deadline. Recovery runs after healing when the earlier phases succeed.
+
+```kotlin
+stove {
+    elasticsearch(Dc1) {
+        chaosExperiment(
+            name = "Search reconnects after an outage",
+            fault = NetworkFault.Unavailable,
+            timeout = 15.seconds,
+            baseline = {
+                http { getBodilessResponse("/search/health") { it.status shouldBe 200 } }
+            },
+            faulted = {
+                http { getBodilessResponse("/search/health") { it.status shouldBe 503 } }
+            },
+            recovery = {
+                eventually(10.seconds) {
+                    http { getBodilessResponse("/search/health") { it.status shouldBe 200 } }
+                }
+            }
+        )
+    }
+}
+```
+
+### Repeated outages: the secondary route stays usable
+
+Declare `Primary` and `Secondary` as `SystemKey` objects and register two keyed Redis systems. Assume
+`/cache/primary/health` and `/cache/secondary/health` each ping their respective exposed route, returning `503` on outage.
+The direct primary ping proves the dependency remains reachable to Stove while the application's primary route is faulted.
+This checks route isolation; it does not prove isolation of data when both registrations share one database.
+
+```kotlin
+// Also import com.trendyol.stove.redis.RedisSystem.Companion.client.
+stove {
+    redis(Primary) {
+        repeat(3) {
+            stove { http { getBodilessResponse("/cache/primary/health") { it.status shouldBe 200 } } }
+            duringFault {
+                http {
+                    getBodilessResponse("/cache/primary/health") { it.status shouldBe 503 }
+                    getBodilessResponse("/cache/secondary/health") { it.status shouldBe 200 }
+                }
+                redis(Primary) { client().connect().use { it.sync().ping() } shouldBe "PONG" }
+            }
+            eventually(10.seconds) {
+                stove { http { getBodilessResponse("/cache/primary/health") { it.status shouldBe 200 } } }
+            }
+        }
+    }
+}
+```
+
 ## Check adapter support before migrating a topology
 
 - Elasticsearch: single HTTP(S) endpoint; application sniffing/alternate endpoint discovery must not bypass the proxy.
@@ -144,3 +235,61 @@ operation IDs. Observe one direction at a time. Evidence binds to that fault gen
 
 The HTTP counter application in `lib/stove-redis/src/test` demonstrates bounded AUT retries with atomic Redis operation-ID
 deduplication and a fresh request after healing; the older queued-INCR example only demonstrates delayed completion.
+
+### Lost acknowledgement: retrying a committed write does not increment twice
+
+For the [executable HTTP counter fixture](https://github.com/Trendyol/stove/blob/main/lib/stove-redis/src/test/kotlin/com/trendyol/stove/redis/RedisChaosUseCasesTest.kt),
+`POST /increment` atomically increments `counter` and stores the result in `$counter:operation:$operation`.
+It makes two attempts with the same idempotency key and returns `504` when Redis acknowledgements time out.
+Use a unique empty counter key configured in the application and an already authenticated Redis connection;
+otherwise the response stall can block login before any write reaches Redis. Configure bounded client timeouts as in the fixture.
+
+```kotlin
+// Also import arrow.core.None, java.util.UUID, and RedisSystem.Companion.client.
+val operation = UUID.randomUUID().toString()
+val headers = mapOf("Idempotency-Key" to operation)
+stove {
+    redis {
+        client().connect().use { it.sync().get(counter) } shouldBe null
+        duringFault(stall(TrafficDirection.Responses)) { redis ->
+            val request = redis.sendIntoStall(2.seconds) {
+                http {
+                    postAndExpectBodilessResponse("/increment", body = None, headers = headers) {
+                        it.status shouldBe 504
+                    }
+                }
+            }
+            eventually(2.seconds) {
+                redis.client().connect().use {
+                    it.sync().get(counter) shouldBe "1"
+                    it.sync().get("$counter:operation:$operation") shouldBe "1"
+                }
+            }
+            request.await()
+            redis.client().connect().use { it.sync().get(counter) } shouldBe "1"
+        }
+        stove {
+            http {
+                postAndExpectBody<Long>("/increment", headers = headers) {
+                    it.status shouldBe 200
+                    it.body() shouldBe 1L
+                }
+                postAndExpectBody<Long>(
+                    "/increment", headers = mapOf("Idempotency-Key" to UUID.randomUUID().toString())
+                ) {
+                    it.status shouldBe 200
+                    it.body() shouldBe 2L
+                }
+            }
+        }
+        client().connect().use {
+            it.sync().get(counter) shouldBe "2"
+            it.sync().get("$counter:operation:$operation") shouldBe "1"
+        }
+    }
+}
+```
+
+The direct reads establish commit and deduplication independently of route-wide stall evidence. Awaiting the first
+request during the fault establishes the application's timeout behavior; retrying after healing and then sending a
+fresh operation establish recovery. The two recovery writes execute once each, outside `eventually`.

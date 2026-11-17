@@ -182,6 +182,26 @@ postgresql {
 }
 ```
 
+For asynchronous database updates, retry only the read and assertion after triggering the application once.
+Use a unique ID created by this test to avoid matching another test's data:
+
+```kotlin
+// Imports: io.kotest.assertions.nondeterministic.eventually,
+// kotlin.time.Duration.Companion.seconds
+eventually(5.seconds) {
+    stove {
+        postgresql {
+            shouldQuery<String>(
+                query = "SELECT status FROM orders WHERE id = '$orderId'",
+                mapper = { row -> row.string("status") }
+            ) { statuses ->
+                statuses shouldBe listOf("CONFIRMED")
+            }
+        }
+    }
+}
+```
+
 ## MySQL queries
 
 Same API as PostgreSQL — uses `shouldExecute` and `shouldQuery` with a row mapper:
@@ -253,14 +273,16 @@ cassandra {
 
 ```kotlin
 mongodb {
+    // Import org.bson.types.ObjectId; domain id and BSON _id are separate fields.
+    val objectId = ObjectId().toHexString()
     // Save a document
-    save(Order(id = "o1", userId = "u1", amount = 99.99))
+    save(Order(id = "o1", userId = "u1", amount = 99.99), objectId = objectId)
 
     // Save to specific collection
     save(Order(id = "o2", userId = "u2", amount = 50.0), collection = "archived_orders")
 
     // Get by ObjectId
-    shouldGet<Order>(objectId = "o1") { order ->
+    shouldGet<Order>(objectId = objectId) { order ->
         order.amount shouldBe 99.99
     }
 
@@ -271,10 +293,10 @@ mongodb {
     }
 
     // Delete
-    shouldDelete(objectId = "o1")
+    shouldDelete(objectId = objectId)
 
     // Verify deletion
-    shouldNotExist(objectId = "o1")
+    shouldNotExist(objectId = objectId)
 
     // Simulate downtime
     pause()
@@ -305,8 +327,12 @@ redis {
 // Simulate downtime
 redis {
     pause()
-    // ... test resilience ...
-    unpause()
+    try {
+        // ... test resilience ...
+    } finally {
+        // Import kotlinx.coroutines.NonCancellable and withContext.
+        withContext(NonCancellable) { unpause() }
+    }
 }
 ```
 
@@ -372,7 +398,7 @@ couchbase {
     }
 
     // N1QL query
-    shouldQuery<Order>(query = "SELECT * FROM `test-bucket` WHERE userId = 'u1'") { orders ->
+    shouldQuery<Order>(query = "SELECT c.* FROM `test-bucket` c WHERE c.userId = 'u1'") { orders ->
         orders.size shouldBe 1
     }
 
@@ -772,7 +798,7 @@ grpc {
 
 Register the framework-specific `bridge()` before the application runner, then call
 `using<T>` directly inside `stove {}`. For Quarkus, first configure the
-[augmented classpath and e2e bean preservation](quarkus-bridge.md). Quarkus lookup
+[augmented classpath and e2e bean preservation](system-setup.md#quarkus-bridge-setup). Quarkus lookup
 uses default CDI qualifiers and preserves generic types; request scopes must
 already be active, and dependent instances are destroyed at `Stove.stop()`.
 
@@ -912,7 +938,13 @@ test("staging smoke test — order flow") {
         // This verifies an output record, not consumption by a downstream app.
         kafka {
             var found = false
-            consumer<String, String>(topic = "order-events", keepConsumingAtLeastFor = 10.seconds) { record ->
+            // Import org.apache.kafka.common.serialization.StringDeserializer.
+            consumer<String, String>(
+                topic = "order-events",
+                keepConsumingAtLeastFor = 10.seconds,
+                keyDeserializer = StringDeserializer(),
+                valueDeserializer = StringDeserializer()
+            ) { record ->
                 if (record.value().contains(userId)) found = true
             }
             found shouldBe true

@@ -60,6 +60,15 @@ class DbSchedulerSystem(
 | `ExposesConfiguration` | During setup | System exposes config to the application (like containers) |
 | `Reports` | During actions and snapshot collection | `report()` records outcomes; `snapshot()` supplies failure reports and dashboard snapshots at test end |
 
+### Systems owning infrastructure
+
+For a container or service system, follow [exposing configuration](https://github.com/Trendyol/stove/blob/main/docs/writing-custom-systems.md#exposing-configuration)
+and [releasing owned resources](https://github.com/Trendyol/stove/blob/main/docs/writing-custom-systems.md#releasing-owned-resources).
+Systems run in parallel within lifecycle phases. Complete initialization before exposing configuration, and make
+`close()` safe after partial startup: Stove attempts cleanup when startup fails. Close only resources your system owns;
+use `com.trendyol.stove.system.closeAll` when several must be released, so one failure does not skip the rest.
+Stove aggregates exposed configuration before starting its AUT runner; provided applications must be configured externally.
+
 ## 2. Create a listener
 
 Observes what happens inside the running application:

@@ -33,7 +33,7 @@ the server build. Do not edit `gradle.properties` to silence the warning.
 ## Database setup and chaos migration in 0.28.0
 
 For options-based `enableChaos()` and managed database chaos, use
-[the focused migration guide](setup-chaos-migration.md). Existing zero-argument setup callbacks are preserved. These changes
+[the chaos testing guide](chaos-testing.md). Existing zero-argument setup callbacks are preserved. These changes
 are available in `0.28.0`; verify the resolved artifact before adopting them.
 
 ## Known runtime pitfalls (0.25.x)

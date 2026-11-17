@@ -152,7 +152,7 @@ Use `stove --log-format text` for readable terminal output, or set `STOVE_LOG_FO
 
 ## Run with Docker
 
-The image serves the dashboard, REST API, and MCP on port `4040`, and receives test events over gRPC on port `4041`. It runs as a non-root user and supports Linux AMD64 and ARM64.
+The image serves the dashboard, REST API, and MCP on port `4040`, and receives test events over gRPC on port `4041`. It runs as a non-root user. The current release workflow publishes Linux AMD64 images; ARM64 publishing is disabled. Check a specific tag with `docker buildx imagetools inspect ghcr.io/trendyol/stove-server:<version>` before choosing another architecture.
 
 Use `ghcr.io/trendyol/stove-server:latest` to follow stable releases or `ghcr.io/trendyol/stove-server:snapshot` to follow development snapshots. Publishing a Maven snapshot also publishes the matching server image with both its versioned tag (for example, `:1.0.0.558-SNAPSHOT`) and `:snapshot`. Snapshot publications never update `:latest`.
 
