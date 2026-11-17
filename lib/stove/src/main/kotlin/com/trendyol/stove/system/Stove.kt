@@ -13,13 +13,15 @@ import kotlin.reflect.KClass
 /** Owner of the application, registered systems, and their observations. */
 @StoveDsl
 class Stove(configure: @StoveDsl StoveOptionsDsl.() -> Unit = {}) : ReadyStove, AutoCloseable {
-  @PublishedApi internal val options: StoveOptions = StoveOptionsDsl().apply(configure).options
+  private val configuration = StoveOptionsDsl().apply(configure)
+
+  @PublishedApi internal val options: StoveOptions = configuration.options
 
   @PublishedApi internal val activeSystems: MutableMap<KClass<*>, PluggedSystem> = mutableMapOf()
 
   @PublishedApi internal val keyedSystems: MutableMap<Pair<KClass<*>, SystemKey>, PluggedSystem> = mutableMapOf()
   internal val reporter = StoveReporter(isEnabled = options.reportingEnabled)
-  private val eventBus = StoveEventBus()
+  private val eventBus = StoveEventBus(configuration.eventObservers.handlers)
   private val environment = RunEnvironment(eventBus::publish)
   val events = StoveEvents(eventBus.runId, eventBus.stream, environment.stream, eventBus::flush)
   private val lifecycle = StoveLifecycle(this, eventBus, environment)
@@ -47,11 +49,10 @@ class Stove(configure: @StoveDsl StoveOptionsDsl.() -> Unit = {}) : ReadyStove, 
 
   inline fun <reified TState : ExposedConfiguration, reified TSystem : PluggedSystem> createStateStorage(
     keyName: String?
-  ): StateStorage<TState> = if (keyName != null) {
-    options.createStateStorage<TState, TSystem>(keyName)
-  } else {
-    options.createStateStorage<TState, TSystem>()
-  }
+  ): StateStorage<TState> = keyName.toOption().fold(
+    { options.createStateStorage<TState, TSystem>() },
+    { options.createStateStorage<TState, TSystem>(it) }
+  )
 
   /** Publishes an observed fact through this Stove's ordered event pipeline. */
   fun publish(event: StoveEvent) = eventBus.publish(event)

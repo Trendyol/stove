@@ -22,11 +22,9 @@ pub(super) fn prepare(
 }
 
 fn validate(environment: &RunEnvironmentEvent) -> Result<()> {
-  let mut ids = std::collections::HashSet::new();
   let valid = environment.components.len() <= 1024
     && environment.components.iter().all(|component| {
       !component.id.is_empty()
-        && ids.insert(&component.id)
         && !component.name.is_empty()
         && matches!(component.role.as_str(), "SYSTEM" | "APPLICATION")
         && component.phases.len() <= 16
@@ -38,7 +36,14 @@ fn validate(environment: &RunEnvironmentEvent) -> Result<()> {
               "RUNNING" | "SUCCEEDED" | "FAILED" | "CANCELLED"
             )
         })
-    });
+    })
+    && environment
+      .components
+      .iter()
+      .map(|component| &component.id)
+      .collect::<std::collections::HashSet<_>>()
+      .len()
+      == environment.components.len();
   if !valid {
     return Err(AppError::InvalidEvent("invalid run environment".into()));
   }

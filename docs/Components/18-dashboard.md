@@ -31,7 +31,26 @@ The demo stores its data only in browser memory. **Reset demo** restores the sam
 
 The inventory is captured before startup, updated live, and persisted by `stove-server` in SQLite or PostgreSQL. Failed startup and cleanup mark the run failed without inventing failed tests. Startup failures remain visible alongside successful cleanup. Older runs without inventory fall back to their reported system names.
 
-The dashboard exports all observations through one `stove.events` subscription. Custom observers can use the same stream without a dashboard:
+The dashboard exports observations through one `stove.events` subscription. You can also register lifecycle callbacks in the Stove configuration, even when the dashboard is disabled.
+
+```kotlin
+import com.trendyol.stove.events.SystemStarted
+import com.trendyol.stove.postgres.PostgresqlSystem
+import com.trendyol.stove.system.Stove
+
+val stove = Stove {
+  events {
+    observe<SystemStarted> { println("${it.source.name} started in ${it.duration}") }
+    onSystemStarted<PostgresqlSystem> { println("PostgreSQL is ready") }
+    onSystemStopped<PostgresqlSystem> { println("PostgreSQL cleanup completed") }
+    onSystemFailed<PostgresqlSystem> { println("PostgreSQL ${it.phase} failed: ${it.error.message}") }
+  }
+}
+```
+
+Each successful system start or close produces one event per registration. `SystemStopped` means `close()` succeeded, including cleanup after a failed startup; it does not imply the system started successfully. `SystemFailed` identifies a failed lifecycle phase and its exception; cancellation is recorded in the environment instead. Run observers close after the event stream is disconnected, so their close is not reported as a system event. Pass a registration key to any of the three helpers to select one database, for example `onSystemStarted<PostgresqlSystem>(AnalyticsDb) { ... }`. Callbacks run in registration order on the asynchronous event dispatcher. Keep them short; startup proceeds independently. Let the lifecycle owner call `flush()` and `close()` outside callbacks.
+
+To manage subscriptions in your own coroutine scope, collect the flows directly.
 
 ```kotlin
 import arrow.core.getOrElse

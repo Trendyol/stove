@@ -8,9 +8,11 @@ import com.trendyol.stove.system.Stove
 import com.trendyol.stove.system.abstractions.PluggedSystem
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import kotlinx.coroutines.withTimeout
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.CopyOnWriteArrayList
 import java.util.concurrent.TimeUnit
+import kotlin.time.Duration.Companion.seconds
 
 class DashboardObservationsTest : FunSpec({
   test("unserializable state preserves the snapshot identity and summary") {
@@ -52,6 +54,18 @@ class DashboardObservationsTest : FunSpec({
         StoveTestContextHolder.get() shouldBe previous
       } finally {
         StoveTestContextHolder.clear()
+      }
+    }
+  }
+
+  test("a late subscription drains without waiting for events it missed") {
+    Stove().use { stove ->
+      stove.publish(RunReady)
+      stove.events.flush()
+      val received = CopyOnWriteArrayList<StoveEvent>()
+      DashboardObservations(stove.events) { received += it }.use { observations ->
+        withTimeout(2.seconds) { observations.awaitPending() }
+        received.isEmpty() shouldBe true
       }
     }
   }

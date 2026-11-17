@@ -7,13 +7,38 @@ import com.trendyol.stove.interactions.MockWarning
 import com.trendyol.stove.reporting.ReportEntry
 import com.trendyol.stove.reporting.StoveTestContext
 import com.trendyol.stove.reporting.SystemSnapshot
+import com.trendyol.stove.system.abstractions.SystemKey
 import com.trendyol.stove.tracing.SpanInfo
 import java.time.Instant
+import kotlin.time.Duration
 
 /** Facts observed by Stove. Subscribers must not perform required setup or cleanup. */
 interface StoveEvent
 
 data class RunStarting(val components: List<RunComponent>) : StoveEvent
+data class SystemStarted(
+  val source: RunComponent,
+  val duration: Duration,
+  val systemType: Class<*>,
+  val key: Option<SystemKey>
+) : StoveEvent
+
+/** Emitted after a system's close succeeds, including cleanup after a failed startup. */
+data class SystemStopped(
+  val source: RunComponent,
+  val duration: Duration,
+  val systemType: Class<*>,
+  val key: Option<SystemKey>
+) : StoveEvent
+
+/** Emitted when a system lifecycle phase fails; cancellation is not a failure. */
+data class SystemFailed(
+  val source: RunComponent,
+  val phase: PhaseName,
+  val error: Throwable,
+  val systemType: Class<*>,
+  val key: Option<SystemKey>
+) : StoveEvent
 data object RunReady : StoveEvent
 data class RunFinished(val failure: Option<String> = None) : StoveEvent
 data class EnvironmentChanged(val components: List<RunComponent>) : StoveEvent

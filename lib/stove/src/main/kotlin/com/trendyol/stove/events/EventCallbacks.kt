@@ -1,6 +1,9 @@
 package com.trendyol.stove.events
 
-typealias StoveEventHandler = (StoveEvent) -> Unit
+typealias EventHandler<E> = (E) -> Unit
+typealias StoveEventHandler = EventHandler<StoveEvent>
 
 internal typealias SnapshotRecorder = (SnapshotRecorded) -> Unit
 internal typealias EventDrain = suspend () -> Long
+
+internal typealias SnapshotCapture = () -> Unit

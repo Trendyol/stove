@@ -4,40 +4,43 @@ import arrow.core.*
 import com.trendyol.stove.reporting.*
 import com.trendyol.stove.system.Stove
 import org.slf4j.LoggerFactory
-import java.util.concurrent.ConcurrentHashMap
 
-/** Capture before test cleanup; only delivery is asynchronous. Never called under the event lock. */
+/** Plan captures in event order under the bus lock. Invoke the returned work outside the lock. */
 internal class StoveSnapshots(private val stove: Stove, private val record: SnapshotRecorder) {
   private val logger = LoggerFactory.getLogger(javaClass)
-  private val contexts = ConcurrentHashMap<String, StoveTestContext>()
-  private val captured = ConcurrentHashMap.newKeySet<String>()
+  private data class PendingTest(val context: StoveTestContext, val capturedFailure: Boolean = false)
 
-  fun observe(event: StoveEvent) {
-    when (event) {
-      is TestStarted -> {
-        contexts[event.context.testId] = event.context
-        captured.remove(event.context.testId)
-      }
+  private var pending = emptyMap<String, PendingTest>()
 
-      is EntryRecorded -> failure(event.entry)
-
-      is TestEnded -> finish(event.testId)
+  fun plan(event: StoveEvent): Option<SnapshotCapture> = when (event) {
+    is TestStarted -> {
+      pending += event.context.testId to PendingTest(event.context)
+      None
     }
-  }
 
-  private fun failure(entry: ReportEntry) {
-    if (!entry.isFailed) return
-    contexts.getOrNone(entry.testId).onSome { context ->
-      if (captured.add(entry.testId)) capture(context, SnapshotTrigger.FAILURE) { it.reportSystemName == entry.system }
+    is EntryRecorded -> planFailure(event.entry)
+
+    is TestEnded -> pending.getOrNone(event.testId).map { test ->
+      pending -= event.testId
+      { capture(test.context, SnapshotTrigger.TEST_END) }
     }
+
+    else -> None
   }
 
-  private fun finish(testId: String) {
-    contexts.remove(testId).toOption().onSome { capture(it, SnapshotTrigger.TEST_END) }
-    captured.remove(testId)
+  private fun planFailure(entry: ReportEntry): Option<SnapshotCapture> {
+    if (!entry.isFailed) return None
+    val test = pending.getOrNone(entry.testId).filter { !it.capturedFailure }.getOrElse { return None }
+    pending += entry.testId to test.copy(capturedFailure = true)
+    return Some { capture(test.context, SnapshotTrigger.FAILURE) { it.reportSystemName == entry.system } }
   }
 
-  fun finishPending() = contexts.keys.toList().forEach(::finish)
+  fun planPending(): Option<SnapshotCapture> {
+    if (pending.isEmpty()) return None
+    val unfinished = pending.values
+    pending = emptyMap()
+    return Some { unfinished.forEach { capture(it.context, SnapshotTrigger.TEST_END) } }
+  }
 
   private fun capture(context: StoveTestContext, trigger: SnapshotTrigger, filter: (Reports) -> Boolean = { true }) {
     val previous = StoveTestContextHolder.get().toOption()

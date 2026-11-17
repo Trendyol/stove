@@ -13,7 +13,7 @@ import kotlin.concurrent.withLock
 import kotlin.time.Duration.Companion.seconds
 
 /** Ordered, hot observations. Collectors own their scope; events have no replay. */
-internal class StoveEventBus : AutoCloseable {
+internal class StoveEventBus(private val handlers: List<StoveEventHandler> = emptyList()) : AutoCloseable {
   val runId: String = UUID.randomUUID().toString()
   private val observations = MutableSharedFlow<EventEnvelope>()
   val stream: SharedFlow<EventEnvelope> = observations.asSharedFlow()
@@ -25,15 +25,15 @@ internal class StoveEventBus : AutoCloseable {
   private val pending = Channel<Delivery>(Channel.UNLIMITED)
   private val worker = scope.launch(start = CoroutineStart.LAZY) { dispatch() }
   private var sources: Option<StoveEventSources> = None
-  private val publishing = MutableStateFlow(0)
+  private val capturesInProgress = MutableStateFlow(0)
   private var sequence = 0L
-  private var closing = false
-  private var closed = false
+  private enum class Status { OPEN, CLOSING, CLOSED }
+  private var status = Status.OPEN
 
   fun connect(stove: Stove): Unit = connections.withLock {
     val connected = lock.withLock {
-      if (closing) return
-      sources.getOrElse { StoveEventSources(stove, this).also { sources = Some(it) } }
+      if (status != Status.OPEN || sources.isSome()) return
+      StoveEventSources(stove, this).also { sources = Some(it) }
     }
     connected.start()
   }
@@ -47,33 +47,38 @@ internal class StoveEventBus : AutoCloseable {
 
   internal fun publish(event: StoveEvent, source: StoveEventSources) = publish(event, Some(source))
 
-  private fun publish(event: StoveEvent, source: Option<StoveEventSources>) {
-    val connected = lock.withLock {
-      if (closing || source.fold({ false }, { sources != Some(it) })) return
-      publishing.value++
-      enqueue(event)
-      sources
+  private fun publish(event: StoveEvent, source: Option<StoveEventSources>) = captureInOrder {
+    if (status != Status.OPEN || source.fold({ false }, { sources != Some(it) })) return@captureInOrder None
+    enqueue(event)
+    sources.flatMap { it.snapshots.plan(event) }
+  }
+
+  private inline fun captureInOrder(plan: () -> Option<SnapshotCapture>) {
+    val capture = lock.withLock {
+      val work = plan().getOrElse { return }
+      capturesInProgress.value++
+      work
     }
     try {
-      connected.onSome { it.snapshots.observe(event) }
+      capture()
     } finally {
-      lock.withLock { publishing.value-- }
+      lock.withLock { capturesInProgress.value-- }
     }
   }
 
   internal fun recordSnapshot(event: SnapshotRecorded): Unit = lock.withLock {
-    if (!closed) enqueue(event)
+    if (status != Status.CLOSED) enqueue(event)
   }
 
   /** Captures unfinished test evidence before systems discard their state during shutdown. */
   fun capturePendingSnapshots() {
-    lock.withLock { sources }.onSome { it.snapshots.finishPending() }
-    awaitPublications()
+    captureInOrder { sources.flatMap { it.snapshots.planPending() } }
+    awaitCaptures()
   }
 
-  private fun awaitPublications(): Unit = runBlocking {
+  private fun awaitCaptures(): Unit = runBlocking {
     try {
-      withTimeout(30.seconds) { publishing.first { it == 0 } }
+      withTimeout(30.seconds) { capturesInProgress.first { it == 0 } }
     } catch (_: TimeoutCancellationException) {
       LoggerFactory.getLogger(javaClass).warn("Stove snapshot capture timed out")
     }
@@ -89,10 +94,10 @@ internal class StoveEventBus : AutoCloseable {
   suspend fun flush(): Long {
     val dispatched = CompletableDeferred<Long>()
     while (true) {
-      publishing.first { it == 0 }
+      capturesInProgress.first { it == 0 }
       val queued = lock.withLock {
-        check(!closing) { "Stove events have been closed" }
-        if (publishing.value != 0) {
+        check(status == Status.OPEN) { "Stove events have been closed" }
+        if (capturesInProgress.value != 0) {
           false
         } else {
           check(pending.trySend(Delivery.Flush(sequence, dispatched)).isSuccess)
@@ -113,7 +118,18 @@ internal class StoveEventBus : AutoCloseable {
   private suspend fun dispatch() {
     for (delivery in pending) {
       when (delivery) {
-        is Delivery.Event -> observations.emit(delivery.envelope)
+        is Delivery.Event -> {
+          observations.emit(delivery.envelope)
+          handlers.forEach { handler ->
+            try {
+              handler(delivery.envelope.event)
+            } catch (failure: Throwable) {
+              currentCoroutineContext().ensureActive()
+              LoggerFactory.getLogger(javaClass).warn("Stove event observer failed", failure)
+            }
+          }
+        }
+
         is Delivery.Flush -> delivery.dispatched.complete(delivery.sequence)
       }
     }
@@ -121,13 +137,13 @@ internal class StoveEventBus : AutoCloseable {
 
   override fun close() {
     lock.withLock {
-      if (closing) return
-      closing = true
+      if (status != Status.OPEN) return
+      status = Status.CLOSING
     }
-    awaitPublications()
+    awaitCaptures()
     disconnect()
     lock.withLock {
-      closed = true
+      status = Status.CLOSED
       pending.close()
     }
     worker.start()
@@ -138,6 +154,7 @@ internal class StoveEventBus : AutoCloseable {
         LoggerFactory.getLogger(javaClass).warn("Stove observation drain timed out")
       } finally {
         scope.cancel()
+        pending.cancel()
       }
     }
   }

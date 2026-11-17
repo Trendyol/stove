@@ -9,35 +9,39 @@ import java.time.Instant
 
 /** Access is serialized by the dashboard's lifecycle lock. */
 internal class DashboardTests(private val emit: DashboardEventEmitter) {
-  private val starts = mutableMapOf<String, TestStart>()
-  private val failures = mutableMapOf<String, String>()
-  private var total = 0
-  private var passed = 0
-  private var failed = 0
+  private data class RunningTest(val start: Instant, val failure: Option<String> = None)
+  private data class Results(
+    val running: Map<String, RunningTest> = emptyMap(),
+    val passed: Int = 0,
+    val failed: Int = 0
+  )
+
+  private var results = Results()
 
   fun start(ctx: StoveTestContext) {
-    if (ctx.testId in starts) return
-    starts[ctx.testId] = TestStart(ctx, Instant.now())
-    total++
+    if (ctx.testId in results.running) return
+    val started = Instant.now()
+    results = results.copy(running = results.running + (ctx.testId to RunningTest(started)))
     emit {
       testStarted = TestStartedEvent.newBuilder().setTestId(ctx.testId)
-        .setTestName(ctx.testName).setSpecName(ctx.specName ?: "")
-        .setTimestamp(Instant.now().toTimestamp()).addAllTestPath(ctx.testPath).build()
+        .setTestName(ctx.testName).setSpecName(ctx.specName.orEmpty())
+        .setTimestamp(started.toTimestamp()).addAllTestPath(ctx.testPath).build()
     }
   }
 
   fun fail(testId: String, error: String) {
-    if (testId in starts) failures[testId] = error
+    results.running.getOrNone(testId).onSome { test ->
+      results = results.copy(running = results.running + (testId to test.copy(failure = Some(error))))
+    }
   }
 
   fun record(entry: ReportEntry) {
-    if (entry.testId !in starts) return
+    if (entry.testId !in results.running) return
     emit { entryRecorded = entry.toProto() }
   }
 
   fun finish(testId: String, interrupted: Boolean = false) {
-    val started = starts.remove(testId).toOption().getOrElse { return }
-    val failure = failures.remove(testId).toOption()
+    val (started, failure) = results.running.getOrNone(testId).getOrElse { return }
     val status = when {
       failure.isSome() -> TestOutcome.FAILED
       interrupted -> TestOutcome.ERROR
@@ -46,19 +50,24 @@ internal class DashboardTests(private val emit: DashboardEventEmitter) {
     val error = failure.getOrElse { if (interrupted) "Test ended before the framework reported an outcome" else "" }
     emit {
       testEnded = TestEndedEvent.newBuilder().setTestId(testId).setStatus(status.name)
-        .setDurationMs(Duration.between(started.at, Instant.now()).toMillis())
+        .setDurationMs(Duration.between(started, Instant.now()).toMillis())
         .setError(error).setTimestamp(Instant.now().toTimestamp()).build()
     }
-    if (status == TestOutcome.PASSED) passed++ else failed++
+    val remaining = results.running - testId
+    results = if (status == TestOutcome.PASSED) {
+      results.copy(running = remaining, passed = results.passed + 1)
+    } else {
+      results.copy(running = remaining, failed = results.failed + 1)
+    }
   }
 
-  fun close() = starts.keys.toList().forEach { finish(it, interrupted = true) }
+  fun close() = results.running.keys.forEach { finish(it, interrupted = true) }
 
   fun result(durationMs: Long, lifecycleFailed: Boolean): RunEndedEvent = RunEndedEvent.newBuilder()
-    .setTimestamp(Instant.now().toTimestamp()).setTotalTests(total).setPassed(passed)
-    .setFailed(failed).setDurationMs(durationMs).setLifecycleFailed(lifecycleFailed).build()
+    .setTimestamp(
+      Instant.now().toTimestamp()
+    ).setTotalTests(results.running.size + results.passed + results.failed).setPassed(results.passed)
+    .setFailed(results.failed).setDurationMs(durationMs).setLifecycleFailed(lifecycleFailed).build()
 }
-
-private data class TestStart(val context: StoveTestContext, val at: Instant)
 
 private enum class TestOutcome { PASSED, FAILED, ERROR }

@@ -76,6 +76,30 @@ class StoveSnapshotsTest : FunSpec({
     }
   }
 
+  test("flush includes snapshots claimed by shutdown for unfinished tests") {
+    Stove().use { stove ->
+      val system = stove.getOrRegister(DelayedSnapshot(stove))
+      EventRecorder(stove.events).use { recorder ->
+        stove.startObserving()
+        stove.publish(TestStarted(StoveTestContext("unfinished", "unfinished")))
+        coroutineScope {
+          val capture = async(Dispatchers.IO) { stove.capturePendingSnapshots() }
+          try {
+            system.entered.await(2, TimeUnit.SECONDS) shouldBe true
+            val flush = async(start = CoroutineStart.UNDISPATCHED) { stove.events.flush() }
+            system.release.countDown()
+            flush.await() shouldBe 2L
+          } finally {
+            system.release.countDown()
+          }
+          capture.await()
+        }
+        recorder.drain()
+        recorder.events.filterIsInstance<SnapshotRecorded>().single().testId shouldBe "unfinished"
+      }
+    }
+  }
+
   test("closing the dispatcher retains a snapshot already being captured") {
     Stove().use { stove ->
       val system = stove.getOrRegister(DelayedSnapshot(stove))

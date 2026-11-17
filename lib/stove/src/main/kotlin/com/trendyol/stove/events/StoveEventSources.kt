@@ -13,19 +13,13 @@ internal class StoveEventSources(private val stove: Stove, private val events: S
   ReportEventListener, SpanEventListener, MockInteractionListener, MockWarningListener, AutoCloseable {
   val snapshots = StoveSnapshots(stove, events::recordSnapshot)
   private val logger = LoggerFactory.getLogger(javaClass)
-  private var spans = emptyList<SpanListenerRegistry>()
-  private var active = false
-  private var interactions = emptyList<MockInteractionPublisher>()
-  private var warnings = emptyList<MockWarningPublisher>()
+  private val spans = stove.systemsOf<SpanListenerRegistry>().distinctInstances()
+  private val interactions = stove.systemsOf<MockInteractionPublisher>().distinctInstances()
+  private val warnings = stove.systemsOf<MockWarningPublisher>().distinctInstances()
 
   fun start() {
-    if (active) return
-    active = true
     stove.addReportListener(this)
-    spans = stove.systemsOf<SpanListenerRegistry>().distinctInstances()
     spans.observe { it.addSpanListener(this) }
-    interactions = stove.systemsOf<MockInteractionPublisher>().distinctInstances()
-    warnings = stove.systemsOf<MockWarningPublisher>().distinctInstances()
     interactions.observe { it.addInteractionListener(this) }
     warnings.observe { it.addWarningListener(this) }
   }
@@ -45,7 +39,6 @@ internal class StoveEventSources(private val stove: Stove, private val events: S
   }
 
   override fun close() {
-    active = false
     stove.removeReportListener(this)
     spans.observe { it.removeSpanListener(this) }
     interactions.observe { it.removeInteractionListener(this) }

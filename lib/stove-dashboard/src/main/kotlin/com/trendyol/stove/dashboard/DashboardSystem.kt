@@ -30,14 +30,13 @@ class DashboardSystem(
   private val logger = LoggerFactory.getLogger(javaClass)
   private val lock = ReentrantLock()
   private val runId = stove.events.runId
-  private var emitter: Option<DashboardEmitter> = None
-  private var profiling: Option<AutoCloseable> = None
-  private var startTime = Instant.now()
-  private var accepting = false
+  private sealed interface State {
+    data object Waiting : State
+    data object Closed : State
+  }
+
+  private var state: State = State.Waiting
   private val closing = AtomicBoolean(false)
-  private var closed = false
-  private var lifecycleFailed = false
-  private val tests = DashboardTests(::emit)
   private val observations = DashboardObservations(stove.events, ::observe)
 
   override fun configuration(): List<String> = options.externalProfiling?.let {
@@ -53,46 +52,75 @@ class DashboardSystem(
   override suspend fun run() {
     if (closing.get()) return
     observations.awaitPending()
-    if (lock.withLock { emitter.isSome() || closing.get() }) return
+    if (lock.withLock { state != State.Waiting || closing.get() }) return
     start(stove.runComponents())
     stove.startObserving()
   }
 
   private fun observe(event: StoveEvent): Unit = lock.withLock {
-    when (event) {
-      is RunStarting -> start(event.components)
-      is EnvironmentChanged -> if (accepting) emit { runEnvironment = event.components.toEnvironmentProto() }
-      is RunFinished -> lifecycleFailed = event.failure.isSome()
-      is TestStarted -> accept { tests.start(event.context) }
-      is TestFailed -> accept { tests.fail(event.testId, event.error) }
-      is TestEnded -> accept { tests.finish(event.testId) }
-      is EntryRecorded -> accept { tests.record(event.entry) }
-      is SnapshotRecorded -> accept { emit { snapshot = event.toProto() } }
-      is SpanRecorded -> accept { emit { spanRecorded = event.span.toProto() } }
-      is InteractionObserved -> accept { emit { mockInteraction = event.interaction.toProto() } }
-      is WarningObserved -> accept { emit { mockWarning = event.warning.toProto() } }
+    if (event is RunStarting) {
+      start(event.components)
+    } else {
+      when (val current = state) {
+        is ActiveRun -> current.observe(event)
+        else -> Unit
+      }
     }
   }
 
   private fun start(components: List<RunComponent>): Unit = lock.withLock {
-    if (emitter.isSome() || closed) return
-    emitter = Some(DashboardEmitter(options.ingestion))
-    startTime = Instant.now()
-    emit {
-      runStarted = RunStartedEvent.newBuilder().setTimestamp(startTime.toTimestamp())
-        .setAppName(options.appName).addAllSystems(components.map { it.name })
-        .putAllMetadata(options.metadata).setStoveVersion(StoveCompatibilityVersion.VALUE).build()
-    }
-    emit { runEnvironment = components.toEnvironmentProto() }
-    accepting = true
-    startProfiling()
+    if (state == State.Waiting) state = ActiveRun(components)
   }
 
-  private fun startProfiling() {
-    if (!System.getProperty("stove.profiling.enabled").toBoolean()) return
-    runCatching { DashboardProfiling(runId, options.appName) }
-      .onSuccess { profiling = Some(it) }
+  private inner class ActiveRun(components: List<RunComponent>) : State, AutoCloseable {
+    private val emitter = DashboardEmitter(options.ingestion)
+    private val started = Instant.now()
+    private val tests = DashboardTests(::emit)
+    private var lifecycleFailed = false
+
+    init {
+      emit {
+        runStarted = RunStartedEvent.newBuilder().setTimestamp(started.toTimestamp())
+          .setAppName(options.appName).addAllSystems(components.map { it.name })
+          .putAllMetadata(options.metadata).setStoveVersion(StoveCompatibilityVersion.VALUE).build()
+      }
+      emit { runEnvironment = components.toEnvironmentProto() }
+    }
+
+    private val profiling = startProfiling()
+
+    fun observe(event: StoveEvent) {
+      when (event) {
+        is EnvironmentChanged -> emit { runEnvironment = event.components.toEnvironmentProto() }
+        is RunFinished -> lifecycleFailed = event.failure.isSome()
+        is TestStarted -> tests.start(event.context)
+        is TestFailed -> tests.fail(event.testId, event.error)
+        is TestEnded -> tests.finish(event.testId)
+        is EntryRecorded -> tests.record(event.entry)
+        is SnapshotRecorded -> emit { snapshot = event.toProto() }
+        is SpanRecorded -> emit { spanRecorded = event.span.toProto() }
+        is InteractionObserved -> emit { mockInteraction = event.interaction.toProto() }
+        is WarningObserved -> emit { mockWarning = event.warning.toProto() }
+      }
+    }
+
+    private fun emit(build: DashboardEventBuilder) {
+      emitter.tryEmit(DashboardEvent.newBuilder().setRunId(runId).apply(build).build())
+    }
+
+    override fun close() {
+      runCatching { profiling.onSome { it.close() } }.onFailure { logger.warn("Stove profiling could not flush", it) }
+      tests.close()
+      emit { runEnded = tests.result(Duration.between(started, Instant.now()).toMillis(), lifecycleFailed) }
+      emitter.close()
+    }
+  }
+
+  private fun startProfiling(): Option<AutoCloseable> {
+    if (!System.getProperty("stove.profiling.enabled").toBoolean()) return None
+    return runCatching { DashboardProfiling(runId, options.appName) }
       .onFailure { logger.warn("Stove profiling could not start; check the tracing plugin and platform support", it) }
+      .fold({ Some(it) }, { None })
   }
 
   override fun onTestStarted(ctx: StoveTestContext) = stove.publish(TestStarted(ctx))
@@ -103,29 +131,14 @@ class DashboardSystem(
   override fun onInteraction(interaction: MockInteraction) = stove.publish(InteractionObserved(interaction))
   override fun onWarning(warning: MockWarning) = stove.publish(WarningObserved(warning))
 
-  private fun accept(action: () -> Unit) {
-    if (accepting) action()
-  }
-
-  private fun emit(build: DashboardEventBuilder) {
-    emitter.onSome { it.tryEmit(DashboardEvent.newBuilder().setRunId(runId).apply(build).build()) }
-  }
-
   override suspend fun stop() = close()
 
   override fun close() {
     if (!closing.compareAndSet(false, true)) return
     stove.capturePendingSnapshots()
     observations.drain()
-    lock.withLock {
-      accepting = false
-      closed = true
-    }
+    val previous = lock.withLock { state.also { state = State.Closed } }
     observations.close()
-    runCatching { profiling.onSome { it.close() } }.onFailure { logger.warn("Stove profiling could not flush", it) }
-    profiling = None
-    tests.close()
-    emit { runEnded = tests.result(Duration.between(startTime, Instant.now()).toMillis(), lifecycleFailed) }
-    emitter.onSome { it.close() }
+    if (previous is ActiveRun) previous.close()
   }
 }

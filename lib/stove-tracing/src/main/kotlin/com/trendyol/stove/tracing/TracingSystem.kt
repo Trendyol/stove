@@ -18,7 +18,7 @@ class TracingSystem(
   SpanListenerRegistry {
   private val logger = org.slf4j.LoggerFactory.getLogger(TracingSystem::class.java)
   internal val collector: StoveTraceCollector = StoveTraceCollector()
-  private var spanReceiver: OTLPSpanReceiver? = null
+  private var spanReceiver: Option<OTLPSpanReceiver> = None
 
   override suspend fun run() {
     if (options.tracingOptions.spanReceiverEnabled) {
@@ -71,8 +71,9 @@ class TracingSystem(
   // Private helper methods
 
   private fun startSpanReceiver() {
-    spanReceiver = OTLPSpanReceiver(collector, options.tracingOptions.spanReceiverPort)
-    spanReceiver?.start()?.fold(
+    if (spanReceiver.isSome()) return
+    val receiver = OTLPSpanReceiver(collector, options.tracingOptions.spanReceiverPort)
+    spanReceiver = receiver.start().fold(
       ifLeft = { error ->
         // Port binding failure is non-fatal - tests continue without span collection
         // This commonly happens when multiple test modules run in parallel on CI
@@ -83,14 +84,15 @@ class TracingSystem(
           options.tracingOptions.spanReceiverPort,
           error.message
         )
-        spanReceiver = null
+        None
       },
-      ifRight = { /* Started successfully */ }
+      ifRight = { Some(receiver) }
     )
   }
 
   private fun stopSpanReceiver() {
-    spanReceiver?.stop()
+    spanReceiver.onSome { it.stop() }
+    spanReceiver = None
   }
 
   private fun clearAllTraces() {

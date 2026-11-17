@@ -54,17 +54,16 @@ class DashboardEmitter internal constructor(
   private val scope = CoroutineScope(Dispatchers.IO + SupervisorJob())
   private val disabled = AtomicBoolean(false)
   private val closed = AtomicBoolean(false)
-  private var consecutiveFailures = 0
   private var rejectionLogged = false
   private val emitLock = ReentrantLock()
-  private val sequenceByRun = mutableMapOf<String, Long>()
+  private var sequenceByRun = emptyMap<String, Long>()
   private val drainJob: Job = scope.launch { drainLoop() }
 
   /** Non-blocking emit. Drops the event only if the emitter is disabled or closed. */
   fun tryEmit(event: DashboardEvent): Unit = emitLock.withLock {
     if (disabled.get() || closed.get()) return@withLock
     val sequence = sequenceByRun.getOrDefault(event.runId, 0) + 1
-    sequenceByRun[event.runId] = sequence
+    sequenceByRun += event.runId to sequence
     val identifiedEvent = event.toBuilder()
       .setEventId(UUID.randomUUID().toString())
       .setSequence(sequence)
@@ -89,6 +88,7 @@ class DashboardEmitter internal constructor(
     }
     if (!drained) logger.warn("Dashboard flush timed out; some queued observations were not delivered")
     scope.cancel()
+    eventQueue.cancel()
     transport.close()
   }
 
@@ -110,37 +110,29 @@ class DashboardEmitter internal constructor(
   }
 
   private suspend fun sendUntilAcknowledged(event: DashboardEvent) {
-    while (scope.isActive && !disabled.get()) {
+    for (attempt in 1..maxFailures) {
+      if (!scope.isActive) return
       when (val outcome = transport.send(event)) {
-        SendOutcome.Accepted -> {
-          consecutiveFailures = 0
-          return
-        }
+        SendOutcome.Accepted -> return
 
         is SendOutcome.Rejected -> {
           handleRejection(outcome.reason)
           return
         }
 
-        is SendOutcome.Failed -> handleFailure(outcome.cause)
+        is SendOutcome.Failed -> handleFailure(outcome.cause, attempt)
       }
-
-      if (!disabled.get()) {
-        val attempt = consecutiveFailures.coerceAtLeast(1).coerceAtMost(5)
-        delay((RETRY_BASE_DELAY_MS shl (attempt - 1)).milliseconds)
-      }
+      if (attempt < maxFailures) delay((RETRY_BASE_DELAY_MS shl (attempt.coerceAtMost(5) - 1)).milliseconds)
     }
   }
 
   private fun handleRejection(reason: String) {
-    consecutiveFailures = 0
     if (rejectionLogged) return
     rejectionLogged = true
     logger.warn("Dashboard server rejected an event: $reason. Such events are dropped; tests continue normally.")
   }
 
-  private fun handleFailure(error: Exception) {
-    consecutiveFailures++
+  private fun handleFailure(error: Exception, consecutiveFailures: Int) {
     if (consecutiveFailures == 1) {
       logger.warn(
         "Dashboard server ${transport.name} error: ${error.message}. " +
@@ -149,6 +141,7 @@ class DashboardEmitter internal constructor(
     }
     if (consecutiveFailures >= maxFailures) {
       disabled.set(true)
+      eventQueue.cancel()
       logger.info(
         "Dashboard emitter disabled after $consecutiveFailures consecutive failures. Tests will continue normally."
       )

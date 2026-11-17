@@ -23,6 +23,7 @@ class RunEnvironmentTest : FunSpec({
       starting.components.all { it.phases.isEmpty() } shouldBe true
       fixture.events.any { it is RunReady } shouldBe true
       fixture.stove.close()
+      fixture.observer.closes shouldBe 1
       fixture.observer.closedAfterFinish shouldBe true
       fixture.environment().single { it.role == ComponentRole.APPLICATION }.phases.map { it.name } shouldBe listOf(PhaseName.START, PhaseName.STOP)
     }
@@ -52,6 +53,71 @@ class RunEnvironmentTest : FunSpec({
       fixture.environment().first().phases.map { it.status } shouldBe listOf(PhaseStatus.FAILED, PhaseStatus.SUCCEEDED)
       fixture.environment().first().phases.first().error shouldBe Some("java.lang.IllegalStateException")
     }
+  }
+
+  test("configured observers receive startup once per registration and match the actual key") {
+    val starts = mutableListOf<SystemStarted>()
+    val keyed = mutableListOf<SystemStarted>()
+    val terminals = mutableListOf<RunFinished>()
+    val stops = mutableListOf<SystemStopped>()
+    val keyedStops = mutableListOf<SystemStopped>()
+    val selected = DatabaseKey("selected")
+    val other = DatabaseKey("other")
+    Stove {
+      events {
+        observe<SystemStarted> { error("broken observer") }
+        observe<SystemStarted> { starts += it }
+        onSystemStarted<SharedLifecycle>(selected) { keyed += it }
+        onSystemStopped<SharedLifecycle> { stops += it }
+        onSystemStopped<SharedLifecycle>(selected) { keyedStops += it }
+        observe<RunFinished> { terminals += it }
+      }
+    }.use { stove ->
+      val shared = stove.getOrRegister(selected, SharedLifecycle(stove))
+      stove.getOrRegister(other, shared)
+      stove.getOrRegister(EnvironmentDependency(stove))
+      stove.applicationUnderTest(EnvironmentApplication()).run()
+    }
+    starts.map { it.key } shouldBe listOf(Some(selected), Some(other))
+    keyed.single() shouldBe starts.first()
+    starts.all { it.source.phases.last().status == PhaseStatus.SUCCEEDED } shouldBe true
+    stops.map { it.key } shouldBe listOf(Some(selected), Some(other))
+    keyedStops.single() shouldBe stops.first()
+    terminals.size shouldBe 1
+  }
+
+  test("a failed system start emits the terminal event without a successful start") {
+    val observed = mutableListOf<StoveEvent>()
+    val failures = mutableListOf<SystemFailed>()
+    val selected = DatabaseKey("failed")
+    Stove {
+      events {
+        observe<StoveEvent> { observed += it }
+        onSystemFailed<FailingLifecycle>(selected) { failures += it }
+      }
+    }.use { stove ->
+      stove.getOrRegister(selected, FailingLifecycle(stove))
+      stove.applicationUnderTest(EnvironmentApplication())
+      shouldThrow<IllegalStateException> { stove.run() }
+      observed.filterIsInstance<SystemStarted>().size shouldBe 0
+      failures.single().phase shouldBe PhaseName.START
+      failures.single().error.message shouldBe "startup failed"
+      observed.filterIsInstance<SystemStopped>().single().key shouldBe Some(selected)
+      (observed.last() as RunFinished).failure shouldBe Some("startup failed")
+    }
+  }
+
+  test("failed close emits a failure but not a stopped event") {
+    val observed = mutableListOf<StoveEvent>()
+    val stove = Stove { events { observe<StoveEvent> { observed += it } } }
+    stove.getOrRegister(EnvironmentDependency(stove)).closeFailure = Some(IllegalStateException("close failed"))
+    stove.applicationUnderTest(EnvironmentApplication()).run()
+    stove.close()
+    observed.filterIsInstance<SystemFailed>().single().let {
+      it.phase shouldBe PhaseName.CLOSE
+      it.error.message shouldBe "close failed"
+    }
+    observed.filterIsInstance<SystemStopped>().size shouldBe 0
   }
 
   test("one instance registered twice runs and closes only once") {
@@ -88,6 +154,14 @@ class RunEnvironmentTest : FunSpec({
   }
 })
 
+private data class DatabaseKey(val name: String) : SystemKey
+
+private class FailingLifecycle(override val stove: Stove) : PluggedSystem, RunAware {
+  override suspend fun run(): Unit = error("startup failed")
+  override suspend fun stop() = Unit
+  override fun close() = Unit
+}
+
 private object Analytics : SystemKey
 
 private class EnvironmentFixture : AutoCloseable {
@@ -119,10 +193,13 @@ private class EnvironmentDependency(override val stove: Stove) : PluggedSystem, 
   }
 }
 
-private class EnvironmentObserver(override val stove: Stove, private val recorder: EventRecorder) : RunObserver {
+private class EnvironmentObserver(override val stove: Stove, private val recorder: EventRecorder) : RunObserver, ApplicationResource {
+  var closes = 0
+  override suspend fun beforeApplicationStop() = Unit
   var closedAfterFinish = false
   var failure: Option<Throwable> = None
   override fun close() {
+    closes++
     runBlocking { recorder.drain() }
     closedAfterFinish = recorder.events.last() is RunFinished
     failure.onSome { throw it }

@@ -4,8 +4,39 @@ import com.trendyol.stove.system.abstractions.*
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.async
+import kotlinx.coroutines.coroutineScope
+import java.util.concurrent.CountDownLatch
+import java.util.concurrent.TimeUnit
 
 class StoveShutdownTest : FunSpec({
+  test("shutdown releases the registration lock before invoking resource cleanup") {
+    Stove().use { stove ->
+      val entered = CompletableDeferred<Unit>()
+      val release = CountDownLatch(1)
+      val releasedByTest = CompletableDeferred<Boolean>()
+      stove.registerForDispose(
+        AutoCloseable {
+          entered.complete(Unit)
+          releasedByTest.complete(release.await(5, TimeUnit.SECONDS))
+        }
+      )
+      coroutineScope {
+        val shutdown = async(Dispatchers.IO) { stove.close() }
+        try {
+          entered.await()
+          shouldThrow<IllegalStateException> { stove.registerForDispose(AutoCloseable {}) }
+        } finally {
+          release.countDown()
+          shutdown.await()
+        }
+        releasedByTest.await() shouldBe true
+      }
+    }
+  }
+
   test("restores faults before stopping the app and closes each resource once") {
     ShutdownFixture().use { fixture ->
       fixture.stove.run()
