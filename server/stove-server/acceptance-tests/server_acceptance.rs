@@ -3,6 +3,7 @@ mod retention_contract;
 #[path = "../tests/common/retention.rs"]
 mod retention_support;
 use retention_support::equal_retention;
+mod environment;
 mod support;
 
 use std::collections::BTreeSet;

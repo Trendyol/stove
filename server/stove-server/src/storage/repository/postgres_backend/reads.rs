@@ -19,6 +19,21 @@ use crate::storage::schema::postgres::{
 };
 
 impl PostgresBackend {
+  pub fn get_run_environment(
+    &self,
+    run_id: &str,
+  ) -> Result<Option<crate::proto::RunEnvironmentEvent>> {
+    use crate::storage::schema::postgres::run_environments as env;
+    let mut conn = self.checkout_read()?;
+    env::table
+      .find(run_id)
+      .select(env::environment)
+      .first::<String>(&mut *conn)
+      .optional()?
+      .map(|json| serde_json::from_str(&json).map_err(Into::into))
+      .transpose()
+  }
+
   pub fn get_run_metadata_facets(
     &self,
     app: Option<&str>,

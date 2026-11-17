@@ -25,6 +25,48 @@ The demo stores its data only in browser memory. **Reset demo** restores the sam
   allow="fullscreen"
 ></iframe>
 
+## Run environment and lifecycle
+
+**Run environment** lists every registered system, keyed instance, and the application under test (AUT), including components with no observed activity. Expand a component to inspect preparation, startup, and cleanup phases with their status, duration, and failure. Registration describes the run's scope; test evidence shows what actually happened.
+
+The inventory is captured before startup, updated live, and persisted by `stove-server` in SQLite or PostgreSQL. Failed startup and cleanup mark the run failed without inventing failed tests. Startup failures remain visible alongside successful cleanup. Older runs without inventory fall back to their reported system names.
+
+The dashboard exports all observations through one `stove.events` subscription. Custom observers can use the same stream without a dashboard:
+
+```kotlin
+import arrow.core.getOrElse
+import com.trendyol.stove.events.*
+import kotlinx.coroutines.*
+import kotlinx.coroutines.flow.*
+
+// Use a scope you own. Start collecting before stove.run().
+val observations = scope.launch(start = CoroutineStart.UNDISPATCHED) {
+  stove.events.stream.collect { envelope ->
+    when (val event = envelope.event) {
+      is RunStarting -> println("${envelope.runId}: ${event.components.size} components")
+      is EnvironmentChanged -> println(event.components)
+      is RunFinished -> println(event.failure.getOrElse { "Run finished" })
+    }
+  }
+}
+
+// StateFlow also gives late collectors the latest inventory.
+val inventory = scope.launch {
+  stove.events.environment.collect { components -> println(components) }
+}
+// After handling the final event, cancel your collectors or their scope.
+```
+
+Events also include test starts, failures and ends, report entries, snapshots, spans, mock interactions, and mock warnings. Existing evidence stores remain authoritative. `stream` is a `SharedFlow` of ordered envelopes with run ID, event ID, sequence, and timestamp, with no replay. `environment` is a `StateFlow` of the latest inventory; intermediate states may be conflated. Custom systems appear automatically when registered; their existing lifecycle interfaces determine which phases are recorded.
+
+`stove.events` is an observation view: it exposes the streams, run identity, and `flush()`. Integrations publish observed facts with `stove.publish(event)`. Stove owns source connections, dispatch, and shutdown; observers cannot close or mutate its dispatcher.
+
+Snapshots are captured synchronously at failure and test-end boundaries, before the next test or shutdown can clear the evidence. Their captured values are then delivered through the same stream.
+
+Source callbacks enqueue observations into an unbounded channel. Enqueuing does not suspend; snapshot capture runs synchronously. Slow collectors can increase memory use, and events dispatched without subscribers are not retained. Collectors own their coroutine scope and error handling; catch recoverable exceptions inside `collect` if collection should continue. Cancelling one collector does not cancel the event stream. `flush()` waits for in-flight capture and returns the last dispatched sequence; consumers that need a processing guarantee must acknowledge that sequence themselves. Flows remain open after shutdown, so cancel collectors when finished.
+
+The dashboard keeps observing through cleanup, waits up to 30 seconds for its collector to process pending observations, then drains its export queue for up to 30 seconds before closing the transport. Delivery is best effort: an unavailable receiver can leave observations undelivered, which is logged. Upgrade both client and server to ingest the environment event. Inventory does not inspect system configuration; phase errors contain the original exception message or, when absent, the exception class name.
+
 ## Open evidence from a report
 
 Agent reports can link directly to a run, test, or specific record. Opening a citation selects the right tab, highlights the record, and opens its inspector. You can copy that link from the dashboard, expand the surrounding context, or choose **Show full test**. Browser back and forward restore earlier selections.
@@ -458,6 +500,7 @@ The server exposes REST endpoints for integration:
 | `POST /api/v1/events` | ingest a protobuf-encoded `DashboardEvent`; responds with a protobuf `EventAck` |
 | `GET /api/v1/runs` | list runs in cursor-paginated pages, with optional app, status, and metadata filters |
 | `GET /api/v1/runs/metadata` | list metadata values and counts across matching runs |
+| `GET /api/v1/runs/{run}/environment` | registered components and lifecycle phases; `null` for runs without inventory |
 | `GET /api/v1/runs/{run}/tests` | tests in a run |
 | `GET /api/v1/runs/{run}/mock-interactions` | mock exchanges for a run; append `/ambient` for unattributed exchanges |
 | `GET /api/v1/runs/{run}/mock-warnings` | mock diagnostics for a run; append `/ambient` for unattributed diagnostics |

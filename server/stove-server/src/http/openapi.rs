@@ -20,6 +20,7 @@ use utoipa_swagger_ui::{Config, SwaggerUi};
     super::routes::get_runs,
     super::routes::get_run_metadata_facets,
     super::routes::get_run,
+    super::routes::get_run_environment,
     super::routes::get_tests,
     super::routes::get_test,
     super::routes::get_focused_evidence,

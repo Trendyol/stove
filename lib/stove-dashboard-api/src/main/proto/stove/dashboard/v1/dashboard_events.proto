@@ -24,6 +24,7 @@ message DashboardEvent {
     SnapshotEvent snapshot = 16;
     MockInteractionEvent mock_interaction = 17;
     MockWarningEvent mock_warning = 18;
+    RunEnvironmentEvent run_environment = 19;
   }
 }
 
@@ -41,6 +42,7 @@ message RunEndedEvent {
   int32 passed = 3;
   int32 failed = 4;
   int64 duration_ms = 5;
+  bool lifecycle_failed = 6;
 }
 
 message TestStartedEvent {
@@ -160,4 +162,27 @@ message EventAck {
   string event_id = 2;
   uint64 sequence = 3;
   bool duplicate = 4;
+}
+
+
+// Complete inventory snapshot, including registered components with no observed activity.
+message RunEnvironmentEvent {
+  repeated RunComponent components = 1;
+}
+
+message RunComponent {
+  string id = 1;
+  string name = 2;
+  string type = 3;
+  string key = 4;
+  string role = 5;
+  repeated ComponentPhase phases = 6;
+}
+
+message ComponentPhase {
+  string name = 1;
+  string status = 2;
+  string started_at = 3;
+  int64 duration_ms = 4;
+  string error = 5;
 }

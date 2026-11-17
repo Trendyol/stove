@@ -1,409 +1,131 @@
 package com.trendyol.stove.dashboard
 
-import arrow.core.getOrElse
-import com.fasterxml.jackson.databind.ObjectMapper
-import com.google.protobuf.Timestamp
-import com.trendyol.stove.dashboard.api.DashboardEvent
-import com.trendyol.stove.dashboard.api.EntryRecordedEvent
-import com.trendyol.stove.dashboard.api.MockInteractionAttribution
-import com.trendyol.stove.dashboard.api.MockInteractionEvent
-import com.trendyol.stove.dashboard.api.MockWarningEvent
-import com.trendyol.stove.dashboard.api.RunEndedEvent
-import com.trendyol.stove.dashboard.api.RunStartedEvent
-import com.trendyol.stove.dashboard.api.SpanRecordedEvent
-import com.trendyol.stove.dashboard.api.TestEndedEvent
-import com.trendyol.stove.dashboard.api.TestStartedEvent
-import com.trendyol.stove.interactions.InteractionAttribution
-import com.trendyol.stove.interactions.MockInteraction
-import com.trendyol.stove.interactions.MockInteractionListener
-import com.trendyol.stove.interactions.MockInteractionPublisher
-import com.trendyol.stove.interactions.MockWarning
-import com.trendyol.stove.interactions.MockWarningListener
-import com.trendyol.stove.interactions.MockWarningPublisher
-import com.trendyol.stove.reporting.ReportEntry
-import com.trendyol.stove.reporting.ReportEventListener
-import com.trendyol.stove.reporting.Reports
-import com.trendyol.stove.reporting.SpanEventListener
-import com.trendyol.stove.reporting.SpanListenerRegistry
-import com.trendyol.stove.reporting.StoveTestContext
+import arrow.core.*
+import com.trendyol.stove.dashboard.api.*
+import com.trendyol.stove.events.*
+import com.trendyol.stove.events.RunComponent
+import com.trendyol.stove.interactions.*
+import com.trendyol.stove.reporting.*
 import com.trendyol.stove.system.Stove
-import com.trendyol.stove.system.abstractions.ExposesConfiguration
-import com.trendyol.stove.system.abstractions.PluggedSystem
-import com.trendyol.stove.system.abstractions.RunAware
+import com.trendyol.stove.system.abstractions.*
 import com.trendyol.stove.tracing.SpanInfo
+import org.slf4j.LoggerFactory
 import java.time.Duration
 import java.time.Instant
-import java.util.UUID
-import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.locks.ReentrantLock
 import kotlin.concurrent.withLock
 
-/**
- * Dashboard system that streams test events to the Stove Server using the configured
- * [DashboardSystemOptions.ingestion] transport.
- *
- * Add to your Stove config:
- * ```kotlin
- * Stove { }.with {
- *   dashboard { DashboardSystemOptions(appName = "my-api") }
- * }
- * ```
- */
+/** Exports Stove observations through one subscription; survives application and system cleanup. */
 class DashboardSystem(
   override val stove: Stove,
   private val options: DashboardSystemOptions
-) : PluggedSystem,
+) : RunObserver,
   RunAware,
   ExposesConfiguration,
   ReportEventListener,
   SpanEventListener,
   MockInteractionListener,
   MockWarningListener {
+  private val logger = LoggerFactory.getLogger(javaClass)
+  private val lock = ReentrantLock()
+  private val runId = stove.events.runId
+  private var emitter: Option<DashboardEmitter> = None
+  private var profiling: Option<AutoCloseable> = None
+  private var startTime = Instant.now()
+  private var accepting = false
+  private val closing = AtomicBoolean(false)
+  private var closed = false
+  private var lifecycleFailed = false
+  private val tests = DashboardTests(::emit)
+  private val observations = DashboardObservations(stove.events, ::observe)
 
-  private val logger = org.slf4j.LoggerFactory.getLogger(DashboardSystem::class.java)
-  private val jsonMapper = ObjectMapper()
-  private val runId = UUID.randomUUID().toString()
-  private lateinit var emitter: DashboardEmitter
-  private var profiling: AutoCloseable? = null
-  private var startTime: Instant = Instant.now()
-  private var totalTests = 0
-  private var passedTests = 0
-  private var failedTests = 0
-  private val lifecycleLock = ReentrantLock()
-  private val testStartTimes = ConcurrentHashMap<String, Instant>()
-  private val testFailures = ConcurrentHashMap<String, String>()
-  private val failureSnapshotTaken = ConcurrentHashMap.newKeySet<String>()
-  private var mockDiagnosticListenersRegistered = false
-  private val acceptingEvents = AtomicBoolean(false)
-
-  override fun configuration(): List<String> = options.externalProfiling?.let { profiling ->
+  override fun configuration(): List<String> = options.externalProfiling?.let {
     listOf(
-      "stove.profiling.serverUrl=${profiling.serverUrl}",
+      "stove.profiling.serverUrl=${it.serverUrl}",
       "stove.profiling.runId=$runId",
-      "stove.profiling.serviceName=${profiling.serviceName ?: options.appName}",
-      "stove.profiling.uploadIntervalSeconds=${profiling.uploadIntervalSeconds}",
-      "stove.profiling.profileTypes=${profiling.profileTypes.joinToString(",")}"
+      "stove.profiling.serviceName=${it.serviceName ?: options.appName}",
+      "stove.profiling.uploadIntervalSeconds=${it.uploadIntervalSeconds}",
+      "stove.profiling.profileTypes=${it.profileTypes.joinToString(",")}"
     )
   } ?: emptyList()
 
   override suspend fun run() {
-    emitter = DashboardEmitter(options.ingestion)
+    if (closing.get()) return
+    observations.awaitPending()
+    if (lock.withLock { emitter.isSome() || closing.get() }) return
+    start(stove.runComponents())
+    stove.startObserving()
+  }
+
+  private fun observe(event: StoveEvent): Unit = lock.withLock {
+    when (event) {
+      is RunStarting -> start(event.components)
+      is EnvironmentChanged -> if (accepting) emit { runEnvironment = event.components.toEnvironmentProto() }
+      is RunFinished -> lifecycleFailed = event.failure.isSome()
+      is TestStarted -> accept { tests.start(event.context) }
+      is TestFailed -> accept { tests.fail(event.testId, event.error) }
+      is TestEnded -> accept { tests.finish(event.testId) }
+      is EntryRecorded -> accept { tests.record(event.entry) }
+      is SnapshotRecorded -> accept { emit { snapshot = event.toProto() } }
+      is SpanRecorded -> accept { emit { spanRecorded = event.span.toProto() } }
+      is InteractionObserved -> accept { emit { mockInteraction = event.interaction.toProto() } }
+      is WarningObserved -> accept { emit { mockWarning = event.warning.toProto() } }
+    }
+  }
+
+  private fun start(components: List<RunComponent>): Unit = lock.withLock {
+    if (emitter.isSome() || closed) return
+    emitter = Some(DashboardEmitter(options.ingestion))
     startTime = Instant.now()
-    emitter.tryEmit(
-      dashboardEvent {
-        runStarted = RunStartedEvent.newBuilder()
-          .setTimestamp(now())
-          .setAppName(options.appName)
-          .addAllSystems(stove.systemsOf<Reports>().map { it.reportSystemName })
-          .putAllMetadata(options.metadata)
-          .apply {
-            StoveCompatibilityVersion.VALUE
-              .takeIf(String::isNotBlank)
-              ?.let(::setStoveVersion)
-          }
-          .build()
-      }
-    )
-    if (System.getProperty("stove.profiling.enabled").toBoolean()) {
-      runCatching { DashboardProfiling(runId, options.appName) }
-        .onSuccess { profiling = it }
-        .onFailure { logger.warn("Stove profiling could not start; check the tracing plugin and platform support", it) }
+    emit {
+      runStarted = RunStartedEvent.newBuilder().setTimestamp(startTime.toTimestamp())
+        .setAppName(options.appName).addAllSystems(components.map { it.name })
+        .putAllMetadata(options.metadata).setStoveVersion(StoveCompatibilityVersion.VALUE).build()
     }
-    acceptingEvents.set(true)
-    stove.addReportListener(this)
-    registerSpanListener()
-    registerMockDiagnosticListeners()
+    emit { runEnvironment = components.toEnvironmentProto() }
+    accepting = true
+    startProfiling()
   }
 
-  override suspend fun stop() {
-    close()
+  private fun startProfiling() {
+    if (!System.getProperty("stove.profiling.enabled").toBoolean()) return
+    runCatching { DashboardProfiling(runId, options.appName) }
+      .onSuccess { profiling = Some(it) }
+      .onFailure { logger.warn("Stove profiling could not start; check the tracing plugin and platform support", it) }
   }
 
-  override fun onTestStarted(ctx: StoveTestContext) {
-    lifecycleLock.withLock {
-      if (!acceptingEvents.get()) return
-      totalTests++
-      testStartTimes[ctx.testId] = Instant.now()
-      emitter.tryEmit(
-        dashboardEvent {
-          testStarted = TestStartedEvent.newBuilder()
-            .setTestId(ctx.testId)
-            .setTestName(ctx.testName)
-            .setSpecName(ctx.specName ?: "")
-            .setTimestamp(now())
-            .addAllTestPath(ctx.testPath)
-            .build()
-        }
-      )
-    }
+  override fun onTestStarted(ctx: StoveTestContext) = stove.publish(TestStarted(ctx))
+  override fun onTestFailed(testId: String, error: String) = stove.publish(TestFailed(testId, error))
+  override fun onTestEnded(testId: String) = stove.publish(TestEnded(testId))
+  override fun onEntryRecorded(entry: ReportEntry) = stove.publish(EntryRecorded(entry))
+  override fun onSpanRecorded(span: SpanInfo) = stove.publish(SpanRecorded(span))
+  override fun onInteraction(interaction: MockInteraction) = stove.publish(InteractionObserved(interaction))
+  override fun onWarning(warning: MockWarning) = stove.publish(WarningObserved(warning))
+
+  private fun accept(action: () -> Unit) {
+    if (accepting) action()
   }
 
-  override fun onTestFailed(testId: String, error: String) {
-    lifecycleLock.withLock {
-      if (!acceptingEvents.get() || !testStartTimes.containsKey(testId)) return
-      testFailures[testId] = error
-    }
+  private fun emit(build: DashboardEventBuilder) {
+    emitter.onSome { it.tryEmit(DashboardEvent.newBuilder().setRunId(runId).apply(build).build()) }
   }
 
-  override fun onTestEnded(testId: String) {
-    lifecycleLock.withLock {
-      if (!acceptingEvents.get()) return
-      finishTestIfOpen(testId)
-    }
-  }
-
-  override fun onEntryRecorded(entry: ReportEntry) {
-    val shouldCaptureFailureSnapshot = lifecycleLock.withLock {
-      if (!acceptingEvents.get() || !testStartTimes.containsKey(entry.testId)) {
-        return@withLock false
-      }
-      emitter.tryEmit(
-        dashboardEvent {
-          entryRecorded = entry.toProto()
-        }
-      )
-      entry.isFailed && failureSnapshotTaken.add(entry.testId)
-    }
-    if (shouldCaptureFailureSnapshot) {
-      // Entry failures are attempt-level diagnostics. The test framework's terminal
-      // callback is the only authority for the test status, so an `eventually` retry
-      // can fail here and still finish as a passed test.
-      emitSnapshots(entry.testId, trigger = TRIGGER_FAILURE) {
-        it.reportSystemName == entry.system
-      }
-    }
-  }
-
-  private fun ReportEntry.toProto(): EntryRecordedEvent = EntryRecordedEvent.newBuilder()
-    .setTestId(testId)
-    .setTimestamp(timestamp.toTimestamp())
-    .setSystem(system)
-    .setAction(action)
-    .setResult(result.name)
-    .setInput(input.getOrElse { "" }.toString())
-    .setOutput(output.getOrElse { "" }.toString())
-    .putAllMetadata(metadata.mapValues { it.value.toString() })
-    .setExpected(expected.getOrElse { "" }.toString())
-    .setActual(actual.getOrElse { "" }.toString())
-    .setError(error.getOrElse { "" })
-    .setTraceId(traceId.getOrElse { "" })
-    .build()
-
-  override fun onInteraction(interaction: MockInteraction) {
-    if (!acceptingEvents.get()) return
-    emitter.tryEmit(
-      dashboardEvent {
-        mockInteraction = MockInteractionEvent.newBuilder()
-          .setTestId(interaction.testId ?: "")
-          .setTimestamp(interaction.timestamp.toTimestamp())
-          .setSystem(interaction.system)
-          .setProtocol(interaction.protocol.name)
-          .setMethod(interaction.method)
-          .setTarget(interaction.target)
-          .setMatched(interaction.matched)
-          .setStubId(interaction.stubId ?: "")
-          .setAttribution(interaction.attribution.toProto())
-          .setRequestBody(interaction.requestBody)
-          .setRequestBodyTruncated(interaction.requestBodyTruncated)
-          .setResponseBody(interaction.responseBody)
-          .setResponseBodyTruncated(interaction.responseBodyTruncated)
-          .setStatus(interaction.status)
-          .setLatencyMs(interaction.latencyMs ?: -1)
-          .addAllNearMisses(interaction.nearMisses)
-          .setTraceId(interaction.traceId ?: "")
-          .setScenarioName(interaction.scenarioName ?: "")
-          .setScenarioState(interaction.scenarioState ?: "")
-          .setNextScenarioState(interaction.nextScenarioState ?: "")
-          .setConfiguredDelayMs(interaction.configuredDelayMs ?: -1)
-          .setFault(interaction.fault ?: "")
-          .setClientDeadlineMs(interaction.clientDeadlineMs ?: -1)
-          .build()
-      }
-    )
-  }
-
-  override fun onWarning(warning: MockWarning) {
-    if (!acceptingEvents.get()) return
-    emitter.tryEmit(
-      dashboardEvent {
-        mockWarning = MockWarningEvent.newBuilder()
-          .setTestId(warning.testId ?: "")
-          .setTimestamp(warning.timestamp.toTimestamp())
-          .setSystem(warning.system)
-          .setKind(warning.kind.name)
-          .setMessage(warning.message)
-          .setStubId(warning.stubId ?: "")
-          .setTarget(warning.target ?: "")
-          .build()
-      }
-    )
-  }
-
-  private fun InteractionAttribution.toProto(): MockInteractionAttribution = when (this) {
-    InteractionAttribution.PROVEN_HEADER -> MockInteractionAttribution.PROVEN_HEADER
-    InteractionAttribution.PROVEN_BAGGAGE -> MockInteractionAttribution.PROVEN_BAGGAGE
-    InteractionAttribution.PROVEN_STUB -> MockInteractionAttribution.PROVEN_STUB
-    InteractionAttribution.UNATTRIBUTED -> MockInteractionAttribution.UNATTRIBUTED
-  }
-
-  override fun onSpanRecorded(span: SpanInfo) {
-    if (!acceptingEvents.get()) return
-    emitter.tryEmit(
-      dashboardEvent {
-        spanRecorded = SpanRecordedEvent.newBuilder()
-          .setTraceId(span.traceId)
-          .setSpanId(span.spanId)
-          .setParentSpanId(span.parentSpanId ?: "")
-          .setOperationName(span.operationName)
-          .setServiceName(span.serviceName)
-          .setStartTimeNanos(span.startTimeNanos)
-          .setEndTimeNanos(span.endTimeNanos)
-          .setStatus(span.status.name)
-          .putAllAttributes(span.attributes)
-          .apply {
-            span.exception?.let { ex ->
-              exception = com.trendyol.stove.dashboard.api.ExceptionInfo.newBuilder()
-                .setType(ex.type)
-                .setMessage(ex.message)
-                .addAllStackTrace(ex.stackTrace)
-                .build()
-            }
-          }
-          .build()
-      }
-    )
-  }
+  override suspend fun stop() = close()
 
   override fun close() {
-    lifecycleLock.withLock {
-      if (!::emitter.isInitialized || !acceptingEvents.compareAndSet(true, false)) return
-      stove.removeReportListener(this)
-      removeMockDiagnosticListeners()
-      runCatching { profiling?.close() }
-        .onFailure { logger.warn("Stove profiling could not flush", it) }
-      profiling = null
-      finalizeOpenTests()
-      val duration = Duration.between(startTime, Instant.now()).toMillis()
-      emitter.tryEmit(
-        dashboardEvent {
-          runEnded = RunEndedEvent.newBuilder()
-            .setTimestamp(now())
-            .setTotalTests(totalTests)
-            .setPassed(passedTests)
-            .setFailed(failedTests)
-            .setDurationMs(duration)
-            .build()
-        }
-      )
-      emitter.close()
+    if (!closing.compareAndSet(false, true)) return
+    stove.capturePendingSnapshots()
+    observations.drain()
+    lock.withLock {
+      accepting = false
+      closed = true
     }
+    observations.close()
+    runCatching { profiling.onSome { it.close() } }.onFailure { logger.warn("Stove profiling could not flush", it) }
+    profiling = None
+    tests.close()
+    emit { runEnded = tests.result(Duration.between(startTime, Instant.now()).toMillis(), lifecycleFailed) }
+    emitter.onSome { it.close() }
   }
-
-  private fun finalizeOpenTests() {
-    val stillRunning = testStartTimes.keys.toList()
-    stillRunning.forEach { testId ->
-      logger.debug("Finalizing still-running test {} during dashboard shutdown", testId)
-      finishTestIfOpen(testId, interrupted = true)
-    }
-  }
-
-  private fun finishTestIfOpen(testId: String, interrupted: Boolean = false) {
-    val startedAt = testStartTimes.remove(testId) ?: run {
-      logger.debug("Ignoring duplicate or late test end for {}", testId)
-      return
-    }
-
-    val failure = testFailures.remove(testId)
-    emitSnapshots(testId, trigger = TRIGGER_TEST_END)
-    failureSnapshotTaken.remove(testId)
-    val durationMs = Duration.between(startedAt, Instant.now()).toMillis()
-    val status = when {
-      failure != null -> "FAILED"
-      interrupted -> "ERROR"
-      else -> "PASSED"
-    }
-    val error = failure ?: if (interrupted) "Test ended before the framework reported an outcome" else ""
-    emitter.tryEmit(
-      dashboardEvent {
-        testEnded = TestEndedEvent.newBuilder()
-          .setTestId(testId)
-          .setStatus(status)
-          .setDurationMs(durationMs)
-          .setError(error)
-          .setTimestamp(now())
-          .build()
-      }
-    )
-    if (status == "PASSED") {
-      passedTests++
-    } else {
-      failedTests++
-    }
-  }
-
-  private fun emitSnapshots(testId: String, trigger: String, filter: (Reports) -> Boolean = { true }) {
-    stove.systemsOf<Reports>()
-      .filter(filter)
-      .forEach { system ->
-        runCatching { system.snapshot() }
-          .onFailure { e ->
-            logger.warn("Failed to collect snapshot from ${system.reportSystemName}: ${e.message}")
-          }
-          .onSuccess { snap ->
-            val stateJson = runCatching { jsonMapper.writeValueAsString(snap.state) }
-              .getOrDefault("{}")
-            emitter.tryEmit(
-              dashboardEvent {
-                snapshot = com.trendyol.stove.dashboard.api.SnapshotEvent.newBuilder()
-                  .setTestId(testId)
-                  .setSystem(snap.system)
-                  .setStateJson(stateJson)
-                  .setSummary(snap.summary)
-                  .setTimestamp(now())
-                  .setTrigger(trigger)
-                  .build()
-              }
-            )
-          }
-      }
-  }
-
-  private fun registerSpanListener() {
-    stove.systemsOf<SpanListenerRegistry>()
-      .firstOrNull()
-      ?.addSpanListener(this)
-  }
-
-  private fun registerMockDiagnosticListeners() {
-    stove.systemsOf<MockInteractionPublisher>().forEach { it.addInteractionListener(this) }
-    stove.systemsOf<MockWarningPublisher>().forEach { it.addWarningListener(this) }
-    mockDiagnosticListenersRegistered = true
-  }
-
-  private fun removeMockDiagnosticListeners() {
-    if (!mockDiagnosticListenersRegistered) return
-    stove.systemsOf<MockInteractionPublisher>().forEach { it.removeInteractionListener(this) }
-    stove.systemsOf<MockWarningPublisher>().forEach { it.removeWarningListener(this) }
-    mockDiagnosticListenersRegistered = false
-  }
-
-  private fun dashboardEvent(block: DashboardEvent.Builder.() -> Unit): DashboardEvent =
-    DashboardEvent.newBuilder()
-      .setRunId(runId)
-      .apply(block)
-      .build()
-
-  private fun now(): Timestamp = Instant.now().toTimestamp()
-
-  private companion object {
-    const val TRIGGER_TEST_END = "TEST_END"
-    const val TRIGGER_FAILURE = "FAILURE"
-  }
-
-  private fun Instant.toTimestamp(): Timestamp =
-    Timestamp.newBuilder()
-      .setSeconds(epochSecond)
-      .setNanos(nano)
-      .build()
 }

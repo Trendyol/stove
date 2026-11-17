@@ -184,3 +184,10 @@ payload -> Binary,
 byte_size -> BigInt,
 }
 }
+
+diesel::table! {
+  run_environments (run_id) {
+    run_id -> Text,
+    environment -> Text,
+  }
+}

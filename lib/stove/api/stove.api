@@ -246,6 +246,254 @@ public final class com/trendyol/stove/database/migrations/SupportsMigrations$Def
 	public static fun migrations (Lcom/trendyol/stove/database/migrations/SupportsMigrations;Lkotlin/jvm/functions/Function1;)Lcom/trendyol/stove/database/migrations/SupportsMigrations;
 }
 
+public final class com/trendyol/stove/events/ComponentPhase {
+	public fun <init> (Lcom/trendyol/stove/events/PhaseName;Lcom/trendyol/stove/events/PhaseStatus;Ljava/time/Instant;JLarrow/core/Option;)V
+	public synthetic fun <init> (Lcom/trendyol/stove/events/PhaseName;Lcom/trendyol/stove/events/PhaseStatus;Ljava/time/Instant;JLarrow/core/Option;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Lcom/trendyol/stove/events/PhaseName;
+	public final fun component2 ()Lcom/trendyol/stove/events/PhaseStatus;
+	public final fun component3 ()Ljava/time/Instant;
+	public final fun component4 ()J
+	public final fun component5 ()Larrow/core/Option;
+	public final fun copy (Lcom/trendyol/stove/events/PhaseName;Lcom/trendyol/stove/events/PhaseStatus;Ljava/time/Instant;JLarrow/core/Option;)Lcom/trendyol/stove/events/ComponentPhase;
+	public static synthetic fun copy$default (Lcom/trendyol/stove/events/ComponentPhase;Lcom/trendyol/stove/events/PhaseName;Lcom/trendyol/stove/events/PhaseStatus;Ljava/time/Instant;JLarrow/core/Option;ILjava/lang/Object;)Lcom/trendyol/stove/events/ComponentPhase;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getDurationMs ()J
+	public final fun getError ()Larrow/core/Option;
+	public final fun getName ()Lcom/trendyol/stove/events/PhaseName;
+	public final fun getStartedAt ()Ljava/time/Instant;
+	public final fun getStatus ()Lcom/trendyol/stove/events/PhaseStatus;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/trendyol/stove/events/ComponentRole : java/lang/Enum {
+	public static final field APPLICATION Lcom/trendyol/stove/events/ComponentRole;
+	public static final field SYSTEM Lcom/trendyol/stove/events/ComponentRole;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public static fun valueOf (Ljava/lang/String;)Lcom/trendyol/stove/events/ComponentRole;
+	public static fun values ()[Lcom/trendyol/stove/events/ComponentRole;
+}
+
+public final class com/trendyol/stove/events/EntryRecorded : com/trendyol/stove/events/StoveEvent {
+	public fun <init> (Lcom/trendyol/stove/reporting/ReportEntry;)V
+	public final fun component1 ()Lcom/trendyol/stove/reporting/ReportEntry;
+	public final fun copy (Lcom/trendyol/stove/reporting/ReportEntry;)Lcom/trendyol/stove/events/EntryRecorded;
+	public static synthetic fun copy$default (Lcom/trendyol/stove/events/EntryRecorded;Lcom/trendyol/stove/reporting/ReportEntry;ILjava/lang/Object;)Lcom/trendyol/stove/events/EntryRecorded;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getEntry ()Lcom/trendyol/stove/reporting/ReportEntry;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/trendyol/stove/events/EnvironmentChanged : com/trendyol/stove/events/StoveEvent {
+	public fun <init> (Ljava/util/List;)V
+	public final fun component1 ()Ljava/util/List;
+	public final fun copy (Ljava/util/List;)Lcom/trendyol/stove/events/EnvironmentChanged;
+	public static synthetic fun copy$default (Lcom/trendyol/stove/events/EnvironmentChanged;Ljava/util/List;ILjava/lang/Object;)Lcom/trendyol/stove/events/EnvironmentChanged;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getComponents ()Ljava/util/List;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/trendyol/stove/events/EventEnvelope {
+	public fun <init> (Ljava/lang/String;Ljava/lang/String;JLjava/time/Instant;Lcom/trendyol/stove/events/StoveEvent;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun component2 ()Ljava/lang/String;
+	public final fun component3 ()J
+	public final fun component4 ()Ljava/time/Instant;
+	public final fun component5 ()Lcom/trendyol/stove/events/StoveEvent;
+	public final fun copy (Ljava/lang/String;Ljava/lang/String;JLjava/time/Instant;Lcom/trendyol/stove/events/StoveEvent;)Lcom/trendyol/stove/events/EventEnvelope;
+	public static synthetic fun copy$default (Lcom/trendyol/stove/events/EventEnvelope;Ljava/lang/String;Ljava/lang/String;JLjava/time/Instant;Lcom/trendyol/stove/events/StoveEvent;ILjava/lang/Object;)Lcom/trendyol/stove/events/EventEnvelope;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getEvent ()Lcom/trendyol/stove/events/StoveEvent;
+	public final fun getEventId ()Ljava/lang/String;
+	public final fun getRunId ()Ljava/lang/String;
+	public final fun getSequence ()J
+	public final fun getTimestamp ()Ljava/time/Instant;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/trendyol/stove/events/InteractionObserved : com/trendyol/stove/events/StoveEvent {
+	public fun <init> (Lcom/trendyol/stove/interactions/MockInteraction;)V
+	public final fun component1 ()Lcom/trendyol/stove/interactions/MockInteraction;
+	public final fun copy (Lcom/trendyol/stove/interactions/MockInteraction;)Lcom/trendyol/stove/events/InteractionObserved;
+	public static synthetic fun copy$default (Lcom/trendyol/stove/events/InteractionObserved;Lcom/trendyol/stove/interactions/MockInteraction;ILjava/lang/Object;)Lcom/trendyol/stove/events/InteractionObserved;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getInteraction ()Lcom/trendyol/stove/interactions/MockInteraction;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/trendyol/stove/events/PhaseName : java/lang/Enum {
+	public static final field AFTER_START Lcom/trendyol/stove/events/PhaseName;
+	public static final field BEFORE_STOP Lcom/trendyol/stove/events/PhaseName;
+	public static final field CLOSE Lcom/trendyol/stove/events/PhaseName;
+	public static final field PREPARE Lcom/trendyol/stove/events/PhaseName;
+	public static final field START Lcom/trendyol/stove/events/PhaseName;
+	public static final field STOP Lcom/trendyol/stove/events/PhaseName;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public static fun valueOf (Ljava/lang/String;)Lcom/trendyol/stove/events/PhaseName;
+	public static fun values ()[Lcom/trendyol/stove/events/PhaseName;
+}
+
+public final class com/trendyol/stove/events/PhaseStatus : java/lang/Enum {
+	public static final field CANCELLED Lcom/trendyol/stove/events/PhaseStatus;
+	public static final field FAILED Lcom/trendyol/stove/events/PhaseStatus;
+	public static final field RUNNING Lcom/trendyol/stove/events/PhaseStatus;
+	public static final field SUCCEEDED Lcom/trendyol/stove/events/PhaseStatus;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public static fun valueOf (Ljava/lang/String;)Lcom/trendyol/stove/events/PhaseStatus;
+	public static fun values ()[Lcom/trendyol/stove/events/PhaseStatus;
+}
+
+public final class com/trendyol/stove/events/RunComponent {
+	public fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Larrow/core/Option;Lcom/trendyol/stove/events/ComponentRole;Ljava/util/List;)V
+	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Larrow/core/Option;Lcom/trendyol/stove/events/ComponentRole;Ljava/util/List;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun component2 ()Ljava/lang/String;
+	public final fun component3 ()Ljava/lang/String;
+	public final fun component4 ()Larrow/core/Option;
+	public final fun component5 ()Lcom/trendyol/stove/events/ComponentRole;
+	public final fun component6 ()Ljava/util/List;
+	public final fun copy (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Larrow/core/Option;Lcom/trendyol/stove/events/ComponentRole;Ljava/util/List;)Lcom/trendyol/stove/events/RunComponent;
+	public static synthetic fun copy$default (Lcom/trendyol/stove/events/RunComponent;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Larrow/core/Option;Lcom/trendyol/stove/events/ComponentRole;Ljava/util/List;ILjava/lang/Object;)Lcom/trendyol/stove/events/RunComponent;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getId ()Ljava/lang/String;
+	public final fun getKey ()Larrow/core/Option;
+	public final fun getName ()Ljava/lang/String;
+	public final fun getPhases ()Ljava/util/List;
+	public final fun getRole ()Lcom/trendyol/stove/events/ComponentRole;
+	public final fun getType ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/trendyol/stove/events/RunFinished : com/trendyol/stove/events/StoveEvent {
+	public fun <init> ()V
+	public fun <init> (Larrow/core/Option;)V
+	public synthetic fun <init> (Larrow/core/Option;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Larrow/core/Option;
+	public final fun copy (Larrow/core/Option;)Lcom/trendyol/stove/events/RunFinished;
+	public static synthetic fun copy$default (Lcom/trendyol/stove/events/RunFinished;Larrow/core/Option;ILjava/lang/Object;)Lcom/trendyol/stove/events/RunFinished;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getFailure ()Larrow/core/Option;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/trendyol/stove/events/RunReady : com/trendyol/stove/events/StoveEvent {
+	public static final field INSTANCE Lcom/trendyol/stove/events/RunReady;
+	public fun equals (Ljava/lang/Object;)Z
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/trendyol/stove/events/RunStarting : com/trendyol/stove/events/StoveEvent {
+	public fun <init> (Ljava/util/List;)V
+	public final fun component1 ()Ljava/util/List;
+	public final fun copy (Ljava/util/List;)Lcom/trendyol/stove/events/RunStarting;
+	public static synthetic fun copy$default (Lcom/trendyol/stove/events/RunStarting;Ljava/util/List;ILjava/lang/Object;)Lcom/trendyol/stove/events/RunStarting;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getComponents ()Ljava/util/List;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/trendyol/stove/events/SnapshotRecorded : com/trendyol/stove/events/StoveEvent {
+	public fun <init> (Ljava/lang/String;Lcom/trendyol/stove/events/SnapshotTrigger;Lcom/trendyol/stove/reporting/SystemSnapshot;Ljava/time/Instant;)V
+	public synthetic fun <init> (Ljava/lang/String;Lcom/trendyol/stove/events/SnapshotTrigger;Lcom/trendyol/stove/reporting/SystemSnapshot;Ljava/time/Instant;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun component2 ()Lcom/trendyol/stove/events/SnapshotTrigger;
+	public final fun component3 ()Lcom/trendyol/stove/reporting/SystemSnapshot;
+	public final fun component4 ()Ljava/time/Instant;
+	public final fun copy (Ljava/lang/String;Lcom/trendyol/stove/events/SnapshotTrigger;Lcom/trendyol/stove/reporting/SystemSnapshot;Ljava/time/Instant;)Lcom/trendyol/stove/events/SnapshotRecorded;
+	public static synthetic fun copy$default (Lcom/trendyol/stove/events/SnapshotRecorded;Ljava/lang/String;Lcom/trendyol/stove/events/SnapshotTrigger;Lcom/trendyol/stove/reporting/SystemSnapshot;Ljava/time/Instant;ILjava/lang/Object;)Lcom/trendyol/stove/events/SnapshotRecorded;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getCapturedAt ()Ljava/time/Instant;
+	public final fun getSnapshot ()Lcom/trendyol/stove/reporting/SystemSnapshot;
+	public final fun getTestId ()Ljava/lang/String;
+	public final fun getTrigger ()Lcom/trendyol/stove/events/SnapshotTrigger;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/trendyol/stove/events/SnapshotTrigger : java/lang/Enum {
+	public static final field FAILURE Lcom/trendyol/stove/events/SnapshotTrigger;
+	public static final field TEST_END Lcom/trendyol/stove/events/SnapshotTrigger;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public static fun valueOf (Ljava/lang/String;)Lcom/trendyol/stove/events/SnapshotTrigger;
+	public static fun values ()[Lcom/trendyol/stove/events/SnapshotTrigger;
+}
+
+public final class com/trendyol/stove/events/SpanRecorded : com/trendyol/stove/events/StoveEvent {
+	public fun <init> (Lcom/trendyol/stove/tracing/SpanInfo;)V
+	public final fun component1 ()Lcom/trendyol/stove/tracing/SpanInfo;
+	public final fun copy (Lcom/trendyol/stove/tracing/SpanInfo;)Lcom/trendyol/stove/events/SpanRecorded;
+	public static synthetic fun copy$default (Lcom/trendyol/stove/events/SpanRecorded;Lcom/trendyol/stove/tracing/SpanInfo;ILjava/lang/Object;)Lcom/trendyol/stove/events/SpanRecorded;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getSpan ()Lcom/trendyol/stove/tracing/SpanInfo;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public abstract interface class com/trendyol/stove/events/StoveEvent {
+}
+
+public final class com/trendyol/stove/events/StoveEvents {
+	public final fun flush (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public final fun getEnvironment ()Lkotlinx/coroutines/flow/StateFlow;
+	public final fun getRunId ()Ljava/lang/String;
+	public final fun getStream ()Lkotlinx/coroutines/flow/SharedFlow;
+}
+
+public final class com/trendyol/stove/events/TestEnded : com/trendyol/stove/events/StoveEvent {
+	public fun <init> (Ljava/lang/String;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun copy (Ljava/lang/String;)Lcom/trendyol/stove/events/TestEnded;
+	public static synthetic fun copy$default (Lcom/trendyol/stove/events/TestEnded;Ljava/lang/String;ILjava/lang/Object;)Lcom/trendyol/stove/events/TestEnded;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getTestId ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/trendyol/stove/events/TestFailed : com/trendyol/stove/events/StoveEvent {
+	public fun <init> (Ljava/lang/String;Ljava/lang/String;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun component2 ()Ljava/lang/String;
+	public final fun copy (Ljava/lang/String;Ljava/lang/String;)Lcom/trendyol/stove/events/TestFailed;
+	public static synthetic fun copy$default (Lcom/trendyol/stove/events/TestFailed;Ljava/lang/String;Ljava/lang/String;ILjava/lang/Object;)Lcom/trendyol/stove/events/TestFailed;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getError ()Ljava/lang/String;
+	public final fun getTestId ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/trendyol/stove/events/TestStarted : com/trendyol/stove/events/StoveEvent {
+	public fun <init> (Lcom/trendyol/stove/reporting/StoveTestContext;)V
+	public final fun component1 ()Lcom/trendyol/stove/reporting/StoveTestContext;
+	public final fun copy (Lcom/trendyol/stove/reporting/StoveTestContext;)Lcom/trendyol/stove/events/TestStarted;
+	public static synthetic fun copy$default (Lcom/trendyol/stove/events/TestStarted;Lcom/trendyol/stove/reporting/StoveTestContext;ILjava/lang/Object;)Lcom/trendyol/stove/events/TestStarted;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getContext ()Lcom/trendyol/stove/reporting/StoveTestContext;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/trendyol/stove/events/WarningObserved : com/trendyol/stove/events/StoveEvent {
+	public fun <init> (Lcom/trendyol/stove/interactions/MockWarning;)V
+	public final fun component1 ()Lcom/trendyol/stove/interactions/MockWarning;
+	public final fun copy (Lcom/trendyol/stove/interactions/MockWarning;)Lcom/trendyol/stove/events/WarningObserved;
+	public static synthetic fun copy$default (Lcom/trendyol/stove/events/WarningObserved;Lcom/trendyol/stove/interactions/MockWarning;ILjava/lang/Object;)Lcom/trendyol/stove/events/WarningObserved;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getWarning ()Lcom/trendyol/stove/interactions/MockWarning;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
 public final class com/trendyol/stove/functional/ExtensionsKt {
 	public static final fun evert (Larrow/core/Option;)Lcom/trendyol/stove/functional/Try;
 	public static final fun evert (Lcom/trendyol/stove/functional/Try;)Larrow/core/Option;
@@ -898,6 +1146,11 @@ public final class com/trendyol/stove/reporting/SpanEventListener$DefaultImpls {
 
 public abstract interface class com/trendyol/stove/reporting/SpanListenerRegistry {
 	public abstract fun addSpanListener (Lcom/trendyol/stove/reporting/SpanEventListener;)V
+	public fun removeSpanListener (Lcom/trendyol/stove/reporting/SpanEventListener;)V
+}
+
+public final class com/trendyol/stove/reporting/SpanListenerRegistry$DefaultImpls {
+	public static fun removeSpanListener (Lcom/trendyol/stove/reporting/SpanListenerRegistry;Lcom/trendyol/stove/reporting/SpanEventListener;)V
 }
 
 public final class com/trendyol/stove/reporting/StoveReporter {
@@ -1368,17 +1621,22 @@ public final class com/trendyol/stove/system/Stove : com/trendyol/stove/system/a
 	public final fun allSystems ()Ljava/util/Collection;
 	public final fun applicationUnderTest (Lcom/trendyol/stove/system/abstractions/ApplicationUnderTest;)Lcom/trendyol/stove/system/Stove;
 	public final fun applicationUnderTestContext ()Ljava/lang/Object;
+	public final fun capturePendingSnapshots ()V
 	public fun close ()V
 	public final fun endTest ()V
 	public final fun getActiveSystems ()Ljava/util/Map;
+	public final fun getEvents ()Lcom/trendyol/stove/events/StoveEvents;
 	public final fun getKeepDependenciesRunning ()Z
 	public final fun getKeyedSystems ()Ljava/util/Map;
 	public final fun getOptions ()Lcom/trendyol/stove/system/StoveOptions;
 	public final fun getRunMigrationsAlways ()Z
+	public final fun publish (Lcom/trendyol/stove/events/StoveEvent;)V
 	public final fun recordReport (Lcom/trendyol/stove/reporting/ReportEntry;)V
 	public final fun registerForDispose (Ljava/lang/AutoCloseable;)Ljava/lang/AutoCloseable;
 	public final fun removeReportListener (Lcom/trendyol/stove/reporting/ReportEventListener;)V
 	public fun run (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public final fun runComponents ()Ljava/util/List;
+	public final fun startObserving ()Lcom/trendyol/stove/events/StoveEvents;
 	public final fun startTest (Lcom/trendyol/stove/reporting/StoveTestContext;)V
 	public final fun with (Lkotlin/jvm/functions/Function1;)Lcom/trendyol/stove/system/Stove;
 }
@@ -1553,6 +1811,14 @@ public abstract interface class com/trendyol/stove/system/abstractions/ReadyStov
 public abstract interface class com/trendyol/stove/system/abstractions/RunAware {
 	public abstract fun run (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public abstract fun stop (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+}
+
+public abstract interface class com/trendyol/stove/system/abstractions/RunObserver : com/trendyol/stove/system/abstractions/PluggedSystem {
+}
+
+public final class com/trendyol/stove/system/abstractions/RunObserver$DefaultImpls {
+	public static fun executeWithReuseCheck (Lcom/trendyol/stove/system/abstractions/RunObserver;Lkotlin/jvm/functions/Function1;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static fun then (Lcom/trendyol/stove/system/abstractions/RunObserver;)Lcom/trendyol/stove/system/Stove;
 }
 
 public abstract interface class com/trendyol/stove/system/abstractions/RunnableSystemWithContext : com/trendyol/stove/system/abstractions/AfterRunAwareWithContext, com/trendyol/stove/system/abstractions/BeforeRunAware, com/trendyol/stove/system/abstractions/RunAware, java/lang/AutoCloseable {

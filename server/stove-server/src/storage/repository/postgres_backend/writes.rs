@@ -74,6 +74,9 @@ impl PostgresBackend {
 
 pub(super) fn apply_event(conn: &mut PgConnection, event: &PersistedDashboardEvent) -> Result<()> {
   match WriteOperation::from(event) {
+    WriteOperation::RunEnvironment(run_id, environment) => {
+      save_environment_on(conn, run_id, environment)
+    }
     WriteOperation::RunStarted(run) => save_run_start_on(conn, &run),
     WriteOperation::RunEnded(run) => {
       lock_completed_app(conn, run.run_id)?;
@@ -414,6 +417,22 @@ fn lock_completed_app(conn: &mut PgConnection, run_id: &str) -> Result<()> {
 fn lock_app(conn: &mut PgConnection, app: &str) -> Result<()> {
   diesel::sql_query("SELECT pg_advisory_xact_lock(hashtextextended($1, 1))")
     .bind::<diesel::sql_types::Text, _>(app)
+    .execute(conn)?;
+  Ok(())
+}
+
+fn save_environment_on(
+  conn: &mut PgConnection,
+  run_id: &str,
+  value: &crate::proto::RunEnvironmentEvent,
+) -> Result<()> {
+  use crate::storage::schema::postgres::run_environments as env;
+  let json = serde_json::to_string(value)?;
+  diesel::insert_into(env::table)
+    .values((env::run_id.eq(run_id), env::environment.eq(&json)))
+    .on_conflict(env::run_id)
+    .do_update()
+    .set(env::environment.eq(&json))
     .execute(conn)?;
   Ok(())
 }

@@ -1,5 +1,6 @@
 package com.trendyol.stove.dashboard
 
+import arrow.core.getOrElse
 import com.trendyol.stove.system.Stove
 import com.trendyol.stove.system.WithDsl
 import com.trendyol.stove.system.annotations.StoveDsl
@@ -18,6 +19,6 @@ import com.trendyol.stove.system.annotations.StoveDsl
 fun WithDsl.dashboard(
   configure: @StoveDsl () -> DashboardSystemOptions
 ): Stove {
-  this.stove.getOrRegister(DashboardSystem(this.stove, configure()))
+  stove.getOrNone<DashboardSystem>().getOrElse { stove.getOrRegister(DashboardSystem(stove, configure())) }
   return this.stove
 }

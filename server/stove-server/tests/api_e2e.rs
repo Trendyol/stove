@@ -85,6 +85,7 @@ fn run_ended_event(
     sequence: 0,
     event: Some(proto::dashboard_event::Event::RunEnded(
       proto::RunEndedEvent {
+        lifecycle_failed: false,
         timestamp: Some(ts(seconds, nanos)),
         total_tests,
         passed,

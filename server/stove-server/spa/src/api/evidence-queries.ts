@@ -31,6 +31,7 @@ function affectsEvidenceQuery(key: QueryKey, event: LiveDashboardEvent): boolean
   if (event.run_id !== key[1]) return false;
   const type = event.event_type;
   if (type === "run_started" || type === "run_ended" || type === "run_deleted") return true;
+  if (type === "run_environment") return false;
   const owner = event.payload.test_id ?? undefined;
   if (key[0] === "linked") {
     return (

@@ -53,6 +53,10 @@ class TracingSystem(
   fun validation(traceId: String): TraceValidationDsl =
     createValidation(traceId)
 
+  override fun removeSpanListener(listener: SpanEventListener) {
+    collector.removeSpanListener(listener)
+  }
+
   override fun addSpanListener(listener: SpanEventListener) {
     collector.addSpanListener(listener)
   }
@@ -60,6 +64,7 @@ class TracingSystem(
   override fun then(): Stove = stove
 
   override fun close() {
+    stopSpanReceiver()
     clearAllTraces()
   }
 

@@ -148,3 +148,19 @@ pub async fn clear_all(
   state.repository.clear_all()?;
   Ok(Json(serde_json::json!({ "cleared": true })))
 }
+
+#[utoipa::path(
+  get, path = "/api/v1/runs/{run_id}/environment", tag = "runs",
+  params(("run_id" = String, Path, description = "Run identifier")),
+  responses((status = 200, description = "Registered components and lifecycle phases, or null for older runs", body = Option<crate::proto::RunEnvironmentEvent>))
+)]
+pub async fn get_run_environment(
+  State(state): State<AppState>,
+  Path(run_id): Path<String>,
+) -> Result<Json<Option<crate::proto::RunEnvironmentEvent>>, AppError> {
+  let environment =
+    tokio::task::spawn_blocking(move || state.repository.get_run_environment(&run_id))
+      .await
+      .map_err(|error| AppError::Startup(format!("run environment task failed: {error}")))??;
+  Ok(Json(environment))
+}

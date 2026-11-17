@@ -92,6 +92,9 @@ pub(super) fn apply_persisted_event(
   event: &PersistedDashboardEvent,
 ) -> Result<()> {
   match WriteOperation::from(event) {
+    WriteOperation::RunEnvironment(run_id, environment) => {
+      save_environment_on(conn, run_id, environment)
+    }
     WriteOperation::RunStarted(run) => save_run_start_on(conn, &run),
     WriteOperation::RunEnded(run) => {
       let retention = super::admin::retention_on(conn)?;
@@ -410,6 +413,22 @@ fn save_mock_warning_on(conn: &mut SqliteConnection, warning: &NewMockWarning) -
       mock_warnings::stub_id.eq(&warning.stub_id),
       mock_warnings::target.eq(&warning.target),
     ))
+    .execute(conn)?;
+  Ok(())
+}
+
+fn save_environment_on(
+  conn: &mut SqliteConnection,
+  run_id: &str,
+  value: &crate::proto::RunEnvironmentEvent,
+) -> Result<()> {
+  use crate::storage::schema::sqlite::run_environments as env;
+  let json = serde_json::to_string(value)?;
+  diesel::insert_into(env::table)
+    .values((env::run_id.eq(run_id), env::environment.eq(&json)))
+    .on_conflict(env::run_id)
+    .do_update()
+    .set(env::environment.eq(&json))
     .execute(conn)?;
   Ok(())
 }

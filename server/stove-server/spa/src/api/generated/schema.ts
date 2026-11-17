@@ -279,6 +279,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/runs/{run_id}/environment": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["get_run_environment"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/runs/{run_id}/evidence/{kind}/{id}": {
         parameters: {
             query?: never;
@@ -620,6 +636,14 @@ export interface components {
             };
             stove_version: string | null;
         };
+        ComponentPhase: {
+            /** Format: int64 */
+            duration_ms: number;
+            error: string;
+            name: string;
+            started_at: string;
+            status: string;
+        };
         DatabaseColumn: {
             data_type: string;
             name: string;
@@ -761,6 +785,10 @@ export interface components {
             seq: number;
         };
         LiveDashboardPayload: {
+            /** @enum {string} */
+            event_type: "run_environment";
+            payload: components["schemas"]["RunEnvironmentEvent"];
+        } | {
             /** @enum {string} */
             event_type: "run_started";
             payload: components["schemas"]["LiveRunStartedPayload"];
@@ -1059,6 +1087,18 @@ export interface components {
             systems: string[];
             /** Format: int32 */
             total_tests: number;
+        };
+        RunComponent: {
+            id: string;
+            key: string;
+            name: string;
+            phases: components["schemas"]["ComponentPhase"][];
+            role: string;
+            type: string;
+        };
+        /** @description Complete inventory snapshot, including registered components with no observed activity. */
+        RunEnvironmentEvent: {
+            components: components["schemas"]["RunComponent"][];
         };
         RunMetadataFacet: {
             key: string;
@@ -1682,6 +1722,29 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["Run"] | null;
+                };
+            };
+        };
+    };
+    get_run_environment: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Run identifier */
+                run_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Registered components and lifecycle phases, or null for older runs */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RunEnvironmentEvent"] | null;
                 };
             };
         };

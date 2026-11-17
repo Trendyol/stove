@@ -21,4 +21,8 @@ data class StoveOptions(
 ) {
   inline fun <reified TState : ExposedConfiguration, reified TSystem : PluggedSystem> createStateStorage(): StateStorage<TState> =
     (this.stateStorageFactory(this, TSystem::class, TState::class))
+
+  inline fun <reified TState : ExposedConfiguration, reified TSystem : PluggedSystem> createStateStorage(
+    keyName: String
+  ): StateStorage<TState> = stateStorageFactory.createWithKey(this, TSystem::class, TState::class, keyName)
 }

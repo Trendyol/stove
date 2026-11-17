@@ -32,7 +32,8 @@ private const val DEFAULT_MAX_FAILURES = 5
 class DashboardEmitter internal constructor(
   ingestion: DashboardIngestion,
   private val maxFailures: Int,
-  private val drainWarningIntervalMs: Long
+  private val drainWarningIntervalMs: Long,
+  private val drainTimeoutMs: Long = 30_000
 ) {
   constructor(
     ingestion: DashboardIngestion = DashboardIngestion.Grpc(),
@@ -40,6 +41,7 @@ class DashboardEmitter internal constructor(
   ) : this(ingestion, maxFailures, DRAIN_WARNING_INTERVAL_MS)
 
   init {
+    require(drainTimeoutMs > 0) { "drainTimeoutMs must be greater than zero" }
     require(maxFailures > 0) { "maxFailures must be greater than zero: $maxFailures" }
     require(drainWarningIntervalMs > 0) {
       "drainWarningIntervalMs must be greater than zero: $drainWarningIntervalMs"
@@ -73,23 +75,31 @@ class DashboardEmitter internal constructor(
     }
   }
 
-  /** Graceful, idempotent shutdown: drains queued events, then closes the transport. */
+  /** Drains for at most 30 seconds, then closes the transport; incomplete delivery is logged. */
   fun close() {
-    if (!closed.compareAndSet(false, true)) return
-    eventQueue.close()
-    runBlocking {
-      while (!drainJob.isCompleted) {
-        val drained = withTimeoutOrNull(drainWarningIntervalMs.milliseconds) {
-          drainJob.join()
-          true
-        } ?: false
-        if (!drained) {
-          logger.warn("Still waiting for queued dashboard events to be acknowledged")
-        }
-      }
+    emitLock.withLock {
+      if (!closed.compareAndSet(false, true)) return
+      eventQueue.close()
     }
+    val drained = runBlocking {
+      withTimeoutOrNull(drainTimeoutMs.milliseconds) {
+        awaitDrain()
+        true
+      } ?: false
+    }
+    if (!drained) logger.warn("Dashboard flush timed out; some queued observations were not delivered")
     scope.cancel()
     transport.close()
+  }
+
+  private suspend fun awaitDrain() {
+    while (!drainJob.isCompleted) {
+      val drained = withTimeoutOrNull(drainWarningIntervalMs.milliseconds) {
+        drainJob.join()
+        true
+      } ?: false
+      if (!drained) logger.warn("Still waiting for queued dashboard events to be acknowledged")
+    }
   }
 
   private suspend fun drainLoop() {
@@ -108,14 +118,7 @@ class DashboardEmitter internal constructor(
         }
 
         is SendOutcome.Rejected -> {
-          consecutiveFailures = 0
-          if (!rejectionLogged) {
-            rejectionLogged = true
-            logger.warn(
-              "Dashboard server rejected an event: ${outcome.reason}. " +
-                "Such events are dropped; tests continue normally."
-            )
-          }
+          handleRejection(outcome.reason)
           return
         }
 
@@ -127,6 +130,13 @@ class DashboardEmitter internal constructor(
         delay((RETRY_BASE_DELAY_MS shl (attempt - 1)).milliseconds)
       }
     }
+  }
+
+  private fun handleRejection(reason: String) {
+    consecutiveFailures = 0
+    if (rejectionLogged) return
+    rejectionLogged = true
+    logger.warn("Dashboard server rejected an event: $reason. Such events are dropped; tests continue normally.")
   }
 
   private fun handleFailure(error: Exception) {

@@ -15,6 +15,7 @@ import { DEFAULT_IDLE_TIMEOUT_SECONDS, isIdleTimeout } from "../utils/idle-timeo
 import { matchesMetadata } from "../utils/metadata-filter";
 import { metadataOptionsForRuns } from "../utils/metadata-options";
 import { expiredRunIds, parseRetentionPolicy } from "../utils/retention";
+import { demoEnvironment } from "./environment";
 import { createDemoData, type DemoData } from "./fixtures";
 import { demoProfileReport } from "./profiles";
 
@@ -402,6 +403,10 @@ export function createDemoBackend(SQL: SqlJsStatic, version: string) {
           if (!runs().some((run) => run.id === runId)) return ok({ error: "Run unavailable" }, 404);
           if (testId && !rows("tests").some((test) => test.run_id === runId && test.id === testId))
             return ok({ error: "Test unavailable" }, 404);
+          if (!testId && suffix === "/environment") {
+            const run = runs().find((run) => run.id === runId);
+            return ok(run ? demoEnvironment(run) : null);
+          }
           if (!testId && suffix === "/profiles") {
             const run = runs().find((item) => item.id === runId)!;
             return ok(demoProfileReport(run, rows("spans"), url.searchParams));

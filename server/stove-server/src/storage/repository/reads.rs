@@ -12,6 +12,16 @@ pub(super) enum EvidenceScope<'a> {
 }
 
 impl Repository {
+  pub fn get_run_environment(
+    &self,
+    run_id: &str,
+  ) -> Result<Option<crate::proto::RunEnvironmentEvent>> {
+    self.with_backend("get_run_environment", "read", |backend| match backend {
+      Backend::Sqlite(sqlite) => sqlite.get_run_environment(run_id),
+      Backend::Postgres(postgres) => postgres.get_run_environment(run_id),
+    })
+  }
+
   pub fn get_test(&self, run_id: &str, test_id: &str) -> Result<Option<Test>> {
     self.with_backend("get_test", "read", |backend| match backend {
       Backend::Sqlite(sqlite) => sqlite.get_test(run_id, test_id),
