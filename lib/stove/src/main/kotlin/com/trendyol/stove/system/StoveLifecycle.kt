@@ -34,6 +34,7 @@ internal class StoveLifecycle(
       check(application.isSome()) { "Register an application runner before starting Stove" }
       check(startup == Startup.NEW) { "Stove has already been started" }
       startup = Startup.SYSTEMS
+      Stove.instance = stove
     }
     try {
       val components = runCatching { stove.readRunComponents(freeze = true) }
@@ -41,7 +42,6 @@ internal class StoveLifecycle(
       events.publish(RunStarting(components))
       events.connect(stove)
       startSystems()
-      Stove.instance = stove
       events.publish(RunReady)
     } catch (failure: Throwable) {
       rollback(failure)

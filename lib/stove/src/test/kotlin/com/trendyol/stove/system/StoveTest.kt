@@ -2,6 +2,7 @@ package com.trendyol.stove.system
 
 import arrow.core.None
 import com.trendyol.stove.system.abstractions.*
+import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.annotation.Isolate
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
@@ -44,6 +45,29 @@ class StoveTest :
       stove { this.stove shouldBe stove }
       stove.close()
       events.takeLast(2) shouldBe listOf("application.stop", "system.close")
+    }
+
+    test("companion accessors resolve the starting Stove and stop is safe after rollback") {
+      Stove().use { current ->
+        var stops = 0
+        current.applicationUnderTest(object : ApplicationUnderTest<Unit> {
+          override suspend fun start(configurations: List<String>) {
+            Stove.reporter() shouldBe current.reporter
+            error("application failed")
+          }
+
+          override suspend fun stop() {
+            stops++
+          }
+        })
+
+        shouldThrow<IllegalStateException> { current.run() }.message shouldBe "application failed"
+        stops shouldBe 1
+        Stove().use { unconfigured -> shouldThrow<IllegalStateException> { unconfigured.run() } }
+        Stove.reporter() shouldBe current.reporter
+        Stove.stop()
+        stops shouldBe 1
+      }
     }
 
     test("a failed resource close still releases the remaining resources and stops the application") {
