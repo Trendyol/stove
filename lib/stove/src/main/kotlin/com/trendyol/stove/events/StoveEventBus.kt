@@ -113,6 +113,7 @@ internal class StoveEventBus(
   }
 
   override fun close() {
+    delivery.requireExternalCaller()
     lock.withLock {
       if (status != Status.OPEN) return
       status = Status.CLOSING

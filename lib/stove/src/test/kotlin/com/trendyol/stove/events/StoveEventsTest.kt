@@ -101,6 +101,23 @@ class StoveEventsTest : FunSpec({
       withTimeout(5.seconds) { result.await() }.getOrThrow()
       stove.events.flush() shouldBe 1L
     }
+
+    val busResult = CompletableDeferred<Result<Unit>>()
+    lateinit var bus: StoveEventBus
+    bus = StoveEventBus(
+      handlers = listOf {
+        busResult.complete(
+          runCatching {
+            shouldThrow<IllegalStateException> { bus.close() }
+            Unit
+          }
+        )
+      }
+    )
+    bus.use {
+      bus.publish(RunReady)
+      withTimeout(5.seconds) { busResult.await() }.getOrThrow()
+    }
   }
 
   test("dispatch flush does not claim a collector has finished processing") {

@@ -9,6 +9,7 @@ import kotlin.concurrent.withLock
 
 /** Claims share the bus lock with publication, expiry and flush barriers. */
 internal class SnapshotCaptures(private val lock: ReentrantLock, private val deadline: SnapshotDeadline) {
+  private val logger = LoggerFactory.getLogger(javaClass)
   private val active = MutableStateFlow(emptySet<Job>())
   val outstanding get() = active.value
   val idle get() = active.value.isEmpty()
@@ -55,7 +56,7 @@ internal class SnapshotCaptures(private val lock: ReentrantLock, private val dea
     val expired = lock.withLock { active.value.intersect(outstanding).also { active.value -= it } }
     expired.forEach { it.cancel() }
     if (expired.isNotEmpty()) {
-      LoggerFactory.getLogger(javaClass).warn("Snapshot wait ended with outstanding captures; discarding late results")
+      logger.warn("Snapshot wait ended with outstanding captures; discarding late results")
     }
   }
 }

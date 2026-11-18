@@ -11,6 +11,8 @@ internal class EventDelivery(
   private val observations: MutableSharedFlow<EventEnvelope>,
   private val handlers: List<StoveEventHandler>
 ) : AutoCloseable {
+  private val logger = LoggerFactory.getLogger(javaClass)
+
   // shortcut: Unbounded buffering preserves synchronous evidence; use durable spooling if collectors routinely fall behind.
   private val pending = Channel<Delivery>(Channel.UNLIMITED)
   private val dispatching = ThreadLocal.withInitial { false }
@@ -44,7 +46,7 @@ internal class EventDelivery(
               handler(delivery.envelope.event)
             } catch (failure: Throwable) {
               currentCoroutineContext().ensureActive()
-              LoggerFactory.getLogger(javaClass).warn("Stove event observer failed", failure)
+              logger.warn("Stove event observer failed", failure)
             }
           }
         }
@@ -60,7 +62,7 @@ internal class EventDelivery(
     try {
       runBlocking { withTimeout(30.seconds) { worker.join() } }
     } catch (_: TimeoutCancellationException) {
-      LoggerFactory.getLogger(javaClass).warn("Stove observation drain timed out")
+      logger.warn("Stove observation drain timed out")
     } finally {
       scope.cancel()
       pending.cancel()

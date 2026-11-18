@@ -3,6 +3,7 @@ package com.trendyol.stove.events
 import com.trendyol.stove.reporting.*
 import com.trendyol.stove.system.Stove
 import com.trendyol.stove.system.abstractions.PluggedSystem
+import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
 import kotlinx.coroutines.*
@@ -172,7 +173,7 @@ class StoveSnapshotsTest : FunSpec({
         system.release.countDown()
         end.get(2, TimeUnit.SECONDS)
       }
-      io.kotest.assertions.throwables.shouldThrow<IllegalStateException> { bus.flush() }
+      shouldThrow<IllegalStateException> { bus.flush() }
     }
   }
 

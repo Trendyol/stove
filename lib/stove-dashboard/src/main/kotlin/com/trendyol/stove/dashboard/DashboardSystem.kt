@@ -54,7 +54,7 @@ class DashboardSystem(
     observations.awaitPending()
     if (lock.withLock { state != State.Waiting || closing.get() }) return
     start(stove.runComponents(), Instant.now())
-    stove.startObserving()
+    if (!closing.get()) stove.startObserving()
   }
 
   internal fun observe(envelope: EventEnvelope) {
@@ -115,7 +115,7 @@ class DashboardSystem(
       try {
         val (ended, lifecycleFailed) = terminal.getOrElse { Instant.now() to false }
         tests.close(ended)
-        emit { runEnded = tests.result(ended, Duration.between(started, ended).toMillis(), lifecycleFailed) }
+        emit { runEnded = tests.result(ended, Duration.between(started, ended).toMillis().coerceAtLeast(0), lifecycleFailed) }
       } finally {
         emitter.close()
       }
