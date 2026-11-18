@@ -4,6 +4,8 @@ import arrow.core.*
 import com.trendyol.stove.events.*
 import com.trendyol.stove.system.abstractions.*
 import kotlinx.coroutines.*
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import java.util.concurrent.locks.ReentrantLock
 import kotlin.concurrent.withLock
 
@@ -15,6 +17,7 @@ internal class StoveLifecycle(
   var application: Option<ApplicationUnderTest<*>> = None
   var context: Option<Any> = None
   private val lifecycleLock = ReentrantLock()
+  private val transition = Mutex()
   private var cleanup: Option<List<AutoCloseable>> = Some(emptyList())
   private enum class Startup { NEW, SYSTEMS, APPLICATION }
   private var startup = Startup.NEW
@@ -25,7 +28,7 @@ internal class StoveLifecycle(
     resource
   }
 
-  suspend fun run() {
+  suspend fun run(): Unit = transition.withLock {
     lifecycleLock.withLock {
       check(cleanup.isSome()) { "Stove has been closed" }
       check(application.isSome()) { "Register an application runner before starting Stove" }
@@ -33,11 +36,12 @@ internal class StoveLifecycle(
       startup = Startup.SYSTEMS
     }
     try {
-      val components = runCatching { stove.runComponents() }
+      val components = runCatching { stove.readRunComponents(freeze = true) }
         .onFailure { events.publish(RunStarting(environment.snapshot())) }.getOrThrow()
       events.publish(RunStarting(components))
       events.connect(stove)
       startSystems()
+      Stove.instance = stove
       events.publish(RunReady)
     } catch (failure: Throwable) {
       rollback(failure)
@@ -70,13 +74,18 @@ internal class StoveLifecycle(
 
   private suspend fun rollback(failure: Throwable): Unit = withContext(NonCancellable) {
     try {
-      shutdown(Some(failure))
+      dispose(Some(failure))
     } catch (cleanupFailure: Throwable) {
       if (cleanupFailure !== failure) failure.addSuppressed(cleanupFailure)
     }
   }
 
-  suspend fun shutdown(startupFailure: Option<Throwable> = None) {
+  suspend fun shutdown() {
+    if (lifecycleLock.withLock { cleanup.isNone() }) return
+    transition.withLock { dispose(None) }
+  }
+
+  private suspend fun dispose(startupFailure: Option<Throwable>) {
     val registered = lifecycleLock.withLock {
       cleanup.getOrElse { return }.also { cleanup = None }
     }

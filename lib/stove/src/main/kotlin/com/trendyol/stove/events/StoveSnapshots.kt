@@ -6,7 +6,7 @@ import com.trendyol.stove.system.Stove
 import org.slf4j.LoggerFactory
 
 /** Plan captures in event order under the bus lock. Invoke the returned work outside the lock. */
-internal class StoveSnapshots(private val stove: Stove, private val record: SnapshotRecorder) {
+internal class StoveSnapshots(private val stove: Stove, private val record: SnapshotRecorder, private val accepting: () -> Boolean) {
   private val logger = LoggerFactory.getLogger(javaClass)
   private data class PendingTest(val context: StoveTestContext, val capturedFailure: Boolean = false)
 
@@ -46,7 +46,8 @@ internal class StoveSnapshots(private val stove: Stove, private val record: Snap
     val previous = StoveTestContextHolder.get().toOption()
     try {
       StoveTestContextHolder.set(context)
-      stove.systemsOf<Reports>().distinctInstances().forEach { system ->
+      for (system in stove.systemsOf<Reports>().distinctInstances()) {
+        if (!accepting()) return
         runCatching {
           if (filter(system)) record(SnapshotRecorded(context.testId, trigger, system.snapshot()))
         }.onFailure { logger.warn("Failed to capture snapshot from ${system.javaClass.name}", it) }

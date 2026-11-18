@@ -9,12 +9,24 @@ import com.trendyol.stove.system.abstractions.PluggedSystem
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
 import kotlinx.coroutines.withTimeout
+import java.time.Instant
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.CopyOnWriteArrayList
 import java.util.concurrent.TimeUnit
 import kotlin.time.Duration.Companion.seconds
 
 class DashboardObservationsTest : FunSpec({
+  test("test duration and timestamps use observation time even when exported together") {
+    val received = mutableListOf<DashboardEvent>()
+    val tests = DashboardTests { received += DashboardEvent.newBuilder().apply(it).build() }
+    val start = Instant.parse("2026-11-18T10:00:00Z")
+    tests.start(StoveTestContext("test", "test"), start)
+    tests.finish("test", start.plusSeconds(10))
+    received.first().testStarted.timestamp shouldBe start.toTimestamp()
+    received.last().testEnded.timestamp shouldBe start.plusSeconds(10).toTimestamp()
+    received.last().testEnded.durationMs shouldBe 10_000L
+  }
+
   test("unserializable state preserves the snapshot identity and summary") {
     val event = SnapshotRecorded("test", SnapshotTrigger.TEST_END, SystemSnapshot("Custom", mapOf("state" to Any()), "evidence"))
     val snapshot = event.toProto()
@@ -30,7 +42,8 @@ class DashboardObservationsTest : FunSpec({
       val received = CopyOnWriteArrayList<DashboardEvent>()
       stove.startObserving()
       val context = StoveTestContext("original-test", "test")
-      DashboardObservations(stove.events) { event ->
+      DashboardObservations(stove.events) { envelope ->
+        val event = envelope.event
         if (event is SnapshotRecorded) received += DashboardEvent.newBuilder().setSnapshot(event.toProto()).build()
       }.use { observations ->
         stove.publish(TestStarted(context))
@@ -63,7 +76,7 @@ class DashboardObservationsTest : FunSpec({
       stove.publish(RunReady)
       stove.events.flush()
       val received = CopyOnWriteArrayList<StoveEvent>()
-      DashboardObservations(stove.events) { received += it }.use { observations ->
+      DashboardObservations(stove.events) { received += it.event }.use { observations ->
         withTimeout(2.seconds) { observations.awaitPending() }
         received.isEmpty() shouldBe true
       }
@@ -74,8 +87,8 @@ class DashboardObservationsTest : FunSpec({
     Stove().use { stove ->
       val received = CopyOnWriteArrayList<StoveEvent>()
       DashboardObservations(stove.events) {
-        if (it is RunReady) error("broken handler")
-        received += it
+        if (it.event is RunReady) error("broken handler")
+        received += it.event
       }.use { observations ->
         stove.publish(RunReady)
         stove.publish(RunFinished())

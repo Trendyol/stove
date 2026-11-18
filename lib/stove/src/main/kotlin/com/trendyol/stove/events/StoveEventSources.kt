@@ -9,19 +9,19 @@ import java.util.Collections
 import java.util.IdentityHashMap
 
 /** Bridges existing observations without changing the callbacks that maintain test state. */
-internal class StoveEventSources(private val stove: Stove, private val events: StoveEventBus) :
+internal class StoveEventSources(private val stove: Stove, private val events: StoveEventBus, accepting: () -> Boolean) :
   ReportEventListener, SpanEventListener, MockInteractionListener, MockWarningListener, AutoCloseable {
-  val snapshots = StoveSnapshots(stove, events::recordSnapshot)
+  val snapshots = StoveSnapshots(stove, events::recordSnapshot, accepting)
   private val logger = LoggerFactory.getLogger(javaClass)
-  private val spans = stove.systemsOf<SpanListenerRegistry>().distinctInstances()
-  private val interactions = stove.systemsOf<MockInteractionPublisher>().distinctInstances()
-  private val warnings = stove.systemsOf<MockWarningPublisher>().distinctInstances()
+  private val attached = Collections.newSetFromMap(IdentityHashMap<Any, Boolean>())
 
-  fun start() {
-    stove.addReportListener(this)
-    spans.observe { it.addSpanListener(this) }
-    interactions.observe { it.addInteractionListener(this) }
-    warnings.observe { it.addWarningListener(this) }
+  fun start() = stove.addReportListener(this)
+
+  fun refresh() {
+    val added = stove.allRegisteredSystems().filter(attached::add)
+    added.filterIsInstance<SpanListenerRegistry>().observe { it.addSpanListener(this) }
+    added.filterIsInstance<MockInteractionPublisher>().observe { it.addInteractionListener(this) }
+    added.filterIsInstance<MockWarningPublisher>().observe { it.addWarningListener(this) }
   }
 
   override fun onTestStarted(ctx: StoveTestContext) = emit(TestStarted(ctx))
@@ -40,9 +40,9 @@ internal class StoveEventSources(private val stove: Stove, private val events: S
 
   override fun close() {
     stove.removeReportListener(this)
-    spans.observe { it.removeSpanListener(this) }
-    interactions.observe { it.removeInteractionListener(this) }
-    warnings.observe { it.removeWarningListener(this) }
+    attached.filterIsInstance<SpanListenerRegistry>().observe { it.removeSpanListener(this) }
+    attached.filterIsInstance<MockInteractionPublisher>().observe { it.removeInteractionListener(this) }
+    attached.filterIsInstance<MockWarningPublisher>().observe { it.removeWarningListener(this) }
   }
 }
 

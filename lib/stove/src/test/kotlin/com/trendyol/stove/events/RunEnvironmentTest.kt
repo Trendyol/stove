@@ -29,12 +29,28 @@ class RunEnvironmentTest : FunSpec({
     }
   }
 
+  test("inventory preview does not hide later registrations from startup or final inventory") {
+    Stove().use { stove ->
+      stove.runComponents() shouldBe emptyList()
+      stove.events.environment.value shouldBe emptyList()
+      stove.getOrRegister(EnvironmentDependency(stove))
+      stove.applicationUnderTest(EnvironmentApplication())
+      EventRecorder(stove.events).use { recorder ->
+        stove.run()
+        recorder.drain()
+        val expected = listOf(ComponentRole.SYSTEM, ComponentRole.APPLICATION)
+        recorder.events.filterIsInstance<RunStarting>().single().components.map { it.role } shouldBe expected
+        stove.close()
+        stove.events.environment.value.map { it.role } shouldBe expected
+      }
+    }
+  }
+
   test("keeps every key when registrations share the same instance") {
     StoveEventBus().use { events ->
       val environment = RunEnvironment(events::publish)
-      val component = Any()
-      environment.register(component)
-      environment.register(component, Some(Analytics))
+      val component = EnvironmentDependency(Stove())
+      environment.components(listOf(component), listOf(Analytics to component), None, freeze = true)
       environment.phase(component, PhaseName.START) { Unit }
       environment.snapshot().map { it.key } shouldBe listOf(None, Some("Analytics"))
       environment.snapshot().map { it.id }.toSet().size shouldBe 2

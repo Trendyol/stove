@@ -33,6 +33,9 @@ private class DeliveryFixture : AutoCloseable {
   private val stove = Stove().with {
     dashboard { DashboardSystemOptions("delivery", ingestion = DashboardIngestion.Grpc(port = server.port)) }
   }
+  init {
+    stove.startObserving()
+  }
   private val publisher = stove.getOrRegister(DeliveryPublisher(stove))
 
   suspend fun exercise() {

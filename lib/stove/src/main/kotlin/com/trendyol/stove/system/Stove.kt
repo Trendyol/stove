@@ -31,11 +31,14 @@ class Stove(configure: @StoveDsl StoveOptionsDsl.() -> Unit = {}) : ReadyStove, 
   inline fun <reified T> systemsOf(): List<T> = allRegisteredSystems().filterIsInstance<T>()
   fun allSystems(): Collection<PluggedSystem> = allRegisteredSystems()
 
-  /** Captures registration metadata once, after configuring this Stove. */
-  fun runComponents(): List<RunComponent> = environment.capture(
+  /** Previews the current registrations until startup captures the run inventory. */
+  fun runComponents(): List<RunComponent> = readRunComponents(freeze = false)
+
+  internal fun readRunComponents(freeze: Boolean): List<RunComponent> = environment.components(
     activeSystems.values,
     keyedSystems.map { (registration, system) -> registration.second to system },
-    lifecycle.application
+    lifecycle.application,
+    freeze
   )
   val keepDependenciesRunning: Boolean get() = options.keepDependenciesRunning
   val runMigrationsAlways: Boolean get() = options.runMigrationsAlways
@@ -108,10 +111,7 @@ class Stove(configure: @StoveDsl StoveOptionsDsl.() -> Unit = {}) : ReadyStove, 
   internal fun getSystemOrThrow(kClass: KClass<*>): PluggedSystem = activeSystems[kClass]
     ?: error("System of type ${kClass.simpleName} is not registered in Stove")
 
-  override suspend fun run() {
-    lifecycle.run()
-    instance = this
-  }
+  override suspend fun run() = lifecycle.run()
 
   fun with(withDsl: WithDsl.() -> Unit): Stove = apply { withDsl(WithDsl(this)) }
 
@@ -139,9 +139,11 @@ class Stove(configure: @StoveDsl StoveOptionsDsl.() -> Unit = {}) : ReadyStove, 
     if (report.isNotEmpty()) logger.info("=== Stove Test Report (Failures Detected) ===\n$report")
   }
 
+  internal suspend fun shutdown() = lifecycle.shutdown()
+
   /** Teardown failures are reported and logged without changing a passing test's outcome. */
   override fun close(): Unit = runBlocking {
-    runCatching { lifecycle.shutdown() }.onFailure { logger.warn("got an error while stopping Stove: ${it.message}", it) }
+    runCatching { shutdown() }.onFailure { logger.warn("got an error while stopping Stove: ${it.message}", it) }
   }
 }
 

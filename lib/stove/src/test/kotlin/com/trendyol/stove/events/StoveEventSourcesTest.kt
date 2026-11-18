@@ -17,9 +17,13 @@ class StoveEventSourcesTest : FunSpec({
         stove.getOrRegister(Healthy, shared)
         EventRecorder(events).use { recorder ->
           events.connect(stove)
+          val late = stove.getOrRegister(Late, Registry(stove, broken = false))
+          events.connect(stove)
+          late.emit()
           shared.emit()
+          late.attached shouldBe 1
           recorder.drain()
-          recorder.events.size shouldBe 1
+          recorder.events.size shouldBe 2
           shared.attached shouldBe 1
           events.disconnect()
           shared.removed shouldBe 1
@@ -55,6 +59,7 @@ class StoveEventSourcesTest : FunSpec({
   }
 })
 
+private object Late : SystemKey
 private object Healthy : SystemKey
 
 private class Registry(override val stove: Stove, private val broken: Boolean) : PluggedSystem, SpanListenerRegistry {

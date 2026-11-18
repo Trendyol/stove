@@ -5,6 +5,7 @@ import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
 import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
@@ -12,6 +13,35 @@ import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
 
 class StoveShutdownTest : FunSpec({
+  test("shutdown waits for startup and stops the application exactly once") {
+    ShutdownFixture().use { fixture ->
+      val entered = CompletableDeferred<Unit>()
+      val release = CompletableDeferred<Unit>()
+      fixture.stove.getOrRegister(object : PluggedSystem, BeforeRunAware {
+        override val stove = fixture.stove
+        override suspend fun beforeRun() {
+          entered.complete(Unit)
+          release.await()
+        }
+        override fun close() = Unit
+      })
+      coroutineScope {
+        val start = async { fixture.stove.run() }
+        entered.await()
+        val stop = async(start = CoroutineStart.UNDISPATCHED) { fixture.stove.shutdown() }
+        try {
+          stop.isCompleted shouldBe false
+        } finally {
+          release.complete(Unit)
+        }
+        start.await()
+        stop.await()
+      }
+      fixture.stove.close()
+      fixture.events shouldBe listOf("app.start", "route.restore", "app.stop", "route.close", "dependency.close")
+    }
+  }
+
   test("shutdown releases the registration lock before invoking resource cleanup") {
     Stove().use { stove ->
       val entered = CompletableDeferred<Unit>()

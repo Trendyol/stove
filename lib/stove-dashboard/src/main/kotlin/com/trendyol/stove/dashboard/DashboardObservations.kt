@@ -1,12 +1,13 @@
 package com.trendyol.stove.dashboard
 
-import com.trendyol.stove.events.StoveEventHandler
+import com.trendyol.stove.events.EventEnvelope
+import com.trendyol.stove.events.EventHandler
 import com.trendyol.stove.events.StoveEvents
 import kotlinx.coroutines.*
 import org.slf4j.LoggerFactory
 import kotlin.time.Duration.Companion.seconds
 
-internal class DashboardObservations(private val events: StoveEvents, observe: StoveEventHandler) : AutoCloseable {
+internal class DashboardObservations(private val events: StoveEvents, observe: EventHandler<EventEnvelope>) : AutoCloseable {
   private val logger = LoggerFactory.getLogger(javaClass)
   private val dispatcher = Dispatchers.Default.limitedParallelism(1)
   private val scope = CoroutineScope(SupervisorJob() + dispatcher)
@@ -15,7 +16,7 @@ internal class DashboardObservations(private val events: StoveEvents, observe: S
     scope.launch(start = CoroutineStart.UNDISPATCHED) {
       events.stream.collect { envelope ->
         try {
-          observe(envelope.event)
+          observe(envelope)
         } catch (failure: Exception) {
           if (failure is CancellationException) throw failure
           logger.warn("Dashboard observation failed", failure)

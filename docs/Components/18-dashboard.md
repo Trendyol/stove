@@ -29,7 +29,7 @@ The demo stores its data only in browser memory. **Reset demo** restores the sam
 
 **Run environment** lists every registered system, keyed instance, and the application under test (AUT), including components with no observed activity. Expand a component to inspect preparation, startup, and cleanup phases with their status, duration, and failure. Registration describes the run's scope; test evidence shows what actually happened.
 
-The inventory is captured before startup, updated live, and persisted by `stove-server` in SQLite or PostgreSQL. Failed startup and cleanup mark the run failed without inventing failed tests. Startup failures remain visible alongside successful cleanup. Older runs without inventory fall back to their reported system names.
+Reading `stove.runComponents()` during configuration previews the current registrations. The inventory is captured when `run()` starts, updated live, and persisted by `stove-server` in SQLite or PostgreSQL. Failed startup and cleanup mark the run failed without inventing failed tests. Startup failures remain visible alongside successful cleanup. Older runs without inventory fall back to their reported system names.
 
 The dashboard exports observations through one `stove.events` subscription. You can also register lifecycle callbacks in the Stove configuration, even when the dashboard is disabled.
 
@@ -80,7 +80,7 @@ Events also include test starts, failures and ends, report entries, snapshots, s
 
 `stove.events` is an observation view: it exposes the streams, run identity, and `flush()`. Integrations publish observed facts with `stove.publish(event)`. Stove owns source connections, dispatch, and shutdown; observers cannot close or mutate its dispatcher.
 
-Snapshots are captured synchronously at failure and test-end boundaries, before the next test or shutdown can clear the evidence. Their captured values are then delivered through the same stream.
+Snapshots are captured synchronously at failure and test-end boundaries, before the next test or shutdown can clear the evidence. Their captured values are then delivered through the same stream. At shutdown, Stove waits up to 30 seconds for unfinished snapshots before continuing cleanup and discarding late snapshot results. Dashboard test timestamps and durations use the time Stove observed each event.
 
 Source callbacks enqueue observations into an unbounded channel. Enqueuing does not suspend; snapshot capture runs synchronously. Slow collectors can increase memory use, and events dispatched without subscribers are not retained. Collectors own their coroutine scope and error handling; catch recoverable exceptions inside `collect` if collection should continue. Cancelling one collector does not cancel the event stream. `flush()` waits for in-flight capture and returns the last dispatched sequence; consumers that need a processing guarantee must acknowledge that sequence themselves. Flows remain open after shutdown, so cancel collectors when finished.
 

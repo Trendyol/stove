@@ -6,8 +6,10 @@ import com.trendyol.stove.system.abstractions.PluggedSystem
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
 import kotlinx.coroutines.*
+import java.util.concurrent.CompletableFuture
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
+import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.seconds
 
 class StoveSnapshotsTest : FunSpec({
@@ -100,6 +102,29 @@ class StoveSnapshotsTest : FunSpec({
     }
   }
 
+  test("shutdown can drain and close while a custom snapshot ignores interruption") {
+    Stove().use { stove ->
+      val system = stove.getOrRegister(UninterruptibleSnapshot(stove))
+      StoveEventBus(snapshotTimeout = 250.milliseconds).use { events ->
+        events.connect(stove)
+        stove.startTest(StoveTestContext("unfinished", "unfinished"))
+        coroutineScope {
+          val cleanup = async(Dispatchers.IO) {
+            events.capturePendingSnapshots()
+            events.flush()
+            events.close()
+          }
+          try {
+            system.entered.await(2, TimeUnit.SECONDS) shouldBe true
+            withTimeout(2.seconds) { cleanup.await() }
+          } finally {
+            system.release.complete(Unit)
+          }
+        }
+      }
+    }
+  }
+
   test("closing the dispatcher retains a snapshot already being captured") {
     Stove().use { stove ->
       val system = stove.getOrRegister(DelayedSnapshot(stove))
@@ -142,6 +167,17 @@ private class DelayedSnapshot(override val stove: Stove) : PluggedSystem, Report
   override fun snapshot(): SystemSnapshot {
     entered.countDown()
     check(release.await(5, TimeUnit.SECONDS))
+    return SystemSnapshot("Delayed", emptyMap<String, Any>(), "")
+  }
+  override fun close() = Unit
+}
+
+private class UninterruptibleSnapshot(override val stove: Stove) : PluggedSystem, Reports {
+  val entered = CountDownLatch(1)
+  val release = CompletableFuture<Unit>()
+  override fun snapshot(): SystemSnapshot {
+    entered.countDown()
+    release.join()
     return SystemSnapshot("Delayed", emptyMap<String, Any>(), "")
   }
   override fun close() = Unit

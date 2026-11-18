@@ -10,10 +10,14 @@ import java.time.Instant
 import java.util.UUID
 import java.util.concurrent.locks.ReentrantLock
 import kotlin.concurrent.withLock
+import kotlin.time.Duration
 import kotlin.time.Duration.Companion.seconds
 
 /** Ordered, hot observations. Collectors own their scope; events have no replay. */
-internal class StoveEventBus(private val handlers: List<StoveEventHandler> = emptyList()) : AutoCloseable {
+internal class StoveEventBus(
+  private val handlers: List<StoveEventHandler> = emptyList(),
+  snapshotTimeout: Duration = 30.seconds
+) : AutoCloseable {
   val runId: String = UUID.randomUUID().toString()
   private val observations = MutableSharedFlow<EventEnvelope>()
   val stream: SharedFlow<EventEnvelope> = observations.asSharedFlow()
@@ -25,17 +29,22 @@ internal class StoveEventBus(private val handlers: List<StoveEventHandler> = emp
   private val pending = Channel<Delivery>(Channel.UNLIMITED)
   private val worker = scope.launch(start = CoroutineStart.LAZY) { dispatch() }
   private var sources: Option<StoveEventSources> = None
-  private val capturesInProgress = MutableStateFlow(0)
+  private val captures = SnapshotCaptures(lock, snapshotTimeout)
   private var sequence = 0L
   private enum class Status { OPEN, CLOSING, CLOSED }
   private var status = Status.OPEN
 
   fun connect(stove: Stove): Unit = connections.withLock {
     val connected = lock.withLock {
-      if (status != Status.OPEN || sources.isSome()) return
-      StoveEventSources(stove, this).also { sources = Some(it) }
+      if (status != Status.OPEN) return
+      sources.getOrElse {
+        StoveEventSources(stove, this, captures::accepting).also {
+          sources = Some(it)
+          it.start()
+        }
+      }
     }
-    connected.start()
+    connected.refresh()
   }
 
   fun disconnect(): Unit = connections.withLock {
@@ -47,41 +56,24 @@ internal class StoveEventBus(private val handlers: List<StoveEventHandler> = emp
 
   internal fun publish(event: StoveEvent, source: StoveEventSources) = publish(event, Some(source))
 
-  private fun publish(event: StoveEvent, source: Option<StoveEventSources>) = captureInOrder {
-    if (status != Status.OPEN || source.fold({ false }, { sources != Some(it) })) return@captureInOrder None
-    enqueue(event)
-    sources.flatMap { it.snapshots.plan(event) }
-  }
-
-  private inline fun captureInOrder(plan: () -> Option<SnapshotCapture>) {
+  private fun publish(event: StoveEvent, source: Option<StoveEventSources>) {
     val capture = lock.withLock {
-      val work = plan().getOrElse { return }
-      capturesInProgress.value++
-      work
+      if (status != Status.OPEN || source.fold({ false }, { sources != Some(it) })) return
+      enqueue(event)
+      captures.claim { sources.flatMap { it.snapshots.plan(event) } }
     }
-    try {
-      capture()
-    } finally {
-      lock.withLock { capturesInProgress.value-- }
-    }
+    capture.onSome { it() }
   }
 
   internal fun recordSnapshot(event: SnapshotRecorded): Unit = lock.withLock {
-    if (status != Status.CLOSED) enqueue(event)
+    if (status != Status.CLOSED && captures.accepting) enqueue(event)
   }
 
-  /** Captures unfinished test evidence before systems discard their state during shutdown. */
+  /** Waits a bounded time for unfinished test evidence before resource cleanup. */
   fun capturePendingSnapshots() {
-    captureInOrder { sources.flatMap { it.snapshots.planPending() } }
-    awaitCaptures()
-  }
-
-  private fun awaitCaptures(): Unit = runBlocking {
-    try {
-      withTimeout(30.seconds) { capturesInProgress.first { it == 0 } }
-    } catch (_: TimeoutCancellationException) {
-      LoggerFactory.getLogger(javaClass).warn("Stove snapshot capture timed out")
-    }
+    val capture = lock.withLock { captures.claim { sources.flatMap { it.snapshots.planPending() } } }
+    val job = capture.map { work -> scope.launch(Dispatchers.IO) { runInterruptible { work() } } }
+    if (!captures.awaitDeadline()) job.onSome { it.cancel() }
   }
 
   private fun enqueue(event: StoveEvent) {
@@ -94,10 +86,10 @@ internal class StoveEventBus(private val handlers: List<StoveEventHandler> = emp
   suspend fun flush(): Long {
     val dispatched = CompletableDeferred<Long>()
     while (true) {
-      capturesInProgress.first { it == 0 }
+      captures.awaitIdle()
       val queued = lock.withLock {
         check(status == Status.OPEN) { "Stove events have been closed" }
-        if (capturesInProgress.value != 0) {
+        if (!captures.idle) {
           false
         } else {
           check(pending.trySend(Delivery.Flush(sequence, dispatched)).isSuccess)
@@ -140,7 +132,7 @@ internal class StoveEventBus(private val handlers: List<StoveEventHandler> = emp
       if (status != Status.OPEN) return
       status = Status.CLOSING
     }
-    awaitCaptures()
+    captures.awaitDeadline()
     disconnect()
     lock.withLock {
       status = Status.CLOSED

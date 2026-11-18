@@ -53,28 +53,28 @@ class DashboardSystem(
     if (closing.get()) return
     observations.awaitPending()
     if (lock.withLock { state != State.Waiting || closing.get() }) return
-    start(stove.runComponents())
+    start(stove.runComponents(), Instant.now())
     stove.startObserving()
   }
 
-  private fun observe(event: StoveEvent): Unit = lock.withLock {
+  private fun observe(envelope: EventEnvelope): Unit = lock.withLock {
+    val event = envelope.event
     if (event is RunStarting) {
-      start(event.components)
+      start(event.components, envelope.timestamp)
     } else {
       when (val current = state) {
-        is ActiveRun -> current.observe(event)
+        is ActiveRun -> current.observe(event, envelope.timestamp)
         else -> Unit
       }
     }
   }
 
-  private fun start(components: List<RunComponent>): Unit = lock.withLock {
-    if (state == State.Waiting) state = ActiveRun(components)
+  private fun start(components: List<RunComponent>, started: Instant): Unit = lock.withLock {
+    if (state == State.Waiting) state = ActiveRun(components, started)
   }
 
-  private inner class ActiveRun(components: List<RunComponent>) : State, AutoCloseable {
+  private inner class ActiveRun(components: List<RunComponent>, private val started: Instant) : State, AutoCloseable {
     private val emitter = DashboardEmitter(options.ingestion)
-    private val started = Instant.now()
     private val tests = DashboardTests(::emit)
     private var lifecycleFailed = false
 
@@ -89,13 +89,13 @@ class DashboardSystem(
 
     private val profiling = startProfiling()
 
-    fun observe(event: StoveEvent) {
+    fun observe(event: StoveEvent, at: Instant) {
       when (event) {
         is EnvironmentChanged -> emit { runEnvironment = event.components.toEnvironmentProto() }
         is RunFinished -> lifecycleFailed = event.failure.isSome()
-        is TestStarted -> tests.start(event.context)
+        is TestStarted -> tests.start(event.context, at)
         is TestFailed -> tests.fail(event.testId, event.error)
-        is TestEnded -> tests.finish(event.testId)
+        is TestEnded -> tests.finish(event.testId, at)
         is EntryRecorded -> tests.record(event.entry)
         is SnapshotRecorded -> emit { snapshot = event.toProto() }
         is SpanRecorded -> emit { spanRecorded = event.span.toProto() }

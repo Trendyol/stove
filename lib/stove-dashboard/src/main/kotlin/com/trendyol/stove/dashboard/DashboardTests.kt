@@ -18,9 +18,8 @@ internal class DashboardTests(private val emit: DashboardEventEmitter) {
 
   private var results = Results()
 
-  fun start(ctx: StoveTestContext) {
+  fun start(ctx: StoveTestContext, started: Instant) {
     if (ctx.testId in results.running) return
-    val started = Instant.now()
     results = results.copy(running = results.running + (ctx.testId to RunningTest(started)))
     emit {
       testStarted = TestStartedEvent.newBuilder().setTestId(ctx.testId)
@@ -40,7 +39,7 @@ internal class DashboardTests(private val emit: DashboardEventEmitter) {
     emit { entryRecorded = entry.toProto() }
   }
 
-  fun finish(testId: String, interrupted: Boolean = false) {
+  fun finish(testId: String, ended: Instant, interrupted: Boolean = false) {
     val (started, failure) = results.running.getOrNone(testId).getOrElse { return }
     val status = when {
       failure.isSome() -> TestOutcome.FAILED
@@ -50,8 +49,8 @@ internal class DashboardTests(private val emit: DashboardEventEmitter) {
     val error = failure.getOrElse { if (interrupted) "Test ended before the framework reported an outcome" else "" }
     emit {
       testEnded = TestEndedEvent.newBuilder().setTestId(testId).setStatus(status.name)
-        .setDurationMs(Duration.between(started, Instant.now()).toMillis())
-        .setError(error).setTimestamp(Instant.now().toTimestamp()).build()
+        .setDurationMs(Duration.between(started, ended).toMillis().coerceAtLeast(0))
+        .setError(error).setTimestamp(ended.toTimestamp()).build()
     }
     val remaining = results.running - testId
     results = if (status == TestOutcome.PASSED) {
@@ -61,7 +60,7 @@ internal class DashboardTests(private val emit: DashboardEventEmitter) {
     }
   }
 
-  fun close() = results.running.keys.forEach { finish(it, interrupted = true) }
+  fun close() = results.running.keys.forEach { finish(it, Instant.now(), interrupted = true) }
 
   fun result(durationMs: Long, lifecycleFailed: Boolean): RunEndedEvent = RunEndedEvent.newBuilder()
     .setTimestamp(

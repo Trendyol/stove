@@ -1,6 +1,7 @@
 package com.trendyol.stove.events
 
 import com.trendyol.stove.system.Stove
+import com.trendyol.stove.system.abstractions.ApplicationUnderTest
 import com.trendyol.stove.system.abstractions.PluggedSystem
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
@@ -49,12 +50,16 @@ class StoveEventsTest : FunSpec({
         override val stove = stove
         override fun close() = Unit
       })
-      stove.runComponents()
+      stove.applicationUnderTest(object : ApplicationUnderTest<Unit> {
+        override suspend fun start(configurations: List<String>) = Unit
+        override suspend fun stop() = Unit
+      }).run()
+      stove.events.flush()
       EventRecorder(stove.events).use { received ->
         stove.publish(RunFinished())
         received.drain()
         received.events shouldBe listOf(RunFinished())
-        stove.events.environment.first().single().id shouldBe "component-1"
+        stove.events.environment.first().first().id shouldBe "component-1"
       }
     }
   }
