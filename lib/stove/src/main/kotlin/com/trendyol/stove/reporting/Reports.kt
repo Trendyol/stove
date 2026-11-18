@@ -24,6 +24,7 @@ import com.trendyol.stove.tracing.TraceVisualization
 interface Reports {
   /**
    * System identifier for reports. Defaults to class name without "System" suffix.
+   * Inventory reads this property during preview and before systems start.
    * Override only when custom naming is needed (e.g., "HTTP" instead of "Http").
    */
   val reportSystemName: String

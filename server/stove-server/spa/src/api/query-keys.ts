@@ -23,6 +23,7 @@ export const dashboardKeys = {
 };
 
 const DASHBOARD_ROOTS = new Set([
+  "environment",
   "linked",
   "focus",
   "apps",

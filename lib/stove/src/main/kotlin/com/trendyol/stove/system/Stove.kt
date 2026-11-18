@@ -2,207 +2,81 @@ package com.trendyol.stove.system
 
 import arrow.core.*
 import com.trendyol.stove.chaos.withChaosOwnership
+import com.trendyol.stove.events.*
 import com.trendyol.stove.reporting.*
 import com.trendyol.stove.system.abstractions.*
 import com.trendyol.stove.system.annotations.StoveDsl
 import kotlinx.coroutines.*
-import org.slf4j.*
+import org.slf4j.LoggerFactory
 import kotlin.reflect.KClass
 
-/**
- * Entrance of entire Stove test system.
- * Expects an url and port combination that are available also in the configuration of System Under Test.
- * For example; if your Spring application starts at :8081 then you need to change httpClient.baseUrl to `http://localhost:8081`
- *
- * Stove should be initialized only once for project, because it will start all the dependencies you plugged into it.
- * See also: [PluggedSystem]
- *
- * As a full example of Stove:
- * ```kotlin
- * Stove {
- *     if (this.isRunningLocally()) {
- *       enableReuseForTestContainers()
- *       keepDependenciesRunning()
- *     }
- *   }.with {
- *     httpClient {
- *       HttpClientSystemOptions(
- *         baseUrl = "http://localhost:8080",
- *       )
- *     }
- *     bridge()
- *     postgresql {
- *       PostgresqlOptions(configureExposedConfiguration = { cfg ->
- *         listOf(
- *           "database.jdbcUrl=${cfg.jdbcUrl}",
- *           "database.host=${cfg.host}",
- *           "database.port=${cfg.port}",
- *           "database.name=${cfg.database}",
- *           "database.username=${cfg.username}",
- *           "database.password=${cfg.password}"
- *         )
- *       })
- *     }
- *     kafka {
- *       stoveKafkaObjectMapperRef = objectMapperRef
- *       KafkaSystemOptions {
- *         listOf(
- *           "kafka.bootstrapServers=${it.bootstrapServers}",
- *           "kafka.interceptorClasses=${it.interceptorClass}"
- *         )
- *       }
- *     }
- *     wiremock {
- *       WireMockSystemOptions(
- *         port = 9090,
- *         removeStubAfterRequestMatched = true,
- *         afterRequest = { e, _ ->
- *           logger.info(e.request.toString())
- *         }
- *       )
- *     }
- *     ktor(
- *       withParameters = listOf(
- *         "port=8080"
- *       ),
- *       runner = { parameters ->
- *         stove.ktor.example.run(parameters) {
- *           addTestSystemDependencies()
- *         }
- *       }
- *     )
- *   }.run()
- * ```
- */
+/** Owner of the application, registered systems, and their observations. */
 @StoveDsl
-class Stove(
-  configure: @StoveDsl StoveOptionsDsl.() -> Unit = {}
-) : ReadyStove,
-  AutoCloseable {
-  private val optionsDsl: StoveOptionsDsl = StoveOptionsDsl()
+class Stove(configure: @StoveDsl StoveOptionsDsl.() -> Unit = {}) : ReadyStove, AutoCloseable {
+  private val configuration = StoveOptionsDsl().apply(configure)
 
-  init {
-    configure(optionsDsl)
+  @PublishedApi internal val options: StoveOptions = configuration.options
+
+  @PublishedApi internal val activeSystems: MutableMap<KClass<*>, PluggedSystem> = mutableMapOf()
+
+  @PublishedApi internal val keyedSystems: MutableMap<Pair<KClass<*>, SystemKey>, PluggedSystem> = mutableMapOf()
+  internal val reporter = StoveReporter(isEnabled = options.reportingEnabled)
+  private val eventBus = StoveEventBus(configuration.eventObservers.handlers)
+  private val environment = RunEnvironment(eventBus::publish)
+  val events = StoveEvents(eventBus.runId, eventBus.stream, environment.stream, eventBus::flush)
+  private val lifecycle = StoveLifecycle(this, eventBus, environment)
+  private val logger = LoggerFactory.getLogger(javaClass)
+
+  fun allRegisteredSystems(): Collection<PluggedSystem> = lifecycle.registrations { activeSystems.values + keyedSystems.values }
+  inline fun <reified T> systemsOf(): List<T> = allRegisteredSystems().filterIsInstance<T>()
+  fun allSystems(): Collection<PluggedSystem> = allRegisteredSystems()
+
+  /** Previews the current registrations until startup captures the run inventory. */
+  fun runComponents(): List<RunComponent> = readRunComponents(freeze = false)
+
+  internal fun readRunComponents(freeze: Boolean): List<RunComponent> {
+    val (systems, keyed, application) = lifecycle.registrations {
+      Triple(activeSystems.values.toList(), keyedSystems.map { (key, system) -> key.second to system }, lifecycle.application)
+    }
+    return environment.components(systems, keyed, application, freeze)
   }
+  val keepDependenciesRunning: Boolean get() = options.keepDependenciesRunning
+  val runMigrationsAlways: Boolean get() = options.runMigrationsAlways
 
-  private val cleanup = mutableListOf<AutoCloseable>()
-  private val closed = java.util.concurrent.atomic.AtomicBoolean(false)
-  private var applicationStartAttempted = false
-
-  @PublishedApi
-  internal val activeSystems: MutableMap<KClass<*>, PluggedSystem> = mutableMapOf()
-
-  @PublishedApi
-  internal val keyedSystems: MutableMap<Pair<KClass<*>, SystemKey>, PluggedSystem> = mutableMapOf()
-
-  private lateinit var applicationRunner: ApplicationUnderTest<*>
-  private val logger: Logger = LoggerFactory.getLogger(javaClass)
-
-  @PublishedApi
-  internal val options: StoveOptions = optionsDsl.options
-
-  internal val reporter: StoveReporter = StoveReporter(isEnabled = options.reportingEnabled)
-
-  /**
-   * Returns all registered systems from both default and keyed registrations.
-   * This is the single source of truth used by lifecycle, reporting, and cleanup.
-   */
-  fun allRegisteredSystems(): Collection<PluggedSystem> =
-    activeSystems.values + keyedSystems.values
-
-  /**
-   * Returns all registered systems that implement the given type.
-   * Includes both default and keyed systems.
-   */
-  inline fun <reified T> systemsOf(): List<T> =
-    allRegisteredSystems().filterIsInstance<T>()
-
-  /**
-   * Returns a read-only snapshot of all registered systems.
-   */
-  fun allSystems(): Collection<PluggedSystem> =
-    allRegisteredSystems()
-
-  /**
-   * Whether dependencies (containers) should be kept running after tests complete.
-   */
-  val keepDependenciesRunning: Boolean
-    get() = options.keepDependenciesRunning
-
-  /**
-   * Whether migrations should always run, even when reusing containers.
-   */
-  val runMigrationsAlways: Boolean
-    get() = options.runMigrationsAlways
-
-  /**
-   * Creates a state storage for the given system and configuration types.
-   */
   inline fun <reified TState : ExposedConfiguration, reified TSystem : PluggedSystem> createStateStorage(): StateStorage<TState> =
     options.createStateStorage<TState, TSystem>()
 
-  /**
-   * Creates a keyed state storage for the given system and configuration types.
-   * The key name is included in the storage path to prevent collisions.
-   */
   inline fun <reified TState : ExposedConfiguration, reified TSystem : PluggedSystem> createStateStorage(
     key: SystemKey
-  ): StateStorage<TState> =
-    options.stateStorageFactory.createWithKey(options, TSystem::class, TState::class, keyDisplayName(key))
+  ): StateStorage<TState> = options.createStateStorage<TState, TSystem>(keyDisplayName(key))
 
-  /**
-   * Creates a state storage with an optional key name for disambiguation.
-   * When keyName is null, behaves identically to the no-arg version.
-   */
   inline fun <reified TState : ExposedConfiguration, reified TSystem : PluggedSystem> createStateStorage(
     keyName: String?
-  ): StateStorage<TState> =
-    if (keyName != null) {
-      options.stateStorageFactory.createWithKey(options, TSystem::class, TState::class, keyName)
-    } else {
-      options.createStateStorage<TState, TSystem>()
-    }
+  ): StateStorage<TState> = keyName.toOption().fold(
+    { options.createStateStorage<TState, TSystem>() },
+    { options.createStateStorage<TState, TSystem>(it) }
+  )
 
-  /**
-   * Registers a listener to receive report events.
-   */
-  fun addReportListener(listener: ReportEventListener) =
-    reporter.addListener(listener)
+  /** Publishes an observed fact through this Stove's ordered event pipeline. */
+  fun publish(event: StoveEvent) = eventBus.publish(event)
 
-  /**
-   * Removes a previously registered report event listener.
-   */
-  fun removeReportListener(listener: ReportEventListener) =
-    reporter.removeListener(listener)
+  /** Connects current sources. Call again after registering more publishers, or start Stove to connect them. */
+  fun startObserving(): StoveEvents = events.also { eventBus.connect(this) }
 
-  /**
-   * Starts tracking a new test in the reporter.
-   */
-  fun startTest(ctx: StoveTestContext) =
-    reporter.startTest(ctx)
+  /** Captures a checkpoint without ending any active tests. */
+  fun capturePendingSnapshots() = eventBus.capturePendingSnapshots(consume = false)
 
-  /**
-   * Records a report entry in the current test.
-   */
-  fun recordReport(entry: ReportEntry) =
-    reporter.record(entry)
+  /** Rejects synchronous teardown or draining from this Stove's dispatch worker. */
+  fun requireExternalEventCaller() = eventBus.requireExternalCaller()
 
-  /**
-   * Ends tracking the current test in the reporter.
-   */
-  fun endTest() =
-    reporter.endTest()
+  fun addReportListener(listener: ReportEventListener) = reporter.addListener(listener)
+  fun removeReportListener(listener: ReportEventListener) = reporter.removeListener(listener)
+  fun startTest(ctx: StoveTestContext) = reporter.startTest(ctx)
+  fun recordReport(entry: ReportEntry) = reporter.record(entry)
+  fun endTest() = reporter.endTest()
 
   companion object {
-    /**
-     * [instance] is created only once per project, and it is available throughout the lifetime of the all the tests.
-     * DO NOT access it before [run] completes
-     */
     internal lateinit var instance: Stove
-
-    /**
-     * Check if Stove instance has been initialized.
-     */
     fun instanceInitialized(): Boolean = ::instance.isInitialized
 
     fun reporter(): StoveReporter {
@@ -221,191 +95,71 @@ class Stove(
       return instance.getSystemOrThrow(kClass) as T
     }
 
-    /**
-     * Returns the system of the given type as an Option.
-     * Returns None if Stove is not initialized or the system is not registered.
-     */
-    inline fun <reified T : PluggedSystem> getSystemOrNone(): Option<T> =
-      getSystemOrNone(T::class)
+    inline fun <reified T : PluggedSystem> getSystemOrNone(): Option<T> = getSystemOrNone(T::class)
 
-    /**
-     * Returns the system of the given type as an Option.
-     * Returns None if Stove is not initialized or the system is not registered.
-     */
     @Suppress("UNCHECKED_CAST")
     @PublishedApi
     internal fun <T : PluggedSystem> getSystemOrNone(kClass: KClass<T>): Option<T> {
       if (!::instance.isInitialized) return None
-      return instance.activeSystems.getOrNone(kClass).map { it as T }
+      val current = instance
+      return current.lookup(current.activeSystems, kClass).map { it as T }
     }
 
     fun stop(): Unit = instance.close()
   }
 
-  /**
-   * Application under test, the tests run against the application provided.
-   * Usually a spring or generic application that can be hosted
-   */
-  fun applicationUnderTest(applicationUnderTest: ApplicationUnderTest<*>): Stove {
-    this.applicationRunner = applicationUnderTest
-    return this
+  fun applicationUnderTest(applicationUnderTest: ApplicationUnderTest<*>): Stove = apply {
+    lifecycle.configure(applicationUnderTest)
   }
 
-  internal fun getSystemOrThrow(
-    kClass: KClass<*>
-  ): PluggedSystem = activeSystems[kClass]
-    ?: error("System of type ${kClass.simpleName} is not registered in Stove")
+  internal fun getSystemOrThrow(kClass: KClass<*>): PluggedSystem = lookup(activeSystems, kClass)
+    .getOrElse { error("System of type ${kClass.simpleName} is not registered in Stove") }
 
-  private lateinit var applicationUnderTestContext: Any
+  override suspend fun run() = lifecycle.run()
 
-  /**
-   * Starts each lifecycle phase in parallel, then exposes dependency configuration to the application.
-   * A failed startup rolls back resources, including a partially started application.
-   */
-  override suspend fun run() {
-    check(!closed.get()) { "Stove has been closed" }
-    check(this::applicationRunner.isInitialized) { "Register an application runner before starting Stove" }
-    try {
-      startRegisteredSystems()
-      instance = this
-    } catch (failure: Throwable) {
-      rollbackStartup(failure)
-      throw failure
+  fun with(withDsl: WithDsl.() -> Unit): Stove = apply { withDsl(WithDsl(this)) }
+
+  /** Registers before startup. Call [startObserving] again to connect new publishers during standalone observation. */
+  inline fun <reified T : PluggedSystem> getOrRegister(system: T): T = register(activeSystems, T::class, system)
+
+  /** Keyed variant of [getOrRegister]; standalone observers reconnect via [startObserving]. */
+  inline fun <reified T : PluggedSystem> getOrRegister(key: SystemKey, system: T): T = register(keyedSystems, T::class to key, system)
+
+  @PublishedApi
+  @Suppress("UNCHECKED_CAST")
+  internal fun <K, T : PluggedSystem> register(systems: MutableMap<K, PluggedSystem>, key: K, system: T): T =
+    lifecycle.registrations {
+      systems.getOrPut(key) {
+        lifecycle.requireConfigurable()
+        registerForDispose(system)
+      } as T
     }
-  }
 
-  private suspend fun startRegisteredSystems(): Unit = coroutineScope {
-    val systems = allRegisteredSystems()
-    systems.filterIsInstance<BeforeRunAware>().runInParallel { it.beforeRun() }
-    systems.filterIsInstance<RunAware>().runInParallel { it.run() }
-    startApplication(systems)
-    systems.filterIsInstance<AfterRunAware>().runInParallel { it.afterRun() }
-  }
+  inline fun <reified T : PluggedSystem> getOrNone(): Option<T> = lookup(activeSystems, T::class).map { it as T }
+  inline fun <reified T : PluggedSystem> getOrNone(key: SystemKey): Option<T> = lookup(keyedSystems, T::class to key).map { it as T }
 
-  private suspend fun <T> Iterable<T>.runInParallel(action: suspend (T) -> Unit): Unit = coroutineScope {
-    map { system -> async(Dispatchers.IO) { action(system) } }.awaitAll()
-  }
+  @PublishedApi
+  internal fun <K> lookup(systems: Map<K, PluggedSystem>, key: K) = lifecycle.registrations { systems.getOrNone(key) }
 
-  private suspend fun startApplication(systems: Collection<PluggedSystem>) {
-    val configurations = systems.filterIsInstance<ExposesConfiguration>().flatMap { it.configuration() }
-    // Own shutdown before user startup: startup and afterRun may partially succeed then fail.
-    applicationStartAttempted = true
-    applicationUnderTestContext = applicationRunner.start(configurations)
-  }
-
-  private suspend fun rollbackStartup(failure: Throwable): Unit = withContext(NonCancellable) {
-    try {
-      shutdown()
-    } catch (cleanupFailure: Throwable) {
-      if (cleanupFailure !== failure) failure.addSuppressed(cleanupFailure)
-    }
-  }
-
-  /**
-   * Enables the DSL for constructing the entire system with the [PluggedSystem]s.
-   *
-   * Example:
-   * ```kotlin
-   *  Stove().with {
-   *    httpClient{
-   *      // configure the http client
-   *    }
-   *    kafka{
-   *      // configure kafka
-   *    }
-   *    couchbase {
-   *      // configure couchbase
-   *    }
-   *
-   *    // and so on...
-   *  }
-   * ```
-   */
-  fun with(withDsl: WithDsl.() -> Unit): Stove {
-    withDsl(WithDsl(this))
-    return this
-  }
-
-  /**
-   * Gets or registers a [PluggedSystem] to Stove. Use it when you want to register a new [PluggedSystem] to Stove.
-   * That can be a system that comply your needs, for example; SchedulerSystem, GarbageCollectorSystem etc... These are only the names,
-   * so, you can implement these systems and register to the Test suite. When you register a new system to the test suite, it is wise to
-   * implement [AfterRunAwareWithContext.afterRun] to get the context/container of the system,
-   * so you can create your system methods based on that.
-   *
-   * Example:
-   * ```kotlin
-   * // plug the new system called scheduler
-   * Stove().withScheduler()
-   *
-   * // use it in testing
-   * stove.scheduler().advance()
-   * ```
-   */
-  inline fun <reified T : PluggedSystem> getOrRegister(system: T): T = activeSystems.getOrPut(T::class) {
-    registerForDispose(system)
-  } as T
-
-  /**
-   * Gets or registers a keyed [PluggedSystem]. Multiple instances of the same system type
-   * can coexist when registered with different [SystemKey]s.
-   *
-   * @see SystemKey
-   */
-  inline fun <reified T : PluggedSystem> getOrRegister(
-    key: SystemKey,
-    system: T
-  ): T = keyedSystems.getOrPut(T::class to key) {
-    registerForDispose(system)
-  } as T
-
-  /**
-   * Gets the registered system or returns [None]
-   */
-  inline fun <reified T : PluggedSystem> getOrNone(): Option<T> = activeSystems.getOrNone(T::class).map { it as T }
-
-  /**
-   * Gets the keyed registered system or returns [None]
-   */
-  inline fun <reified T : PluggedSystem> getOrNone(key: SystemKey): Option<T> =
-    keyedSystems.getOrNone(T::class to key).map { it as T }
-
-  fun <T : AutoCloseable> registerForDispose(closeable: T): T {
-    check(!closed.get()) { "Cannot register resources on a closed Stove" }
-    cleanup.add(closeable)
-    return closeable
-  }
+  fun <T : AutoCloseable> registerForDispose(closeable: T): T = lifecycle.register(closeable)
 
   @Suppress("UNCHECKED_CAST", "unused")
-  fun <TContext> applicationUnderTestContext(): TContext = applicationUnderTestContext as TContext
+  fun <TContext> applicationUnderTestContext(): TContext = lifecycle.context.getOrElse {
+    error("Application context is unavailable before successful startup")
+  } as TContext
 
-  /** Teardown failures are logged, not thrown: a failed cleanup must not fail a passing test run. */
-  override fun close(): Unit = runBlocking {
-    runCatching { shutdown() }.onFailure { logger.warn("got an error while stopping Stove: ${it.message}", it) }
-  }
-
-  private suspend fun shutdown() {
-    if (!closed.compareAndSet(false, true)) return
-    closeAll(takeShutdownActions()) { it() }
-  }
-
-  private fun takeShutdownActions(): List<suspend () -> Unit> = buildList {
-    val resources = cleanup.filterIsInstance<ApplicationResource>()
-    resources.forEach { resource -> add { resource.beforeApplicationStop() } }
-    if (applicationStartAttempted) {
-      applicationStartAttempted = false
-      add { applicationRunner.stop() }
-    }
-    resources.asReversed().forEach { resource -> add { resource.close() } }
-    cleanup.asReversed().filterNot { it is ApplicationResource }.forEach { resource -> add { resource.close() } }
-    cleanup.clear()
-    add { dumpFailureReport() }
-  }
-
-  private fun dumpFailureReport() {
+  internal fun dumpFailureReport() {
     if (!options.dumpReportOnStop || !options.reportingEnabled) return
     val report = reporter.dumpIfFailed(options.defaultRenderer)
     if (report.isNotEmpty()) logger.info("=== Stove Test Report (Failures Detected) ===\n$report")
+  }
+
+  internal suspend fun shutdown() = lifecycle.shutdown()
+
+  /** Teardown failures are reported and logged without changing a passing test's outcome. */
+  override fun close() {
+    lifecycle.requireExternalClose()
+    runBlocking { runCatching { shutdown() }.onFailure { logger.warn("got an error while stopping Stove: ${it.message}", it) } }
   }
 }
 

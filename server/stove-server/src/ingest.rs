@@ -1,4 +1,5 @@
 mod convert;
+mod environment;
 mod events;
 mod preparers;
 
@@ -82,6 +83,9 @@ impl EventIngestor {
     };
 
     match inner_event {
+      proto::dashboard_event::Event::RunEnvironment(inner) => {
+        environment::prepare(&event.run_id, inner)
+      }
       proto::dashboard_event::Event::RunStarted(inner) => {
         Ok(preparers::prepare_run_started(&event.run_id, inner))
       }

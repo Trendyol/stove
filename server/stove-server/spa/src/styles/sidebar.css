@@ -915,3 +915,42 @@
   letter-spacing: 0.04em;
   text-transform: uppercase;
 }
+
+.stove-run-environment > p,
+.stove-run-environment details > p {
+  margin: 8px 0;
+  color: var(--stove-text-muted);
+}
+.stove-run-environment ul {
+  list-style: none;
+  padding: 0;
+  margin: 8px 0;
+}
+.stove-run-environment > ul > li {
+  padding: 7px 0;
+  border-top: 1px solid var(--stove-border);
+}
+.stove-run-environment small {
+  margin-left: 8px;
+  color: var(--stove-text-muted);
+}
+.stove-component-type {
+  overflow-wrap: anywhere;
+}
+.stove-component-phase {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 4px;
+  padding: 3px 0;
+}
+.stove-component-phase[data-status="FAILED"],
+.stove-component-phase[data-status="CANCELLED"] {
+  color: var(--stove-red);
+}
+.stove-component-phase pre {
+  width: 100%;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  font-size: 11px;
+}

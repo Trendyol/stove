@@ -373,10 +373,10 @@ class DashboardSystemTest : FunSpec({
       received.first().hasRunStarted() shouldBe true
       received.any { it.hasMockInteraction() && it.mockInteraction.target == "/on-register" } shouldBe true
       received.any { it.hasMockWarning() && it.mockWarning.target == "/on-register" } shouldBe true
-      received.none {
+      received.any {
         it.hasMockInteraction() && it.mockInteraction.target == "/during-finalization"
       } shouldBe true
-      received.none { it.hasMockWarning() && it.mockWarning.target == "/during-finalization" } shouldBe true
+      received.any { it.hasMockWarning() && it.mockWarning.target == "/during-finalization" } shouldBe true
       received.last().hasRunEnded() shouldBe true
     } finally {
       server.shutdownNow()
@@ -384,7 +384,7 @@ class DashboardSystemTest : FunSpec({
   }
 })
 
-private fun startMockServer(received: MutableList<DashboardEvent>, port: Int): Server {
+internal fun startMockServer(received: MutableList<DashboardEvent>, port: Int): Server {
   val service = object : DashboardEventServiceCoroutineImplBase() {
     override suspend fun sendEvent(request: DashboardEvent): EventAck {
       received.add(request)

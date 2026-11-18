@@ -1,4 +1,5 @@
 import { appPath, type EvidenceFocus } from "../utils/location";
+import { isRunEnvironment } from "./environment";
 import * as schema from "./response-schemas";
 import type { RunListRequest } from "./run-queries";
 import type { TestListRequest } from "./test-queries";
@@ -79,6 +80,8 @@ async function readResponse<T>(
 }
 
 export const api = {
+  getRunEnvironment: (runId: string, signal?: AbortSignal) =>
+    get(`/runs/${encodePath(runId)}/environment`, nullable(isRunEnvironment), signal),
   profiles: (runId: string, parameters: URLSearchParams, signal?: AbortSignal) =>
     get(`/runs/${encodePath(runId)}/profiles?${parameters}`, schema.isProfileReport, signal),
   getAgentSetup: (endpoint: string, signal?: AbortSignal) =>

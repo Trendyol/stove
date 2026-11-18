@@ -1,5 +1,6 @@
 package com.trendyol.stove.system
 
+import com.trendyol.stove.events.StoveEventsDsl
 import com.trendyol.stove.reporting.ReportRenderer
 import com.trendyol.stove.reporting.isRunningOnCI
 import com.trendyol.stove.system.abstractions.StateStorageFactory
@@ -27,6 +28,12 @@ import org.slf4j.LoggerFactory
 class StoveOptionsDsl {
   private val logger = LoggerFactory.getLogger(javaClass)
   private val propertiesFile = PropertiesFile()
+
+  internal val eventObservers = StoveEventsDsl()
+
+  fun events(configure: StoveEventsDsl.() -> Unit) {
+    eventObservers.configure()
+  }
 
   internal var options = StoveOptions()
     private set

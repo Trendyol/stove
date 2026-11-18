@@ -7,4 +7,5 @@ package com.trendyol.stove.reporting
  */
 interface SpanListenerRegistry {
   fun addSpanListener(listener: SpanEventListener)
+  fun removeSpanListener(listener: SpanEventListener) {}
 }

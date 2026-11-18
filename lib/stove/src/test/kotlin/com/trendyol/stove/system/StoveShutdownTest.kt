@@ -4,8 +4,155 @@ import com.trendyol.stove.system.abstractions.*
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.CoroutineStart
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.async
+import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.currentCoroutineContext
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withContext
+import java.util.concurrent.CompletableFuture
+import java.util.concurrent.CountDownLatch
+import java.util.concurrent.TimeUnit
+import java.util.concurrent.TimeoutException
+import kotlin.coroutines.CoroutineContext
 
 class StoveShutdownTest : FunSpec({
+  test("shutdown waits for startup and stops the application exactly once") {
+    ShutdownFixture().use { fixture ->
+      val entered = CompletableDeferred<Unit>()
+      val release = CompletableDeferred<Unit>()
+      fixture.stove.getOrRegister(object : PluggedSystem, BeforeRunAware {
+        override val stove = fixture.stove
+        override suspend fun beforeRun() {
+          entered.complete(Unit)
+          release.await()
+        }
+        override fun close() = Unit
+      })
+      coroutineScope {
+        val start = async { fixture.stove.run() }
+        entered.await()
+        shouldThrow<IllegalStateException> {
+          fixture.stove.getOrRegister(object : PluggedSystem {
+            override val stove = fixture.stove
+            override fun close() = Unit
+          })
+        }
+        shouldThrow<IllegalStateException> { fixture.stove.applicationUnderTest(fixture.application) }
+        val stop = async(start = CoroutineStart.UNDISPATCHED) { fixture.stove.shutdown() }
+        try {
+          stop.isCompleted shouldBe false
+        } finally {
+          release.complete(Unit)
+        }
+        start.await()
+        stop.await()
+      }
+      fixture.stove.close()
+      fixture.events shouldBe listOf("app.start", "route.restore", "app.stop", "route.close", "dependency.close")
+    }
+  }
+
+  test("close from a startup callback fails immediately and rolls back") {
+    val fixture = ShutdownFixture()
+    val callback = CompletableFuture<Thread>()
+    fixture.stove.getOrRegister(object : PluggedSystem, BeforeRunAware {
+      override val stove = fixture.stove
+      override suspend fun beforeRun() {
+        callback.complete(Thread.currentThread())
+        stove.close()
+      }
+      override fun close() = Unit
+    })
+    val startup = CompletableFuture.supplyAsync {
+      runCatching { runBlocking { fixture.stove.run() } }.exceptionOrNull()?.message
+    }
+    val thread = callback.get(5, TimeUnit.SECONDS)
+    try {
+      startup.get(5, TimeUnit.SECONDS) shouldBe "Cannot close Stove from its startup callback"
+    } catch (timeout: TimeoutException) {
+      thread.interrupt()
+      startup.get(5, TimeUnit.SECONDS)
+      throw timeout
+    }
+    fixture.events shouldBe listOf("route.restore", "route.close", "dependency.close")
+  }
+
+  test("startup context retained by an application can close Stove after startup returns") {
+    val captured = CompletableDeferred<CoroutineContext>()
+    ShutdownFixture().use { fixture ->
+      fixture.stove.applicationUnderTest(object : ApplicationUnderTest<Unit> {
+        override suspend fun start(configurations: List<String>) {
+          captured.complete(currentCoroutineContext().minusKey(Job))
+        }
+        override suspend fun stop() {
+          fixture.events += "app.stop"
+        }
+      }).run()
+      withContext(captured.await()) { fixture.stove.close() }
+      fixture.events shouldBe listOf("route.restore", "app.stop", "route.close", "dependency.close")
+    }
+  }
+
+  test("cancelling shutdown during application stop still disposes the remaining resources") {
+    val entered = CompletableDeferred<Unit>()
+    val release = CompletableDeferred<Unit>()
+    ShutdownFixture().use { fixture ->
+      fixture.stove.applicationUnderTest(object : ApplicationUnderTest<Unit> {
+        override suspend fun start(configurations: List<String>) = Unit
+        override suspend fun stop() {
+          fixture.stove.close()
+          entered.complete(Unit)
+          release.await()
+          fixture.events += "app.stop"
+        }
+      }).run()
+      coroutineScope {
+        val shutdown = launch { fixture.stove.shutdown() }
+        entered.await()
+        val second = async(start = CoroutineStart.UNDISPATCHED) { fixture.stove.shutdown() }
+        try {
+          second.isCompleted shouldBe false
+          shutdown.cancel()
+        } finally {
+          release.complete(Unit)
+        }
+        second.await()
+        shutdown.join()
+      }
+      fixture.events shouldBe listOf("route.restore", "app.stop", "route.close", "dependency.close")
+    }
+  }
+
+  test("shutdown releases the registration lock before invoking resource cleanup") {
+    Stove().use { stove ->
+      val entered = CompletableDeferred<Unit>()
+      val release = CountDownLatch(1)
+      val releasedByTest = CompletableDeferred<Boolean>()
+      stove.registerForDispose(
+        AutoCloseable {
+          entered.complete(Unit)
+          releasedByTest.complete(release.await(5, TimeUnit.SECONDS))
+        }
+      )
+      coroutineScope {
+        val shutdown = async(Dispatchers.IO) { stove.close() }
+        try {
+          entered.await()
+          shouldThrow<IllegalStateException> { stove.registerForDispose(AutoCloseable {}) }
+        } finally {
+          release.countDown()
+          shutdown.await()
+        }
+        releasedByTest.await() shouldBe true
+      }
+    }
+  }
+
   test("restores faults before stopping the app and closes each resource once") {
     ShutdownFixture().use { fixture ->
       fixture.stove.run()

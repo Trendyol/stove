@@ -29,6 +29,10 @@ pub struct StoredLiveEvent {
 
 #[derive(Clone, Debug)]
 pub enum PersistedDashboardEvent {
+  RunEnvironment {
+    run_id: String,
+    environment: crate::proto::RunEnvironmentEvent,
+  },
   RunStarted {
     run_id: String,
     app_name: String,
@@ -44,6 +48,7 @@ pub enum PersistedDashboardEvent {
     passed: i32,
     failed: i32,
     duration_ms: i64,
+    lifecycle_failed: bool,
   },
   TestStarted {
     run_id: String,
@@ -129,7 +134,8 @@ impl LiveDashboardEvent {
       LiveDashboardPayload::Snapshot(payload) => payload.id = temp_id,
       LiveDashboardPayload::MockInteraction(payload) => payload.id = temp_id,
       LiveDashboardPayload::MockWarning(payload) => payload.id = temp_id,
-      LiveDashboardPayload::RunDeleted(_)
+      LiveDashboardPayload::RunEnvironment(_)
+      | LiveDashboardPayload::RunDeleted(_)
       | LiveDashboardPayload::RunStarted(_)
       | LiveDashboardPayload::RunEnded(_)
       | LiveDashboardPayload::TestStarted(_)
@@ -142,6 +148,7 @@ impl LiveDashboardEvent {
 #[derive(Clone, Debug, Serialize, ToSchema)]
 #[serde(tag = "event_type", content = "payload", rename_all = "snake_case")]
 pub enum LiveDashboardPayload {
+  RunEnvironment(crate::proto::RunEnvironmentEvent),
   RunStarted(LiveRunStartedPayload),
   RunDeleted(LiveRunDeletedPayload),
   RunEnded(LiveRunEndedPayload),
@@ -157,6 +164,7 @@ pub enum LiveDashboardPayload {
 impl LiveDashboardPayload {
   const fn event_type(&self) -> &'static str {
     match self {
+      Self::RunEnvironment(_) => "run_environment",
       Self::RunStarted(_) => "run_started",
       Self::RunDeleted(_) => "run_deleted",
       Self::RunEnded(_) => "run_ended",

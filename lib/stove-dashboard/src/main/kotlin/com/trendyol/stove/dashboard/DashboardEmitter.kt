@@ -32,7 +32,8 @@ private const val DEFAULT_MAX_FAILURES = 5
 class DashboardEmitter internal constructor(
   ingestion: DashboardIngestion,
   private val maxFailures: Int,
-  private val drainWarningIntervalMs: Long
+  private val drainWarningIntervalMs: Long,
+  private val drainTimeoutMs: Long = 30_000
 ) {
   constructor(
     ingestion: DashboardIngestion = DashboardIngestion.Grpc(),
@@ -40,6 +41,7 @@ class DashboardEmitter internal constructor(
   ) : this(ingestion, maxFailures, DRAIN_WARNING_INTERVAL_MS)
 
   init {
+    require(drainTimeoutMs > 0) { "drainTimeoutMs must be greater than zero" }
     require(maxFailures > 0) { "maxFailures must be greater than zero: $maxFailures" }
     require(drainWarningIntervalMs > 0) {
       "drainWarningIntervalMs must be greater than zero: $drainWarningIntervalMs"
@@ -52,17 +54,16 @@ class DashboardEmitter internal constructor(
   private val scope = CoroutineScope(Dispatchers.IO + SupervisorJob())
   private val disabled = AtomicBoolean(false)
   private val closed = AtomicBoolean(false)
-  private var consecutiveFailures = 0
   private var rejectionLogged = false
   private val emitLock = ReentrantLock()
-  private val sequenceByRun = mutableMapOf<String, Long>()
+  private var sequenceByRun = emptyMap<String, Long>()
   private val drainJob: Job = scope.launch { drainLoop() }
 
   /** Non-blocking emit. Drops the event only if the emitter is disabled or closed. */
   fun tryEmit(event: DashboardEvent): Unit = emitLock.withLock {
     if (disabled.get() || closed.get()) return@withLock
     val sequence = sequenceByRun.getOrDefault(event.runId, 0) + 1
-    sequenceByRun[event.runId] = sequence
+    sequenceByRun += event.runId to sequence
     val identifiedEvent = event.toBuilder()
       .setEventId(UUID.randomUUID().toString())
       .setSequence(sequence)
@@ -73,23 +74,32 @@ class DashboardEmitter internal constructor(
     }
   }
 
-  /** Graceful, idempotent shutdown: drains queued events, then closes the transport. */
+  /** Drains for at most 30 seconds, then closes the transport; incomplete delivery is logged. */
   fun close() {
-    if (!closed.compareAndSet(false, true)) return
-    eventQueue.close()
-    runBlocking {
-      while (!drainJob.isCompleted) {
-        val drained = withTimeoutOrNull(drainWarningIntervalMs.milliseconds) {
-          drainJob.join()
-          true
-        } ?: false
-        if (!drained) {
-          logger.warn("Still waiting for queued dashboard events to be acknowledged")
-        }
-      }
+    emitLock.withLock {
+      if (!closed.compareAndSet(false, true)) return
+      eventQueue.close()
     }
+    val drained = runBlocking {
+      withTimeoutOrNull(drainTimeoutMs.milliseconds) {
+        awaitDrain()
+        true
+      } ?: false
+    }
+    if (!drained) logger.warn("Dashboard flush timed out; some queued observations were not delivered")
     scope.cancel()
+    eventQueue.cancel()
     transport.close()
+  }
+
+  private suspend fun awaitDrain() {
+    while (!drainJob.isCompleted) {
+      val drained = withTimeoutOrNull(drainWarningIntervalMs.milliseconds) {
+        drainJob.join()
+        true
+      } ?: false
+      if (!drained) logger.warn("Still waiting for queued dashboard events to be acknowledged")
+    }
   }
 
   private suspend fun drainLoop() {
@@ -100,37 +110,29 @@ class DashboardEmitter internal constructor(
   }
 
   private suspend fun sendUntilAcknowledged(event: DashboardEvent) {
-    while (scope.isActive && !disabled.get()) {
+    for (attempt in 1..maxFailures) {
+      if (!scope.isActive) return
       when (val outcome = transport.send(event)) {
-        SendOutcome.Accepted -> {
-          consecutiveFailures = 0
-          return
-        }
+        SendOutcome.Accepted -> return
 
         is SendOutcome.Rejected -> {
-          consecutiveFailures = 0
-          if (!rejectionLogged) {
-            rejectionLogged = true
-            logger.warn(
-              "Dashboard server rejected an event: ${outcome.reason}. " +
-                "Such events are dropped; tests continue normally."
-            )
-          }
+          handleRejection(outcome.reason)
           return
         }
 
-        is SendOutcome.Failed -> handleFailure(outcome.cause)
+        is SendOutcome.Failed -> handleFailure(outcome.cause, attempt)
       }
-
-      if (!disabled.get()) {
-        val attempt = consecutiveFailures.coerceAtLeast(1).coerceAtMost(5)
-        delay((RETRY_BASE_DELAY_MS shl (attempt - 1)).milliseconds)
-      }
+      if (attempt < maxFailures) delay((RETRY_BASE_DELAY_MS shl (attempt.coerceAtMost(5) - 1)).milliseconds)
     }
   }
 
-  private fun handleFailure(error: Exception) {
-    consecutiveFailures++
+  private fun handleRejection(reason: String) {
+    if (rejectionLogged) return
+    rejectionLogged = true
+    logger.warn("Dashboard server rejected an event: $reason. Such events are dropped; tests continue normally.")
+  }
+
+  private fun handleFailure(error: Exception, consecutiveFailures: Int) {
     if (consecutiveFailures == 1) {
       logger.warn(
         "Dashboard server ${transport.name} error: ${error.message}. " +
@@ -139,6 +141,7 @@ class DashboardEmitter internal constructor(
     }
     if (consecutiveFailures >= maxFailures) {
       disabled.set(true)
+      eventQueue.cancel()
       logger.info(
         "Dashboard emitter disabled after $consecutiveFailures consecutive failures. Tests will continue normally."
       )

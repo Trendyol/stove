@@ -1,4 +1,5 @@
 import type { QueryClient, QueryKey } from "@tanstack/react-query";
+import { environmentKey } from "./environment";
 import { LiveCacheBuffer } from "./live-cache/buffer";
 import { cancelPreDeletionRequests } from "./live-cache/reconciliation";
 import {
@@ -65,6 +66,11 @@ export function applyLiveDashboardEvents(
     })
     .map((query) => query.queryKey);
   for (const queryKey of interrupted) void queryClient.cancelQueries({ queryKey, exact: true });
+  for (const event of events) {
+    if (event.event_type === EVENT_TYPE.RUN_ENVIRONMENT) {
+      void queryClient.cancelQueries({ queryKey: environmentKey(event.run_id), exact: true });
+    }
+  }
   const cache = new LiveCacheBuffer(queryClient);
   for (const event of events) applyEvent(cache, event);
   cache.flush();
@@ -90,6 +96,9 @@ export function applyLiveDashboardEvents(
 
 function applyEvent(cache: LiveCacheBuffer, event: LiveDashboardEvent) {
   switch (event.event_type) {
+    case EVENT_TYPE.RUN_ENVIRONMENT:
+      cache.setQueryData(environmentKey(event.run_id), event.payload);
+      return;
     case EVENT_TYPE.RUN_DELETED:
       return applyRunDeleted(cache, event);
     case EVENT_TYPE.RUN_STARTED:
@@ -248,6 +257,7 @@ export function invalidateDashboardQueries(queryClient: QueryClient, runId?: str
   queryClient.invalidateQueries({ queryKey: ["run"] });
   queryClient.invalidateQueries({ queryKey: ["run-metadata"] });
   if (runId) {
+    queryClient.invalidateQueries({ queryKey: environmentKey(runId) });
     queryClient.invalidateQueries({ queryKey: ["linked", runId] });
     queryClient.invalidateQueries({ queryKey: ["focus", runId] });
     queryClient.invalidateQueries({ queryKey: ["trace"] });

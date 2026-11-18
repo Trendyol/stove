@@ -261,3 +261,14 @@ test("demo rejects shared invalid retention policies without changing saved sett
     assert.deepEqual((await get("/admin/status", schema.isAdminStatus)).retention, original);
   }
 });
+
+test("demo environment includes AUT, keyed PostgreSQL and components without activity", async (t) => {
+  const { get } = setup(t);
+  const { isRunEnvironment } = await jiti.import("../src/api/environment.ts");
+  const [run] = (await get("/runs", schema.isRunPage)).runs;
+  const environment = await get(`/runs/${run.id}/environment`, isRunEnvironment);
+  assert.ok(environment.components.some((component) => component.role === "APPLICATION"));
+  assert.ok(environment.components.some((component) => component.name === "Kafka"));
+  assert.ok(environment.components.some((component) => component.name === "OIDC"));
+  assert.ok(environment.components.some((component) => component.key === "analytics" && component.phases.length === 0));
+});

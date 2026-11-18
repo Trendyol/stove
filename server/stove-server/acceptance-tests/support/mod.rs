@@ -346,6 +346,7 @@ pub fn run_ended(
     sequence: 0,
     event: Some(proto::dashboard_event::Event::RunEnded(
       proto::RunEndedEvent {
+        lifecycle_failed: false,
         timestamp: timestamp(seconds),
         total_tests,
         passed,

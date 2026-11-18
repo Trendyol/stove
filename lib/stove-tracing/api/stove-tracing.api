@@ -133,6 +133,7 @@ public final class com/trendyol/stove/tracing/TracingSystem : com/trendyol/stove
 	public fun executeWithReuseCheck (Lkotlin/jvm/functions/Function1;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public fun getStove ()Lcom/trendyol/stove/system/Stove;
 	public fun getTraceVisualizationForCurrentTest (J)Larrow/core/Option;
+	public fun removeSpanListener (Lcom/trendyol/stove/reporting/SpanEventListener;)V
 	public fun run (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public fun stop (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public fun then ()Lcom/trendyol/stove/system/Stove;

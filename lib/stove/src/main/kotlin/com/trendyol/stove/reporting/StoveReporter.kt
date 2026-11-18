@@ -48,7 +48,9 @@ class StoveReporter(
     val testId = resolveTestId()
     try {
       if (testId == null) return
-      notifyListeners("onTestEnded") { it.onTestEnded(testId) }
+      val (beforeCleanup, ordinary) = listeners.partition { it is PreCleanupReportListener }
+      notifyListeners("onTestEnded", beforeCleanup) { it.onTestEnded(testId) }
+      notifyListeners("onTestEnded", ordinary) { it.onTestEnded(testId) }
     } finally {
       contextThreadLocal.remove()
     }
@@ -111,8 +113,8 @@ class StoveReporter(
     }
   }.getOrDefault(emptyList())
 
-  private inline fun notifyListeners(event: String, notify: (ReportEventListener) -> Unit) {
-    listeners.forEach { listener ->
+  private inline fun notifyListeners(event: String, targets: List<ReportEventListener> = listeners, notify: (ReportEventListener) -> Unit) {
+    targets.forEach { listener ->
       runCatching { notify(listener) }.onFailure { logger.warn("Listener failed on $event", it) }
     }
   }
@@ -123,3 +125,6 @@ class StoveReporter(
     private const val DEFAULT_TEST_ID = "default"
   }
 }
+
+/** Captures evidence before ordinary end listeners release test-owned resources. */
+internal interface PreCleanupReportListener : ReportEventListener

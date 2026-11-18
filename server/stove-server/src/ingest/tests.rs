@@ -8,7 +8,7 @@ use crate::proto;
 use crate::sse::manager::SseManager;
 use crate::storage::repository::Repository;
 
-fn test_service() -> EventIngestor {
+pub(super) fn test_service() -> EventIngestor {
   let repo = Arc::new(Repository::connect_sqlite(":memory:", &equal_retention(1)).unwrap());
   let sse = Arc::new(SseManager::new());
   EventIngestor::new(repo, sse)
@@ -375,6 +375,7 @@ async fn process_full_lifecycle() {
       sequence: 0,
       event: Some(proto::dashboard_event::Event::RunEnded(
         proto::RunEndedEvent {
+          lifecycle_failed: false,
           timestamp: Some(ts(1_704_067_210)),
           total_tests: 1,
           passed: 1,
@@ -499,53 +500,14 @@ async fn assertions_with_distinct_expectations_do_not_share_retry_identity() {
 
 #[test]
 fn every_live_variant_matches_its_wire_envelope_storage_tag_and_schema() {
-  use proto::dashboard_event::Event;
-
   let service = test_service();
   let cases = [
-    (
-      Event::RunStarted(proto::RunStartedEvent::default()),
-      "run_started",
-    ),
-    (
-      Event::RunEnded(proto::RunEndedEvent::default()),
-      "run_ended",
-    ),
-    (
-      Event::TestStarted(proto::TestStartedEvent::default()),
-      "test_started",
-    ),
-    (
-      Event::TestEnded(proto::TestEndedEvent {
-        status: "PASSED".into(),
-        ..Default::default()
-      }),
-      "test_ended",
-    ),
-    (
-      Event::EntryRecorded(proto::EntryRecordedEvent {
-        result: "PASSED".into(),
-        ..Default::default()
-      }),
-      "entry_recorded",
-    ),
-    (
-      Event::SpanRecorded(proto::SpanRecordedEvent {
-        status: "UNSET".into(),
-        ..Default::default()
-      }),
-      "span_recorded",
-    ),
-    (Event::Snapshot(proto::SnapshotEvent::default()), "snapshot"),
-    (
-      Event::MockInteraction(proto::MockInteractionEvent::default()),
-      "mock_interaction",
-    ),
-    (
-      Event::MockWarning(proto::MockWarningEvent::default()),
-      "mock_warning",
-    ),
-  ];
+    run_wire_cases(),
+    test_wire_cases(),
+    recorded_wire_cases(),
+    mock_wire_cases(),
+  ]
+  .concat();
 
   let document = serde_json::to_value(crate::http::openapi_document()).unwrap();
   let schemas = &document["components"]["schemas"];
@@ -553,56 +515,51 @@ fn every_live_variant_matches_its_wire_envelope_storage_tag_and_schema() {
   assert_eq!(variants.len(), cases.len() + 1);
 
   for (payload, expected_tag) in cases {
-    let prepared = service
-      .prepare_event(&proto::DashboardEvent {
-        run_id: "run-wire".to_string(),
-        event: Some(payload),
-        ..Default::default()
-      })
-      .unwrap();
-    let live = prepared.live.with_seq(42);
-    let json = serde_json::to_value(&live).unwrap();
-
-    assert_eq!(json.as_object().unwrap().len(), 4);
-    assert_eq!(json["seq"], 42);
-    assert_eq!(json["run_id"], "run-wire");
-    assert_eq!(json["event_type"], expected_tag);
-    assert_eq!(live.event_type(), expected_tag);
-    let variant = variants
-      .iter()
-      .find(|variant| variant["properties"]["event_type"]["enum"][0] == expected_tag)
-      .unwrap();
-    let payload_ref = variant["properties"]["payload"]["$ref"].as_str().unwrap();
-    let payload_schema = document
-      .pointer(payload_ref.strip_prefix('#').unwrap())
-      .unwrap();
-    let fields = json["payload"].as_object().unwrap();
-    let required = payload_schema["required"].as_array().unwrap();
-    assert_eq!(
-      payload_schema["properties"].as_object().unwrap().len(),
-      fields.len()
-    );
-    assert_eq!(required.len(), fields.len());
-    for (field, value) in fields {
-      assert!(
-        required.iter().any(|name| name == field),
-        "{expected_tag}.{field}"
-      );
-      if value.is_null() {
-        assert!(
-          payload_schema["properties"][field]["type"]
-            .as_array()
-            .unwrap()
-            .iter()
-            .any(|kind| kind == "null"),
-          "{expected_tag}.{field} must allow null"
-        );
-      }
-    }
-    if let Some(id) = json["payload"].get("id") {
-      assert_eq!(id, -42);
-    }
+    assert_wire_event(&service, &document, payload, expected_tag);
   }
+}
+
+fn assert_wire_event(
+  service: &EventIngestor,
+  document: &serde_json::Value,
+  payload: proto::dashboard_event::Event,
+  expected_tag: &str,
+) {
+  let prepared = service
+    .prepare_event(&proto::DashboardEvent {
+      run_id: "run-wire".to_string(),
+      event: Some(payload),
+      ..Default::default()
+    })
+    .unwrap();
+  let live = prepared.live.with_seq(42);
+  let json = serde_json::to_value(&live).unwrap();
+
+  assert_eq!(json.as_object().unwrap().len(), 4);
+  assert_eq!(json["seq"], 42);
+  assert_eq!(json["run_id"], "run-wire");
+  assert_eq!(json["event_type"], expected_tag);
+  assert_eq!(live.event_type(), expected_tag);
+  assert_wire_schema(document, expected_tag, &json["payload"]);
+}
+
+fn assert_wire_schema(
+  document: &serde_json::Value,
+  expected_tag: &str,
+  payload: &serde_json::Value,
+) {
+  let variants = document["components"]["schemas"]["LiveDashboardPayload"]["oneOf"]
+    .as_array()
+    .unwrap();
+  let variant = variants
+    .iter()
+    .find(|variant| variant["properties"]["event_type"]["enum"][0] == expected_tag)
+    .unwrap();
+  let payload_ref = variant["properties"]["payload"]["$ref"].as_str().unwrap();
+  let payload_schema = document
+    .pointer(payload_ref.strip_prefix('#').unwrap())
+    .unwrap();
+  assert_wire_fields(payload_schema, payload, expected_tag);
 }
 
 #[tokio::test]
@@ -672,6 +629,118 @@ async fn invalid_statuses_never_commit_domain_or_live_events() {
     svc.repository.get_entries("run-1", "test-1").unwrap().len(),
     0
   );
+}
+
+fn run_wire_cases() -> Vec<(proto::dashboard_event::Event, &'static str)> {
+  use proto::dashboard_event::Event;
+  vec![
+    (
+      Event::RunEnvironment(proto::RunEnvironmentEvent::default()),
+      "run_environment",
+    ),
+    (
+      Event::RunStarted(proto::RunStartedEvent::default()),
+      "run_started",
+    ),
+    (
+      Event::RunEnded(proto::RunEndedEvent::default()),
+      "run_ended",
+    ),
+  ]
+}
+
+fn test_wire_cases() -> Vec<(proto::dashboard_event::Event, &'static str)> {
+  use proto::dashboard_event::Event;
+  vec![
+    (
+      Event::TestStarted(proto::TestStartedEvent::default()),
+      "test_started",
+    ),
+    (
+      Event::TestEnded(proto::TestEndedEvent {
+        status: "PASSED".into(),
+        ..Default::default()
+      }),
+      "test_ended",
+    ),
+  ]
+}
+
+fn recorded_wire_cases() -> Vec<(proto::dashboard_event::Event, &'static str)> {
+  use proto::dashboard_event::Event;
+  vec![
+    (
+      Event::EntryRecorded(proto::EntryRecordedEvent {
+        result: "PASSED".into(),
+        ..Default::default()
+      }),
+      "entry_recorded",
+    ),
+    (
+      Event::SpanRecorded(proto::SpanRecordedEvent {
+        status: "UNSET".into(),
+        ..Default::default()
+      }),
+      "span_recorded",
+    ),
+  ]
+}
+
+fn mock_wire_cases() -> Vec<(proto::dashboard_event::Event, &'static str)> {
+  use proto::dashboard_event::Event;
+  vec![
+    (Event::Snapshot(proto::SnapshotEvent::default()), "snapshot"),
+    (
+      Event::MockInteraction(proto::MockInteractionEvent::default()),
+      "mock_interaction",
+    ),
+    (
+      Event::MockWarning(proto::MockWarningEvent::default()),
+      "mock_warning",
+    ),
+  ]
+}
+
+fn assert_wire_fields(
+  payload_schema: &serde_json::Value,
+  payload: &serde_json::Value,
+  expected_tag: &str,
+) {
+  let fields = payload.as_object().unwrap();
+  let required = payload_schema["required"].as_array().unwrap();
+  assert_eq!(
+    payload_schema["properties"].as_object().unwrap().len(),
+    fields.len()
+  );
+  assert_eq!(required.len(), fields.len());
+  for (field, value) in fields {
+    assert!(
+      required.iter().any(|name| name == field),
+      "{expected_tag}.{field}"
+    );
+    assert_nullable(
+      &payload_schema["properties"][field],
+      value,
+      expected_tag,
+      field,
+    );
+  }
+  if let Some(id) = payload.get("id") {
+    assert_eq!(id, -42);
+  }
+}
+
+fn assert_nullable(schema: &serde_json::Value, value: &serde_json::Value, tag: &str, field: &str) {
+  if value.is_null() {
+    assert!(
+      schema["type"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .any(|kind| kind == "null"),
+      "{tag}.{field} must allow null"
+    );
+  }
 }
 
 #[test]

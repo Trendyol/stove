@@ -6,6 +6,7 @@ export type { Status };
 export const EVENT_TYPE = {
   RUN_DELETED: "run_deleted",
   RUN_STARTED: "run_started",
+  RUN_ENVIRONMENT: "run_environment",
   RUN_ENDED: "run_ended",
   TEST_STARTED: "test_started",
   TEST_ENDED: "test_ended",
@@ -73,3 +74,7 @@ export type TestSummary = components["schemas"]["TestSummary"];
 
 export type RetentionPolicy = components["schemas"]["RetentionPolicy"];
 export type RetentionRule = components["schemas"]["RetentionRule"];
+
+export type RunEnvironment = components["schemas"]["RunEnvironmentEvent"];
+export type RunComponent = components["schemas"]["RunComponent"];
+export type ComponentPhase = components["schemas"]["ComponentPhase"];

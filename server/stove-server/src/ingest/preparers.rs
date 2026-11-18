@@ -73,7 +73,11 @@ pub(super) fn prepare_run_ended(
   event: &proto::RunEndedEvent,
 ) -> PreparedDashboardEvent {
   let ended_at = format_timestamp(event.timestamp.as_ref());
-  let status = run_status(event.failed);
+  let status = run_status(if event.lifecycle_failed {
+    1
+  } else {
+    event.failed
+  });
   PreparedDashboardEvent {
     live: LiveDashboardEvent::new(
       run_id,
@@ -93,6 +97,7 @@ pub(super) fn prepare_run_ended(
       passed: event.passed,
       failed: event.failed,
       duration_ms: event.duration_ms,
+      lifecycle_failed: event.lifecycle_failed,
     },
   }
 }

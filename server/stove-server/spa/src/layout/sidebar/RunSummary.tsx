@@ -5,6 +5,7 @@ import {
   type MetadataFilter,
   toggleMetadataValue,
 } from "../../utils/metadata-filter";
+import { RunEnvironment } from "./RunEnvironment";
 
 interface RunSummaryProps {
   run: Run;
@@ -33,6 +34,7 @@ export function RunSummary({
           {total} tests · {formatDuration(run.duration_ms)}
         </span>
       </section>
+      <RunEnvironment run={run} />
       <details className="stove-run-details">
         <summary>Run details</summary>
         <dl>

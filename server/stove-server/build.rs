@@ -12,6 +12,18 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
   );
   tonic_prost_build::configure()
     .build_server(true)
+    .type_attribute(
+      "stove.dashboard.v1.RunEnvironmentEvent",
+      "#[derive(serde::Serialize, serde::Deserialize, utoipa::ToSchema)]",
+    )
+    .type_attribute(
+      "stove.dashboard.v1.RunComponent",
+      "#[derive(serde::Serialize, serde::Deserialize, utoipa::ToSchema)]",
+    )
+    .type_attribute(
+      "stove.dashboard.v1.ComponentPhase",
+      "#[derive(serde::Serialize, serde::Deserialize, utoipa::ToSchema)]",
+    )
     // The generated client is used by the black-box acceptance suite to send
     // events to the real server process over its public gRPC boundary.
     .build_client(true)

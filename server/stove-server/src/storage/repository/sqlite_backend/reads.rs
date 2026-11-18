@@ -18,6 +18,21 @@ use crate::storage::schema::sqlite::{
 };
 
 impl SqliteBackend {
+  pub fn get_run_environment(
+    &self,
+    run_id: &str,
+  ) -> Result<Option<crate::proto::RunEnvironmentEvent>> {
+    use crate::storage::schema::sqlite::run_environments as env;
+    let mut db = self.lock_read();
+    env::table
+      .find(run_id)
+      .select(env::environment)
+      .first::<String>(db.conn())
+      .optional()?
+      .map(|json| serde_json::from_str(&json).map_err(Into::into))
+      .transpose()
+  }
+
   pub fn get_run_metadata_facets(
     &self,
     app: Option<&str>,

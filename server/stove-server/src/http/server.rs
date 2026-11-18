@@ -101,6 +101,10 @@ fn run_routes() -> Router<AppState> {
     )
     .route("/runs/{run_id}", get(super::routes::get_run))
     .route(
+      "/runs/{run_id}/environment",
+      get(super::routes::get_run_environment),
+    )
+    .route(
       "/runs/{run_id}/tests/{test_id}",
       get(super::routes::get_test),
     )

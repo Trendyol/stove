@@ -43,6 +43,7 @@ pub(super) struct RunEnd<'a> {
   pub passed: i32,
   pub failed: i32,
   pub duration_ms: i64,
+  pub lifecycle_failed: bool,
 }
 
 impl<'a> RunEnd<'a> {
@@ -61,11 +62,12 @@ impl<'a> RunEnd<'a> {
       passed,
       failed,
       duration_ms,
+      lifecycle_failed: false,
     }
   }
 
   pub fn status(&self) -> RunStatus {
-    if self.failed > 0 {
+    if self.failed > 0 || self.lifecycle_failed {
       RunStatus::Failed
     } else {
       RunStatus::Passed
@@ -164,6 +166,7 @@ impl<'a> SnapshotWrite<'a> {
 }
 
 pub(super) enum WriteOperation<'a> {
+  RunEnvironment(&'a str, &'a crate::proto::RunEnvironmentEvent),
   RunStarted(RunStart<'a>),
   RunEnded(RunEnd<'a>),
   TestStarted(TestStart<'a>),
@@ -178,6 +181,10 @@ pub(super) enum WriteOperation<'a> {
 impl<'a> From<&'a PersistedDashboardEvent> for WriteOperation<'a> {
   fn from(event: &'a PersistedDashboardEvent) -> Self {
     match event {
+      PersistedDashboardEvent::RunEnvironment {
+        run_id,
+        environment,
+      } => Self::RunEnvironment(run_id, environment),
       PersistedDashboardEvent::RunStarted {
         run_id,
         app_name,
@@ -200,14 +207,16 @@ impl<'a> From<&'a PersistedDashboardEvent> for WriteOperation<'a> {
         passed,
         failed,
         duration_ms,
-      } => Self::RunEnded(RunEnd::new(
+        lifecycle_failed,
+      } => Self::RunEnded(RunEnd {
         run_id,
         ended_at,
-        *total_tests,
-        *passed,
-        *failed,
-        *duration_ms,
-      )),
+        total_tests: *total_tests,
+        passed: *passed,
+        failed: *failed,
+        duration_ms: *duration_ms,
+        lifecycle_failed: *lifecycle_failed,
+      }),
       PersistedDashboardEvent::TestStarted {
         run_id,
         test_id,
