@@ -10,13 +10,12 @@ import java.time.Instant
 import java.util.UUID
 import java.util.concurrent.locks.ReentrantLock
 import kotlin.concurrent.withLock
-import kotlin.time.Duration
 import kotlin.time.Duration.Companion.seconds
 
 /** Ordered, hot observations. Collectors own their scope; events have no replay. */
 internal class StoveEventBus(
   private val handlers: List<StoveEventHandler> = emptyList(),
-  snapshotTimeout: Duration = 30.seconds
+  snapshotDeadline: SnapshotDeadline = { wait -> withTimeoutOrNull(30.seconds) { wait() } != null }
 ) : AutoCloseable {
   val runId: String = UUID.randomUUID().toString()
   private val observations = MutableSharedFlow<EventEnvelope>()
@@ -29,16 +28,17 @@ internal class StoveEventBus(
   private val pending = Channel<Delivery>(Channel.UNLIMITED)
   private val worker = scope.launch(start = CoroutineStart.LAZY) { dispatch() }
   private var sources: Option<StoveEventSources> = None
-  private val captures = SnapshotCaptures(lock, snapshotTimeout)
+  private val captures = SnapshotCaptures(lock, snapshotDeadline)
+  private var finished = false
   private var sequence = 0L
   private enum class Status { OPEN, CLOSING, CLOSED }
   private var status = Status.OPEN
 
   fun connect(stove: Stove): Unit = connections.withLock {
     val connected = lock.withLock {
-      if (status != Status.OPEN) return
+      if (status != Status.OPEN || finished) return
       sources.getOrElse {
-        StoveEventSources(stove, this, captures::accepting).also {
+        StoveEventSources(stove, this).also {
           sources = Some(it)
           it.start()
         }
@@ -58,22 +58,26 @@ internal class StoveEventBus(
 
   private fun publish(event: StoveEvent, source: Option<StoveEventSources>) {
     val capture = lock.withLock {
-      if (status != Status.OPEN || source.fold({ false }, { sources != Some(it) })) return
+      if (status != Status.OPEN || finished || source.fold({ false }, { sources != Some(it) })) return
       enqueue(event)
-      captures.claim { sources.flatMap { it.snapshots.plan(event) } }
+      if (event is RunFinished) finished = true
+      captures.claim(sources.flatMap { it.snapshots.plan(event) })
     }
     capture.onSome { it() }
   }
 
-  internal fun recordSnapshot(event: SnapshotRecorded): Unit = lock.withLock {
-    if (status != Status.CLOSED && captures.accepting) enqueue(event)
+  internal fun recordSnapshot(claim: Job, event: SnapshotRecorded): Unit = lock.withLock {
+    if (status != Status.CLOSED && !finished && captures.owns(claim)) enqueue(event)
   }
 
   /** Waits a bounded time for unfinished test evidence before resource cleanup. */
   fun capturePendingSnapshots() {
-    val capture = lock.withLock { captures.claim { sources.flatMap { it.snapshots.planPending() } } }
-    val job = capture.map { work -> scope.launch(Dispatchers.IO) { runInterruptible { work() } } }
-    if (!captures.awaitDeadline()) job.onSome { it.cancel() }
+    val outstanding = lock.withLock {
+      if (status != Status.OPEN || finished) return
+      captures.launchPending(scope, sources.flatMap { it.snapshots.planPending() })
+      captures.outstanding
+    }
+    captures.awaitDeadline(outstanding)
   }
 
   private fun enqueue(event: StoveEvent) {

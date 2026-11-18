@@ -18,7 +18,7 @@ internal class DashboardObservations(private val events: StoveEvents, observe: E
         try {
           observe(envelope)
         } catch (failure: Exception) {
-          if (failure is CancellationException) throw failure
+          currentCoroutineContext().ensureActive()
           logger.warn("Dashboard observation failed", failure)
         }
       }

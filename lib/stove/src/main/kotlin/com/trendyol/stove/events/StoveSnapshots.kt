@@ -3,10 +3,11 @@ package com.trendyol.stove.events
 import arrow.core.*
 import com.trendyol.stove.reporting.*
 import com.trendyol.stove.system.Stove
+import kotlinx.coroutines.Job
 import org.slf4j.LoggerFactory
 
 /** Plan captures in event order under the bus lock. Invoke the returned work outside the lock. */
-internal class StoveSnapshots(private val stove: Stove, private val record: SnapshotRecorder, private val accepting: () -> Boolean) {
+internal class StoveSnapshots(private val stove: Stove, private val record: SnapshotRecorder) {
   private val logger = LoggerFactory.getLogger(javaClass)
   private data class PendingTest(val context: StoveTestContext, val capturedFailure: Boolean = false)
 
@@ -42,14 +43,14 @@ internal class StoveSnapshots(private val stove: Stove, private val record: Snap
     return Some { unfinished.forEach { capture(it.context, SnapshotTrigger.TEST_END) } }
   }
 
-  private fun capture(context: StoveTestContext, trigger: SnapshotTrigger, filter: (Reports) -> Boolean = { true }) {
+  private fun Job.capture(context: StoveTestContext, trigger: SnapshotTrigger, filter: (Reports) -> Boolean = { true }) {
     val previous = StoveTestContextHolder.get().toOption()
     try {
       StoveTestContextHolder.set(context)
       for (system in stove.systemsOf<Reports>().distinctInstances()) {
-        if (!accepting()) return
+        if (!isActive) return
         runCatching {
-          if (filter(system)) record(SnapshotRecorded(context.testId, trigger, system.snapshot()))
+          if (filter(system)) record(this, SnapshotRecorded(context.testId, trigger, system.snapshot()))
         }.onFailure { logger.warn("Failed to capture snapshot from ${system.javaClass.name}", it) }
       }
     } finally {

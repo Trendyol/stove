@@ -91,7 +91,7 @@ private data class Registration(val target: Any, val key: Option<SystemKey>, val
 
 private fun registration(target: Any, index: Int, key: Option<SystemKey> = None, role: ComponentRole = ComponentRole.SYSTEM): Registration {
   val type = target.javaClass
-  val name = if (target is Reports) target.reportSystemName else type.simpleName.ifBlank { type.name }
+  val name = (target as? Reports)?.reportSystemName.orEmpty().ifBlank { type.simpleName.ifBlank { type.name } }
   return Registration(target, key, RunComponent("component-${index + 1}", name, type.name, key.map(::keyDisplayName), role))
 }
 

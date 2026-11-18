@@ -1,57 +1,55 @@
 package com.trendyol.stove.events
 
 import arrow.core.*
-import kotlinx.coroutines.TimeoutCancellationException
+import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
-import kotlinx.coroutines.runBlocking
-import kotlinx.coroutines.withTimeout
 import org.slf4j.LoggerFactory
 import java.util.concurrent.locks.ReentrantLock
 import kotlin.concurrent.withLock
-import kotlin.time.Duration
 
-/** Claims and abandonment share the event bus lock with publication and flush barriers. */
-internal class SnapshotCaptures(private val lock: ReentrantLock, private val timeout: Duration) {
-  private val active = MutableStateFlow(0)
-  val idle get() = active.value == 0
+/** Claims share the bus lock with publication, expiry and flush barriers. */
+internal class SnapshotCaptures(private val lock: ReentrantLock, private val deadline: SnapshotDeadline) {
+  private val active = MutableStateFlow(emptySet<Job>())
+  val outstanding get() = active.value
+  val idle get() = active.value.isEmpty()
+  fun owns(claim: Job) = claim in active.value
 
-  @Volatile var accepting = true
-    private set
-
-  fun claim(plan: () -> Option<SnapshotCapture>): Option<SnapshotCapture> {
-    if (!accepting) return None
-    return plan().map { capture ->
-      active.value++
-      {
-        try {
-          capture()
-        } finally {
-          lock.withLock { if (accepting) active.value-- }
-        }
+  fun claim(plan: Option<SnapshotCapture>): Option<() -> Unit> = plan.map { capture ->
+    val claim = Job().also(::track)
+    return@map {
+      try {
+        claim.capture()
+      } finally {
+        claim.complete()
       }
     }
   }
 
-  suspend fun awaitIdle() {
-    active.first { it == 0 }
-  }
-
-  fun awaitDeadline(): Boolean {
-    try {
-      runBlocking { withTimeout(timeout) { awaitIdle() } }
-      return true
-    } catch (_: TimeoutCancellationException) {
-      return abandon()
+  fun launchPending(scope: CoroutineScope, plan: Option<SnapshotCapture>) {
+    plan.onSome { capture ->
+      val job = scope.launch(Dispatchers.IO, start = CoroutineStart.LAZY) {
+        val claim = currentCoroutineContext().job
+        runInterruptible { claim.capture() }
+      }
+      track(job)
+      job.start()
     }
   }
 
-  private fun abandon(): Boolean {
-    lock.withLock {
-      if (idle) return true
-      accepting = false
-      active.value = 0
+  private fun track(job: Job) {
+    active.value += job
+    job.invokeOnCompletion { lock.withLock { active.value -= job } }
+  }
+
+  suspend fun awaitIdle() = active.first { it.isEmpty() }
+
+  fun awaitDeadline(outstanding: Set<Job> = active.value) {
+    if (outstanding.isEmpty()) return
+    if (runBlocking { deadline { active.first { live -> outstanding.none(live::contains) } } }) return
+    val expired = lock.withLock { active.value.intersect(outstanding).also { active.value -= it } }
+    expired.forEach { it.cancel() }
+    if (expired.isNotEmpty()) {
+      LoggerFactory.getLogger(javaClass).warn("Snapshot capture timed out; discarding late results")
     }
-    LoggerFactory.getLogger(javaClass).warn("Stove snapshot capture timed out; continuing cleanup without late snapshots")
-    return false
   }
 }

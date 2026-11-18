@@ -57,6 +57,8 @@ class StoveEventsTest : FunSpec({
       stove.events.flush()
       EventRecorder(stove.events).use { received ->
         stove.publish(RunFinished())
+        stove.publish(RunReady)
+        stove.publish(RunFinished())
         received.drain()
         received.events shouldBe listOf(RunFinished())
         stove.events.environment.first().first().id shouldBe "component-1"

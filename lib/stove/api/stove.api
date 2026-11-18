@@ -1687,8 +1687,10 @@ public final class com/trendyol/stove/system/Stove : com/trendyol/stove/system/a
 	public final fun getKeyedSystems ()Ljava/util/Map;
 	public final fun getOptions ()Lcom/trendyol/stove/system/StoveOptions;
 	public final fun getRunMigrationsAlways ()Z
+	public final fun lookup (Ljava/util/Map;Ljava/lang/Object;)Larrow/core/Option;
 	public final fun publish (Lcom/trendyol/stove/events/StoveEvent;)V
 	public final fun recordReport (Lcom/trendyol/stove/reporting/ReportEntry;)V
+	public final fun register (Ljava/util/Map;Ljava/lang/Object;Lcom/trendyol/stove/system/abstractions/PluggedSystem;)Lcom/trendyol/stove/system/abstractions/PluggedSystem;
 	public final fun registerForDispose (Ljava/lang/AutoCloseable;)Ljava/lang/AutoCloseable;
 	public final fun removeReportListener (Lcom/trendyol/stove/reporting/ReportEventListener;)V
 	public fun run (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;

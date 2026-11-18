@@ -384,7 +384,7 @@ class DashboardSystemTest : FunSpec({
   }
 })
 
-private fun startMockServer(received: MutableList<DashboardEvent>, port: Int): Server {
+internal fun startMockServer(received: MutableList<DashboardEvent>, port: Int): Server {
   val service = object : DashboardEventServiceCoroutineImplBase() {
     override suspend fun sendEvent(request: DashboardEvent): EventAck {
       received.add(request)

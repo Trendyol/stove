@@ -60,12 +60,10 @@ internal class DashboardTests(private val emit: DashboardEventEmitter) {
     }
   }
 
-  fun close() = results.running.keys.forEach { finish(it, Instant.now(), interrupted = true) }
+  fun close(ended: Instant) = results.running.keys.forEach { finish(it, ended, interrupted = true) }
 
-  fun result(durationMs: Long, lifecycleFailed: Boolean): RunEndedEvent = RunEndedEvent.newBuilder()
-    .setTimestamp(
-      Instant.now().toTimestamp()
-    ).setTotalTests(results.running.size + results.passed + results.failed).setPassed(results.passed)
+  fun result(ended: Instant, durationMs: Long, lifecycleFailed: Boolean): RunEndedEvent = RunEndedEvent.newBuilder()
+    .setTimestamp(ended.toTimestamp()).setTotalTests(results.running.size + results.passed + results.failed).setPassed(results.passed)
     .setFailed(results.failed).setDurationMs(durationMs).setLifecycleFailed(lifecycleFailed).build()
 }
 

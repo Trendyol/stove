@@ -15,12 +15,29 @@ internal class StoveLifecycle(
   private val environment: RunEnvironment
 ) {
   var application: Option<ApplicationUnderTest<*>> = None
+    private set
   var context: Option<Any> = None
   private val lifecycleLock = ReentrantLock()
+  private val startingHere = ThreadLocal.withInitial { false }
   private val transition = Mutex()
   private var cleanup: Option<List<AutoCloseable>> = Some(emptyList())
   private enum class Startup { NEW, SYSTEMS, APPLICATION }
   private var startup = Startup.NEW
+
+  fun <T> registrations(read: () -> T): T = lifecycleLock.withLock(read)
+
+  fun requireConfigurable() {
+    check(startup == Startup.NEW && cleanup.isSome()) { "Run components must be registered before Stove starts" }
+  }
+
+  fun configure(runner: ApplicationUnderTest<*>) = registrations {
+    requireConfigurable()
+    application = Some(runner)
+  }
+
+  fun requireExternalClose() {
+    check(!startingHere.get()) { "Cannot close Stove from its startup callback" }
+  }
 
   fun <T : AutoCloseable> register(resource: T): T = lifecycleLock.withLock {
     val resources = cleanup.getOrElse { error("Cannot register resources on a closed Stove") }
@@ -37,16 +54,20 @@ internal class StoveLifecycle(
       Stove.instance = stove
     }
     try {
-      val components = runCatching { stove.readRunComponents(freeze = true) }
-        .onFailure { events.publish(RunStarting(environment.snapshot())) }.getOrThrow()
-      events.publish(RunStarting(components))
-      events.connect(stove)
-      startSystems()
-      events.publish(RunReady)
+      withContext(startingHere.asContextElement(true)) { start() }
     } catch (failure: Throwable) {
       rollback(failure)
       throw failure
     }
+  }
+
+  private suspend fun start() {
+    val components = runCatching { stove.readRunComponents(freeze = true) }
+      .onFailure { events.publish(RunStarting(environment.snapshot())) }.getOrThrow()
+    events.publish(RunStarting(components))
+    events.connect(stove)
+    startSystems()
+    events.publish(RunReady)
   }
 
   private suspend fun startSystems() {
@@ -56,7 +77,7 @@ internal class StoveLifecycle(
     phase<RunAware>(systems, PhaseName.START) { it.run() }
     environment.phase(application, PhaseName.START) {
       val configurations = systems.filterIsInstance<ExposesConfiguration>().flatMap { it.configuration() }
-      startup = Startup.APPLICATION
+      lifecycleLock.withLock { startup = Startup.APPLICATION }
       context = Some(application.start(configurations))
     }
     phase<AfterRunAware>(systems, PhaseName.AFTER_START) { it.afterRun() }
@@ -82,7 +103,8 @@ internal class StoveLifecycle(
 
   suspend fun shutdown() {
     if (lifecycleLock.withLock { cleanup.isNone() }) return
-    transition.withLock { dispose(None) }
+    requireExternalClose()
+    transition.withLock { withContext(NonCancellable) { dispose(None) } }
   }
 
   private suspend fun dispose(startupFailure: Option<Throwable>) {

@@ -31,17 +31,18 @@ class RunEnvironmentTest : FunSpec({
 
   test("inventory preview does not hide later registrations from startup or final inventory") {
     Stove().use { stove ->
-      stove.runComponents() shouldBe emptyList()
-      stove.events.environment.value shouldBe emptyList()
       stove.getOrRegister(EnvironmentDependency(stove))
+      stove.runComponents().map { it.name } shouldBe listOf("EnvironmentDependency")
+      stove.events.environment.value shouldBe emptyList()
+      stove.getOrRegister(Analytics, EnvironmentDependency(stove))
       stove.applicationUnderTest(EnvironmentApplication())
       EventRecorder(stove.events).use { recorder ->
         stove.run()
         recorder.drain()
-        val expected = listOf(ComponentRole.SYSTEM, ComponentRole.APPLICATION)
-        recorder.events.filterIsInstance<RunStarting>().single().components.map { it.role } shouldBe expected
+        val expected = listOf(None, Some("Analytics"), None)
+        recorder.events.filterIsInstance<RunStarting>().single().components.map { it.key } shouldBe expected
         stove.close()
-        stove.events.environment.value.map { it.role } shouldBe expected
+        stove.events.environment.value.map { it.key } shouldBe expected
       }
     }
   }
@@ -144,6 +145,14 @@ class RunEnvironmentTest : FunSpec({
       stove.close()
       shared.phases shouldBe listOf("prepare", "start", "after", "close")
       stove.events.environment.value.count { it.type == SharedLifecycle::class.java.name } shouldBe 2
+    }
+  }
+
+  test("blank report names fall back to the class name and custom names stay unchanged") {
+    Stove().use { stove ->
+      stove.getOrRegister(NamedReport(stove, "  "))
+      stove.getOrRegister(Analytics, NamedReport(stove, " My DB "))
+      stove.runComponents().map { it.name } shouldBe listOf("NamedReport", " My DB ")
     }
   }
 
@@ -251,4 +260,8 @@ private class SharedLifecycle(override val stove: Stove) : PluggedSystem, Before
   override fun close() {
     phases += "close"
   }
+}
+
+private class NamedReport(override val stove: Stove, override val reportSystemName: String) : PluggedSystem, Reports {
+  override fun close() = Unit
 }

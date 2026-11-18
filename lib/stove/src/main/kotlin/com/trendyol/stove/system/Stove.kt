@@ -27,19 +27,19 @@ class Stove(configure: @StoveDsl StoveOptionsDsl.() -> Unit = {}) : ReadyStove, 
   private val lifecycle = StoveLifecycle(this, eventBus, environment)
   private val logger = LoggerFactory.getLogger(javaClass)
 
-  fun allRegisteredSystems(): Collection<PluggedSystem> = activeSystems.values + keyedSystems.values
+  fun allRegisteredSystems(): Collection<PluggedSystem> = lifecycle.registrations { activeSystems.values + keyedSystems.values }
   inline fun <reified T> systemsOf(): List<T> = allRegisteredSystems().filterIsInstance<T>()
   fun allSystems(): Collection<PluggedSystem> = allRegisteredSystems()
 
   /** Previews the current registrations until startup captures the run inventory. */
   fun runComponents(): List<RunComponent> = readRunComponents(freeze = false)
 
-  internal fun readRunComponents(freeze: Boolean): List<RunComponent> = environment.components(
-    activeSystems.values,
-    keyedSystems.map { (registration, system) -> registration.second to system },
-    lifecycle.application,
-    freeze
-  )
+  internal fun readRunComponents(freeze: Boolean): List<RunComponent> {
+    val (systems, keyed, application) = lifecycle.registrations {
+      Triple(activeSystems.values.toList(), keyedSystems.map { (key, system) -> key.second to system }, lifecycle.application)
+    }
+    return environment.components(systems, keyed, application, freeze)
+  }
   val keepDependenciesRunning: Boolean get() = options.keepDependenciesRunning
   val runMigrationsAlways: Boolean get() = options.runMigrationsAlways
 
@@ -60,7 +60,7 @@ class Stove(configure: @StoveDsl StoveOptionsDsl.() -> Unit = {}) : ReadyStove, 
   /** Publishes an observed fact through this Stove's ordered event pipeline. */
   fun publish(event: StoveEvent) = eventBus.publish(event)
 
-  /** Connects registered sources for observers that run without starting the application. */
+  /** Connects current sources. Call again after registering more publishers, or start Stove to connect them. */
   fun startObserving(): StoveEvents = events.also { eventBus.connect(this) }
 
   /** Captures unfinished test evidence before an observer or system is closed. */
@@ -98,33 +98,48 @@ class Stove(configure: @StoveDsl StoveOptionsDsl.() -> Unit = {}) : ReadyStove, 
     @PublishedApi
     internal fun <T : PluggedSystem> getSystemOrNone(kClass: KClass<T>): Option<T> {
       if (!::instance.isInitialized) return None
-      return instance.activeSystems.getOrNone(kClass).map { it as T }
+      val current = instance
+      return current.lookup(current.activeSystems, kClass).map { it as T }
     }
 
     fun stop(): Unit = instance.close()
   }
 
   fun applicationUnderTest(applicationUnderTest: ApplicationUnderTest<*>): Stove = apply {
-    lifecycle.application = Some(applicationUnderTest)
+    lifecycle.configure(applicationUnderTest)
   }
 
-  internal fun getSystemOrThrow(kClass: KClass<*>): PluggedSystem = activeSystems[kClass]
-    ?: error("System of type ${kClass.simpleName} is not registered in Stove")
+  internal fun getSystemOrThrow(kClass: KClass<*>): PluggedSystem = lookup(activeSystems, kClass)
+    .getOrElse { error("System of type ${kClass.simpleName} is not registered in Stove") }
 
   override suspend fun run() = lifecycle.run()
 
   fun with(withDsl: WithDsl.() -> Unit): Stove = apply { withDsl(WithDsl(this)) }
 
-  inline fun <reified T : PluggedSystem> getOrRegister(system: T): T = activeSystems.getOrPut(T::class) {
-    registerForDispose(system)
-  } as T
+  /** Registers before startup. Call [startObserving] again to connect new publishers during standalone observation. */
+  inline fun <reified T : PluggedSystem> getOrRegister(system: T): T = register(activeSystems, T::class, system)
 
-  inline fun <reified T : PluggedSystem> getOrRegister(key: SystemKey, system: T): T =
-    keyedSystems.getOrPut(T::class to key) { registerForDispose(system) } as T
+  /** Keyed variant of [getOrRegister]; standalone observers reconnect via [startObserving]. */
+  inline fun <reified T : PluggedSystem> getOrRegister(key: SystemKey, system: T): T = register(keyedSystems, T::class to key, system)
 
-  inline fun <reified T : PluggedSystem> getOrNone(): Option<T> = activeSystems.getOrNone(T::class).map { it as T }
-  inline fun <reified T : PluggedSystem> getOrNone(key: SystemKey): Option<T> =
-    keyedSystems.getOrNone(T::class to key).map { it as T }
+  @PublishedApi
+  @Suppress("UNCHECKED_CAST")
+  internal fun <K, T : PluggedSystem> register(systems: MutableMap<K, PluggedSystem>, key: K, system: T): T =
+    lifecycle.registrations {
+      systems.getOrPut(key) {
+        lifecycle.requireConfigurable()
+        registerForDispose(system)
+      } as T
+    }
+
+  inline fun <reified T : PluggedSystem> getOrNone(): Option<T> = lookup(activeSystems, T::class).map { it as T }
+  inline fun <reified T : PluggedSystem> getOrNone(key: SystemKey): Option<T> = lookup(keyedSystems, T::class to key).map { it as T }
+
+  @PublishedApi
+  internal fun <K> lookup(
+    systems: Map<K, PluggedSystem>,
+    key: K
+  ): Option<PluggedSystem> = lifecycle.registrations { systems.getOrNone(key) }
 
   fun <T : AutoCloseable> registerForDispose(closeable: T): T = lifecycle.register(closeable)
 
@@ -142,8 +157,9 @@ class Stove(configure: @StoveDsl StoveOptionsDsl.() -> Unit = {}) : ReadyStove, 
   internal suspend fun shutdown() = lifecycle.shutdown()
 
   /** Teardown failures are reported and logged without changing a passing test's outcome. */
-  override fun close(): Unit = runBlocking {
-    runCatching { shutdown() }.onFailure { logger.warn("got an error while stopping Stove: ${it.message}", it) }
+  override fun close() {
+    lifecycle.requireExternalClose()
+    runBlocking { runCatching { shutdown() }.onFailure { logger.warn("got an error while stopping Stove: ${it.message}", it) } }
   }
 }
 

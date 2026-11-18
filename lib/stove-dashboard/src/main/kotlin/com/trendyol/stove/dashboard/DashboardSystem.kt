@@ -57,7 +57,7 @@ class DashboardSystem(
     stove.startObserving()
   }
 
-  private fun observe(envelope: EventEnvelope): Unit = lock.withLock {
+  internal fun observe(envelope: EventEnvelope): Unit = lock.withLock {
     val event = envelope.event
     if (event is RunStarting) {
       start(event.components, envelope.timestamp)
@@ -76,7 +76,7 @@ class DashboardSystem(
   private inner class ActiveRun(components: List<RunComponent>, private val started: Instant) : State, AutoCloseable {
     private val emitter = DashboardEmitter(options.ingestion)
     private val tests = DashboardTests(::emit)
-    private var lifecycleFailed = false
+    private var terminal: Option<Pair<Instant, Boolean>> = None
 
     init {
       emit {
@@ -92,7 +92,7 @@ class DashboardSystem(
     fun observe(event: StoveEvent, at: Instant) {
       when (event) {
         is EnvironmentChanged -> emit { runEnvironment = event.components.toEnvironmentProto() }
-        is RunFinished -> lifecycleFailed = event.failure.isSome()
+        is RunFinished -> terminal = Some(at to event.failure.isSome())
         is TestStarted -> tests.start(event.context, at)
         is TestFailed -> tests.fail(event.testId, event.error)
         is TestEnded -> tests.finish(event.testId, at)
@@ -110,9 +110,13 @@ class DashboardSystem(
 
     override fun close() {
       runCatching { profiling.onSome { it.close() } }.onFailure { logger.warn("Stove profiling could not flush", it) }
-      tests.close()
-      emit { runEnded = tests.result(Duration.between(started, Instant.now()).toMillis(), lifecycleFailed) }
-      emitter.close()
+      try {
+        val (ended, lifecycleFailed) = terminal.getOrElse { Instant.now() to false }
+        tests.close(ended)
+        emit { runEnded = tests.result(ended, Duration.between(started, ended).toMillis(), lifecycleFailed) }
+      } finally {
+        emitter.close()
+      }
     }
   }
 
@@ -135,10 +139,13 @@ class DashboardSystem(
 
   override fun close() {
     if (!closing.compareAndSet(false, true)) return
-    stove.capturePendingSnapshots()
-    observations.drain()
-    val previous = lock.withLock { state.also { state = State.Closed } }
-    observations.close()
-    if (previous is ActiveRun) previous.close()
+    try {
+      stove.capturePendingSnapshots()
+      observations.drain()
+    } finally {
+      val previous = lock.withLock { state.also { state = State.Closed } }
+      observations.close()
+      if (previous is ActiveRun) previous.close()
+    }
   }
 }

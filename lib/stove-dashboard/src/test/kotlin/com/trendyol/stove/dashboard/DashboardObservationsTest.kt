@@ -6,8 +6,10 @@ import com.trendyol.stove.events.*
 import com.trendyol.stove.reporting.*
 import com.trendyol.stove.system.Stove
 import com.trendyol.stove.system.abstractions.PluggedSystem
+import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.withTimeout
 import java.time.Instant
 import java.util.concurrent.CompletableFuture
@@ -17,14 +19,45 @@ import kotlin.time.Duration.Companion.seconds
 
 class DashboardObservationsTest : FunSpec({
   test("test duration and timestamps use observation time even when exported together") {
-    val received = mutableListOf<DashboardEvent>()
-    val tests = DashboardTests { received += DashboardEvent.newBuilder().apply(it).build() }
-    val start = Instant.parse("2026-11-18T10:00:00Z")
-    tests.start(StoveTestContext("test", "test"), start)
-    tests.finish("test", start.plusSeconds(10))
-    received.first().testStarted.timestamp shouldBe start.toTimestamp()
-    received.last().testEnded.timestamp shouldBe start.plusSeconds(10).toTimestamp()
-    received.last().testEnded.durationMs shouldBe 10_000L
+    val received = CopyOnWriteArrayList<DashboardEvent>()
+    val server = startMockServer(received, port = 0)
+    try {
+      Stove().use { stove ->
+        val dashboard = DashboardSystem(stove, DashboardSystemOptions("time", ingestion = DashboardIngestion.Grpc(port = server.port)))
+        val start = Instant.parse("2026-11-18T10:00:00Z")
+        val events = listOf(RunStarting(emptyList()), TestStarted(StoveTestContext("test", "test")), TestEnded("test"), RunFinished())
+        val timestamps = listOf(start, start, start.plusSeconds(10), start.plusSeconds(12))
+        events.forEachIndexed { index, event ->
+          dashboard.observe(EventEnvelope(stove.events.runId, "event-$index", index + 1L, timestamps[index], event))
+        }
+        dashboard.close()
+        received.single { it.hasTestStarted() }.testStarted.timestamp shouldBe start.toTimestamp()
+        received.single { it.hasTestEnded() }.testEnded.let {
+          it.timestamp shouldBe start.plusSeconds(10).toTimestamp()
+          it.durationMs shouldBe 10_000L
+        }
+        received.last().runEnded.timestamp shouldBe start.plusSeconds(12).toTimestamp()
+        received.last().runEnded.durationMs shouldBe 12_000L
+      }
+    } finally {
+      server.shutdownNow()
+    }
+  }
+
+  test("a failed observation drain still finalizes the run once") {
+    val received = CopyOnWriteArrayList<DashboardEvent>()
+    val server = startMockServer(received, port = 0)
+    try {
+      val stove = Stove()
+      val dashboard = DashboardSystem(stove, DashboardSystemOptions("drain", ingestion = DashboardIngestion.Grpc(port = server.port)))
+      dashboard.run()
+      stove.close()
+      shouldThrow<IllegalStateException> { dashboard.close() }
+      dashboard.close()
+      received.count { it.hasRunEnded() } shouldBe 1
+    } finally {
+      server.shutdownNow()
+    }
   }
 
   test("unserializable state preserves the snapshot identity and summary") {
@@ -87,9 +120,11 @@ class DashboardObservationsTest : FunSpec({
     Stove().use { stove ->
       val received = CopyOnWriteArrayList<StoveEvent>()
       DashboardObservations(stove.events) {
+        if (it.event is RunStarting) throw CancellationException("handler deadline")
         if (it.event is RunReady) error("broken handler")
         received += it.event
       }.use { observations ->
+        stove.publish(RunStarting(emptyList()))
         stove.publish(RunReady)
         stove.publish(RunFinished())
         observations.drain()
