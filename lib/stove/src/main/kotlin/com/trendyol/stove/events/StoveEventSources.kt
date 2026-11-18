@@ -11,7 +11,7 @@ import java.util.concurrent.atomic.AtomicBoolean
 
 /** Bridges existing observations without changing the callbacks that maintain test state. */
 internal class StoveEventSources(private val stove: Stove, private val events: StoveEventBus) :
-  ReportEventListener, AutoCloseable {
+  PreCleanupReportListener, AutoCloseable {
   val snapshots = StoveSnapshots(stove, events::recordSnapshot)
   private val spans = Attachments(SpanListenerRegistry::addSpanListener, SpanListenerRegistry::removeSpanListener) { live ->
     object : SpanEventListener {

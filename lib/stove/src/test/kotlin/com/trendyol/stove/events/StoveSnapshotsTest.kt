@@ -52,6 +52,35 @@ class StoveSnapshotsTest : FunSpec({
     }
   }
 
+  test("a checkpoint leaves test-end evidence pending and end listeners cannot erase captured state") {
+    Stove().use { stove ->
+      val bytes = byteArrayOf(1)
+      val values = mutableListOf(mapOf("bytes" to bytes))
+      stove.getOrRegister(object : PluggedSystem, Reports {
+        override val stove = stove
+        override fun snapshot() = SystemSnapshot("nested", mapOf("values" to values), "")
+        override fun close() = Unit
+      })
+      stove.addReportListener(object : ReportEventListener {
+        override fun onTestEnded(testId: String) {
+          bytes[0] = 3
+          values.clear()
+        }
+      })
+      EventRecorder(stove.startObserving()).use { recorder ->
+        stove.startTest(StoveTestContext("test", "test"))
+        stove.capturePendingSnapshots()
+        bytes[0] = 2
+        stove.endTest()
+        recorder.drain()
+        recorder.events.filterIsInstance<SnapshotRecorded>().map {
+          val list = it.snapshot.state.getValue("values") as List<*>
+          ((list.single() as Map<*, *>)["bytes"] as ByteArray).single().toInt()
+        } shouldBe listOf(1, 2)
+      }
+    }
+  }
+
   test("flush waits for an in-flight snapshot before choosing its final sequence") {
     Stove().use { stove ->
       val system = stove.getOrRegister(DelayedSnapshot(stove))
@@ -101,6 +130,52 @@ class StoveSnapshotsTest : FunSpec({
     }
   }
 
+  test("unfinished tests get independent capture attempts before the common deadline") {
+    Stove().use { stove ->
+      val second = CountDownLatch(1)
+      stove.getOrRegister(object : PluggedSystem, Reports {
+        override val stove = stove
+        override fun snapshot(): SystemSnapshot {
+          val id = checkNotNull(StoveTestContextHolder.get()).testId
+          if (id == "first") check(second.await(3, TimeUnit.SECONDS)) else second.countDown()
+          return SystemSnapshot("parallel", emptyMap(), id)
+        }
+        override fun close() = Unit
+      })
+      EventRecorder(stove.startObserving()).use { recorder ->
+        listOf("first", "second").forEach { stove.publish(TestStarted(StoveTestContext(it, it))) }
+        stove.capturePendingSnapshots()
+        recorder.drain()
+        recorder.events.filterIsInstance<SnapshotRecorded>().map { it.snapshot.summary }.toSet() shouldBe setOf("first", "second")
+      }
+    }
+  }
+
+  test("interruption during close still disconnects publishers and closes dispatch") {
+    Stove().use { stove ->
+      val thread = CompletableFuture<Thread>()
+      val system = stove.getOrRegister(DelayedSnapshot(stove))
+      val bus = StoveEventBus(snapshotDeadline = { wait ->
+        thread.complete(Thread.currentThread())
+        wait()
+        true
+      })
+      bus.connect(stove)
+      bus.publish(TestStarted(StoveTestContext("test", "test")))
+      val end = CompletableFuture.runAsync { bus.publish(TestEnded("test")) }
+      try {
+        system.entered.await(2, TimeUnit.SECONDS) shouldBe true
+        val close = CompletableFuture.supplyAsync { runCatching { bus.close() }.exceptionOrNull() }
+        thread.get(2, TimeUnit.SECONDS).interrupt()
+        (close.get(2, TimeUnit.SECONDS) is InterruptedException) shouldBe true
+      } finally {
+        system.release.countDown()
+        end.get(2, TimeUnit.SECONDS)
+      }
+      io.kotest.assertions.throwables.shouldThrow<IllegalStateException> { bus.flush() }
+    }
+  }
+
   test("shutdown can drain and close while a custom snapshot ignores interruption") {
     Stove().use { stove ->
       val system = stove.getOrRegister(UninterruptibleSnapshot(stove))
@@ -147,14 +222,18 @@ class StoveSnapshotsTest : FunSpec({
           events.publish(TestStarted(StoveTestContext("old", "old")))
           coroutineScope {
             val first = async(Dispatchers.IO) { events.capturePendingSnapshots() }
-            withTimeout(5.seconds) {
-              waiting.await()
-              system.entered.await()
-            }
-            events.capturePendingSnapshots()
-            withTimeout(5.seconds) {
-              first.await()
-              system.interrupted.await()
+            try {
+              withTimeout(5.seconds) {
+                waiting.await()
+                system.entered.await()
+              }
+              events.capturePendingSnapshots()
+              withTimeout(5.seconds) {
+                first.await()
+                system.interrupted.await()
+              }
+            } finally {
+              system.release.countDown()
             }
           }
           events.publish(TestStarted(StoveTestContext("new", "new")))
@@ -227,10 +306,11 @@ private class UninterruptibleSnapshot(override val stove: Stove) : PluggedSystem
 private class InterruptibleSnapshot(override val stove: Stove) : PluggedSystem, Reports {
   val entered = CompletableDeferred<Unit>()
   val interrupted = CompletableDeferred<Unit>()
+  val release = CountDownLatch(1)
   override fun snapshot(): SystemSnapshot {
     if (entered.complete(Unit)) {
       try {
-        CountDownLatch(1).await(5, TimeUnit.SECONDS)
+        release.await()
       } catch (_: InterruptedException) {
         interrupted.complete(Unit)
       }

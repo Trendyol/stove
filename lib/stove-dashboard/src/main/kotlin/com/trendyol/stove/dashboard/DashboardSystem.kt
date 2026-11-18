@@ -57,15 +57,18 @@ class DashboardSystem(
     stove.startObserving()
   }
 
-  internal fun observe(envelope: EventEnvelope): Unit = lock.withLock {
+  internal fun observe(envelope: EventEnvelope) {
     val event = envelope.event
-    if (event is RunStarting) {
-      start(event.components, envelope.timestamp)
-    } else {
-      when (val current = state) {
-        is ActiveRun -> current.observe(event, envelope.timestamp)
-        else -> Unit
+    when (event) {
+      is RunStarting -> start(event.components, envelope.timestamp)
+
+      is SnapshotRecorded -> {
+        val run = lock.withLock { state as? ActiveRun } ?: return
+        val snapshot = event.toProto()
+        lock.withLock { if (state === run) run.emit { this.snapshot = snapshot } }
       }
+
+      else -> lock.withLock { (state as? ActiveRun)?.observe(event, envelope.timestamp) }
     }
   }
 
@@ -97,14 +100,13 @@ class DashboardSystem(
         is TestFailed -> tests.fail(event.testId, event.error)
         is TestEnded -> tests.finish(event.testId, at)
         is EntryRecorded -> tests.record(event.entry)
-        is SnapshotRecorded -> emit { snapshot = event.toProto() }
         is SpanRecorded -> emit { spanRecorded = event.span.toProto() }
         is InteractionObserved -> emit { mockInteraction = event.interaction.toProto() }
         is WarningObserved -> emit { mockWarning = event.warning.toProto() }
       }
     }
 
-    private fun emit(build: DashboardEventBuilder) {
+    fun emit(build: DashboardEventBuilder) {
       emitter.tryEmit(DashboardEvent.newBuilder().setRunId(runId).apply(build).build())
     }
 
@@ -138,6 +140,7 @@ class DashboardSystem(
   override suspend fun stop() = close()
 
   override fun close() {
+    stove.requireExternalEventCaller()
     if (!closing.compareAndSet(false, true)) return
     try {
       stove.capturePendingSnapshots()

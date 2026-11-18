@@ -18,7 +18,8 @@ internal class StoveLifecycle(
     private set
   var context: Option<Any> = None
   private val lifecycleLock = ReentrantLock()
-  private val startingHere = ThreadLocal.withInitial { false }
+  private val startingHere = ThreadLocal<Job>()
+  private val stoppingHere = ThreadLocal<Job>()
   private val transition = Mutex()
   private var cleanup: Option<List<AutoCloseable>> = Some(emptyList())
   private enum class Startup { NEW, SYSTEMS, APPLICATION }
@@ -36,7 +37,8 @@ internal class StoveLifecycle(
   }
 
   fun requireExternalClose() {
-    check(!startingHere.get()) { "Cannot close Stove from its startup callback" }
+    events.requireExternalCaller()
+    check(startingHere.get()?.isActive != true) { "Cannot close Stove from its startup callback" }
   }
 
   fun <T : AutoCloseable> register(resource: T): T = lifecycleLock.withLock {
@@ -54,7 +56,7 @@ internal class StoveLifecycle(
       Stove.instance = stove
     }
     try {
-      withContext(startingHere.asContextElement(true)) { start() }
+      startingHere.during { start() }
     } catch (failure: Throwable) {
       rollback(failure)
       throw failure
@@ -75,7 +77,7 @@ internal class StoveLifecycle(
     val systems = stove.allRegisteredSystems().distinctInstances()
     phase<BeforeRunAware>(systems, PhaseName.PREPARE) { it.beforeRun() }
     phase<RunAware>(systems, PhaseName.START) { it.run() }
-    environment.phase(application, PhaseName.START) {
+    environment.phase(application, PhaseName.START, ComponentRole.APPLICATION) {
       val configurations = systems.filterIsInstance<ExposesConfiguration>().flatMap { it.configuration() }
       lifecycleLock.withLock { startup = Startup.APPLICATION }
       context = Some(application.start(configurations))
@@ -95,16 +97,16 @@ internal class StoveLifecycle(
 
   private suspend fun rollback(failure: Throwable): Unit = withContext(NonCancellable) {
     try {
-      dispose(Some(failure))
+      stoppingHere.during { dispose(Some(failure)) }
     } catch (cleanupFailure: Throwable) {
       if (cleanupFailure !== failure) failure.addSuppressed(cleanupFailure)
     }
   }
 
   suspend fun shutdown() {
-    if (lifecycleLock.withLock { cleanup.isNone() }) return
+    if (stoppingHere.get()?.isActive == true) return
     requireExternalClose()
-    transition.withLock { withContext(NonCancellable) { dispose(None) } }
+    transition.withLock { withContext(NonCancellable) { stoppingHere.during { dispose(None) } } }
   }
 
   private suspend fun dispose(startupFailure: Option<Throwable>) {
@@ -117,7 +119,7 @@ internal class StoveLifecycle(
       { cleanupResult.getOrThrow() },
       {
         val failure = cleanupResult.fold({ startupFailure }, { cleanupError -> Some(startupFailure.getOrElse { cleanupError }) })
-        if (startup != Startup.NEW) events.publish(RunFinished(failure.map { it.description() }))
+        if (startup != Startup.NEW) events.finish(RunFinished(failure.map { it.description() }))
       },
       { events.disconnect() },
       { closeAll(observers) { it.close() } },
@@ -130,7 +132,7 @@ internal class StoveLifecycle(
     val resources = registered.filterIsInstance<ApplicationResource>()
     resources.forEach { resource -> add { environment.phase(resource, PhaseName.BEFORE_STOP) { resource.beforeApplicationStop() } } }
     if (startup == Startup.APPLICATION) {
-      add { application.onSome { runner -> environment.phase(runner, PhaseName.STOP) { runner.stop() } } }
+      add { application.onSome { runner -> environment.phase(runner, PhaseName.STOP, ComponentRole.APPLICATION) { runner.stop() } } }
     }
     resources.asReversed().filterNot { it is RunObserver }.forEach { resource -> add { closeResource(resource) } }
     registered.asReversed().filterNot { it is ApplicationResource || it is RunObserver }
@@ -145,3 +147,12 @@ internal class StoveLifecycle(
 
 private typealias LifecycleAction<T> = suspend (T) -> Unit
 private typealias ShutdownAction = suspend () -> Unit
+
+private suspend fun ThreadLocal<Job>.during(block: suspend () -> Unit) {
+  val marker = Job()
+  try {
+    withContext(asContextElement(marker)) { block() }
+  } finally {
+    marker.complete()
+  }
+}

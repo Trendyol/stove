@@ -44,6 +44,41 @@ class DashboardObservationsTest : FunSpec({
     }
   }
 
+  test("closing rejects an event handler and discards conversion that finishes after finalization") {
+    val received = CopyOnWriteArrayList<DashboardEvent>()
+    val server = startMockServer(received, port = 0)
+    val entered = CompletableFuture<Unit>()
+    val release = CompletableFuture<Unit>()
+    lateinit var dashboard: DashboardSystem
+    val rejected = CompletableFuture<Boolean>()
+    val stove = Stove { events { observe<RunReady> { rejected.complete(runCatching { dashboard.close() }.isFailure) } } }
+    try {
+      dashboard = DashboardSystem(stove, DashboardSystemOptions("close", ingestion = DashboardIngestion.Grpc(port = server.port)))
+      dashboard.run()
+      stove.publish(RunReady)
+      rejected.get(2, TimeUnit.SECONDS) shouldBe true
+      val value = object {
+        val text: String get() {
+          entered.complete(Unit)
+          release.join()
+          return "late"
+        }
+      }
+      val event = SnapshotRecorded("test", SnapshotTrigger.TEST_END, SystemSnapshot("Slow", mapOf("value" to value), ""))
+      val conversion = CompletableFuture.runAsync { dashboard.observe(EventEnvelope(stove.events.runId, "slow", 1, Instant.now(), event)) }
+      entered.get(2, TimeUnit.SECONDS)
+      CompletableFuture.runAsync { dashboard.close() }.get(5, TimeUnit.SECONDS)
+      release.complete(Unit)
+      conversion.get(2, TimeUnit.SECONDS)
+      received.none { it.hasSnapshot() } shouldBe true
+      received.last().hasRunEnded() shouldBe true
+    } finally {
+      release.complete(Unit)
+      stove.close()
+      server.shutdownNow()
+    }
+  }
+
   test("a failed observation drain still finalizes the run once") {
     val received = CopyOnWriteArrayList<DashboardEvent>()
     val server = startMockServer(received, port = 0)
@@ -116,7 +151,22 @@ class DashboardObservationsTest : FunSpec({
     }
   }
 
-  test("a failed handler does not prevent terminal observation delivery") {
+  test("a retried test replaces its previous outcome in the run summary") {
+    val exported = mutableListOf<DashboardEvent>()
+    val tests = DashboardTests { exported += DashboardEvent.newBuilder().apply(it).build() }
+    val context = StoveTestContext("same", "same")
+    val at = Instant.now()
+    tests.start(context, at)
+    tests.fail(context.testId, "retry")
+    tests.finish(context.testId, at)
+    tests.start(context, at)
+    tests.finish(context.testId, at)
+    val result = tests.result(at, 0L, false)
+    exported.last().testEnded.status shouldBe "PASSED"
+    listOf(result.totalTests, result.passed, result.failed) shouldBe listOf(1, 1, 0)
+  }
+
+  test("a failed handler does not prevent later observation delivery") {
     Stove().use { stove ->
       val received = CopyOnWriteArrayList<StoveEvent>()
       DashboardObservations(stove.events) {
@@ -126,9 +176,9 @@ class DashboardObservationsTest : FunSpec({
       }.use { observations ->
         stove.publish(RunStarting(emptyList()))
         stove.publish(RunReady)
-        stove.publish(RunFinished())
+        stove.publish(TestEnded("later"))
         observations.drain()
-        received shouldBe listOf(RunFinished())
+        received shouldBe listOf(TestEnded("later"))
       }
     }
   }

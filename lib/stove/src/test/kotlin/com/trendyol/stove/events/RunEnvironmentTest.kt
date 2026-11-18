@@ -59,6 +59,21 @@ class RunEnvironmentTest : FunSpec({
     }
   }
 
+  test("application startup on a shared instance does not start its system registrations") {
+    Stove().use { stove ->
+      val both = object : ApplicationUnderTest<Unit>, PluggedSystem {
+        override val stove = stove
+        override suspend fun start(configurations: List<String>) = Unit
+        override suspend fun stop() = Unit
+        override fun close() = Unit
+      }
+      stove.getOrRegister(both)
+      stove.getOrRegister(Analytics, both)
+      stove.applicationUnderTest(both).run()
+      stove.runComponents().map { entry -> entry.phases.map { it.name } } shouldBe listOf(emptyList(), emptyList(), listOf(PhaseName.START))
+    }
+  }
+
   test("failed startup still reports unstarted components and rollback before the final event") {
     EnvironmentFixture().use { fixture ->
       fixture.dependency.failure = Some(IllegalStateException())

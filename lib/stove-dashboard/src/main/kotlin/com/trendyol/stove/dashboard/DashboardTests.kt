@@ -10,17 +10,12 @@ import java.time.Instant
 /** Access is serialized by the dashboard's lifecycle lock. */
 internal class DashboardTests(private val emit: DashboardEventEmitter) {
   private data class RunningTest(val start: Instant, val failure: Option<String> = None)
-  private data class Results(
-    val running: Map<String, RunningTest> = emptyMap(),
-    val passed: Int = 0,
-    val failed: Int = 0
-  )
-
-  private var results = Results()
+  private val running = mutableMapOf<String, RunningTest>()
+  private val completed = mutableMapOf<String, TestOutcome>()
 
   fun start(ctx: StoveTestContext, started: Instant) {
-    if (ctx.testId in results.running) return
-    results = results.copy(running = results.running + (ctx.testId to RunningTest(started)))
+    if (ctx.testId in running) return
+    running[ctx.testId] = RunningTest(started)
     emit {
       testStarted = TestStartedEvent.newBuilder().setTestId(ctx.testId)
         .setTestName(ctx.testName).setSpecName(ctx.specName.orEmpty())
@@ -29,18 +24,18 @@ internal class DashboardTests(private val emit: DashboardEventEmitter) {
   }
 
   fun fail(testId: String, error: String) {
-    results.running.getOrNone(testId).onSome { test ->
-      results = results.copy(running = results.running + (testId to test.copy(failure = Some(error))))
+    running.getOrNone(testId).onSome { test ->
+      running[testId] = test.copy(failure = Some(error))
     }
   }
 
   fun record(entry: ReportEntry) {
-    if (entry.testId !in results.running) return
+    if (entry.testId !in running) return
     emit { entryRecorded = entry.toProto() }
   }
 
   fun finish(testId: String, ended: Instant, interrupted: Boolean = false) {
-    val (started, failure) = results.running.getOrNone(testId).getOrElse { return }
+    val (started, failure) = running.getOrNone(testId).getOrElse { return }
     val status = when {
       failure.isSome() -> TestOutcome.FAILED
       interrupted -> TestOutcome.ERROR
@@ -52,19 +47,17 @@ internal class DashboardTests(private val emit: DashboardEventEmitter) {
         .setDurationMs(Duration.between(started, ended).toMillis().coerceAtLeast(0))
         .setError(error).setTimestamp(ended.toTimestamp()).build()
     }
-    val remaining = results.running - testId
-    results = if (status == TestOutcome.PASSED) {
-      results.copy(running = remaining, passed = results.passed + 1)
-    } else {
-      results.copy(running = remaining, failed = results.failed + 1)
-    }
+    running.remove(testId)
+    completed[testId] = status
   }
 
-  fun close(ended: Instant) = results.running.keys.forEach { finish(it, ended, interrupted = true) }
+  fun close(ended: Instant) = running.keys.toList().forEach { finish(it, ended, interrupted = true) }
 
-  fun result(ended: Instant, durationMs: Long, lifecycleFailed: Boolean): RunEndedEvent = RunEndedEvent.newBuilder()
-    .setTimestamp(ended.toTimestamp()).setTotalTests(results.running.size + results.passed + results.failed).setPassed(results.passed)
-    .setFailed(results.failed).setDurationMs(durationMs).setLifecycleFailed(lifecycleFailed).build()
+  fun result(ended: Instant, durationMs: Long, lifecycleFailed: Boolean): RunEndedEvent {
+    val passed = completed.values.count { it == TestOutcome.PASSED }
+    return RunEndedEvent.newBuilder().setTimestamp(ended.toTimestamp()).setTotalTests(completed.size)
+      .setPassed(passed).setFailed(completed.size - passed).setDurationMs(durationMs).setLifecycleFailed(lifecycleFailed).build()
+  }
 }
 
 private enum class TestOutcome { PASSED, FAILED, ERROR }

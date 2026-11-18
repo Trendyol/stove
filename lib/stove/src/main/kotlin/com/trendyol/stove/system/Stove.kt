@@ -63,8 +63,11 @@ class Stove(configure: @StoveDsl StoveOptionsDsl.() -> Unit = {}) : ReadyStove, 
   /** Connects current sources. Call again after registering more publishers, or start Stove to connect them. */
   fun startObserving(): StoveEvents = events.also { eventBus.connect(this) }
 
-  /** Captures unfinished test evidence before an observer or system is closed. */
-  fun capturePendingSnapshots() = eventBus.capturePendingSnapshots()
+  /** Captures a checkpoint without ending any active tests. */
+  fun capturePendingSnapshots() = eventBus.capturePendingSnapshots(consume = false)
+
+  /** Rejects synchronous teardown or draining from this Stove's dispatch worker. */
+  fun requireExternalEventCaller() = eventBus.requireExternalCaller()
 
   fun addReportListener(listener: ReportEventListener) = reporter.addListener(listener)
   fun removeReportListener(listener: ReportEventListener) = reporter.removeListener(listener)
@@ -136,10 +139,7 @@ class Stove(configure: @StoveDsl StoveOptionsDsl.() -> Unit = {}) : ReadyStove, 
   inline fun <reified T : PluggedSystem> getOrNone(key: SystemKey): Option<T> = lookup(keyedSystems, T::class to key).map { it as T }
 
   @PublishedApi
-  internal fun <K> lookup(
-    systems: Map<K, PluggedSystem>,
-    key: K
-  ): Option<PluggedSystem> = lifecycle.registrations { systems.getOrNone(key) }
+  internal fun <K> lookup(systems: Map<K, PluggedSystem>, key: K) = lifecycle.registrations { systems.getOrNone(key) }
 
   fun <T : AutoCloseable> registerForDispose(closeable: T): T = lifecycle.register(closeable)
 

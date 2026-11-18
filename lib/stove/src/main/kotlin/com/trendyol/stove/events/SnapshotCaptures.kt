@@ -25,15 +25,13 @@ internal class SnapshotCaptures(private val lock: ReentrantLock, private val dea
     }
   }
 
-  fun launchPending(scope: CoroutineScope, plan: Option<SnapshotCapture>) {
-    plan.onSome { capture ->
-      val job = scope.launch(Dispatchers.IO, start = CoroutineStart.LAZY) {
-        val claim = currentCoroutineContext().job
-        runInterruptible { claim.capture() }
-      }
-      track(job)
-      job.start()
+  fun launchPending(scope: CoroutineScope, capture: SnapshotCapture) {
+    val job = scope.launch(Dispatchers.IO, start = CoroutineStart.LAZY) {
+      val claim = currentCoroutineContext().job
+      runInterruptible { claim.capture() }
     }
+    track(job)
+    job.start()
   }
 
   private fun track(job: Job) {
@@ -45,11 +43,19 @@ internal class SnapshotCaptures(private val lock: ReentrantLock, private val dea
 
   fun awaitDeadline(outstanding: Set<Job> = active.value) {
     if (outstanding.isEmpty()) return
-    if (runBlocking { deadline { active.first { live -> outstanding.none(live::contains) } } }) return
+    var settled = false
+    try {
+      settled = runBlocking { deadline { active.first { live -> outstanding.none(live::contains) } } }
+    } finally {
+      if (!settled) expire(outstanding)
+    }
+  }
+
+  private fun expire(outstanding: Set<Job>) {
     val expired = lock.withLock { active.value.intersect(outstanding).also { active.value -= it } }
     expired.forEach { it.cancel() }
     if (expired.isNotEmpty()) {
-      LoggerFactory.getLogger(javaClass).warn("Snapshot capture timed out; discarding late results")
+      LoggerFactory.getLogger(javaClass).warn("Snapshot wait ended with outstanding captures; discarding late results")
     }
   }
 }

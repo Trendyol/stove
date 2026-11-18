@@ -3,6 +3,7 @@ package com.trendyol.stove.events
 import com.trendyol.stove.system.Stove
 import com.trendyol.stove.system.abstractions.ApplicationUnderTest
 import com.trendyol.stove.system.abstractions.PluggedSystem
+import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
 import kotlinx.coroutines.*
@@ -56,13 +57,49 @@ class StoveEventsTest : FunSpec({
       }).run()
       stove.events.flush()
       EventRecorder(stove.events).use { received ->
-        stove.publish(RunFinished())
+        shouldThrow<IllegalArgumentException> { stove.publish(RunFinished()) }
         stove.publish(RunReady)
-        stove.publish(RunFinished())
         received.drain()
-        received.events shouldBe listOf(RunFinished())
+        received.events shouldBe listOf(RunReady)
         stove.events.environment.first().first().id shouldBe "component-1"
       }
+    }
+  }
+
+  test("only lifecycle finish seals admission, and its terminal event can still drain") {
+    StoveEventBus().use { bus ->
+      EventRecorder(bus).use { received ->
+        shouldThrow<IllegalArgumentException> { bus.publish(RunFinished()) }
+        bus.publish(RunReady)
+        bus.finish(RunFinished())
+        bus.publish(RunReady)
+        bus.finish(RunFinished())
+        received.drain()
+        received.events shouldBe listOf(RunReady, RunFinished())
+      }
+    }
+  }
+
+  test("handler-initiated flush and close fail before taking ownership") {
+    val result = CompletableDeferred<Result<Unit>>()
+    lateinit var stove: Stove
+    stove = Stove {
+      events {
+        observe<RunReady> {
+          result.complete(
+            runCatching {
+              shouldThrow<IllegalStateException> { runBlocking { withTimeout(2.seconds) { stove.events.flush() } } }
+              shouldThrow<IllegalStateException> { stove.close() }
+              Unit
+            }
+          )
+        }
+      }
+    }
+    stove.use {
+      stove.publish(RunReady)
+      withTimeout(5.seconds) { result.await() }.getOrThrow()
+      stove.events.flush() shouldBe 1L
     }
   }
 

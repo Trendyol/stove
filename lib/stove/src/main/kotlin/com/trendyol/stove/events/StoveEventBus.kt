@@ -3,9 +3,7 @@ package com.trendyol.stove.events
 import arrow.core.*
 import com.trendyol.stove.system.Stove
 import kotlinx.coroutines.*
-import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.*
-import org.slf4j.LoggerFactory
 import java.time.Instant
 import java.util.UUID
 import java.util.concurrent.locks.ReentrantLock
@@ -14,7 +12,7 @@ import kotlin.time.Duration.Companion.seconds
 
 /** Ordered, hot observations. Collectors own their scope; events have no replay. */
 internal class StoveEventBus(
-  private val handlers: List<StoveEventHandler> = emptyList(),
+  handlers: List<StoveEventHandler> = emptyList(),
   snapshotDeadline: SnapshotDeadline = { wait -> withTimeoutOrNull(30.seconds) { wait() } != null }
 ) : AutoCloseable {
   val runId: String = UUID.randomUUID().toString()
@@ -24,9 +22,7 @@ internal class StoveEventBus(
   private val connections = ReentrantLock()
   private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
 
-  // shortcut: Unbounded buffering preserves synchronous evidence; use durable spooling if collectors routinely fall behind.
-  private val pending = Channel<Delivery>(Channel.UNLIMITED)
-  private val worker = scope.launch(start = CoroutineStart.LAZY) { dispatch() }
+  private val delivery = EventDelivery(scope, observations, handlers)
   private var sources: Option<StoveEventSources> = None
   private val captures = SnapshotCaptures(lock, snapshotDeadline)
   private var finished = false
@@ -52,7 +48,10 @@ internal class StoveEventBus(
     connected.onSome { it.close() }
   }
 
-  fun publish(event: StoveEvent) = publish(event, None)
+  fun publish(event: StoveEvent) {
+    require(event !is RunFinished) { "Only Stove shutdown can finish a run" }
+    publish(event, None)
+  }
 
   internal fun publish(event: StoveEvent, source: StoveEventSources) = publish(event, Some(source))
 
@@ -60,21 +59,29 @@ internal class StoveEventBus(
     val capture = lock.withLock {
       if (status != Status.OPEN || finished || source.fold({ false }, { sources != Some(it) })) return
       enqueue(event)
-      if (event is RunFinished) finished = true
       captures.claim(sources.flatMap { it.snapshots.plan(event) })
     }
     capture.onSome { it() }
   }
+
+  fun finish(event: RunFinished): Unit = lock.withLock {
+    if (status == Status.OPEN && !finished) {
+      finished = true
+      enqueue(event)
+    }
+  }
+
+  fun requireExternalCaller() = delivery.requireExternalCaller()
 
   internal fun recordSnapshot(claim: Job, event: SnapshotRecorded): Unit = lock.withLock {
     if (status != Status.CLOSED && !finished && captures.owns(claim)) enqueue(event)
   }
 
   /** Waits a bounded time for unfinished test evidence before resource cleanup. */
-  fun capturePendingSnapshots() {
+  fun capturePendingSnapshots(consume: Boolean = true) {
     val outstanding = lock.withLock {
       if (status != Status.OPEN || finished) return
-      captures.launchPending(scope, sources.flatMap { it.snapshots.planPending() })
+      sources.onSome { source -> source.snapshots.planPending(consume).forEach { captures.launchPending(scope, it) } }
       captures.outstanding
     }
     captures.awaitDeadline(outstanding)
@@ -82,12 +89,12 @@ internal class StoveEventBus(
 
   private fun enqueue(event: StoveEvent) {
     val envelope = EventEnvelope(runId, UUID.randomUUID().toString(), ++sequence, Instant.now(), event)
-    check(pending.trySend(Delivery.Event(envelope)).isSuccess)
-    worker.start()
+    delivery.enqueue(Delivery.Event(envelope))
   }
 
   /** Returns the last dispatched sequence; collectors acknowledge processing independently. */
   suspend fun flush(): Long {
+    requireExternalCaller()
     val dispatched = CompletableDeferred<Long>()
     while (true) {
       captures.awaitIdle()
@@ -96,39 +103,13 @@ internal class StoveEventBus(
         if (!captures.idle) {
           false
         } else {
-          check(pending.trySend(Delivery.Flush(sequence, dispatched)).isSuccess)
-          worker.start()
+          delivery.enqueue(Delivery.Flush(sequence, dispatched))
           true
         }
       }
       if (queued) break
     }
-    val stopped = worker.invokeOnCompletion { dispatched.cancel() }
-    return try {
-      dispatched.await()
-    } finally {
-      stopped.dispose()
-    }
-  }
-
-  private suspend fun dispatch() {
-    for (delivery in pending) {
-      when (delivery) {
-        is Delivery.Event -> {
-          observations.emit(delivery.envelope)
-          handlers.forEach { handler ->
-            try {
-              handler(delivery.envelope.event)
-            } catch (failure: Throwable) {
-              currentCoroutineContext().ensureActive()
-              LoggerFactory.getLogger(javaClass).warn("Stove event observer failed", failure)
-            }
-          }
-        }
-
-        is Delivery.Flush -> delivery.dispatched.complete(delivery.sequence)
-      }
-    }
+    return delivery.await(dispatched)
   }
 
   override fun close() {
@@ -136,27 +117,15 @@ internal class StoveEventBus(
       if (status != Status.OPEN) return
       status = Status.CLOSING
     }
-    captures.awaitDeadline()
-    disconnect()
-    lock.withLock {
-      status = Status.CLOSED
-      pending.close()
-    }
-    worker.start()
-    runBlocking {
+    try {
+      captures.awaitDeadline()
+    } finally {
       try {
-        withTimeout(30.seconds) { worker.join() }
-      } catch (_: TimeoutCancellationException) {
-        LoggerFactory.getLogger(javaClass).warn("Stove observation drain timed out")
+        disconnect()
       } finally {
-        scope.cancel()
-        pending.cancel()
+        lock.withLock { status = Status.CLOSED }
+        delivery.close()
       }
     }
   }
-}
-
-private sealed interface Delivery {
-  data class Event(val envelope: EventEnvelope) : Delivery
-  data class Flush(val sequence: Long, val dispatched: CompletableDeferred<Long>) : Delivery
 }

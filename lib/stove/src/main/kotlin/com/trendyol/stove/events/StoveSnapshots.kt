@@ -36,11 +36,10 @@ internal class StoveSnapshots(private val stove: Stove, private val record: Snap
     return Some { capture(test.context, SnapshotTrigger.FAILURE) { it.reportSystemName == entry.system } }
   }
 
-  fun planPending(): Option<SnapshotCapture> {
-    if (pending.isEmpty()) return None
+  fun planPending(consume: Boolean): List<SnapshotCapture> {
     val unfinished = pending.values
-    pending = emptyMap()
-    return Some { unfinished.forEach { capture(it.context, SnapshotTrigger.TEST_END) } }
+    if (consume) pending = emptyMap()
+    return unfinished.map { test -> { capture(test.context, SnapshotTrigger.TEST_END) } }
   }
 
   private fun Job.capture(context: StoveTestContext, trigger: SnapshotTrigger, filter: (Reports) -> Boolean = { true }) {
@@ -50,7 +49,7 @@ internal class StoveSnapshots(private val stove: Stove, private val record: Snap
       for (system in stove.systemsOf<Reports>().distinctInstances()) {
         if (!isActive) return
         runCatching {
-          if (filter(system)) record(this, SnapshotRecorded(context.testId, trigger, system.snapshot()))
+          if (filter(system)) record(this, SnapshotRecorded(context.testId, trigger, system.snapshot().detached()))
         }.onFailure { logger.warn("Failed to capture snapshot from ${system.javaClass.name}", it) }
       }
     } finally {

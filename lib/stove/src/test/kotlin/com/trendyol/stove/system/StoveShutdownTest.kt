@@ -7,13 +7,18 @@ import io.kotest.matchers.shouldBe
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withContext
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
+import java.util.concurrent.TimeoutException
+import kotlin.coroutines.CoroutineContext
 
 class StoveShutdownTest : FunSpec({
   test("shutdown waits for startup and stops the application exactly once") {
@@ -54,16 +59,43 @@ class StoveShutdownTest : FunSpec({
 
   test("close from a startup callback fails immediately and rolls back") {
     val fixture = ShutdownFixture()
+    val callback = CompletableFuture<Thread>()
     fixture.stove.getOrRegister(object : PluggedSystem, BeforeRunAware {
       override val stove = fixture.stove
-      override suspend fun beforeRun() = stove.close()
+      override suspend fun beforeRun() {
+        callback.complete(Thread.currentThread())
+        stove.close()
+      }
       override fun close() = Unit
     })
     val startup = CompletableFuture.supplyAsync {
       runCatching { runBlocking { fixture.stove.run() } }.exceptionOrNull()?.message
     }
-    startup.get(5, TimeUnit.SECONDS) shouldBe "Cannot close Stove from its startup callback"
+    val thread = callback.get(5, TimeUnit.SECONDS)
+    try {
+      startup.get(5, TimeUnit.SECONDS) shouldBe "Cannot close Stove from its startup callback"
+    } catch (timeout: TimeoutException) {
+      thread.interrupt()
+      startup.get(5, TimeUnit.SECONDS)
+      throw timeout
+    }
     fixture.events shouldBe listOf("route.restore", "route.close", "dependency.close")
+  }
+
+  test("startup context retained by an application can close Stove after startup returns") {
+    val captured = CompletableDeferred<CoroutineContext>()
+    ShutdownFixture().use { fixture ->
+      fixture.stove.applicationUnderTest(object : ApplicationUnderTest<Unit> {
+        override suspend fun start(configurations: List<String>) {
+          captured.complete(currentCoroutineContext().minusKey(Job))
+        }
+        override suspend fun stop() {
+          fixture.events += "app.stop"
+        }
+      }).run()
+      withContext(captured.await()) { fixture.stove.close() }
+      fixture.events shouldBe listOf("route.restore", "app.stop", "route.close", "dependency.close")
+    }
   }
 
   test("cancelling shutdown during application stop still disposes the remaining resources") {
@@ -73,6 +105,7 @@ class StoveShutdownTest : FunSpec({
       fixture.stove.applicationUnderTest(object : ApplicationUnderTest<Unit> {
         override suspend fun start(configurations: List<String>) = Unit
         override suspend fun stop() {
+          fixture.stove.close()
           entered.complete(Unit)
           release.await()
           fixture.events += "app.stop"
@@ -81,8 +114,14 @@ class StoveShutdownTest : FunSpec({
       coroutineScope {
         val shutdown = launch { fixture.stove.shutdown() }
         entered.await()
-        shutdown.cancel()
-        release.complete(Unit)
+        val second = async(start = CoroutineStart.UNDISPATCHED) { fixture.stove.shutdown() }
+        try {
+          second.isCompleted shouldBe false
+          shutdown.cancel()
+        } finally {
+          release.complete(Unit)
+        }
+        second.await()
         shutdown.join()
       }
       fixture.events shouldBe listOf("route.restore", "app.stop", "route.close", "dependency.close")

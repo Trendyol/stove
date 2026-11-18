@@ -37,6 +37,8 @@ class DashboardRunTest : FunSpec({
   test("inventory failure still produces a failed dashboard run") {
     RunFixture(metadataFailure = true).use { fixture ->
       shouldThrow<IllegalStateException> { fixture.stove.run() }.message shouldBe "metadata failed"
+      val inventory = fixture.received.first { it.hasRunEnvironment() }.runEnvironment
+      inventory.componentsList.map { it.name } shouldBe listOf("DashboardSystem", "QuietSystem", "FailingApplication")
       fixture.received.first().hasRunStarted() shouldBe true
       fixture.received.last().runEnded.lifecycleFailed shouldBe true
     }

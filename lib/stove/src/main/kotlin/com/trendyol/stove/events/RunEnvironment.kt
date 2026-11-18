@@ -37,23 +37,25 @@ internal class RunEnvironment(private val publish: StoveEventHandler) {
       registrations = current
       state.value = components
     }
+    current.firstNotNullOfOrNull { it.metadataFailure.getOrNull() }?.let { throw it }
     components
   }
 
   fun snapshot(): List<RunComponent> = state.value
 
-  suspend fun <T> phase(target: Any, name: PhaseName, block: PhaseOperation<T>): T {
+  suspend fun <T> phase(target: Any, name: PhaseName, role: ComponentRole = ComponentRole.SYSTEM, block: PhaseOperation<T>): T {
     val started = Instant.now()
     val elapsed = TimeSource.Monotonic.markNow()
-    update(target, ComponentPhase(name, PhaseStatus.RUNNING, started))
+    update(target, role, ComponentPhase(name, PhaseStatus.RUNNING, started))
     try {
       return block().also {
-        update(target, ComponentPhase(name, PhaseStatus.SUCCEEDED, started, elapsed.elapsedNow().inWholeMilliseconds))
+        update(target, role, ComponentPhase(name, PhaseStatus.SUCCEEDED, started, elapsed.elapsedNow().inWholeMilliseconds))
       }
     } catch (failure: Throwable) {
       val status = if (failure is CancellationException) PhaseStatus.CANCELLED else PhaseStatus.FAILED
       update(
         target,
+        role,
         ComponentPhase(name, status, started, elapsed.elapsedNow().inWholeMilliseconds, Some(failure.description())),
         Some(failure)
       )
@@ -61,21 +63,28 @@ internal class RunEnvironment(private val publish: StoveEventHandler) {
     }
   }
 
-  private fun update(target: Any, phase: ComponentPhase, failure: Option<Throwable> = None): Unit = lock.withLock {
-    if (registrations.none { it.target === target }) return
+  private fun update(target: Any, role: ComponentRole, phase: ComponentPhase, failure: Option<Throwable> = None): Unit = lock.withLock {
+    if (registrations.none { it.matches(target, role) }) return
     registrations = registrations.map { registration ->
-      if (registration.target !== target) return@map registration
+      if (!registration.matches(target, role)) return@map registration
       val component = registration.component
       registration.copy(component = component.copy(phases = component.phases.filterNot { it.name == phase.name } + phase))
     }
     val snapshot = registrations.map { it.component }
     state.value = snapshot
     publish(EnvironmentChanged(snapshot))
-    registrations.filter { it.target === target }.forEach { it.event(phase, failure).onSome(publish) }
+    registrations.filter { it.matches(target, role) }.forEach { it.event(phase, failure).onSome(publish) }
   }
 }
 
-private data class Registration(val target: Any, val key: Option<SystemKey>, val component: RunComponent) {
+private data class Registration(
+  val target: Any,
+  val key: Option<SystemKey>,
+  val component: RunComponent,
+  val metadataFailure: Option<Throwable>
+) {
+  fun matches(instance: Any, role: ComponentRole) = target === instance && component.role == role
+
   fun event(phase: ComponentPhase, failure: Option<Throwable>): Option<StoveEvent> {
     if (component.role != ComponentRole.SYSTEM) return None
     val duration = phase.durationMs.milliseconds
@@ -91,8 +100,10 @@ private data class Registration(val target: Any, val key: Option<SystemKey>, val
 
 private fun registration(target: Any, index: Int, key: Option<SystemKey> = None, role: ComponentRole = ComponentRole.SYSTEM): Registration {
   val type = target.javaClass
-  val name = (target as? Reports)?.reportSystemName.orEmpty().ifBlank { type.simpleName.ifBlank { type.name } }
-  return Registration(target, key, RunComponent("component-${index + 1}", name, type.name, key.map(::keyDisplayName), role))
+  val reported = runCatching { (target as? Reports)?.reportSystemName.orEmpty() }
+  val name = reported.getOrDefault("").ifBlank { type.simpleName.ifBlank { type.name } }
+  val component = RunComponent("component-${index + 1}", name, type.name, key.map(::keyDisplayName), role)
+  return Registration(target, key, component, reported.exceptionOrNull().toOption())
 }
 
 private typealias PhaseOperation<T> = suspend () -> T

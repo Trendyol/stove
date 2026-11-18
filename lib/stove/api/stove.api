@@ -1693,6 +1693,7 @@ public final class com/trendyol/stove/system/Stove : com/trendyol/stove/system/a
 	public final fun register (Ljava/util/Map;Ljava/lang/Object;Lcom/trendyol/stove/system/abstractions/PluggedSystem;)Lcom/trendyol/stove/system/abstractions/PluggedSystem;
 	public final fun registerForDispose (Ljava/lang/AutoCloseable;)Ljava/lang/AutoCloseable;
 	public final fun removeReportListener (Lcom/trendyol/stove/reporting/ReportEventListener;)V
+	public final fun requireExternalEventCaller ()V
 	public fun run (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public final fun runComponents ()Ljava/util/List;
 	public final fun startObserving ()Lcom/trendyol/stove/events/StoveEvents;
