@@ -3788,6 +3788,7 @@
 1) Keep <code>@QuarkusMain</code> intact. 2) Startup is detected automatically, including apps without HTTP. 3) For Bridge, build an augmented uber-jar and use the shared test classpath described below.</p>
 </div>
 <h2 id="setup">Setup<a class="headerlink" href="#setup" title="Permanent link">&para;</a></h2>
+<p>The Quarkus 4 starter and its tests require Java 21 or later.</p>
 <div class="language-kotlin highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="n">dependencies</span><span class="w"> </span><span class="p">{</span>
 </span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="w">    </span><span class="n">testImplementation</span><span class="p">(</span><span class="n">platform</span><span class="p">(</span><span class="s">"com.trendyol:stove-bom:</span><span class="si">$</span><span class="n">stoveVersion</span><span class="s">"</span><span class="p">))</span>
 </span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="w">    </span><span class="n">testImplementation</span><span class="p">(</span><span class="s">"com.trendyol:stove"</span><span class="p">)</span>
