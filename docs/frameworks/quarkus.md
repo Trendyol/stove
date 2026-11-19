@@ -11,6 +11,8 @@ Stove starts the real Quarkus runtime. `bridge()` exposes CDI beans through `usi
 
 ## Setup
 
+The Quarkus 4 starter and its tests require Java 21 or later.
+
 ```kotlin
 dependencies {
     testImplementation(platform("com.trendyol:stove-bom:$stoveVersion"))

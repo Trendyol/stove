@@ -168,12 +168,14 @@ subprojects.of("lib", "spring", "examples", "ktor", "quarkus", "micronaut", "con
     }
 
     kotlin {
-      val java25Projects = setOf("stove-micronaut", "micronaut-example")
-      val targetJvm = if (project.name in java25Projects) 25 else 17
+      val targetJvm = when (project.name) {
+        "stove-micronaut", "micronaut-example" -> 25
+        "stove-quarkus", "quarkus-example", "quarkus-bridge", "quarkus-startup" -> 21
+        else -> 17
+      }
       jvmToolchain(targetJvm)
       compilerOptions {
-        val targetJvmTarget = if (project.name in java25Projects) JvmTarget.JVM_25 else JvmTarget.JVM_17
-        jvmTarget.set(targetJvmTarget)
+        jvmTarget.set(JvmTarget.fromTarget(targetJvm.toString()))
         allWarningsAsErrors = true
         freeCompilerArgs.addAll("-Xjsr305=strict")
       }
