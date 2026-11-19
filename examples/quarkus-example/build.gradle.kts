@@ -27,7 +27,7 @@ dependencies {
   implementation(libs.quarkus.jdbc.postgresql)
   implementation(libs.quarkus.flyway)
   implementation(libs.quarkus.messaging.kafka)
-  implementation(libs.jackson.kotlin)
+  implementation(libs.jackson3.kotlin)
   implementation(libs.opentelemetry.instrumentation.annotations)
 }
 

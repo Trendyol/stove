@@ -1,10 +1,10 @@
 package stove.quarkus.example.infrastructure.http
 
-import com.fasterxml.jackson.databind.ObjectMapper
 import io.opentelemetry.instrumentation.annotations.WithSpan
 import jakarta.enterprise.context.ApplicationScoped
 import org.eclipse.microprofile.config.inject.ConfigProperty
 import stove.quarkus.example.application.SupplierPermission
+import tools.jackson.databind.ObjectMapper
 import java.net.URI
 import java.net.http.HttpClient
 import java.net.http.HttpRequest
