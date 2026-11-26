@@ -45,6 +45,27 @@ class WiremockPluginFunctionalTest : FunSpec({
     run("exercise").build().task(":generateSupplierStoveWiremockSources")?.outcome shouldBe TaskOutcome.UP_TO_DATE
   }
 
+  test("configuration reuse and build-cache restoration still recheck remote references") {
+    dir.resolve("settings.gradle.kts").appendText("\nbuildCache { local { directory = file(\"local-cache\") } }")
+    val runner = generate("--build-cache", "--configuration-cache-problems=fail")
+    val sources = ":generateSupplierStoveWiremockSources"
+    runner.build().task(sources)?.outcome shouldBe TaskOutcome.SUCCESS
+
+    check(dir.resolve("build").deleteRecursively())
+    val restored = runner.build()
+    restored.output shouldContain "Reusing configuration cache"
+    restored.task(":resolveSupplierStoveContract")?.outcome shouldBe TaskOutcome.SUCCESS
+    restored.task(sources)?.outcome shouldBe TaskOutcome.FROM_CACHE
+
+    types.set(types.get().replace("detail", "message"))
+    val changed = runner.build()
+    changed.output shouldContain "Reusing configuration cache"
+    changed.task(sources)?.outcome shouldBe TaskOutcome.SUCCESS
+    val model = dir.resolve("build/generated/stove/wiremock/supplier").walk()
+      .single { it.name == "SubmitResponse.kt" }
+    model.readText() shouldContain "message"
+  }
+
   test("a multi-file Swagger 2 contract serves the same typed client online and offline") {
     spec.set(resource("supplier-v2.yaml"))
     server.serve("/models.yaml", """
