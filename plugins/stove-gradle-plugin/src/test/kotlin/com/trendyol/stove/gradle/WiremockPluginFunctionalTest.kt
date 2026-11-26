@@ -66,6 +66,16 @@ class WiremockPluginFunctionalTest : FunSpec({
     generated.walk().filter { it.extension == "kt" }.none { "fun submit(" in it.readText() } shouldBe true
   }
 
+  test("nested schema references are fetched relative to their source, but example data is never fetched") {
+    types.set(types.get().replace("{ type: string }", "{ \$ref: 'schemas/detail.yaml' }"))
+    val detail = server.serve("/schemas/detail.yaml", "type: string\nexample: { \$ref: 'not-a-document.yaml' }")
+    generate().build()
+    detail.set("\$ref: 'file:///forbidden.yaml'")
+    generate().buildAndFail().output shouldContain "A remote OpenAPI document cannot reference a local file"
+    server.removeContext("/schemas/detail.yaml")
+    generate("--offline").build()
+  }
+
   test("invalid updates and failed downloads preserve the last working offline contract") {
     generate().build()
     val valid = spec.get()

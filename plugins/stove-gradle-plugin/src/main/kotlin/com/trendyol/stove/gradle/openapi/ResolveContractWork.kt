@@ -1,5 +1,6 @@
 package com.trendyol.stove.gradle.openapi
 
+import com.fasterxml.jackson.databind.JavaType
 import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.databind.node.ObjectNode
@@ -62,11 +63,12 @@ abstract class ResolveContractWork : WorkAction<ResolveParameters> {
       name
     }
 
-    fun visit(uri: URI, pointer: String, kind: ContractNode) {
+    val references = ContractReferences(json)
+    fun visit(uri: URI, pointer: String, kind: JavaType) {
       val name = load(uri)
       val targetNode = documents.get(name).at(pointer)
       require(!targetNode.isMissingNode) { "Unresolved OpenAPI reference: $uri#$pointer" }
-      kind.walk(targetNode) { node, targetKind ->
+      references.walk(targetNode, kind) { node, targetKind ->
         if (!rewritten.add(node)) return@walk
         val value = node.get("\$ref")
         require(value.isTextual) { "Invalid reference in $uri: $value" }
@@ -84,7 +86,7 @@ abstract class ResolveContractWork : WorkAction<ResolveParameters> {
       }
     }
 
-    visit(root, "", ContractNode.DOCUMENT)
+    visit(root, "", references.document)
     writeChanged(parameters.downloads.asFile.get(), json.writeValueAsBytes(remote))
     val output = parameters.output.asFile.get()
     if (writeChanged(output, json.writeValueAsBytes(documents))) {

@@ -1,70 +1,53 @@
 package com.trendyol.stove.gradle.openapi
 
+import com.fasterxml.jackson.databind.JavaType
 import com.fasterxml.jackson.databind.JsonNode
+import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.databind.node.ObjectNode
+import io.swagger.v3.oas.models.OpenAPI
+import io.swagger.v3.oas.models.Paths
+import io.swagger.v3.oas.models.callbacks.Callback
+import io.swagger.v3.oas.models.media.Schema
+import io.swagger.v3.oas.models.responses.ApiResponses
 
-/** Only follow reference-bearing fields. Examples, defaults and extensions may contain arbitrary JSON. */
-internal enum class ContractNode {
-  DOCUMENT, COMPONENTS, PATH_ITEM, OPERATION, PARAMETER, MEDIA, ENCODING, RESPONSE, REQUEST_BODY, SCHEMA, CALLBACK, LEAF;
+/** Follow Swagger's declared field types without round-tripping (and potentially losing) input data. */
+internal class ContractReferences(private val mapper: ObjectMapper) {
+  val document: JavaType = mapper.constructType(OpenAPI::class.java)
+  private val schema = mapper.constructType(Schema::class.java)
+  private val schemaMap = mapper.typeFactory.constructMapType(Map::class.java, String::class.java, Schema::class.java)
+  private val fields = mutableMapOf<JavaType, Map<String, JavaType>>()
 
-  fun walk(node: JsonNode, reference: (ObjectNode, ContractNode) -> Unit) {
-    if (node !is ObjectNode) return
-    fun child(key: String, kind: ContractNode) = node.get(key)?.let { kind.walk(it, reference) }
-    fun entries(key: String, kind: ContractNode) = node.get(key)?.forEach { kind.walk(it, reference) }
-
-    if (this in referenceable && node.has("\$ref")) reference(node, this)
-    when (this) {
-      DOCUMENT -> {
-        node.path("paths").properties().filter { it.key.startsWith('/') }.forEach { PATH_ITEM.walk(it.value, reference) }
-        entries("webhooks", PATH_ITEM)
-        child("components", COMPONENTS)
-      }
-      COMPONENTS -> {
-        entries("schemas", SCHEMA)
-        entries("parameters", PARAMETER)
-        entries("headers", PARAMETER)
-        entries("responses", RESPONSE)
-        entries("requestBodies", REQUEST_BODY)
-        entries("callbacks", CALLBACK)
-        entries("pathItems", PATH_ITEM)
-        for (key in listOf("examples", "links", "securitySchemes")) entries(key, LEAF)
-      }
-      PATH_ITEM -> {
-        for (method in listOf("get", "post", "put", "delete", "patch", "head", "options", "trace")) child(method, OPERATION)
-        entries("parameters", PARAMETER)
-      }
-      OPERATION -> {
-        child("requestBody", REQUEST_BODY)
-        entries("parameters", PARAMETER)
-        entries("callbacks", CALLBACK)
-        node.path("responses").properties().filterNot { it.key.startsWith("x-") }.forEach { RESPONSE.walk(it.value, reference) }
-      }
-      PARAMETER, MEDIA -> {
-        child("schema", SCHEMA)
-        entries("examples", LEAF)
-        if (this == MEDIA) entries("encoding", ENCODING) else entries("content", MEDIA)
-      }
-      RESPONSE, REQUEST_BODY -> {
-        entries("content", MEDIA)
-        if (this == RESPONSE) {
-          entries("headers", PARAMETER)
-          entries("links", LEAF)
-        }
-      }
-      ENCODING -> entries("headers", PARAMETER)
-      CALLBACK -> node.properties().filterNot { it.key.startsWith("x-") || it.key == "\$ref" }
-        .forEach { PATH_ITEM.walk(it.value, reference) }
-      SCHEMA -> {
-        for (key in listOf("properties", "patternProperties", "dependentSchemas", "\$defs", "definitions")) entries(key, SCHEMA)
-        for (key in listOf("allOf", "oneOf", "anyOf", "prefixItems")) entries(key, SCHEMA)
-        for (key in listOf("items", "contains", "additionalProperties", "unevaluatedProperties", "unevaluatedItems",
-          "propertyNames", "not", "if", "then", "else", "contentSchema")) child(key, SCHEMA)
-      }
-      LEAF -> Unit
+  fun walk(node: JsonNode, type: JavaType, reference: (ObjectNode, JavaType) -> Unit) {
+    if (node.isArray && type.isCollectionLikeType) {
+      node.forEach { walk(it, type.contentType, reference) }
+      return
     }
-  }
-
-  private companion object {
-    val referenceable = setOf(PATH_ITEM, PARAMETER, RESPONSE, REQUEST_BODY, SCHEMA, CALLBACK, LEAF)
+    if (node !is ObjectNode) return
+    if (type.isMapLikeType) {
+      val callback = type.hasRawClass(Callback::class.java)
+      if (callback && node.has("\$ref")) reference(node, type)
+      val extensible = callback || type.hasRawClass(Paths::class.java) || type.hasRawClass(ApiResponses::class.java)
+      node.properties().forEach { (name, child) ->
+        if (extensible && name.startsWith("x-")) return@forEach
+        if (callback && name == "\$ref") return@forEach
+        walk(child, type.contentType, reference)
+      }
+      return
+    }
+    // Untyped values (examples, defaults, extensions) are user data, not OpenAPI objects.
+    if (!type.rawClass.packageName.startsWith("io.swagger.v3.oas.models")) return
+    val properties = fields.getOrPut(type) {
+      mapper.serializationConfig.introspect(type).findProperties().associate { it.name to it.primaryType }
+    }
+    if ("\$ref" in properties && node.has("\$ref")) reference(node, type)
+    val isSchema = type.hasRawClass(Schema::class.java)
+    node.properties().forEach { (name, child) ->
+      val childType = when {
+        isSchema && (name == "\$defs" || name == "definitions") -> schemaMap
+        isSchema && name == "additionalProperties" -> schema
+        else -> properties[name]
+      }
+      if (childType != null) walk(child, childType, reference)
+    }
   }
 }
