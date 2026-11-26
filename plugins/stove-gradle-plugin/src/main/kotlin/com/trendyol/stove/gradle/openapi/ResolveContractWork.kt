@@ -63,7 +63,7 @@ abstract class ResolveContractWork : WorkAction<ResolveParameters> {
       name
     }
 
-    val references = ContractReferences(json)
+    val references = ContractFormat.detect(documents.get(load(root))).references(json)
     fun visit(uri: URI, pointer: String, kind: JavaType) {
       val name = load(uri)
       val targetNode = documents.get(name).at(pointer)
@@ -86,7 +86,7 @@ abstract class ResolveContractWork : WorkAction<ResolveParameters> {
       }
     }
 
-    visit(root, "", references.document(documents.get(load(root))))
+    visit(root, "", references.document)
     writeChanged(parameters.downloads.asFile.get(), json.writeValueAsBytes(remote))
     val output = parameters.output.asFile.get()
     if (writeChanged(output, json.writeValueAsBytes(documents))) {

@@ -3,9 +3,6 @@ package com.trendyol.stove.gradle.openapi
 import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.databind.ObjectMapper
 import io.swagger.v3.oas.models.OpenAPI
-import io.swagger.v3.parser.OpenAPIV3Parser
-import io.swagger.v3.parser.converter.SwaggerConverter
-import io.swagger.v3.parser.core.models.ParseOptions
 import org.gradle.api.file.DirectoryProperty
 import org.gradle.api.file.RegularFileProperty
 import org.gradle.api.provider.MapProperty
@@ -66,10 +63,5 @@ private fun readContract(documents: JsonNode, docs: File): OpenAPI {
     file.writeText(tree.toString())
   }
   val input = docs.resolve("openapi.json")
-  val parser = if (documents.get("openapi.json").isSwagger2()) SwaggerConverter() else OpenAPIV3Parser()
-  val parsed = parser.readLocation(input.toURI().toString(), null, ParseOptions().apply { isResolve = true })
-  require(parsed.messages.isNullOrEmpty()) { "Invalid Stove OpenAPI contract: ${parsed.messages.joinToString("; ")}" }
-  val api = requireNotNull(parsed.openAPI) { "Expected a Swagger 2.0 or OpenAPI 3.0/3.1 contract" }
-  require(api.openapi?.matches(Regex("3\\.[01]\\.\\d+.*")) == true) { "Unsupported OpenAPI version: ${api.openapi}" }
-  return api
+  return ContractFormat.detect(documents.get("openapi.json")).parse(input)
 }
