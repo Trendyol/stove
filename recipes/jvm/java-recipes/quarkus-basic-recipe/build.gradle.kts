@@ -1,6 +1,6 @@
 plugins {
   alias(libs.plugins.quarkus)
-  id("com.trendyol.stove.tracing") version libs.versions.stove.get()
+  id("com.trendyol.stove")
   id("org.jetbrains.kotlin.plugin.allopen") version libs.versions.kotlin
   java
 }
@@ -56,8 +56,10 @@ dependencies {
   testImplementation(stoveLibs.stoveKafka)
 }
 
-stoveTracing {
+stove {
   serviceName.set("quarkus-basic-recipe")
   testTaskNames.set(listOf("e2eTest"))
-  otelAgentVersion.set(libs.opentelemetry.instrumentation.annotations.get().version!!)
+  tracing {
+    otelAgentVersion.set(libs.opentelemetry.instrumentation.annotations.get().version!!)
+  }
 }

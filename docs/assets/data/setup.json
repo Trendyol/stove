@@ -350,8 +350,8 @@
       "gradle": [
         "com.trendyol:stove-tracing"
       ],
-      "pluginLine": "id(\"com.trendyol.stove.tracing\") version \"$stoveVersion\"",
-      "pluginBlock": "stoveTracing {\n  serviceName.set(\"my-service\")\n  testTaskNames.set(listOf(\"e2eTest\"))\n}",
+      "pluginLine": "id(\"com.trendyol.stove\") version \"$stoveVersion\"",
+      "pluginBlock": "stove {\n  tracing {}\n  serviceName.set(\"my-service\")\n  testTaskNames.set(listOf(\"e2eTest\"))\n}",
       "imports": [
         "com.trendyol.stove.tracing.tracing"
       ],

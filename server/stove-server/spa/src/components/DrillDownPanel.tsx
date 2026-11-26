@@ -193,7 +193,7 @@ export function DrillDownPanel({
                 <p>JVM applications running inside the test process:</p>
                 <pre>
                   {
-                    "stoveTracing {\n  profiling {\n    enabled.set(true)\n    allocations.set(true)\n  }\n}"
+                    "stove {\n  profiling {\n    enabled.set(true)\n    allocations.set(true)\n  }\n}"
                   }
                 </pre>
                 <p>

@@ -46,7 +46,7 @@ apiValidation {
     "ktor-di-tests",
     "ktor-koin-tests",
     "ktor-test-fixtures",
-    "stove-tracing-gradle-plugin",
+    "stove-gradle-plugin",
     "stove-dashboard-api",
     "stove-dashboard",
     "stove-micronaut",
@@ -215,7 +215,7 @@ val publishedProjects = listOf(
   projects.testExtensions.stoveExtensionsCucumber.name,
   projects.testExtensions.stoveExtensionsKotest.name,
   projects.testExtensions.stoveExtensionsJunit.name,
-  projects.plugins.stoveTracingGradlePlugin.name,
+  projects.plugins.stoveGradlePlugin.name,
 )
 
 subprojects.of("lib", "spring", "ktor", "quarkus", "micronaut", "container", "process", "test-extensions", "plugins", filter = { p -> publishedProjects.contains(p.name) && p.name != "stove-bom" }) {

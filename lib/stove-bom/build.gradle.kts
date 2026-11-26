@@ -48,7 +48,7 @@ dependencies {
     api(projects.testExtensions.stoveExtensionsJunit)
 
     // Gradle Plugins
-    api(projects.plugins.stoveTracingGradlePlugin)
+    api(projects.plugins.stoveGradlePlugin)
   }
 }
 

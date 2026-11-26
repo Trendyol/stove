@@ -1,7 +1,7 @@
 plugins {
   alias(libs.plugins.spring.plugin)
   alias(libs.plugins.spring.boot.four)
-  id("com.trendyol.stove.tracing")
+  id("com.trendyol.stove")
   idea
   application
 }
@@ -38,11 +38,12 @@ application { mainClass.set("stove.spring.example4x.ExampleAppkt") }
 // ============================================================================
 // TRACING SETUP - OpenTelemetry Java Agent (Gradle plugin)
 // ============================================================================
-stoveTracing {
+stove {
   serviceName.set("spring-4x-example")
-  otelAgentVersion.set(libs.versions.opentelemetry.instrumentation.get())
+  tracing {
+    otelAgentVersion.set(libs.versions.opentelemetry.instrumentation.get())
+  }
   profiling {
-    enabled.set(true)
     agentVersion.set(libs.versions.pyroscope.get())
     allocations.set(true)
   }

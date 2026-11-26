@@ -1,4 +1,5 @@
 [versions]
+openapi-generator = "7.27.0"
 pyroscope = "2.9.2"
 pyroscopeOtelExtension = "2.1.4"
 nav-oidc = "7.0.1"
@@ -73,6 +74,7 @@ flyway = "13.13.0"
 lombok = "1.18.48"
 
 [libraries]
+openapi-generator = { module = "org.openapitools:openapi-generator", version.ref = "openapi-generator" }
 nav-oidc = { module = "no.nav.security:mock-oauth2-server", version.ref = "nav-oidc" }
 keycloak-testcontainers = { module = "com.github.dasniko:testcontainers-keycloak", version.ref = "keycloak-testcontainers" }
 keycloak-admin = { module = "org.keycloak:keycloak-admin-client", version.ref = "keycloak-admin" }

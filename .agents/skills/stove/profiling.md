@@ -4,7 +4,7 @@ Use this guide to configure continuous profiles or investigate CPU/allocation ho
 
 ## Establish what can be profiled
 
-`stoveTracing.profiling` attaches Pyroscope **Java** agent 2.9.2 to selected Gradle `Test` JVMs. An in-process JVM application is included, along with test code and background work. A Go, Python, Node.js, Rust, separate JVM, container, or deployed application is not automatically profiled by attaching that agent to the harness.
+`stove.profiling` attaches Pyroscope **Java** agent 2.9.2 to selected Gradle `Test` JVMs. An in-process JVM application is included, along with test code and background work. A Go, Python, Node.js, Rust, separate JVM, container, or deployed application is not automatically profiled by attaching that agent to the harness.
 
 Stove Server accepts Pyroscope Java JFR and the native Go SDK's delta pprof multipart uploads. Pyroscope Push RPC, arbitrary cumulative heap/lock pprof files, OTLP Profiles, and other runtimes are unsupported. A separate JVM still requires custom agent/lifecycle integration. Exact run identity can be exposed by `DashboardExternalProfilingOptions`; never substitute the latest run.
 
@@ -32,21 +32,20 @@ Go can configure headers and an approved HTTP client through `StartFromEnv(func(
 
 ## Configure the existing JVM test setup
 
-Reuse the project's version catalog and plugin management. The plugin ID is `com.trendyol.stove.tracing`; do not add the agent to the application runtime classpath. The plugin resolves the agent itself.
+Reuse the project's version catalog and plugin management. The plugin ID is `com.trendyol.stove`; do not add the agent to the application runtime classpath. The plugin resolves the agent itself.
 
 ```kotlin
-stoveTracing {
+stove {
     serviceName.set("checkout-api")
     testTaskNames.set(listOf("e2eTest")) // Match the existing Gradle Test task.
     profiling {
-        enabled.set(true)
         serverUrl.set("http://localhost:4040")
         allocations.set(true) // Optional; omit for CPU-only collection.
     }
 }
 ```
 
-Keep `stove-dashboard` and register `dashboard { DashboardSystemOptions(appName = "checkout-api") }` in the existing Stove lifecycle. The dashboard starts collection after assigning its run ID and flushes at teardown. Pair startup with `Stove.stop()`; do not start a competing Pyroscope agent. The outer `stoveTracing.enabled` controls OTel wiring independently from `profiling.enabled`. A span receiver is not needed for profiling alone.
+Keep `stove-dashboard` and register `dashboard { DashboardSystemOptions(appName = "checkout-api") }` in the existing Stove lifecycle. The dashboard starts collection after assigning its run ID and flushes at teardown. Pair startup with `Stove.stop()`; do not start a competing Pyroscope agent. `stove.tracing.enabled` controls OTel wiring independently from `profiling.enabled`. A span receiver is not needed for profiling alone.
 
 The bundled extension is extracted by `stoveExtractPyroscopeExtension`; downstream builds need no direct GitHub access or extra repository. It preserves other OTel extensions and sets `otel.pyroscope.start.profiling=false` and `otel.pyroscope.root.span.only=true`. Stove retains profiler lifecycle ownership. Do not manually start the extension’s fallback profiler or add Maven `io.pyroscope:otel` as a substitute. Set `profiling.traceCorrelation=false` to opt out. The supported agent/extension pair is 2.9.2/2.1.4; verify overrides.
 

@@ -17,7 +17,7 @@ Filter by name, family (database, mock, observability), or substring. Each card 
   <noscript>
     <div class="admonition warning">
       <p class="admonition-title">JavaScript required</p>
-      <p>The cookbook is a live, searchable view. Browse the static <a href="Components/">Systems reference</a> instead.</p>
+      <p>The cookbook is a live, searchable view. Browse the static <a href="../Components/">Systems reference</a> instead.</p>
     </div>
   </noscript>
 </div>

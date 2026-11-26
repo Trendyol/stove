@@ -39,10 +39,11 @@ sequenceDiagram
 
 ```kotlin
 plugins {
-    id("com.trendyol.stove.tracing") version "$stoveVersion"
+    id("com.trendyol.stove") version "$stoveVersion"
 }
 
-stoveTracing {
+stove {
+    tracing {}
     serviceName.set("order-service")
     testTaskNames.set(listOf("e2eTest"))
 }

@@ -22,13 +22,13 @@ annotation-style alternatives, and scenario isolation.
 The wizard runs entirely in your browser. Nothing is sent anywhere. Your selections are reflected in the URL, so you can share or bookmark a configuration.
 
 !!! note "Review before pasting"
-    The generated setup is a starting point. Before committing it, review package names, imports, your application runner, fixed ports, property names, and version alignment between the Stove BOM, `stoveTracing` plugin, Stove dependencies, and `stove-server`.
+    Replace `<stove-version>` with the release you use. The unified Gradle plugin requires a release after 0.28.0. Before committing it, review package names, imports, your application runner, fixed ports, property names, and version alignment between the Stove BOM, `stove` plugin, Stove dependencies, and `stove-server`.
 
 <div id="stove-wizard" markdown="0">
   <noscript>
     <div class="admonition warning">
       <p class="admonition-title">JavaScript required</p>
-      <p>The setup wizard needs JavaScript to run. If you'd rather not enable it, follow <a href="getting-started/">Getting Started</a> instead. It walks through the same setup manually.</p>
+      <p>The setup wizard needs JavaScript to run. If you'd rather not enable it, follow <a href="../getting-started/">Getting Started</a> instead. It walks through the same setup manually.</p>
     </div>
   </noscript>
 </div>

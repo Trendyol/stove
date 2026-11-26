@@ -202,6 +202,7 @@ public final class com/trendyol/stove/wiremock/WireMockSystem : com/trendyol/sto
 	public final fun request (Lcom/github/tomakehurst/wiremock/http/RequestMethod;Lcom/trendyol/stove/wiremock/RequestTarget;Lkotlin/jvm/functions/Function1;)Lcom/trendyol/stove/wiremock/RequestSpec;
 	public static synthetic fun request$default (Lcom/trendyol/stove/wiremock/WireMockSystem;Lcom/github/tomakehurst/wiremock/http/RequestMethod;Lcom/trendyol/stove/wiremock/RequestTarget;Lkotlin/jvm/functions/Function1;ILjava/lang/Object;)Lcom/trendyol/stove/wiremock/RequestSpec;
 	public fun run (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public final fun scalarParameter (Ljava/lang/Object;)Ljava/lang/String;
 	public final fun shouldHaveBeenCalled (Lcom/github/tomakehurst/wiremock/client/CountMatchingStrategy;Lkotlin/jvm/functions/Function0;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public final fun shouldHaveBeenCalled (Lcom/github/tomakehurst/wiremock/http/RequestMethod;Lcom/trendyol/stove/wiremock/RequestTarget;Lcom/github/tomakehurst/wiremock/client/CountMatchingStrategy;Lkotlin/jvm/functions/Function1;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 	public final fun shouldHaveBeenCalled (Lcom/github/tomakehurst/wiremock/http/RequestMethod;Ljava/lang/String;Lcom/github/tomakehurst/wiremock/client/CountMatchingStrategy;Larrow/core/Option;Ljava/util/Map;Ljava/util/Map;Ljava/util/Map;Lkotlin/jvm/functions/Function1;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;

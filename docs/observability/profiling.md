@@ -1,6 +1,6 @@
 # Profiling and Drill Down
 
-**Available in 0.28.0.** Use matching Stove libraries, tracing Gradle plugin, and Stove Server builds that include profiling. Stove 0.27.x does not include this feature.
+**Available in 0.28.0.** The unified plugin DSL below requires the release after 0.28.0. Use matching Stove libraries, Gradle plugin, and Stove Server builds that include profiling. Stove 0.27.x does not include this feature.
 
 Stove collects continuous JVM and Go profiles during end-to-end tests and shows them in **Drill Down**. CPU, allocation, surviving-object, and lock samples help locate methods worth investigating before a performance problem reaches production. The existing Stove Server receives, converts, stores, and queries the recordings. Downstream users do not need to deploy Pyroscope or another profiling backend.
 
@@ -18,7 +18,7 @@ Profiles are sampled evidence. A hot method is an investigation starting point; 
 
 ## Language and runner support
 
-Having Gradle in a project does not make the application a JVM process. `stoveTracing.profiling` installs the **Pyroscope Java agent in the selected Gradle test JVMs**. It does not attach to child processes or discover applications in containers.
+Having Gradle in a project does not make the application a JVM process. `stove.profiling` installs the **Pyroscope Java agent in the selected Gradle test JVMs**. It does not attach to child processes or discover applications in containers.
 
 | Application under test | What the plugin profiles | Application profiling in Stove 0.28.0 |
 |---|---|---|
@@ -29,7 +29,7 @@ Having Gradle in a project does not make the application a JVM process. `stoveTr
 
 ### Go developers
 
-Stove 0.28.0 supports native Go profiles through the small [`go/stove-profiler`](https://github.com/Trendyol/stove/tree/main/go/stove-profiler) module, following the `stove-kafka` integration pattern. It wraps Grafana `pyroscope-go` **1.5.0**, pushes directly to Stove Server, and is inactive when no profiling URL is configured. `stoveTracing.profiling` remains the Java-agent configuration; it is unnecessary for profiling a Go binary.
+Stove 0.28.0 supports native Go profiles through the small [`go/stove-profiler`](https://github.com/Trendyol/stove/tree/main/go/stove-profiler) module, following the `stove-kafka` integration pattern. It wraps Grafana `pyroscope-go` **1.5.0**, pushes directly to Stove Server, and is inactive when no profiling URL is configured. `stove.profiling` remains the Java-agent configuration; it is unnecessary for profiling a Go binary.
 
 Install the published module:
 
@@ -129,14 +129,14 @@ The embedded converter uses Grafana's generated `google.v1.Profile` protobuf, va
 
 ## Configure an in-process JVM application
 
-Keep versions in the project's Gradle version catalog. For 0.28.0, the relevant catalog entries are:
+Keep versions in the project's Gradle version catalog. For the unified plugin, use its release version:
 
 ```toml
 [versions]
-stove = "0.28.0"
+stove = "<stove-version>"
 
 [plugins]
-stove-tracing = { id = "com.trendyol.stove.tracing", version.ref = "stove" }
+stove = { id = "com.trendyol.stove", version.ref = "stove" }
 ```
 
 Merge these into the existing sections in `gradle/libs.versions.toml`. Keep the server, libraries, and plugin aligned.
@@ -145,14 +145,13 @@ In the test project's `build.gradle.kts`:
 
 ```kotlin
 plugins {
-    alias(libs.plugins.stove.tracing)
+    alias(libs.plugins.stove)
 }
 
-stoveTracing {
+stove {
     serviceName.set("checkout-api")
     testTaskNames.set(listOf("e2eTest")) // Use your actual Gradle Test task name.
     profiling {
-        enabled.set(true)
         serverUrl.set("http://localhost:4040")
         allocations.set(true) // Optional; CPU collection is enabled by default.
     }
@@ -172,7 +171,7 @@ dashboard {
 
 Use the project's normal Kotest or JUnit lifecycle and pair Stove startup with `Stove.stop()`. The dashboard creates the run ID, starts profiling for that run, and flushes the last partial recording before ending it. Do not start a second Pyroscope agent independently in the same JVM; Stove needs ownership of that lifecycle.
 
-Profiling is independent of `stoveTracing.enabled`: setting the outer `enabled.set(false)` disables OTel Java-agent wiring while an enabled `profiling` block still works. `tracing { enableSpanReceiver() }` is needed for receiving spans, not for uploading profiles.
+Profiling is independent of `stove.tracing.enabled`: setting `tracing.enabled.set(false)` disables OTel Java-agent wiring while an enabled `profiling` block still works. `tracing { enableSpanReceiver() }` is needed for receiving spans, not for uploading profiles.
 
 ### Running from IntelliJ and CI
 
@@ -184,7 +183,7 @@ Recordings upload every ten seconds by default and once more during orderly tear
 
 | Profiling option | Default | Meaning |
 |---|---|---|
-| `enabled` | `false` | Opt in to JVM profiling |
+| `enabled` | enabled by the profiling block | Override to disable conditionally |
 | `serverUrl` | `http://localhost:4040` | HTTP(S) base URL, optionally including a gateway prefix |
 | `agentVersion` | `2.9.2` | Tested Pyroscope Java agent version |
 | `traceCorrelation` | `true` | Attach the bundled Pyroscope OTel extension when tracing is also enabled |
@@ -194,13 +193,13 @@ Recordings upload every ten seconds by default and once more during orderly tear
 | `liveAllocations` | `false` | Sample surviving allocations; also enables allocation sampling |
 | `lockThreshold` | empty | Optional lock wait threshold, for example `10ms` |
 
-`serviceName` and `testTaskNames` belong to the outer `stoveTracing` block. An empty task list selects all Gradle `Test` tasks. Select only the intended tasks when you have unit, integration, and end-to-end suites.
+`serviceName` and `testTaskNames` belong to the outer `stove` block. An empty task list selects all Gradle `Test` tasks. Select only the intended tasks when you have unit, integration, and end-to-end suites.
 
 CPU collection uses async-profiler's ITIMER event. Native support depends on the JVM, OS, and architecture. Unsupported startup is logged without failing the test suite. Allocation, live-object, and lock collection add workload-dependent overhead and are opt-in. Stove does not force garbage collection before dumping profiles.
 
 ## JVM trace-to-profile correlation
 
-When both tracing and profiling are enabled, `stoveTracing` automatically loads the Pyroscope OpenTelemetry Java-agent extension **2.1.4**. Keep the existing `tracing { enableSpanReceiver() }` and dashboard registration. No additional application dependency or backend is needed.
+When both tracing and profiling are enabled, `stove` automatically loads the Pyroscope OpenTelemetry Java-agent extension **2.1.4**. Keep the existing `tracing { enableSpanReceiver() }` and dashboard registration. No additional application dependency or backend is needed.
 
 The official shaded extension is bundled in the Stove Gradle plugin and extracted by `stoveExtractPyroscopeExtension`. Downstream builds do not need a GitHub repository or direct GitHub access. Stove's source build resolves the versioned GitHub release; `gradle/libs.versions.toml` pins the version. Maven's `io.pyroscope:otel` is the library, not this extension. Existing `otel.javaagent.extensions` entries are preserved.
 
@@ -215,15 +214,15 @@ Short operations may receive no samples. Coroutine, reactive, and other asynchro
 To keep profiling without correlation:
 
 ```kotlin
-stoveTracing {
+stove {
+    tracing {}
     profiling {
-        enabled.set(true)
         traceCorrelation.set(false)
     }
 }
 ```
 
-Setting the outer `stoveTracing.enabled=false` also omits the OTel agent and extension while preserving profiling. IntelliJ must delegate tests to Gradle for all this wiring; native Run Test bypasses it. This extension applies only to JVM profiling. Go still needs explicit runtime profiling labels.
+Leaving out the `tracing {}` block also omits the OTel agent and extension while preserving profiling. IntelliJ must delegate tests to Gradle for all this wiring; native Run Test bypasses it. This extension applies only to JVM profiling. Go still needs explicit runtime profiling labels.
 
 ## Shared Stove Server over HTTPS
 
@@ -231,10 +230,9 @@ Use the same deployment for dashboard events and profiling. The two client setti
 
 ```kotlin
 // build.gradle.kts
-stoveTracing {
+stove {
     serviceName.set("checkout-api")
     profiling {
-        enabled.set(true)
         serverUrl.set("https://stove.example.internal")
     }
 }
@@ -259,10 +257,9 @@ The ingress must forward `POST /ingest` with its query parameters and multipart 
 To avoid configuring different destinations accidentally, read one environment variable in both places. `STOVE_SERVER_URL` below is a project convention explicitly wired by these snippets, not an automatically recognized Stove setting.
 
 ```kotlin
-// build.gradle.kts; inside the existing stoveTracing configuration:
-stoveTracing {
+// build.gradle.kts; inside the existing stove configuration:
+stove {
     profiling {
-        enabled.set(true)
         serverUrl.set(providers.environmentVariable("STOVE_SERVER_URL"))
     }
 }
@@ -286,7 +283,7 @@ dashboard {
 STOVE_SERVER_URL=https://stove.example.internal ./gradlew :your-project:e2eTest
 ```
 
-Set that variable in the CI job or IntelliJ's Gradle run configuration as well. Use a base URL without credentials, query parameters, fragments, or an endpoint suffix. `serviceName` still belongs in the outer `stoveTracing` configuration. `appName` groups dashboard runs; the service name identifies the profiled service within a run. Using the same name for a single application makes navigation easier.
+Set that variable in the CI job or IntelliJ's Gradle run configuration as well. Use a base URL without credentials, query parameters, fragments, or an endpoint suffix. `serviceName` still belongs in the outer `stove` configuration. `appName` groups dashboard runs; the service name identifies the profiled service within a run. Using the same name for a single application makes navigation easier.
 
 ### Routes, ports, and gateway prefixes
 
@@ -315,7 +312,7 @@ Forward query values, the multipart boundary, and binary part bytes unchanged. D
 | Header | Meaning |
 |---|---|
 | `X-Stove-Run-Id` | Exact dashboard run created by Stove; required, nonblank, at most 256 bytes |
-| `X-Stove-Service-Name` | Profile service from `stoveTracing.serviceName`; at most 256 bytes; the server can fall back to the query name |
+| `X-Stove-Service-Name` | Profile service from `stove.serviceName`; at most 256 bytes; the server can fall back to the query name |
 | `X-Stove-Instance-Id` | Stable identifier for this profiler lifecycle, generated by Stove; required, nonblank, at most 256 bytes |
 
 These are association fields, **not authentication credentials**. Gateways must not replace them with a constant or guess a run ID. The run-start event must reach storage before its profile is accepted. Load-balanced replicas must share the same database; independent SQLite databases behind one hostname can produce intermittent missing-run responses. See [multiple replicas](../Components/18-dashboard.md#run-multiple-replicas) for the shared PostgreSQL setup.
@@ -334,7 +331,7 @@ TLS usually terminates at the existing ingress, which forwards HTTP to Stove on 
 
 For an internal CA, provision the approved CA chain in the test JDK's trust store, or configure a dedicated trust store on the selected Gradle `Test` tasks using the JVM properties `javax.net.ssl.trustStore`, `javax.net.ssl.trustStoreType`, and, when required, `javax.net.ssl.trustStorePassword`. Keep any password in the existing CI secret mechanism. Setting properties only on the Gradle daemon does not configure forked test JVMs. Check the Gradle Java toolchain and IntelliJ Gradle JVM when local and CI results differ. Do not disable certificate or hostname verification.
 
-Stove's endpoints have no built-in authentication or authorization. Keep the deployment behind the existing trusted network/access boundary. Neither `stoveTracing.profiling` nor `DashboardIngestion.Http` currently exposes arbitrary authentication headers or a dedicated client-certificate configuration API.
+Stove's endpoints have no built-in authentication or authorization. Keep the deployment behind the existing trusted network/access boundary. Neither `stove.profiling` nor `DashboardIngestion.Http` currently exposes arbitrary authentication headers or a dedicated client-certificate configuration API.
 
 | Gateway requirement | Current integration |
 |---|---|

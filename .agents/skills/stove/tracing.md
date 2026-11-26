@@ -25,12 +25,13 @@ The dashboard ingestion port is not an OTLP endpoint.
 
 ### JVM application running inside the test JVM
 
-Apply `com.trendyol.stove.tracing` with the version declared in the project's plugin management or version catalog. Configure the actual test task names:
+Apply `com.trendyol.stove` with the version declared in the project's plugin management or version catalog. Configure the actual test task names:
 
 ```kotlin
-plugins { id("com.trendyol.stove.tracing") }
+plugins { id("com.trendyol.stove") }
 
-stoveTracing {
+stove {
+    tracing {}
     serviceName.set("my-service")
     testTaskNames.set(listOf("e2eTest"))
 }
@@ -102,7 +103,7 @@ For a test that expects a failure, use `shouldHaveFailedSpan("PaymentGateway.cha
 
 Check the receiver startup log and port first, then the AUT's exporter protocol/address, installed instrumentation, sampling, and propagation. A receiver bind failure is logged and tests can continue without spans. If spans arrive under another trace, inspect `getAllTraceVisualizations()` and trace headers rather than repeatedly increasing timeouts.
 
-Source: `lib/stove-tracing/`, `plugins/stove-tracing-gradle-plugin/`.
+Source: `lib/stove-tracing/`, `plugins/stove-gradle-plugin/`.
 
 ## Continuous profiling
 

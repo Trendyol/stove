@@ -6,7 +6,7 @@ plugins {
   idea
   kotlin("plugin.serialization") version libs.versions.kotlin
   alias(libs.plugins.protobuf)
-  id("com.trendyol.stove.tracing")
+  id("com.trendyol.stove")
 }
 
 application {
@@ -18,11 +18,12 @@ application {
   applicationDefaultJvmArgs = listOf("-Dio.ktor.development=$isDevelopment")
 }
 
-stoveTracing {
+stove {
   serviceName.set("ktor-example")
-  otelAgentVersion.set(libs.versions.opentelemetry.instrumentation.get())
+  tracing {
+    otelAgentVersion.set(libs.versions.opentelemetry.instrumentation.get())
+  }
   profiling {
-    enabled.set(true)
     agentVersion.set(libs.versions.pyroscope.get())
     allocations.set(true)
   }

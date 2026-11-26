@@ -3,6 +3,9 @@ site_description: "End-to-end testing framework for the JVM"
 repo_url: https://github.com/trendyol/stove
 repo_name: trendyol/stove
 edit_uri: edit/main/docs/
+validation:
+  links:
+    anchors: warn
 extra_css:
   - css/custom.css
 extra_javascript:

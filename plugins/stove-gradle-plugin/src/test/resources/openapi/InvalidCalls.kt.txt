@@ -1,0 +1,12 @@
+package fixture
+
+import com.trendyol.stove.wiremock.WireMockSystem
+import stove.generated.wiremock.inventory.inventory
+import stove.generated.wiremock.supplier.supplier
+
+suspend fun WireMockSystem.invalid() {
+  inventory.reservationState("east", "42") { ok("not-a-state") }
+  supplier.submit("wrong") { conflict(123) }
+  supplier.submit("missing") { notFound() }
+  supplier.submit { noContent() }
+}

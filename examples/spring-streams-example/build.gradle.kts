@@ -5,7 +5,7 @@ plugins {
   alias(libs.plugins.spring.boot.three)
   alias(libs.plugins.spring.dependencyManagement)
   alias(libs.plugins.protobuf)
-  id("com.trendyol.stove.tracing")
+  id("com.trendyol.stove")
   idea
   application
 }
@@ -79,11 +79,12 @@ configurations.matching { it.name == "detekt" }.all {
   }
 }
 
-stoveTracing {
+stove {
   serviceName.set("spring-streams-example")
-  otelAgentVersion.set(libs.versions.opentelemetry.instrumentation.get())
+  tracing {
+    otelAgentVersion.set(libs.versions.opentelemetry.instrumentation.get())
+  }
   profiling {
-    enabled.set(true)
     agentVersion.set(libs.versions.pyroscope.get())
     allocations.set(true)
   }

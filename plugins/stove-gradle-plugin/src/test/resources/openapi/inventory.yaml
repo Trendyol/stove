@@ -1,0 +1,84 @@
+openapi: 3.1.0
+info: {title: Inventory reservations, version: "2"}
+servers:
+  - url: https://inventory.example.test/api/{version}
+    variables:
+      version: {default: v2}
+paths:
+  /warehouses/{warehouseId}/reservations:
+    parameters: [{$ref: '#/components/parameters/WarehouseId'}]
+    post:
+      operationId: reserveStock
+      parameters:
+        - in: query
+          name: channel
+          schema: {$ref: '#/components/schemas/Channel'}
+        - in: header
+          name: Idempotency-Key
+          schema: {type: string}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/ReserveStock'}
+            examples:
+              splitShipment:
+                value: {lines: [{sku: "tea", quantity: 2}], labels: {$ref: "cart-42"}}
+      responses:
+        "201":
+          description: Stock reserved
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/Reservation'}
+        "409": {$ref: '#/components/responses/InventoryProblem'}
+        default: {$ref: '#/components/responses/InventoryProblem'}
+  /warehouses/{warehouseId}/reservations/{reservationId}:
+    parameters:
+      - {$ref: '#/components/parameters/WarehouseId'}
+      - {in: path, name: reservationId, required: true, schema: {type: string}}
+    get:
+      operationId: reservationState
+      responses:
+        "200":
+          description: Fulfilment state
+          content:
+            application/json:
+              schema: {title: ReservationState, type: string, enum: [held, released]}
+    delete:
+      operationId: releaseStock
+      responses:
+        "204": {description: Released}
+components:
+  parameters:
+    WarehouseId: {in: path, name: warehouseId, required: true, schema: {type: string}}
+  responses:
+    InventoryProblem:
+      description: Inventory error
+      content:
+        application/problem+json:
+          schema: {$ref: '#/components/schemas/InventoryProblem'}
+  schemas:
+    CartLink:
+      type: object
+      properties:
+        $ref: {type: string}
+      example: {$ref: "cart-42"}
+    Channel: {type: string, enum: [online, shop]}
+    StockLine: {$ref: 'inventory-models.yaml#/StockLine'}
+    ReserveStock:
+      type: object
+      required: [lines, labels]
+      properties:
+        lines: {type: array, items: {$ref: '#/components/schemas/StockLine'}}
+        labels: {type: object, additionalProperties: {type: string}}
+    Reservation:
+      type: object
+      required: [id, lines]
+      properties:
+        id: {type: string}
+        lines: {type: array, items: {$ref: '#/components/schemas/StockLine'}}
+    InventoryProblem:
+      type: object
+      required: [reason]
+      properties:
+        reason: {type: string}

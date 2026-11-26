@@ -1,0 +1,25 @@
+openapi: 3.0.3
+info: { title: Supplier API, version: '1' }
+paths:
+  /suppliers/{supplierId}/allowed:
+    get:
+      operationId: getSupplierPermission
+      parameters:
+        - name: supplierId
+          in: path
+          required: true
+          schema: { type: integer, format: int64 }
+      responses:
+        '200':
+          description: Supplier permission
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/SupplierPermission' }
+components:
+  schemas:
+    SupplierPermission:
+      type: object
+      required: [supplierId, isAllowed]
+      properties:
+        supplierId: { type: integer, format: int64 }
+        isAllowed: { type: boolean }

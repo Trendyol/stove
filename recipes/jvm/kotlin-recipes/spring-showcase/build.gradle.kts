@@ -1,7 +1,7 @@
 plugins {
   alias(libs.plugins.spring.plugin)
   alias(libs.plugins.protobuf)
-  id("com.trendyol.stove.tracing") version libs.versions.stove.get()
+  id("com.trendyol.stove")
 }
 
 dependencies {
@@ -97,8 +97,10 @@ protobuf {
 // ============================================================================
 // TRACING SETUP - OpenTelemetry Java Agent
 // ============================================================================
-stoveTracing {
+stove {
   serviceName.set("stove-kotlin-spring-showcase")
   testTaskNames.set(listOf("e2eTest"))
-  otelAgentVersion.set(libs.opentelemetry.instrumentation.annotations.get().version!!)
+  tracing {
+    otelAgentVersion.set(libs.opentelemetry.instrumentation.annotations.get().version!!)
+  }
 }

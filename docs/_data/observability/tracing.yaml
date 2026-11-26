@@ -6,9 +6,10 @@
 - |-
   com.trendyol:stove-tracing
 "pluginLine": |-
-  id("com.trendyol.stove.tracing") version "$stoveVersion"
+  id("com.trendyol.stove") version "$stoveVersion"
 "pluginBlock": |-
-  stoveTracing {
+  stove {
+    tracing {}
     serviceName.set("my-service")
     testTaskNames.set(listOf("e2eTest"))
   }

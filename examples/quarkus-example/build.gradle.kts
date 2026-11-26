@@ -12,7 +12,7 @@ abstract class EnsureDirectoryTask : DefaultTask() {
 plugins {
   alias(libs.plugins.quarkus)
   alias(libs.plugins.allopen)
-  id("com.trendyol.stove.tracing")
+  id("com.trendyol.stove")
   idea
   application
 }
@@ -73,11 +73,12 @@ kotlin {
   }
 }
 
-stoveTracing {
+stove {
   serviceName.set("quarkus-example")
-  otelAgentVersion.set(libs.versions.opentelemetry.instrumentation.get())
+  tracing {
+    otelAgentVersion.set(libs.versions.opentelemetry.instrumentation.get())
+  }
   profiling {
-    enabled.set(true)
     agentVersion.set(libs.versions.pyroscope.get())
     allocations.set(true)
   }

@@ -1,0 +1,40 @@
+openapi: 3.0.3
+info: { title: Supplier, version: "1" }
+servers:
+  - url: https://example.test/{version}
+    variables: { version: { default: v1 } }
+paths:
+  /orders/{id}:
+    post:
+      operationId: submit
+      parameters:
+        - { in: path, name: id, required: true, schema: { type: string } }
+        - { in: query, name: limit, schema: { type: integer } }
+        - { in: header, name: X-Mode, schema: { type: string } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/Item' }
+      responses:
+        '204': { description: Saved }
+        '409':
+          description: Conflict
+          content:
+            application/problem+json:
+              schema: { $ref: 'types.yaml#/components/schemas/SubmitResponse' }
+  /upload:
+    get:
+      operationId: download
+      responses:
+        '200':
+          description: Binary
+          content:
+            application/octet-stream:
+              schema: { type: string, format: binary }
+components:
+  schemas:
+    Item:
+      type: object
+      properties:
+        value: { type: string }

@@ -1,6 +1,6 @@
 plugins {
   application
-  id("com.trendyol.stove.tracing")
+  id("com.trendyol.stove")
   alias(libs.plugins.kotlinx.serialization)
   id("org.graalvm.buildtools.native")
 }
@@ -9,12 +9,10 @@ application {
   mainClass.set("stove.ktor.bff.ApplicationKt")
 }
 
-stoveTracing {
-  enabled.set(false)
+stove {
   serviceName.set("ktor-oidc-bff")
   testTaskNames.set(listOf("test", "postgresE2eTest", "keycloakE2eTest"))
   profiling {
-    enabled.set(true)
     agentVersion.set(libs.versions.pyroscope.get())
     allocations.set(true)
   }

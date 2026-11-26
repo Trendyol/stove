@@ -73,7 +73,7 @@ include(
   "examples:micronaut-example"
 )
 include(
-  "plugins:stove-tracing-gradle-plugin"
+  "plugins:stove-gradle-plugin"
 )
 
 dependencyResolutionManagement {

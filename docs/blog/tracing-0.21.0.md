@@ -166,7 +166,7 @@ Stove()
 
 ### Step 2: Attach the OpenTelemetry agent in your build
 
-At the original 0.21.0 release, setup used a copied Gradle helper. Current projects should prefer the standalone `com.trendyol.stove.tracing` Gradle plugin described in the [tracing docs](../Components/15-tracing.md). The historical helper setup looked like this:
+At the original 0.21.0 release, setup used a copied Gradle helper. For current projects, follow the plugin setup in the [tracing docs](../Components/15-tracing.md). The historical helper setup looked like this:
 
 ```kotlin hl_lines="3-5"
 import com.trendyol.stove.gradle.stoveTracing

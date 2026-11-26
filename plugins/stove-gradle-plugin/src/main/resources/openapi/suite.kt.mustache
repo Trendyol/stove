@@ -1,0 +1,52 @@
+package {{pkg}}
+
+import com.github.tomakehurst.wiremock.http.RequestMethod
+import com.trendyol.stove.wiremock.RequestSpec
+import com.trendyol.stove.wiremock.ResponseDsl
+import com.trendyol.stove.wiremock.WireMockSystem
+import com.trendyol.stove.wiremock.WiremockDsl
+import com.trendyol.stove.wiremock.path
+import java.net.URLEncoder
+
+val WireMockSystem.{{alias}}: {{suite}} get() = {{suite}}(this)
+
+private fun encodeSegment(value: String): String =
+  URLEncoder.encode(value, "UTF-8").replace("+", "%20").replace("*", "%2A").replace("%7E", "~")
+
+class {{suite}} internal constructor(private val system: WireMockSystem) {
+  val requests = Requests(system)
+  class Requests internal constructor(private val system: WireMockSystem) {
+{{#operations}}
+    fun {{name}}({{params}}): RequestSpec = this.system.request(RequestMethod.{{method}}, path({{path}})) {
+{{#constraints}}
+      {{.}}
+{{/constraints}}
+    }
+{{/operations}}
+  }
+{{#operations}}
+  suspend fun {{name}}({{#params}}{{.}}, {{/params}}_respond: {{scope}}.() -> Unit): WireMockSystem =
+    this.system.stub(this.requests.{{name}}({{args}}), {{label}}) {
+      var chosen = false
+      {{scope}} { response -> respond(response); chosen = true }._respond()
+      require(chosen) { {{missingResponse}} }
+    }
+{{/operations}}
+{{#operations}}
+  @WiremockDsl
+  class {{scope}} internal constructor(private val send: (ResponseDsl.() -> Unit) -> Unit) {
+{{#responses}}
+    fun {{name}}({{params}}) = send {
+{{#guard}}
+      require({{.}}) { "Status does not match response {{code}}" }
+{{/guard}}
+      status = {{status}}
+{{#contentType}}
+      header("Content-Type", {{.}})
+{{/contentType}}
+      {{body}}
+    }
+{{/responses}}
+  }
+{{/operations}}
+}

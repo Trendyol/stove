@@ -46,6 +46,70 @@ Stove().with {
 | `serde` | `StoveSerde.jackson.anyByteArraySerde()` | Pass your app's mapper |
 | `configureExposedConfiguration` | empty | Inject WireMock URL into AUT |
 
+## Typed mocks from OpenAPI
+
+Apply the Stove Gradle plugin at the same version as your Stove libraries (unreleased after 0.28.0). Keep your existing `stove-wiremock` dependency and normal WireMock registration. Register each contract in your Kotlin/JVM test project:
+
+```kotlin
+plugins { id("com.trendyol.stove") version "$stoveVersion" }
+
+stove {
+    wiremock {
+        // sourceSet.set("test-e2e") // defaults to test
+        api("supplier") {
+            specUrl.set("https://supplier.example.com/openapi.json")
+        }
+        api("inventory") {
+            specFile.set(layout.projectDirectory.file("contracts/inventory.yaml"))
+            schemaMappings.put("Item", "com.example.inventory.Item")
+        }
+    }
+}
+```
+
+Use exactly one of `specUrl`, `specFile`, or `specText` per API. Compile the source set once to generate IDE-completable Kotlin. Import the accessor and contract models:
+
+```kotlin
+import stove.generated.wiremock.supplier.supplier
+import stove.generated.wiremock.supplier.SupplierPermission
+
+// Inside stove { ... }
+wiremock {
+    supplier.getSupplierPermission(supplierId = id) {
+        ok(SupplierPermission(supplierId = id, isAllowed = true))
+    }
+}
+// Exercise the application, then:
+wiremock {
+    shouldHaveBeenCalled(supplier.requests.getSupplierPermission(supplierId = id))
+}
+```
+
+The operation declares the method, path and possible responses. Mocks include the base path of the first applicable OpenAPI server, using its variable defaults. Supply all path values and just the header, query or JSON body constraints your test needs. Choose exactly one declared response. The same accessor works in `wiremock(key)`; pass its `requests` to `callsFor`, verification, or `stub` for advanced behaviour.
+
+**Names and types.** Each unique lower camel case API name becomes an accessor and the last segment of its package (`stove.generated.wiremock.supplier`, for example). Operations use their `operationId` converted to a Kotlin name; without one, Stove derives a name from the HTTP method and path. Give operations explicit, distinct IDs for a stable test API. A collision, such as a parameterless `toString`, fails generation with the method and path. Map a component schema name to a fully qualified DTO using `schemaMappings`; that DTO must be on the selected source set's compile classpath.
+
+**Matching and responses.** Path values are required and encoded as individual segments. Omit a query, header, or body to leave it unconstrained, even if the real API requires it. Response helpers use the declared status, body type and media type: for example, `created(reservation)`, `conflict(problem)`, or bodyless `noContent()`. A declared response range or `default` takes a status code; an explicitly declared status takes precedence. An empty response block or selecting two responses fails when registering the stub.
+
+Online compilation rechecks the spec and its referenced documents. An unchanged contract skips code generation. Use Gradle `--offline` to reuse the last download that successfully generated sources. A failed fetch or invalid update fails the online build and leaves that offline copy intact. On a fresh checkout, build online once before using a URL offline. An unresolved reference fails the build; a literal `$ref` in an example payload is data and is never fetched. Changed input regenerates the suite and removes stale generated files. Contract drift surfaces when it changes generated types or exercised HTTP behavior; this is not a general compatibility check. Prefer files checked into source control when CI needs reproducible input.
+
+OpenAPI 3.0/3.1 operations with JSON (including `+json`) and bodyless responses are supported. The generator reports operations it skips, such as multipart requests, complex parameter encodings, or composed schemas. Handwritten mocks remain available for those operations.
+
+For a larger example, the [inventory contract](https://github.com/trendyol/stove/blob/main/plugins/stove-gradle-plugin/src/test/resources/openapi/inventory.yaml) and its [executable Kotlin consumer](https://github.com/trendyol/stove/blob/main/plugins/stove-gradle-plugin/src/test/resources/openapi/InventoryScenario.kt) exercise reservations across two contract files:
+
+```kotlin
+wiremock(Inventory) {
+    inventory.reserveStock(warehouseId = "EU/West", channel = Channel.online, body = cart) {
+        created(Reservation(id = "r1", lines = cart.lines))
+    }
+    inventory.reservationState(warehouseId = "EU/West", reservationId = "r1") {
+        ok(ReservationState.held)
+    }
+}
+```
+
+Here `Channel` is an existing application enum mapped with `schemaMappings`. Stove uses the selected WireMock system's JSON serializer for enum parameter values, so a custom wire spelling works in both stubs and verification. `ReservationState` comes from an inline response enum: its schema's `title` gives the Kotlin type a readable name, and the compiler rejects an arbitrary string passed to `ok`.
+
 ## Basic stubs
 
 ```kotlin
