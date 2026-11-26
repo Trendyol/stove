@@ -102,6 +102,25 @@ class WiremockPluginFunctionalTest : FunSpec({
     generated.walk().filter { it.extension == "kt" }.none { "fun submit(" in it.readText() } shouldBe true
   }
 
+  test("OpenAPI 3.1 nested schema identifiers survive snapshot relocation") {
+    dir.write("inventory.yaml", resource("inventory.yaml").replace("#/StockLine", "#/\$defs/StockLine"))
+    dir.write("inventory-models.yaml", """
+      ${'$'}id: shared/inventory.json
+      ${'$'}defs:
+        StockLine:
+          ${'$'}id: schemas/line.json
+          type: object
+          required: [sku, quantity]
+          properties:
+            sku: { ${'$'}ref: '#/${'$'}defs/Sku' }
+            quantity: { ${'$'}id: counts/value.json, ${'$'}ref: integer.yaml }
+          ${'$'}defs:
+            Sku: { type: string }
+    """)
+    dir.write("shared/schemas/counts/integer.yaml", "type: integer\nformat: int32")
+    run("exercise").build()
+  }
+
   test("nested schema references are fetched relative to their source, but example data is never fetched") {
     types.set(types.get().replace("{ type: string }", "{ \$ref: 'schemas/detail.yaml' }"))
     val detail = server.serve("/schemas/detail.yaml", "type: string\nexample: { \$ref: 'not-a-document.yaml' }")

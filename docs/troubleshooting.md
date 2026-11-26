@@ -446,7 +446,7 @@ Mixed versions are a common cause of class-load errors and empty dashboard data.
 - Containers have enough memory
 - Ports free or `port = 0` for mocks
 - Test extension registered (`StoveKotestExtension()` or `@ExtendWith(StoveJUnitExtension)`)
-- For tracing: `stove` Gradle plugin applied + `tracing { enableSpanReceiver() }` in setup
+- For tracing: apply the `com.trendyol.stove` Gradle plugin, opt in with `stove { tracing {} }` in the build, and register `tracing { enableSpanReceiver() }` in test setup
 
 
 ## Cancelled CI jobs leave dashboard runs running

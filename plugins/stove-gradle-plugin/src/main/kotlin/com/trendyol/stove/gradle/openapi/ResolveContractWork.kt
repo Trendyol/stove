@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.databind.node.ObjectNode
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory
+import io.swagger.v3.oas.models.media.Schema
 import org.gradle.api.file.RegularFileProperty
 import org.gradle.api.logging.Logging
 import org.gradle.api.provider.Property
@@ -63,30 +64,68 @@ abstract class ResolveContractWork : WorkAction<ResolveParameters> {
       name
     }
 
-    val references = ContractFormat.detect(documents.get(load(root))).references(json)
+    val rootDocument = documents.get(load(root))
+    val references = ContractFormat.detect(rootDocument).references(json)
+    val schemaIds = rootDocument.path("openapi").asText().startsWith("3.1.")
+    val resources = mutableMapOf<URI, Pair<URI, String>>()
+    val scoped = IdentityHashMap<ObjectNode, ReferenceScope>()
+
+    val indexed = mutableSetOf<URI>()
+    fun schemaScope(uri: URI, schema: ObjectNode, scope: ReferenceScope): ReferenceScope {
+      if (!schemaIds) return scope
+      return scoped.getOrPut(schema) {
+        val id = schema.get("\$id") ?: return@getOrPut scope
+        require(id.isTextual) { "Invalid schema identifier at $uri#${scope.pointer}" }
+        val base = scope.base.resolve(id.textValue()).normalize()
+        require(base.fragment == null) { "Schema identifier must not have a fragment: $base" }
+        val location = uri to scope.pointer
+        val previousLocation = resources.putIfAbsent(base, location)
+        require(previousLocation == null || previousLocation == location) { "Duplicate schema identifier: $base" }
+        scope.copy(base = base)
+      }
+    }
+
     fun visit(uri: URI, pointer: String, kind: JavaType) {
       val name = load(uri)
-      val targetNode = documents.get(name).at(pointer)
+      val document = documents.get(name)
+      val targetNode = document.at(pointer)
       require(!targetNode.isMissingNode) { "Unresolved OpenAPI reference: $uri#$pointer" }
-      references.walk(targetNode, kind) { node, targetKind ->
-        if (!rewritten.add(node)) return@walk
+      val scopeFor = { schema: ObjectNode, scope: ReferenceScope -> schemaScope(uri, schema, scope) }
+      // A pointer into another document may enter below a schema's $id.
+      if (schemaIds && pointer.isNotEmpty() && (document.has("openapi") || kind.hasRawClass(Schema::class.java)) && indexed.add(uri)) {
+        val rootKind = if (document.has("openapi")) references.document else kind
+        references.walk(document, rootKind, ReferenceScope(uri, ""), scopeFor) { _, _, _ -> }
+      }
+
+      // Register sibling schema identifiers before resolving references to them.
+      val pending = mutableListOf<Triple<ObjectNode, JavaType, URI>>()
+      references.walk(targetNode, kind, ReferenceScope(uri, pointer), scopeFor) { node, targetKind, scope ->
+        if (rewritten.add(node)) pending.add(Triple(node, targetKind, scope.base))
+      }
+      for ((node, targetKind, base) in pending) {
         val value = node.get("\$ref")
         require(value.isTextual) { "Invalid reference in $uri: $value" }
         val ref = URI(value.asText())
-        val target = if (value.asText().startsWith("#")) uri else uri.resolve(value.asText().substringBefore('#')).normalize()
+        val location = value.asText().substringBefore('#')
+        val resource = if (location.isEmpty()) base else base.resolve(location).normalize()
+        val (target, prefix) = resources[resource] ?: (resource to "")
         require(uri.scheme == "file" || target.scheme in setOf("http", "https")) {
           "A remote OpenAPI document cannot reference a local file: $uri"
         }
         val fragment = ref.fragment.orEmpty()
         require(fragment.isEmpty() || fragment.startsWith("/")) { "Unsupported OpenAPI reference anchor: $ref in $uri" }
-        visit(target, fragment, targetKind)
+        val targetPointer = prefix + fragment
+        visit(target, targetPointer, targetKind)
         val file = files.getValue(target)
         val relative = if (file == name) "" else (Path.of(name).parent ?: Path.of("")).relativize(Path.of(file)).joinToString("/")
-        node.put("\$ref", relative + (ref.rawFragment?.let { "#$it" } ?: ""))
+        val suffix = if (targetPointer.isEmpty() && relative.isNotEmpty()) "" else URI(null, "", targetPointer).toASCIIString()
+        node.put("\$ref", relative + suffix)
       }
     }
 
     visit(root, "", references.document)
+    // References now use snapshot-relative document paths; the original bases must not rebase them again.
+    scoped.keys.forEach { it.remove("\$id") }
     writeChanged(parameters.downloads.asFile.get(), json.writeValueAsBytes(remote))
     val output = parameters.output.asFile.get()
     if (writeChanged(output, json.writeValueAsBytes(documents))) {

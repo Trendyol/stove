@@ -6,12 +6,18 @@ import com.trendyol.stove.wiremock.ResponseDsl
 import com.trendyol.stove.wiremock.WireMockSystem
 import com.trendyol.stove.wiremock.WiremockDsl
 import com.trendyol.stove.wiremock.path
-import java.net.URLEncoder
 
 val WireMockSystem.{{alias}}: {{suite}} get() = {{suite}}(this)
 
-private fun encodeSegment(value: String): String =
-  URLEncoder.encode(value, "UTF-8").replace("+", "%20").replace("*", "%2A").replace("%7E", "~")
+private fun encodeSegment(value: String): String = buildString {
+  val hex = "0123456789ABCDEF"
+  for (byte in value.toByteArray(Charsets.UTF_8)) {
+    val octet = byte.toInt() and 255
+    val c = octet.toChar()
+    if (c in 'a'..'z' || c in 'A'..'Z' || c in '0'..'9' || c in "-._~!$&'()*+,;=:@") append(c)
+    else append('%').append(hex[octet ushr 4]).append(hex[octet and 15])
+  }
+}
 
 class {{suite}} internal constructor(private val system: WireMockSystem) {
   val requests = Requests(system)

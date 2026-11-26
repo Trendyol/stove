@@ -35,7 +35,7 @@ private suspend fun exerciseSupplier(supplierUrl: String) {
       check(runCatching { supplier.submit("empty") {} }.isFailure)
       check(runCatching { supplier.submit("twice") { noContent(); noContent() } }.isFailure)
       supplier.submit("any") { noContent() }
-      supplier.submit("a/b c", limit = 2, xMode = "draft", body = Item("x")) {
+      supplier.submit("a@b:c/d e", limit = 2, xMode = "draft", body = Item("x")) {
         conflict(SubmitResponse(detail = "busy"))
       }
     }
@@ -45,13 +45,13 @@ private suspend fun exerciseSupplier(supplierUrl: String) {
     .header("X-Mode", "draft").POST(HttpRequest.BodyPublishers.ofString("""{"value":"x"}""")).build(),
     HttpResponse.BodyHandlers.ofString())
   check(post("/v1/orders/any?ignored=1").statusCode() == 204)
-  val problem = post("/v1/orders/a%2Fb%20c?limit=2")
+  val problem = post("/v1/orders/a@b:c%2Fd%20e?limit=2")
   check(problem.statusCode() == 409 && problem.body() == """{"detail":"busy"}""") { problem.toString() + problem.body() }
   check(problem.headers().firstValue("Content-Type").get() == "application/problem+json")
   stove {
     wiremock(Supplier) {
-      shouldHaveBeenCalled(supplier.requests.submit("a/b c", limit = 2, xMode = "draft", body = Item("x")))
-      shouldNotHaveBeenCalled(supplier.requests.submit("a/b c", limit = 1))
+      shouldHaveBeenCalled(supplier.requests.submit("a@b:c/d e", limit = 2, xMode = "draft", body = Item("x")))
+      shouldNotHaveBeenCalled(supplier.requests.submit("a@b:c/d e", limit = 1))
       shouldNotHaveBeenCalled(inventory.requests.releaseStock(warehouseId = "EU/West", reservationId = "r1"))
     }
   }

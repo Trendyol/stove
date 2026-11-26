@@ -54,22 +54,22 @@ Configure W3C Trace Context propagation and preserve context across async work a
 
 ## 3. JVM plugin options
 
-Defaults below describe current source; check the project's resolved plugin version.
+Tracing is off until the Gradle build declares `stove { tracing {} }`. The table uses paths relative to `stove`; tracing defaults apply inside the enabled block. Defaults describe current source; check the project's resolved plugin version.
 
 | Option | Default | Description |
 |---|---|---|
 | `serviceName` | `"stove-traced-app"` | Service name in traces |
-| `enabled` | `true` | Toggle Java agent wiring |
+| `tracing.enabled` | `false` without the block; `true` inside it | Toggle Java agent wiring |
 | `testTaskNames` | `[]` | Task names; empty applies to all `Test` tasks |
-| `otelAgentVersion` | `"2.24.0"` | OTel Java agent version |
-| `disabledInstrumentations` | `[]` | Instrumentations to disable, such as `jdbc` |
-| `additionalInstrumentations` | `[]` | Extra instrumentations |
-| `customAnnotations` | `[]` | Annotation classes to instrument |
-| `protocol` | `"grpc"` | Only `grpc` is supported; other values are rejected |
-| `captureHttpHeaders` | `true` | Capture HTTP headers in spans |
-| `captureExperimentalTelemetry` | `true` | Enable experimental HTTP telemetry |
-| `bspScheduleDelay` | `100` | Batch span processor delay, milliseconds |
-| `bspMaxBatchSize` | `1` | Maximum spans per export batch; export is still asynchronous |
+| `tracing.otelAgentVersion` | `"2.24.0"` | OTel Java agent version |
+| `tracing.disabledInstrumentations` | `[]` | Instrumentations to disable, such as `jdbc` |
+| `tracing.additionalInstrumentations` | `[]` | Extra instrumentations |
+| `tracing.customAnnotations` | `[]` | Annotation classes to instrument |
+| `tracing.protocol` | `"grpc"` | Only `grpc` is supported; other values are rejected |
+| `tracing.captureHttpHeaders` | `true` | Capture HTTP headers in spans |
+| `tracing.captureExperimentalTelemetry` | `true` | Enable experimental HTTP telemetry |
+| `tracing.bspScheduleDelay` | `100` | Batch span processor delay, milliseconds |
+| `tracing.bspMaxBatchSize` | `1` | Maximum spans per export batch; export is still asynchronous |
 
 ## 4. Wait for evidence and assert
 

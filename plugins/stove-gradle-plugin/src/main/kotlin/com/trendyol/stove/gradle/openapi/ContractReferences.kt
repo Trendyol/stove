@@ -8,6 +8,11 @@ import io.swagger.v3.oas.models.Paths
 import io.swagger.v3.oas.models.callbacks.Callback
 import io.swagger.v3.oas.models.media.Schema
 import io.swagger.v3.oas.models.responses.ApiResponses
+import java.net.URI
+
+internal data class ReferenceScope(val base: URI, val pointer: String) {
+  fun child(key: String) = copy(pointer = "$pointer/${key.replace("~", "~0").replace("/", "~1")}")
+}
 
 /** Follow Swagger's declared field types without round-tripping (and potentially losing) input data. */
 internal open class ContractReferences(private val mapper: ObjectMapper, root: Class<*>) {
@@ -16,21 +21,27 @@ internal open class ContractReferences(private val mapper: ObjectMapper, root: C
   private val schemaMap = mapper.typeFactory.constructMapType(Map::class.java, String::class.java, Schema::class.java)
   private val fields = mutableMapOf<JavaType, Map<String, JavaType>>()
 
-  fun walk(node: JsonNode, declaredType: JavaType, reference: (ObjectNode, JavaType) -> Unit) {
+  fun walk(
+    node: JsonNode,
+    declaredType: JavaType,
+    scope: ReferenceScope,
+    schemaScope: (ObjectNode, ReferenceScope) -> ReferenceScope,
+    reference: (ObjectNode, JavaType, ReferenceScope) -> Unit,
+  ) {
     val type = modelType(declaredType)
     if (node.isArray && type.isCollectionLikeType) {
-      node.forEach { walk(it, type.contentType, reference) }
+      node.forEachIndexed { index, child -> walk(child, type.contentType, scope.child(index.toString()), schemaScope, reference) }
       return
     }
     if (node !is ObjectNode) return
     if (type.isMapLikeType) {
       val callback = type.hasRawClass(Callback::class.java)
-      if (callback && node.has("\$ref")) reference(node, type)
+      if (callback && node.has("\$ref")) reference(node, type, scope)
       val extensible = callback || type.hasRawClass(Paths::class.java) || type.hasRawClass(ApiResponses::class.java)
       node.properties().forEach { (name, child) ->
         if (extensible && name.startsWith("x-")) return@forEach
         if (callback && name == "\$ref") return@forEach
-        walk(child, type.contentType, reference)
+        walk(child, type.contentType, scope.child(name), schemaScope, reference)
       }
       return
     }
@@ -40,10 +51,11 @@ internal open class ContractReferences(private val mapper: ObjectMapper, root: C
     val properties = fields.getOrPut(type) {
       mapper.serializationConfig.introspect(type).findProperties().associate { it.name to it.primaryType }
     }
-    if (node.has("\$ref") && ("\$ref" in properties || allowsReference(type))) reference(node, type)
+    val effective = if (type.hasRawClass(Schema::class.java)) schemaScope(node, scope) else scope
+    if (node.has("\$ref") && ("\$ref" in properties || allowsReference(type))) reference(node, type, effective)
     node.properties().forEach { (name, child) ->
       val childType = fieldType(type, name) ?: properties[name]
-      if (childType != null) walk(child, childType, reference)
+      if (childType != null) walk(child, childType, effective.child(name), schemaScope, reference)
     }
   }
 
