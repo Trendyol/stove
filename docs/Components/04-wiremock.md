@@ -48,6 +48,8 @@ Stove().with {
 
 ## Typed mocks from OpenAPI
 
+### Set up generation
+
 Apply the Stove Gradle plugin at the same version as your Stove libraries (unreleased after 0.28.0). Keep your existing `stove-wiremock` dependency and normal WireMock registration. Register each contract in your Kotlin/JVM test project:
 
 ```kotlin
@@ -67,7 +69,11 @@ stove {
 }
 ```
 
-Use exactly one of `specUrl`, `specFile`, or `specText` per API. Compile the source set once to generate IDE-completable Kotlin. Import the accessor and contract models:
+Use exactly one of `specUrl`, `specFile`, or `specText` per API. For the default source set, run `./gradlew compileTestKotlin` once to generate the Kotlin sources.
+
+### Stub and verify a declared response
+
+Import the accessor and contract models:
 
 ```kotlin
 import stove.generated.wiremock.supplier.supplier
@@ -85,7 +91,47 @@ wiremock {
 }
 ```
 
-The operation declares the method, path and possible responses. Mocks include the base path of the first applicable OpenAPI server, using its variable defaults. Supply all path values and just the header, query or JSON body constraints your test needs. Choose exactly one declared response. The same accessor works in `wiremock(key)`; pass its `requests` to `callsFor`, verification, or `stub` for advanced behaviour.
+The operation declares the method, path and possible responses. Mocks include the base path of the first applicable OpenAPI server, using its variable defaults. Supply all path values and just the header, query or JSON body constraints your test needs. Choose exactly one declared response. The same accessor works in `wiremock(key)` and uses that server for registration and verification.
+
+### Use a generated request with Stove's WireMock DSL
+
+Use the operation directly for one of the contract's declared responses. Use `supplier.requests` when you want the same method, encoded path, and matchers with a handwritten response. For example, this supplier contract declares only 200, but a retry test needs a temporary 503:
+
+```kotlin
+import com.github.tomakehurst.wiremock.client.WireMock.exactly
+
+// Inside stove { ... }, with the same supplier imports as above
+wiremock {
+    val permission = supplier.requests.getSupplierPermission(supplierId = id)
+    stub(permission) {
+        behaviour {
+            respond { status = 503 }
+            thenAlways {
+                status = 200
+                json(SupplierPermission(supplierId = id, isAllowed = true))
+            }
+        }
+    }
+}
+// Exercise the application and wait for its retry to complete.
+wiremock {
+    val permission = supplier.requests.getSupplierPermission(supplierId = id)
+    shouldHaveBeenCalled(permission, exactly(2))
+}
+```
+
+The first matching call gets 503; every later match gets 200. The generated request is still typed, but the ordinary `respond` and `thenAlways` blocks accept any status and body. Contract response helpers such as `ok(...)` are available only inside the generated operation block.
+
+| What you need | Use |
+|---|---|
+| One custom response, delay, or extra response headers | `stub(permission) { respond { … } }` |
+| A sequence of responses, including a simulated timeout | `stub(permission) { behaviour { … } }` |
+| Assert a call count or absence | `shouldHaveBeenCalled(permission, exactly(2))` or `shouldNotHaveBeenCalled(permission)` |
+| Inspect matching requests | `callsFor(permission)` on the same WireMock system |
+
+The bridge is `RequestSpec`. Helpers such as `behaviourFor(url, method)` that take a URL do not accept it; use the structured `stub` overload above.
+
+### Generation capabilities and limits
 
 **Names and types.** Each unique lower camel case API name becomes an accessor and the last segment of its package (`stove.generated.wiremock.supplier`, for example). Operations use their `operationId` converted to a Kotlin name; without one, Stove derives a name from the HTTP method and path. Give operations explicit, distinct IDs for a stable test API. A collision, such as a parameterless `toString`, fails generation with the method and path. Map a component schema name to a fully qualified DTO using `schemaMappings`; that DTO must be on the selected source set's compile classpath.
 
