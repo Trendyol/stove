@@ -139,7 +139,9 @@ The bridge is `RequestSpec`. Helpers such as `behaviourFor(url, method)` that ta
 
 Online compilation rechecks the spec and its referenced documents. An unchanged contract skips code generation. Use Gradle `--offline` to reuse the last download that successfully generated sources. A failed fetch or invalid update fails the online build and leaves that offline copy intact. On a fresh checkout, build online once before using a URL offline. An unresolved reference fails the build; a literal `$ref` in an example payload is data and is never fetched. Changed input regenerates the suite and removes stale generated files. Contract drift surfaces when it changes generated types or exercised HTTP behavior; this is not a general compatibility check. Prefer files checked into source control when CI needs reproducible input.
 
-OpenAPI 3.0/3.1 operations with JSON (including `+json`) and bodyless responses are supported. The generator reports operations it skips, such as multipart requests, complex parameter encodings, or composed schemas. Handwritten mocks remain available for those operations.
+Swagger 2.0 and OpenAPI 3.0/3.1 use the same Gradle configuration and generated Kotlin DSL. For a Swagger 2.0 contract, register the original file, URL, or inline text; Stove converts it during generation. Use `basePath` for the URL prefix and declare JSON media types in `consumes` and `produces` for operations with bodies. Referenced files follow the same online refresh and offline-cache rules.
+
+Operations with JSON (including `+json`) and bodyless responses are supported. The generator reports operations it skips, such as multipart requests, complex parameter encodings, or composed schemas. Handwritten mocks remain available for those operations.
 
 For a larger example, the [inventory contract](https://github.com/trendyol/stove/blob/main/plugins/stove-gradle-plugin/src/test/resources/openapi/inventory.yaml) and its [executable Kotlin consumer](https://github.com/trendyol/stove/blob/main/plugins/stove-gradle-plugin/src/test/resources/openapi/InventoryScenario.kt) exercise reservations across two contract files:
 

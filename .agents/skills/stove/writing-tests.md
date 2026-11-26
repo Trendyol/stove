@@ -594,7 +594,7 @@ Observation is distinct from business completion. Go consumer hooks pre-report c
 
    These response steps use Stove's ordinary response DSL: Kotlin checks the request arguments, but does not enforce the contract's response types here. After exercising the app, use the same request specification with `shouldHaveBeenCalled`, `shouldNotHaveBeenCalled`, or `callsFor`. For keyed servers, register and verify inside `wiremock(theSameKey)`.
 
-OpenAPI 3.0/3.1 JSON and bodyless operations are supported. If generation skips an operation, use a handwritten stub for that operation. See the [WireMock guide](https://trendyol.github.io/stove/Components/04-wiremock/#typed-mocks-from-openapi) for schema mappings, URL refresh and offline behavior, and an executable inventory example.
+Swagger 2.0 and OpenAPI 3.0/3.1 support JSON and bodyless operations. Register Swagger 2.0 inputs directly with the same DSL; check `consumes` and `produces` when a body operation is skipped. If generation skips an operation, use a handwritten stub for that operation. See the [WireMock guide](https://trendyol.github.io/stove/Components/04-wiremock/#typed-mocks-from-openapi) for schema mappings, URL refresh and offline behavior, and an executable inventory example.
 
 ### Handwritten WireMock operations
 

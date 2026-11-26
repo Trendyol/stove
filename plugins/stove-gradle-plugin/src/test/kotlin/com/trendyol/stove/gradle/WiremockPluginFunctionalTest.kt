@@ -45,6 +45,21 @@ class WiremockPluginFunctionalTest : FunSpec({
     run("exercise").build().task(":generateSupplierStoveWiremockSources")?.outcome shouldBe TaskOutcome.UP_TO_DATE
   }
 
+  test("a multi-file Swagger 2 contract serves the same typed client online and offline") {
+    spec.set(resource("supplier-v2.yaml"))
+    server.serve("/models.yaml", """
+      definitions:
+        SubmitResponse:
+          type: object
+          required: [detail]
+          properties: { detail: { type: string } }
+    """.trimIndent())
+    run("exercise").build()
+    server.removeContext("/api.yaml")
+    server.removeContext("/models.yaml")
+    run("clean", "exercise", "--offline").build()
+  }
+
   test("the Kotlin compiler rejects invalid responses and missing path arguments") {
     dir.write("src/contractTest/kotlin/InvalidCalls.kt", resource("InvalidCalls.kt.txt"))
     val errors = compile().buildAndFail().output

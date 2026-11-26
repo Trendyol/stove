@@ -86,7 +86,7 @@ abstract class ResolveContractWork : WorkAction<ResolveParameters> {
       }
     }
 
-    visit(root, "", references.document)
+    visit(root, "", references.document(documents.get(load(root))))
     writeChanged(parameters.downloads.asFile.get(), json.writeValueAsBytes(remote))
     val output = parameters.output.asFile.get()
     if (writeChanged(output, json.writeValueAsBytes(documents))) {
