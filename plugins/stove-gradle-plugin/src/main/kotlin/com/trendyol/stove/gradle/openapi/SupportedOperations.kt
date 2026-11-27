@@ -6,6 +6,7 @@ import io.swagger.v3.oas.models.PathItem
 import io.swagger.v3.oas.models.media.Content
 import io.swagger.v3.oas.models.media.Schema
 import io.swagger.v3.oas.models.parameters.Parameter
+import io.swagger.v3.oas.models.responses.ApiResponse
 import io.swagger.v3.oas.models.servers.Server
 import org.openapitools.codegen.languages.KotlinClientCodegen
 import org.openapitools.codegen.utils.ModelUtils
@@ -27,7 +28,7 @@ internal data class SupportedOperations(val endpoints: List<Endpoint>, val skipp
  * Keeps the operations a typed stub can represent and removes the others, and the schemas only they use, from [api].
  * Runs before normalization: an unsupported operation must never become a broader stub.
  */
-internal fun supportedOperations(api: OpenAPI, kotlin: KotlinClientCodegen, mappings: Set<String>): SupportedOperations {
+internal fun supportedOperations(api: OpenAPI, kotlin: KotlinClientCodegen, mappings: Set<String>, base: URI): SupportedOperations {
   val candidates = api.paths.orEmpty().flatMap { (path, item) ->
     item.readOperationsMap().map { (method, op) ->
       val name = kotlin.toOperationId(op.operationId ?: "${method.name.lowercase()}_${path.replace(nonIdentifier, "_")}")
@@ -47,7 +48,7 @@ internal fun supportedOperations(api: OpenAPI, kotlin: KotlinClientCodegen, mapp
   }
   api.paths.orEmpty().values.forEach { it.parameters = null } // Already merged into each operation.
 
-  val (kept, rejected) = candidates.map { it to it.support(api, mappings) }.partition { (_, result) -> result.isSuccess }
+  val (kept, rejected) = candidates.map { it to it.support(api, mappings, base) }.partition { (_, result) -> result.isSuccess }
   rejected.forEach { (c, _) -> c.item.operation(c.method, null) }
   val supported = kept.map { (_, result) -> result.getOrThrow() }
   api.components?.schemas?.keys?.retainAll(supported.flatMap { it.models }.toSet())
@@ -64,10 +65,10 @@ private data class Candidate(
 private class Supported(val endpoint: Endpoint, val models: Set<String>)
 
 /** Fails with the reason when the operation, or its server URL, cannot be represented. */
-private fun Candidate.support(api: OpenAPI, mappings: Set<String>): Result<Supported> = try {
+private fun Candidate.support(api: OpenAPI, mappings: Set<String>, base: URI): Result<Supported> = try {
   val models = OperationCheck(api, mappings).check(operation, path)
   val servers = operation.servers ?: item.servers ?: api.servers
-  Result.success(Supported(Endpoint(serverPath(servers) + path, method, operation), models))
+  Result.success(Supported(Endpoint(serverPath(servers, base) + path, method, operation), models))
 } catch (e: IllegalArgumentException) {
   Result.failure(e)
 }
@@ -100,7 +101,7 @@ private class OperationCheck(private val api: OpenAPI, private val mappings: Set
     require(!op.responses.isNullOrEmpty()) { "no responses" }
     op.responses.forEach { (code, response) ->
       require(code.matches(responseStatus)) { "unsupported response status: $code" }
-      checkContent(ModelUtils.getReferencedApiResponse(api, response).content, allowText = true)
+      checkContent(api.resolveResponse(response).content, allowText = true)
     }
     return used.toSet()
   }
@@ -130,7 +131,7 @@ private class OperationCheck(private val api: OpenAPI, private val mappings: Set
   }
 
   private fun isString(schema: Schema<*>?) =
-    schema != null && ModelUtils.getReferencedSchema(api, schema).let { ModelUtils.isStringSchema(it) && it.format !in binaryFormats }
+    schema != null && ModelUtils.getReferencedSchema(api, schema).let { ModelUtils.isStringSchema(it) && it.format !in binaryFormats && it.nullable != true && "null" !in it.types.orEmpty() }
 
   private fun checkSchema(schema: Schema<*>?) {
     requireNotNull(schema) { "missing JSON schema" }
@@ -152,12 +153,23 @@ private class OperationCheck(private val api: OpenAPI, private val mappings: Set
   }
 }
 
+internal fun OpenAPI.resolveResponse(response: ApiResponse): ApiResponse {
+  var current = response
+  val seen = mutableSetOf<String>()
+  while (current.content.isNullOrEmpty()) {
+    val ref = current.`$ref` ?: break
+    require(ref.startsWith("#/components/responses/") && seen.add(ref)) { "unresolved or cyclic response: $ref" }
+    current = requireNotNull(components?.responses?.get(ModelUtils.getSimpleRef(ref))) { "unresolved response: $ref" }
+  }
+  return current
+}
+
 /** The target of `allOf: [$ref]` or `anyOf: [$ref, {type: null}]`: wrappers around one schema, not unions. */
 private fun singleRef(schema: Schema<*>): Schema<*>? {
   if (schema.oneOf != null || schema.not != null || schema.properties != null || schema.additionalProperties != null) return null
   val member = when {
     schema.anyOf == null -> schema.allOf?.singleOrNull()
-    schema.allOf == null && schema.anyOf.size == 2 && schema.anyOf.any(::isNullType) -> schema.anyOf.single { !isNullType(it) }
+    schema.allOf == null && schema.anyOf.size == 2 && schema.anyOf.any(::isNullType) -> schema.anyOf.singleOrNull { !isNullType(it) }
     else -> null
   }
   return member?.takeIf { it.`$ref` != null }
@@ -166,10 +178,10 @@ private fun singleRef(schema: Schema<*>): Schema<*>? {
 private fun isNullType(schema: Schema<*>) = schema.type == "null" || schema.types == setOf("null")
 
 /** The path part of the first server URL, with variables replaced by their defaults. */
-private fun serverPath(servers: List<Server>?): String {
+private fun serverPath(servers: List<Server>?, base: URI): String {
   val server = servers?.firstOrNull() ?: return ""
   val url = pathParameter.replace(server.url) {
     requireNotNull(server.variables?.get(it.groupValues[1])?.default) { "missing server variable default: ${it.value}" }
   }
-  return URI.create(url).rawPath.orEmpty().trim('/').let { if (it.isEmpty()) "" else "/$it" }
+  return base.resolve(url).normalize().rawPath.orEmpty().trim('/').let { if (it.isEmpty()) "" else "/$it" }
 }

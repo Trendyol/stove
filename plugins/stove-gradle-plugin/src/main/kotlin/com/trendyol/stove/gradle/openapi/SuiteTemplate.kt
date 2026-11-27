@@ -97,7 +97,7 @@ internal class SuiteTemplate(
   }
 
   private fun response(code: String, response: ApiResponse, declared: Set<String>): ResponseTemplate {
-    val media = ModelUtils.getReferencedApiResponse(api, response).content.orEmpty().entries.singleOrNull()
+    val media = api.resolveResponse(response).content.orEmpty().entries.singleOrNull()
     val schema = media?.value?.schema
     val shape = schema?.let { ModelUtils.getReferencedSchema(api, it) }
     val nullable = shape?.nullable == true || "null" in shape?.types.orEmpty()

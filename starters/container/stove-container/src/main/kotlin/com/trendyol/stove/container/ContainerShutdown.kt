@@ -25,8 +25,8 @@ internal object ContainerShutdown {
   private val logger = LoggerFactory.getLogger(ContainerShutdown::class.java)
   private val workers = ThreadPoolExecutor(
     0,
-    4,
-    30,
+    MAX_SHUTDOWN_WORKERS,
+    IDLE_SECONDS,
     TimeUnit.SECONDS,
     SynchronousQueue(),
     { task -> Thread(task, "stove-container-shutdown").apply { isDaemon = true } }
@@ -37,7 +37,7 @@ internal object ContainerShutdown {
     try {
       run(gracefulShutdownTimeout) {
         container.containerId?.let { id ->
-          val seconds = kotlin.math.ceil(gracefulShutdownTimeout.inWholeMilliseconds / 1000.0)
+          val seconds = kotlin.math.ceil(gracefulShutdownTimeout.inWholeMilliseconds / 1.seconds.inWholeMilliseconds.toDouble())
             .toInt().coerceAtLeast(1)
           container.dockerClient.stopContainerCmd(id).withTimeout(seconds).exec()
         }
@@ -91,3 +91,6 @@ internal object ContainerShutdown {
     }
   }
 }
+
+private const val MAX_SHUTDOWN_WORKERS = 4
+private const val IDLE_SECONDS = 30L

@@ -5,7 +5,7 @@ paths:
     get:
       operationId: mixed
       responses:
-        "200": { description: ok, content: { application/json: { schema: { $ref: "#/components/schemas/Note" } } } }
+        "200": { $ref: "#/components/responses/NoteAlias" }
         "500": { description: err, content: { text/plain: { schema: { type: string } } } }
   /multi:
     post:
@@ -15,6 +15,11 @@ paths:
           application/json: { schema: { $ref: "#/components/schemas/Note" } }
           application/xml: { schema: { $ref: "#/components/schemas/Note" } }
       responses: { "204": { description: ok } }
+  /nullable-text:
+    get:
+      operationId: nullableText
+      responses:
+        "200": { description: nullable, content: { text/plain: { schema: { type: string, nullable: true } } } }
   /secure:
     get:
       operationId: secure
@@ -29,6 +34,9 @@ paths:
       responses:
         "201": { description: ok, content: { application/json: { schema: { $ref: "#/components/schemas/Note" } } } }
 components:
+  responses:
+    NoteAlias: { $ref: "#/components/responses/ActualNote" }
+    ActualNote: { description: ok, content: { application/json: { schema: { $ref: "#/components/schemas/Note" } } } }
   schemas:
     Note:
       type: object

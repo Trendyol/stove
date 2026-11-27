@@ -24,10 +24,12 @@ internal object RedisChaosAdapter : ChaosEndpointAdapter<RedisExposedConfigurati
       "Chaos routing requires a single-server redis:// or rediss:// URI"
     }
     val host = uri.host.removeSurrounding("[", "]")
-    val port = if (uri.port == -1) 6379 else uri.port
+    val port = if (uri.port == -1) DEFAULT_REDIS_PORT else uri.port
     require(host.equals(configuration.host.removeSurrounding("[", "]"), ignoreCase = true) && port == configuration.port) {
       "Chaos routing requires Redis URI host and port to match the exposed configuration"
     }
     return uri
   }
 }
+
+private const val DEFAULT_REDIS_PORT = 6379

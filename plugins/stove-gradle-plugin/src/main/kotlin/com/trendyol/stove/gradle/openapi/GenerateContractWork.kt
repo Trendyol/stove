@@ -28,7 +28,8 @@ abstract class GenerateContractWork : WorkAction<GenerateParameters> {
     val docs = scratch.resolve("documents")
     val generated = scratch.resolve("kotlin")
     generated.deleteRecursively()
-    val api = readContract(json.readTree(parameters.input.asFile.get()), docs)
+    val snapshot = json.readTree(parameters.input.asFile.get())
+    val api = readContract(snapshot.get("documents"), docs)
     val alias = parameters.alias.get()
     val pkg = "stove.generated.wiremock.$alias"
     val config = KotlinClientCodegen().apply {
@@ -39,7 +40,7 @@ abstract class GenerateContractWork : WorkAction<GenerateParameters> {
       inlineSchemaOption()["RESOLVE_INLINE_ENUMS"] = "true"
       schemaMapping().putAll(parameters.types.get())
     }
-    val (operations, skipped) = supportedOperations(api, config, parameters.types.get().keys)
+    val (operations, skipped) = supportedOperations(api, config, parameters.types.get().keys, java.net.URI(snapshot.get("serverBase").textValue()))
     parameters.skipped.asFile.get().writeText(skipped.joinToString("\n"))
     val generator = DefaultGenerator().apply {
       setGenerateMetadata(false)

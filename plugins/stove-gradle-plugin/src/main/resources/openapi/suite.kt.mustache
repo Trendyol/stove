@@ -33,7 +33,7 @@ private inline fun <reified T : java.time.temporal.TemporalAccessor> com.fasterx
     gen.writeString(format.format(value))
 })
 
-/** Matches the body exactly, except that a null field also matches an absent one, as clients often omit it. */
+/** Ignores array order. A null field matches an absent field or any value; unexpected fields do not match. */
 private fun stubBody(value: Any) =
   com.github.tomakehurst.wiremock.client.WireMock.equalToJson(mapper.writeValueAsString(optional(mapper.valueToTree(value))), true, false)
 

@@ -68,7 +68,7 @@ setup once in their checkout.
 
 Setup performs the following steps:
 
-1. Installs the pinned tools from [mise.toml](mise.toml): Java 25/21/17, Node.js,
+1. Installs the tools from [mise.toml](mise.toml): Java 25/21/17, Node.js,
    Go, Rust with rustfmt and Clippy, just, Lefthook, protoc, and Python.
 2. Installs the pre-commit hook and migrates the former Gradle hook's default-path
    setting when present.
@@ -113,7 +113,7 @@ to type `just lint-jvm` instead of `mise exec -- just lint-jvm`. Git hooks invok
 `PATH` in the terminal or Git client that creates the commit.
 
 Keep personal mise overrides in the ignored `mise.local.toml`. Use the shared
-versions when reproducing a failure before attributing it to the repository.
+versions when reproducing a failure before attributing it to the repository. The Temurin aliases pin Java majors, not patches; report the resolved `java -version` and Gradle JVM (`./gradlew --version`) for JVM failures.
 
 ## Find the right project
 

@@ -15,7 +15,7 @@ abstract class StoveWiremockExtension @Inject constructor(private val objects: O
 
   fun api(name: String, action: Action<StoveOpenApiSpec>) {
     require(name.matches(apiName)) { "Use a lower camel case API name: $name" }
-    require(name !in contracts) { "Duplicate Stove WireMock API: $name" }
+    require(contracts.keys.none { it.equals(name, ignoreCase = true) }) { "Duplicate Stove WireMock API: $name" }
     contracts[name] = objects.newInstance(StoveOpenApiSpec::class.java).also(action::execute)
   }
 }

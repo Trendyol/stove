@@ -55,8 +55,10 @@ class WiremockPluginFunctionalTest : FunSpec({
     dir.write("src/contractTest/kotlin/Consumer.kt", resource("ProbeConsumer.kt"))
     val result = run("exercise").build()
     result.output shouldContain "PROBE passed"
-    // Only the inventory contract's composed schema is skipped; every probe operation is kept.
-    result.output.lines().filter { "Skipping" in it } shouldBe listOf("Skipping GET /search (search): composed schema")
+    result.output.lines().filter { "Skipping" in it }.toSet() shouldBe setOf(
+      "Skipping GET /search (search): composed schema",
+      "Skipping GET /nullable-text (nullableText): unsupported media types: text/plain",
+    )
     val suite = dir.resolve("build/generated/stove/wiremock/supplier").walk().single { it.name == "SupplierWiremock.kt" }
     suite.readText() shouldNotContain "\"Authorization\""
     suite.readText() shouldNotContain "\"Accept\""
@@ -83,6 +85,22 @@ class WiremockPluginFunctionalTest : FunSpec({
     model.readText() shouldContain "message"
   }
 
+  test("redirected contracts resolve relative models and servers identically offline") {
+    server.removeContext("/api.yaml")
+    server.removeContext("/types.yaml")
+    server.createContext("/api.yaml") { exchange ->
+      exchange.responseHeaders.add("Location", "/contracts/v2/root.yaml")
+      exchange.sendResponseHeaders(302, -1)
+      exchange.close()
+    }
+    server.serve("/contracts/v2/root.yaml", resource("supplier.yaml").replace("https://example.test/{version}", "../../{version}"))
+    server.serve("/contracts/v2/types.yaml", resource("types.yaml"))
+    run("exercise").build()
+    server.removeContext("/contracts/v2/root.yaml")
+    server.removeContext("/contracts/v2/types.yaml")
+    run("clean", "exercise", "--offline").build()
+  }
+
   test("a multi-file Swagger 2 contract serves the same typed client online and offline") {
     spec.set(resource("supplier-v2.yaml"))
     server.serve("/models.yaml", """
@@ -96,6 +114,18 @@ class WiremockPluginFunctionalTest : FunSpec({
     server.removeContext("/api.yaml")
     server.removeContext("/models.yaml")
     run("clean", "exercise", "--offline").build()
+  }
+
+  test("Swagger 2 path extensions are data but x-prefixed model properties still resolve") {
+    spec.set(resource("supplier-v2.yaml").replace("paths:", "paths:\n  x-example: { \$ref: ignored.yaml }"))
+    server.serve("/models.yaml", """
+      definitions:
+        SubmitResponse:
+          type: object
+          properties:
+            x-detail: { ${'$'}ref: 'missing.yaml' }
+    """.trimIndent())
+    run("resolveSupplierStoveContract").buildAndFail().output shouldContain "missing.yaml"
   }
 
   test("the Kotlin compiler rejects invalid responses and missing path arguments") {
@@ -125,7 +155,7 @@ class WiremockPluginFunctionalTest : FunSpec({
       ${'$'}id: shared/inventory.json
       ${'$'}defs:
         StockLine:
-          ${'$'}id: schemas/line.json
+          ${'$'}id: schemas/line.json#
           type: object
           required: [sku, quantity]
           properties:

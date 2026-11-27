@@ -26,22 +26,23 @@ internal open class ContractReferences(private val mapper: ObjectMapper, root: C
     declaredType: JavaType,
     scope: ReferenceScope,
     schemaScope: (ObjectNode, ReferenceScope) -> ReferenceScope,
+    skipMapExtensions: Boolean = false,
     reference: (ObjectNode, JavaType, ReferenceScope) -> Unit,
   ) {
     val type = modelType(declaredType)
     if (node.isArray && type.isCollectionLikeType) {
-      node.forEachIndexed { index, child -> walk(child, type.contentType, scope.child(index.toString()), schemaScope, reference) }
+      node.forEachIndexed { index, child -> walk(child, type.contentType, scope.child(index.toString()), schemaScope, reference = reference) }
       return
     }
     if (node !is ObjectNode) return
     if (type.isMapLikeType) {
       val callback = type.hasRawClass(Callback::class.java)
       if (callback && node.has("\$ref")) reference(node, type, scope)
-      val extensible = callback || type.hasRawClass(Paths::class.java) || type.hasRawClass(ApiResponses::class.java)
+      val extensible = skipMapExtensions || callback || type.hasRawClass(Paths::class.java) || type.hasRawClass(ApiResponses::class.java)
       node.properties().forEach { (name, child) ->
         if (extensible && name.startsWith("x-")) return@forEach
         if (callback && name == "\$ref") return@forEach
-        walk(child, type.contentType, scope.child(name), schemaScope, reference)
+        walk(child, type.contentType, scope.child(name), schemaScope, reference = reference)
       }
       return
     }
@@ -55,7 +56,10 @@ internal open class ContractReferences(private val mapper: ObjectMapper, root: C
     if (node.has("\$ref") && ("\$ref" in properties || allowsReference(type))) reference(node, type, effective)
     node.properties().forEach { (name, child) ->
       val childType = fieldType(type, name) ?: properties[name]
-      if (childType != null) walk(child, childType, effective.child(name), schemaScope, reference)
+      if (childType != null) {
+        val extensions = type.hasRawClass(io.swagger.models.Swagger::class.java) && (name == "paths" || name == "responses")
+        walk(child, childType, effective.child(name), schemaScope, extensions, reference)
+      }
     }
   }
 

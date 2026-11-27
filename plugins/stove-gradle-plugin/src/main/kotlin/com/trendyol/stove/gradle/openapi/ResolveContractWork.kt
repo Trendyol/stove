@@ -40,7 +40,11 @@ abstract class ResolveContractWork : WorkAction<ResolveParameters> {
     snapshot.resolve()
     writeChanged(parameters.downloads.asFile.get(), json.writeValueAsBytes(snapshot.remote))
     val output = parameters.output.asFile.get()
-    if (writeChanged(output, json.writeValueAsBytes(snapshot.documents))) {
+    val bundle = json.createObjectNode().apply {
+      put("serverBase", snapshot.serverBase)
+      set<ObjectNode>("documents", snapshot.documents)
+    }
+    if (writeChanged(output, json.writeValueAsBytes(bundle))) {
       Logging.getLogger(javaClass).lifecycle("Updated Stove WireMock contract: ${output.nameWithoutExtension}")
     }
   }
@@ -63,6 +67,9 @@ private class ContractSnapshot(
 
   /** Every loaded document, keyed by its file name in the snapshot. */
   val documents: ObjectNode = json.createObjectNode()
+
+  private val effective = mutableMapOf<URI, URI>()
+  val serverBase: String get() = if (root.scheme in remoteSchemes) (effective[root] ?: root).rawPath.ifEmpty { "/" } else "/"
 
   private val files = mutableMapOf<URI, String>()
   private val rewritten = Collections.newSetFromMap(IdentityHashMap<ObjectNode, Boolean>())
@@ -96,6 +103,10 @@ private class ContractSnapshot(
     val document = read(uri)
     require(document != null && document.isContainerNode) { "Invalid OpenAPI document: $uri" }
     if (uri.scheme != "file") remote.set<JsonNode>(uri.toString(), document.deepCopy())
+    effective[uri]?.let { finalUri ->
+      remote.withObjectProperty("redirects").put(uri.toString(), finalUri.toString())
+      files[finalUri] = name
+    }
     documents.set<JsonNode>(name, document)
     name
   }
@@ -103,10 +114,14 @@ private class ContractSnapshot(
   private fun read(uri: URI): JsonNode? = when (uri.scheme) {
     "file" -> inline?.takeIf { uri == root }?.let(yaml::readTree) ?: yaml.readTree(File(uri))
     in remoteSchemes -> if (offlineDownloads != null) {
+      offlineDownloads.path("redirects").get(uri.toString())?.let { effective[uri] = URI(it.textValue()) }
       requireNotNull(offlineDownloads.get(uri.toString())) { "No cached Stove contract for $uri; build once online" }.deepCopy<JsonNode>()
     } else {
       val connection = uri.toURL().openConnection().apply { connectTimeout = 15000; readTimeout = 30000 }
-      connection.getInputStream().use(yaml::readTree)
+      connection.getInputStream().use(yaml::readTree).also {
+        val finalUri = connection.url.toURI()
+        if (finalUri != uri) effective[uri] = finalUri
+      }
     }
     else -> error("Unsupported OpenAPI URI scheme: ${uri.scheme}")
   }
@@ -121,7 +136,7 @@ private class ContractSnapshot(
 
     // Register sibling schema identifiers before resolving references to them.
     val pending = mutableListOf<Triple<ObjectNode, JavaType, URI>>()
-    references.walk(target, kind, ReferenceScope(uri, pointer), scopeIn(uri)) { node, refKind, scope ->
+    references.walk(target, kind, ReferenceScope(effective[uri] ?: uri, pointer), scopeIn(uri)) { node, refKind, scope ->
       if (rewritten.add(node)) pending += Triple(node, refKind, scope.base)
     }
     for ((node, refKind, base) in pending) node.put("\$ref", follow(uri, name, node, refKind, base))
@@ -131,7 +146,7 @@ private class ContractSnapshot(
   private fun indexIdentifiers(uri: URI, document: JsonNode, kind: JavaType) {
     val openApi = document.has("openapi")
     if ((openApi || kind.hasRawClass(Schema::class.java)) && indexed.add(uri)) {
-      references.walk(document, if (openApi) references.document else kind, ReferenceScope(uri, ""), scopeIn(uri)) { _, _, _ -> }
+      references.walk(document, if (openApi) references.document else kind, ReferenceScope(effective[uri] ?: uri, ""), scopeIn(uri)) { _, _, _ -> }
     }
   }
 
@@ -160,7 +175,8 @@ private class ContractSnapshot(
     return scoped.getOrPut(schema) {
       val id = schema.get("\$id") ?: return@getOrPut scope
       require(id.isTextual) { "Invalid schema identifier at $uri#${scope.pointer}" }
-      val base = scope.base.resolve(id.textValue()).normalize()
+      val resolved = scope.base.resolve(id.textValue()).normalize()
+      val base = URI(resolved.toString().removeSuffix("#"))
       require(base.fragment == null) { "Schema identifier must not have a fragment: $base" }
       val location = uri to scope.pointer
       val declared = resources.putIfAbsent(base, location)
