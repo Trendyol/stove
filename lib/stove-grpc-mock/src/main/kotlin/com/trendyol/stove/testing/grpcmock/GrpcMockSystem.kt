@@ -102,6 +102,7 @@ import kotlin.time.Duration
  * ```
  */
 @GrpcMockDsl
+@Suppress("LargeClass") // Public DSL surface; splitting it would break the binary API.
 class GrpcMockSystem internal constructor(
   override val stove: Stove,
   private val ctx: GrpcMockContext
@@ -1012,7 +1013,8 @@ class GrpcMockSystem internal constructor(
   private fun emitCrossTestMatchWarning(record: InteractionRecord) {
     val requestTestId = record.headers.stoveTestId()
     val stubTestId = record.stubTestId
-    if (!record.matched || requestTestId == null || stubTestId == null || requestTestId == stubTestId) return
+    if (!record.matched || requestTestId == stubTestId) return
+    if (requestTestId == null || stubTestId == null) return
     warningListeners.emit(
       MockWarning(
         system = reportSystemName,

@@ -99,7 +99,6 @@ subprojects.of("lib", "spring", "examples", "ktor", "quarkus", "micronaut", "con
     testImplementation(libs.kotest.runner.junit6)
     testImplementation(libs.kotest.framework.engine)
     testImplementation(libs.kotest.assertions.core)
-    detektPlugins(libs.detekt.formatting)
   }
 
   spotless {
@@ -157,14 +156,10 @@ subprojects.of("lib", "spring", "examples", "ktor", "quarkus", "micronaut", "con
       jvmArgs("--add-opens", "java.base/java.util=ALL-UNNAMED")
     }
 
-    if (JavaVersion.current().isCompatibleWith(JavaVersion.toVersion("25"))) {
-      withType<io.gitlab.arturbosch.detekt.Detekt>().configureEach {
-        enabled = false
-      }
-    } else {
-      withType<io.gitlab.arturbosch.detekt.Detekt>().configureEach {
-        jvmTarget = "21"
-      }
+    // Analyse with the running JDK: a module's toolchain JDK may not be installed locally.
+    withType<dev.detekt.gradle.Detekt>().configureEach {
+      jvmTarget.set("21")
+      jdkHome.set(file(System.getProperty("java.home")))
     }
 
     kotlin {

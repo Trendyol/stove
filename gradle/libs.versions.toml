@@ -41,7 +41,7 @@ testcontainers = "2.0.5"
 cassandra-driver = "4.19.4"
 mysql = "26.10.0"
 spotless = "8.12.0"
-detekt = "1.23.8"
+detekt = "2.0.0-alpha.6"
 wire = "7.2.2"
 io-grpc = "1.85.1"
 io-grpc-kotlin = "1.5.0"
@@ -239,7 +239,6 @@ spring-boot-four-autoconfigure = { module = "org.springframework.boot:spring-boo
 spring-boot-four-annotationProcessor = { module = "org.springframework.boot:spring-boot-configuration-processor", version.ref = "spring-boot-4x" }
 spring-boot-four-kafka = { module = "org.springframework.kafka:spring-kafka", version.ref = "spring-kafka-4x" }
 
-detekt-formatting = { module = "io.gitlab.arturbosch.detekt:detekt-formatting", version.ref = "detekt" }
 wire-grpc-server = { module = "com.squareup.wiregrpcserver:server", version = "1.0.0-alpha04" }
 wire-grpc-server-generator = { module = "com.squareup.wiregrpcserver:server-generator", version = "1.0.0-alpha04" }
 wire-grpc-client = { module = "com.squareup.wire:wire-grpc-client", version.ref = "wire" }
@@ -354,7 +353,7 @@ spring-boot-four = { id = "org.springframework.boot", version.ref = "spring-boot
 spring-dependencyManagement = { id = "io.spring.dependency-management", version.ref = "spring-dependency-management" }
 kover = { id = "org.jetbrains.kotlinx.kover", version.ref = "kover" }
 spotless = { id = "com.diffplug.spotless", version.ref = "spotless" }
-detekt = { id = "io.gitlab.arturbosch.detekt", version.ref = "detekt" }
+detekt = { id = "dev.detekt", version.ref = "detekt" }
 wire = { id = "com.squareup.wire", version.ref = "wire" }
 testLogger = { id = "com.adarshr.test-logger", version = "4.0.0" }
 protobuf = { id = "com.google.protobuf", version = "0.10.1" }

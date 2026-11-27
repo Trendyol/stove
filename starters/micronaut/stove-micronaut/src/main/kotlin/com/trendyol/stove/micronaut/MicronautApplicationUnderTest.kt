@@ -36,7 +36,6 @@ class MicronautApplicationUnderTest(
     application = runner(allConfigurations)
     while (!application.isRunning) {
       delay(DELAY)
-      continue
     }
     stove.systemsOf<AfterRunAwareWithContext<ApplicationContext>>()
       .map { async(context = Dispatchers.IO) { it.afterRun(application) } }

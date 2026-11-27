@@ -26,7 +26,7 @@ fun Application.configureRouting() {
           recordException(ex)
           setStatus(StatusCode.ERROR, ex.message ?: "Unknown error")
         }
-        ex.printStackTrace()
+        call.application.log.error("Product update failed", ex)
         call.respond(HttpStatusCode.BadRequest)
       }
     }

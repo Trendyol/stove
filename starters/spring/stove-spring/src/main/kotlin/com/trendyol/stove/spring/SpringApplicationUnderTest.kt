@@ -44,7 +44,6 @@ class SpringApplicationUnderTest(
       application = runner(allConfigurations)
       while (!application.isRunning || !application.isActive) {
         delay(DELAY)
-        continue
       }
       stove.systemsOf<AfterRunAwareWithContext<ConfigurableApplicationContext>>()
         .map { async(context = Dispatchers.IO) { it.afterRun(application) } }

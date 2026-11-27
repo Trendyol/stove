@@ -5,24 +5,16 @@ import kotlinx.coroutines.withContext
 
 /** Registers compensation before activation and preserves the primary failure, including cancellation. */
 internal suspend fun <T> restoring(restore: suspend () -> Unit, block: suspend () -> T): T {
-  var primary: Throwable? = null
-  try {
-    return block()
+  val result = try {
+    block()
   } catch (failure: Throwable) {
-    primary = failure
+    try {
+      withContext(NonCancellable) { restore() }
+    } catch (cleanupFailure: Throwable) {
+      throw failure.also { if (cleanupFailure !== it) it.addSuppressed(cleanupFailure) }
+    }
     throw failure
-  } finally {
-    val cleanupFailure = withContext(NonCancellable) {
-      try {
-        restore()
-        null
-      } catch (failure: Throwable) {
-        failure
-      }
-    }
-    if (cleanupFailure != null) {
-      if (primary == null) throw cleanupFailure
-      if (primary !== cleanupFailure) primary.addSuppressed(cleanupFailure)
-    }
   }
+  withContext(NonCancellable) { restore() }
+  return result
 }

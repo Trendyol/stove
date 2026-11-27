@@ -10,6 +10,7 @@ import io.cucumber.java8.StepDefinitionBody
  * Scenario-scoped lambda glue. Register steps in [body] or init; step bodies suspend inside Stove's validation DSL.
  * Cucumber owns discovery and argument conversion; native hooks inherited from [LambdaGlue] remain synchronous.
  */
+@Suppress("VariableNaming") // Given/When/Then mirror Gherkin keywords; they are the public step DSL.
 abstract class StoveSteps(body: StoveSteps.() -> Unit = {}) : LambdaGlue {
   val Given: StoveStepDsl get() = StoveStepDsl
   val When: StoveStepDsl get() = StoveStepDsl

@@ -31,14 +31,13 @@ subprojects {
   detekt {
     buildUponDefaultConfig = true
     parallel = true
-    config.from(rootProject.file("detekt.yml"))
+    config.from(rootProject.file("../../detekt.yml"))
   }
 
   dependencies {
     testImplementation(rootProject.libs.kotest.framework.engine)
     testImplementation(rootProject.libs.kotest.assertions.core)
     testImplementation(rootProject.libs.kotest.runner.junit6)
-    detektPlugins(rootProject.libs.detekt.formatting)
   }
 
   spotless {
@@ -72,10 +71,9 @@ subprojects {
   }
 
   tasks {
-    if (JavaVersion.current().isCompatibleWith(JavaVersion.toVersion("25"))) {
-      withType<io.gitlab.arturbosch.detekt.Detekt>().configureEach {
-        enabled = false
-      }
+    // Analyse with the running JDK: a module's toolchain JDK may not be installed locally.
+    withType<dev.detekt.gradle.Detekt>().configureEach {
+      jdkHome.set(file(System.getProperty("java.home")))
     }
 
     test {

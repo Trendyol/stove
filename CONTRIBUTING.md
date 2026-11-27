@@ -308,9 +308,10 @@ running Detekt, Clippy, typechecks, Go vet, or API checks. Review the diff and r
 lint after formatting. Update public API baselines only for intentional API
 changes, and include the resulting `.api` diff for review.
 
-The JVM command requests Spotless, Detekt, and API checks. The current Gradle
-configuration disables Detekt on Java 25, so `detekt SKIPPED` is expected with
-the default toolchain; a successful run does not mean Detekt analyzed the code.
+The JVM command requests Spotless, Detekt, and API checks. Detekt runs in light
+mode (no type resolution) against `detekt.yml` with no baselines: fix findings
+in code, and use an inline `@Suppress("Rule") // reason` only for intentional
+public API shapes.
 
 When you commit, pre-commit checks run in parallel. Staged paths select whole
 project groups, and those checks read the **working tree, including unstaged

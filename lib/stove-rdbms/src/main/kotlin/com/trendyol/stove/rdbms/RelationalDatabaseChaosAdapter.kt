@@ -3,6 +3,10 @@ package com.trendyol.stove.rdbms
 import com.trendyol.stove.chaos.ChaosEndpointAdapter
 import com.trendyol.stove.chaos.TcpEndpoint
 
+private const val POSTGRES_DEFAULT_PORT = 5432
+private const val MYSQL_DEFAULT_PORT = 3306
+private const val MSSQL_DEFAULT_PORT = 1433
+
 /** Application-only routing for single-server PostgreSQL, MySQL and SQL Server JDBC URLs. */
 object RelationalDatabaseChaosAdapter : ChaosEndpointAdapter<RelationalDatabaseExposedConfiguration> {
   override fun reroute(
@@ -48,9 +52,9 @@ object RelationalDatabaseChaosAdapter : ChaosEndpointAdapter<RelationalDatabaseE
       return requireNotNull(value.toIntOrNull()) { "Chaos routing requires a valid JDBC port" }
     }
     return when (driver) {
-      "postgresql" -> 5432
-      "mysql" -> 3306
-      else -> 1433
+      "postgresql" -> POSTGRES_DEFAULT_PORT
+      "mysql" -> MYSQL_DEFAULT_PORT
+      else -> MSSQL_DEFAULT_PORT
     }
   }
 

@@ -55,18 +55,21 @@ internal object ContainerShutdown {
       logger.warn("Graceful container shutdown failed; removing container", error)
     } finally {
       // Cleanup gets its own bounded attempt even when the caller was cancelled.
-      withContext(NonCancellable) {
-        try {
-          run(5.seconds) { container.stop() }
-          onRemoved()
-        } catch (error: Exception) {
-          // Preserve the handle so a subsequent stop can retry cleanup.
-          logger.warn("Container cleanup failed; retaining container for a later cleanup attempt", error)
-          if (cancellation == null) throw error
-        }
-      }
+      withContext(NonCancellable) { removeContainer(container, onRemoved, rethrow = cancellation == null) }
     }
     currentCoroutineContext().ensureActive()
+  }
+
+  /** A failure is rethrown only when no cancellation is already propagating. */
+  private suspend fun removeContainer(container: GenericContainer<*>, onRemoved: () -> Unit, rethrow: Boolean) {
+    try {
+      run(5.seconds) { container.stop() }
+      onRemoved()
+    } catch (error: Exception) {
+      // Preserve the handle so a subsequent stop can retry cleanup.
+      logger.warn("Container cleanup failed; retaining container for a later cleanup attempt", error)
+      if (rethrow) throw error
+    }
   }
 
   private suspend fun run(timeout: Duration, action: () -> Unit): Unit = withTimeout(timeout) {

@@ -70,12 +70,10 @@ protobuf {
   }
 }
 
+// Spring dependency management aligns every Kotlin artifact; detekt must run on the compiler it was built with.
 configurations.matching { it.name == "detekt" }.all {
   resolutionStrategy.eachDependency {
-    if (requested.group == "org.jetbrains.kotlin") {
-      @Suppress("UnstableApiUsage")
-      useVersion(io.gitlab.arturbosch.detekt.getSupportedKotlinVersion())
-    }
+    if (requested.group == "org.jetbrains.kotlin") useVersion(requested.version!!)
   }
 }
 

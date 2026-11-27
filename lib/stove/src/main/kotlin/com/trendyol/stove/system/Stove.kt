@@ -12,6 +12,7 @@ import kotlin.reflect.KClass
 
 /** Owner of the application, registered systems, and their observations. */
 @StoveDsl
+@Suppress("TooManyFunctions") // Root facade: every function is public API.
 class Stove(configure: @StoveDsl StoveOptionsDsl.() -> Unit = {}) : ReadyStove, AutoCloseable {
   private val configuration = StoveOptionsDsl().apply(configure)
 
