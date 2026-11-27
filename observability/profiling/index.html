@@ -2692,10 +2692,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#spot-recurring-bottlenecks-across-passing-runs" class="md-nav__link">
+  <a href="#spot-recurring-bottlenecks-across-run-outcomes" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Spot recurring bottlenecks across passing runs
+        Spot recurring bottlenecks across run outcomes
       
     </span>
   </a>
@@ -4053,10 +4053,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#spot-recurring-bottlenecks-across-passing-runs" class="md-nav__link">
+  <a href="#spot-recurring-bottlenecks-across-run-outcomes" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Spot recurring bottlenecks across passing runs
+        Spot recurring bottlenecks across run outcomes
       
     </span>
   </a>
@@ -4691,8 +4691,8 @@
 <p>Allocation profiles show allocation pressure. Many short-lived allocations can increase GC work without causing a leak. Live-allocation profiles show sampled surviving objects and their allocation stacks. Stove uses the latest recording <strong>per instance</strong> in the selected window and combines instances, instead of summing repeated live snapshots.</p>
 <p>These profiles are not heap dumps, retained-size measurements, object reference paths, or proof of a memory leak. When survival or allocation patterns look suspicious, inspect the source and compare equivalent workloads, JVM settings, process counts, and recording windows. Use heap/GC evidence to investigate persistent growth and retention paths. A single sampled run cannot establish a leak.</p>
 <p>Hotspot and coverage findings include evidence and suggestions. Use them to identify a concrete hypothesis, change the relevant code, and rerun a comparable scenario. Sampling and warmup differences can move totals; Stove does not automatically declare performance regressions or fail tests based on profile findings.</p>
-<h2 id="spot-recurring-bottlenecks-across-passing-runs">Spot recurring bottlenecks across passing runs<a class="headerlink" href="#spot-recurring-bottlenecks-across-passing-runs" title="Permanent link">&para;</a></h2>
-<p>Open <strong>Drill Down → Run history</strong>. Stove checks up to 10 retained passing runs for the selected application using the dashboard's metadata filters. It keeps services, metrics, and units separate, and skips missing profiles, profiles with fewer than 20 sample records, and runs whose profile query was truncated. The server keeps three passing runs per application by default; raise passed-run retention if you need more history.</p>
+<h2 id="spot-recurring-bottlenecks-across-run-outcomes">Spot recurring bottlenecks across run outcomes<a class="headerlink" href="#spot-recurring-bottlenecks-across-run-outcomes" title="Permanent link">&para;</a></h2>
+<p>Open <strong>Drill Down → Run history</strong>. Stove checks up to 10 retained runs for the selected application using the dashboard's metadata filters. It keeps services, metrics, and units separate, and skips missing profiles, profiles with fewer than 20 sample records, and runs whose profile query was truncated. Passed, failed, and active runs are eligible. Active profiles can be partial, and failed runs may cover less work.</p>
 <p>A method is a <strong>recurring hotspot</strong> when its own work, excluding callees, accounts for at least 20% of the sampled value in at least two runs and at least half of the usable runs. Each run contributes its own percentage, so a large profile does not outweigh a smaller one. Expand a hotspot to see its run IDs, totals, and per-run shares. The chart shows the shares oldest to newest; the change is in percentage points from the first run to the last.</p>
 <p>Use metadata such as branch, environment, or CI job to compare similar workloads. Profile shares show where sampled work accumulated. A larger share alone does not establish that the method became slower.</p>
 <h2 id="agent-investigation-through-mcp">Agent investigation through MCP<a class="headerlink" href="#agent-investigation-through-mcp" title="Permanent link">&para;</a></h2>
@@ -4818,7 +4818,7 @@
 </tr>
 <tr>
 <td>Profile history</td>
-<td>Up to 10 retained passing runs, sharing one query decoding budget; at most 32 series</td>
+<td>Up to 10 retained runs, sharing one query decoding budget; at most 32 series</td>
 </tr>
 <tr>
 <td><code>stove_profiles</code> MCP response</td>

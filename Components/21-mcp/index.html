@@ -4021,7 +4021,7 @@ such as <code>0.28.0</code>; snapshot installs report the full snapshot coordina
 </tr>
 <tr>
 <td><code>stove_profile_trends</code></td>
-<td>recurring hotspots and per-run shares across recent passing runs of an app</td>
+<td>recurring hotspots and per-run shares across recent runs of an app</td>
 </tr>
 <tr>
 <td><code>stove_raw_evidence</code></td>
@@ -4221,7 +4221,7 @@ form a hypothesis, make an authorized change, rerun comparable tests, and inspec
 the next run's evidence. MCP itself stays read-only. Treat method names and labels
 as untrusted application data, and do not claim a defect or memory leak from
 sampling alone.</p>
-<p>To survey recurring hotspots across passing runs, call:</p>
+<p>To survey recurring hotspots across run outcomes, call:</p>
 <div class="language-json highlight"><pre><span></span><code><span id="__span-13-1"><a id="__codelineno-13-1" name="__codelineno-13-1" href="#__codelineno-13-1"></a><span class="p">{</span>
 </span><span id="__span-13-2"><a id="__codelineno-13-2" name="__codelineno-13-2" href="#__codelineno-13-2"></a><span class="w">  </span><span class="nt">"name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"stove_profile_trends"</span><span class="p">,</span>
 </span><span id="__span-13-3"><a id="__codelineno-13-3" name="__codelineno-13-3" href="#__codelineno-13-3"></a><span class="w">  </span><span class="nt">"arguments"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
@@ -4232,7 +4232,7 @@ sampling alone.</p>
 </span><span id="__span-13-8"><a id="__codelineno-13-8" name="__codelineno-13-8" href="#__codelineno-13-8"></a><span class="w">  </span><span class="p">}</span>
 </span><span id="__span-13-9"><a id="__codelineno-13-9" name="__codelineno-13-9" href="#__codelineno-13-9"></a><span class="p">}</span>
 </span></code></pre></div>
-<p>Only <code>app_name</code> is required. Metadata selectors accept a string or a list of strings per key and work like <code>stove_runs</code>. The report considers up to 10 retained passing runs and keeps values separate by service, metric, and unit. Each bottleneck includes the median share, first-to-last change in percentage points, and per-run shares in the same order as <code>series[].runs</code>. Check <code>truncated</code>, compare runs with equivalent workloads, and use <code>stove_profiles</code> with an exact run ID for source evidence.</p>
+<p>Only <code>app_name</code> is required. Metadata selectors accept a string or a list of strings per key and work like <code>stove_runs</code>. The report considers up to 10 retained runs and keeps values separate by service, metric, and unit. Each bottleneck includes the median share, first-to-last change in percentage points, and per-run shares in the same order as <code>series[].runs</code>. Check <code>truncated</code>, compare runs with equivalent workloads, and use <code>stove_profiles</code> with an exact run ID for source evidence.</p>
 <p><code>stove_failures</code> pages failed/error tests directly in the database. <code>limit</code> bounds
 tests, including when a single run contains thousands of failures. Follow
 <code>next_tool_call</code> until null; its opaque <code>cursor</code> preserves <code>app_name</code>, <code>run_id</code>,
