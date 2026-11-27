@@ -5,7 +5,7 @@ plugins {
   alias(libs.plugins.spring.boot.three)
   alias(libs.plugins.spring.dependencyManagement)
   alias(libs.plugins.protobuf)
-  id("com.trendyol.stove.tracing")
+  id("com.trendyol.stove")
   idea
   application
 }
@@ -70,20 +70,19 @@ protobuf {
   }
 }
 
+// Spring dependency management aligns every Kotlin artifact; detekt must run on the compiler it was built with.
 configurations.matching { it.name == "detekt" }.all {
   resolutionStrategy.eachDependency {
-    if (requested.group == "org.jetbrains.kotlin") {
-      @Suppress("UnstableApiUsage")
-      useVersion(io.gitlab.arturbosch.detekt.getSupportedKotlinVersion())
-    }
+    if (requested.group == "org.jetbrains.kotlin") useVersion(requested.version!!)
   }
 }
 
-stoveTracing {
+stove {
   serviceName.set("spring-streams-example")
-  otelAgentVersion.set(libs.versions.opentelemetry.instrumentation.get())
+  tracing {
+    otelAgentVersion.set(libs.versions.opentelemetry.instrumentation.get())
+  }
   profiling {
-    enabled.set(true)
     agentVersion.set(libs.versions.pyroscope.get())
     allocations.set(true)
   }

@@ -2,6 +2,8 @@ package com.trendyol.stove.dashboard
 
 import java.net.URI
 
+private const val MAX_SERVICE_NAME_LENGTH = 256
+
 /** Native profiler configuration exposed to process/container applications; does not attach a JVM agent. */
 data class DashboardExternalProfilingOptions(
   val serverUrl: String,
@@ -23,7 +25,7 @@ data class DashboardExternalProfilingOptions(
 }
 
 internal fun requireValidProfilingServiceName(value: String) {
-  require(value.isNotBlank() && value == value.trim() && value.length <= 256 && value.all { it in ' '..'~' }) {
+  require(value.isNotBlank() && value == value.trim() && value.length <= MAX_SERVICE_NAME_LENGTH && value.all { it in ' '..'~' }) {
     "Profiling service name must be printable ASCII without surrounding whitespace, at most 256 bytes"
   }
 }

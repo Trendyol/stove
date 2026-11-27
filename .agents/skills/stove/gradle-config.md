@@ -50,6 +50,8 @@ dependencies {
 
 Choose one Kafka integration: `stove-kafka` and `stove-spring-kafka` define overlapping classes and should not share a runtime classpath. The BOM aligns Stove artifacts; reuse the project's Kotlin plugin and test engine versions.
 
+If the project uses the unified Stove plugin, register an upstream OpenAPI contract in `stove { wiremock { api("supplier") { ... } } }` to generate typed stubs and `RequestSpec` builders. Set `wiremock.sourceSet` to the consuming Kotlin source set. See [typed mocks from OpenAPI](https://trendyol.github.io/stove/Components/04-wiremock/#typed-mocks-from-openapi).
+
 ## Existing tasks and convention plugins
 
 An entry task may aggregate another task or `JvmTestSuite` rather than execute

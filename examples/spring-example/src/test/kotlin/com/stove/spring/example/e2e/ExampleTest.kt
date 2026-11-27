@@ -11,6 +11,8 @@ import io.kotest.matchers.*
 import io.kotest.matchers.string.shouldContain
 import org.jetbrains.exposed.v1.jdbc.Database
 import org.springframework.http.MediaType
+import stove.generated.wiremock.supplier.SupplierPermission as ContractPermission
+import stove.generated.wiremock.supplier.supplier
 import stove.spring.example.application.handlers.*
 import stove.spring.example.application.services.SupplierPermission
 import stove.spring.example.infrastructure.messaging.kafka.consumers.*
@@ -64,20 +66,20 @@ class ExampleTest :
     test("should create new product when send product create request from api for the allowed supplier") {
       stove {
         val productCreateRequest = ProductCreateRequest(1L, name = "product name", 99L)
-        val supplierPermission = SupplierPermission(productCreateRequest.supplierId, isAllowed = true)
-
         wiremock {
-          mockGet(
-            "/suppliers/${productCreateRequest.supplierId}/allowed",
-            statusCode = 200,
-            responseBody = supplierPermission.some()
-          )
+          supplier.getSupplierPermission(supplierId = productCreateRequest.supplierId) {
+            ok(ContractPermission(supplierId = productCreateRequest.supplierId, isAllowed = true))
+          }
         }
 
         http {
           postAndExpectBodilessResponse(uri = "/api/product/create", body = productCreateRequest.some()) { actual ->
             actual.status shouldBe 200
           }
+        }
+
+        wiremock {
+          shouldHaveBeenCalled(supplier.requests.getSupplierPermission(supplierId = productCreateRequest.supplierId))
         }
 
         kafka {

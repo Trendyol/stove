@@ -130,14 +130,15 @@ containerApp(
 
 ### 2. Instrument with OpenTelemetry
 
-Enable the **`stoveTracing` Gradle plugin**. It boots the OTLP gRPC receiver, picks a free port, and exposes it to your tests + AUT via env vars:
+Enable the **`stove` Gradle plugin**. It boots the OTLP gRPC receiver, picks a free port, and exposes it to your tests + AUT via env vars:
 
 ```kotlin hl_lines="2 5 6 7"
 plugins {
-    id("com.trendyol.stove.tracing") version "$stoveVersion"
+    id("com.trendyol.stove") version "$stoveVersion"
 }
 
-stoveTracing {
+stove {
+    tracing {}
     serviceName.set("my-service")
     testTaskNames.set(listOf("e2eTest"))   // and "e2eTest-container", etc.
 }

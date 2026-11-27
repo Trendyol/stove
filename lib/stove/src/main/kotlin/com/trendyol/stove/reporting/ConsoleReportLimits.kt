@@ -35,7 +35,7 @@ internal fun limitReportValue(
 ): String {
   if (value.length <= maxCharacters) return value
 
-  val headCharacters = maxCharacters * 3 / 4
+  val headCharacters = maxCharacters * HEAD_NUMERATOR / HEAD_DENOMINATOR
   val tailCharacters = maxCharacters - headCharacters
   val omittedCharacters = value.length - maxCharacters
   return buildString {
@@ -46,3 +46,6 @@ internal fun limitReportValue(
 }
 
 private const val MIN_OUTPUT_CHARACTERS = 256
+
+private const val HEAD_NUMERATOR = 3
+private const val HEAD_DENOMINATOR = 4

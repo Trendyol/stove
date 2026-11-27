@@ -711,20 +711,28 @@ class KafkaSystem(
     // KafkaConsumer calls are serialized in this coroutine; no poll/commit/close calls can overlap.
     KafkaConsumer(props, keyDeserializer, valueDeserializer).use { consumer ->
       consumer.subscribe(listOf(topic))
-      val startedAt = TimeSource.Monotonic.markNow()
-      while (currentCoroutineContext().isActive && startedAt.elapsedNow() < keepConsumingAtLeastFor) {
-        val records = consumer.poll(pollTimeout.toJavaDuration())
-        for (record in records) {
-          currentCoroutineContext().ensureActive()
-          if (startedAt.elapsedNow() >= keepConsumingAtLeastFor) break
+      consumer.pollFor(keepConsumingAtLeastFor, pollTimeout, readOnly, onConsume)
+    }
+  }
 
-          // Once a callback starts, the duration deadline does not cancel it halfway through.
-          // External coroutine cancellation still propagates normally.
-          onConsume(record)
-          if (!readOnly) {
-            val offset = TopicPartition(record.topic(), record.partition()) to OffsetAndMetadata(record.offset() + 1)
-            consumer.commitSync(mapOf(offset))
-          }
+  private suspend fun <K : Any, V : Any> KafkaConsumer<K, V>.pollFor(
+    keepConsumingAtLeastFor: Duration,
+    pollTimeout: Duration,
+    readOnly: Boolean,
+    onConsume: suspend (ConsumerRecord<K, V>) -> Unit
+  ) {
+    val startedAt = TimeSource.Monotonic.markNow()
+    while (currentCoroutineContext().isActive && startedAt.elapsedNow() < keepConsumingAtLeastFor) {
+      for (record in poll(pollTimeout.toJavaDuration())) {
+        currentCoroutineContext().ensureActive()
+        if (startedAt.elapsedNow() >= keepConsumingAtLeastFor) break
+
+        // Once a callback starts, the duration deadline does not cancel it halfway through.
+        // External coroutine cancellation still propagates normally.
+        onConsume(record)
+        if (!readOnly) {
+          val offset = TopicPartition(record.topic(), record.partition()) to OffsetAndMetadata(record.offset() + 1)
+          commitSync(mapOf(offset))
         }
       }
     }

@@ -163,6 +163,11 @@ class RequestDsl internal constructor(
     bodies += RequestBodyConstraint.JsonPath(expression, pattern)
   }
 
+  /** Requires the request body to match a native WireMock [pattern]. */
+  fun body(pattern: StringValuePattern) {
+    bodies += RequestBodyConstraint.Pattern(pattern)
+  }
+
   internal fun build(): RequestModel =
     RequestModel(
       method = method,
@@ -378,6 +383,8 @@ internal sealed interface RequestBodyConstraint {
     val expression: String,
     val pattern: StringValuePattern
   ) : RequestBodyConstraint
+
+  data class Pattern(val pattern: StringValuePattern) : RequestBodyConstraint
 }
 
 internal data class ResponseModel(
@@ -535,6 +542,8 @@ private fun RequestBodyConstraint.toWireMockPattern(
     )
 
   is RequestBodyConstraint.JsonPath -> matchingJsonPath(expression, pattern)
+
+  is RequestBodyConstraint.Pattern -> pattern
 }
 
 private fun RequestTarget.toUrlPattern(): UrlPattern = when (kind) {

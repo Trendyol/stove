@@ -1,16 +1,20 @@
 plugins {
   alias(libs.plugins.spring.plugin)
   alias(libs.plugins.spring.boot.three)
-  id("com.trendyol.stove.tracing")
+  id("com.trendyol.stove")
   idea
   application
 }
 
-stoveTracing {
+stove {
   serviceName.set("spring-example")
-  otelAgentVersion.set(libs.versions.opentelemetry.instrumentation.get())
+  wiremock {
+    api("supplier") { specFile.set(layout.projectDirectory.file("src/test/contracts/supplier.yaml")) }
+  }
+  tracing {
+    otelAgentVersion.set(libs.versions.opentelemetry.instrumentation.get())
+  }
   profiling {
-    enabled.set(true)
     agentVersion.set(libs.versions.pyroscope.get())
     allocations.set(true)
   }

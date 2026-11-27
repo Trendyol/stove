@@ -64,8 +64,8 @@ class TcpChaosProxy(
   // Bounded workers and no pending task queue: saturation closes the new connection.
   private val executor = ThreadPoolExecutor(
     0,
-    257,
-    60,
+    MAX_PROXY_WORKERS,
+    WORKER_IDLE_SECONDS,
     TimeUnit.SECONDS,
     SynchronousQueue(),
     DaemonThreadFactory("$name-chaos-proxy")
@@ -258,3 +258,6 @@ class TcpChaosProxy(
       Thread(task, "$prefix-${nextId.getAndIncrement()}").apply { isDaemon = true }
   }
 }
+
+private const val MAX_PROXY_WORKERS = 257
+private const val WORKER_IDLE_SECONDS = 60L

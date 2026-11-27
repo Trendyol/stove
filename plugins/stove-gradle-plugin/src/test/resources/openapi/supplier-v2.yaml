@@ -1,0 +1,27 @@
+swagger: "2.0"
+info: { title: Supplier, version: "1" }
+host: example.test
+basePath: /v1
+consumes: [application/json]
+produces: [application/problem+json]
+paths:
+  /orders/{id}:
+    post:
+      operationId: submit
+      parameters:
+        - { in: path, name: id, required: true, type: string }
+        - { in: query, name: limit, type: integer }
+        - { in: header, name: X-Mode, type: string }
+        - in: body
+          name: body
+          schema: { $ref: '#/definitions/Item' }
+      responses:
+        '204': { description: Saved }
+        '409':
+          description: Conflict
+          schema: { $ref: 'models.yaml#/definitions/SubmitResponse' }
+definitions:
+  Item:
+    type: object
+    properties:
+      value: { type: string }

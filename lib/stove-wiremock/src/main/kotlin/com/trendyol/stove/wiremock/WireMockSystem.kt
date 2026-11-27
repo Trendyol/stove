@@ -338,6 +338,13 @@ class WireMockSystem(
     configure: StubDsl.() -> Unit
   ): WireMockSystem = stub(RequestMethod.HEAD, path(url), name, configure)
 
+  /** Renders a scalar path, query or header value using this system's JSON serialization rules. */
+  fun scalarParameter(value: Any): String {
+    val node = StoveSerde.jackson.default.readTree(serde.serialize(value))
+    require(node.isTextual || node.isNumber || node.isBoolean) { "Expected a scalar HTTP parameter for ${value.javaClass.name}" }
+    return node.asText()
+  }
+
   /** Builds a reusable request specification. */
   fun request(
     method: RequestMethod,
@@ -1566,7 +1573,8 @@ class WireMockSystem(
 
   /** Both sides provably tagged and different: cross-test bleed the user should see. */
   private fun emitCrossTestMatchWarning(serveEvent: ServeEvent, requestTestId: String?, stubTestId: String?) {
-    if (!serveEvent.wasMatched || requestTestId == null || stubTestId == null || requestTestId == stubTestId) return
+    if (!serveEvent.wasMatched || requestTestId == stubTestId) return
+    if (requestTestId == null || stubTestId == null) return
     warningListeners.emit(
       MockWarning(
         system = reportSystemName,

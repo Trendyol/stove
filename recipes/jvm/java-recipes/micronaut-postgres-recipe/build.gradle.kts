@@ -1,6 +1,6 @@
 plugins {
   alias(libs.plugins.micronaut.application)
-  id("com.trendyol.stove.tracing") version libs.versions.stove.get()
+  id("com.trendyol.stove")
   java
 }
 
@@ -46,10 +46,12 @@ dependencies {
   testImplementation(stoveLibs.stoveExtensionsKotest)
 }
 
-stoveTracing {
+stove {
   serviceName.set("micronaut-postgres-recipe")
   testTaskNames.set(listOf("e2eTest"))
-  otelAgentVersion.set(libs.opentelemetry.instrumentation.annotations.get().version!!)
+  tracing {
+    otelAgentVersion.set(libs.opentelemetry.instrumentation.annotations.get().version!!)
+  }
 }
 
 java {

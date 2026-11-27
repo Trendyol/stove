@@ -8,6 +8,9 @@ import java.util.concurrent.atomic.AtomicLong
 import java.util.concurrent.locks.ReentrantLock
 import kotlin.concurrent.withLock
 
+private const val MAX_RECENT_OPERATIONS = 20
+private const val NANOS_PER_MILLI = 1_000_000
+
 /** A bounded overview of operations and discovered endpoints. */
 internal class OidcDiagnostics {
   private val operations = AtomicLong()
@@ -49,9 +52,9 @@ internal class OidcDiagnostics {
   fun summary(): String = "${operations.get()} operations, ${failures.get()} failures"
 
   private fun append(name: String, result: String, started: Long) = recentOperationsLock.withLock {
-    if (recentOperations.size == 20) recentOperations.removeFirst()
+    if (recentOperations.size == MAX_RECENT_OPERATIONS) recentOperations.removeFirst()
     recentOperations.addLast(
-      mapOf("operation" to name, "result" to result, "durationMs" to (System.nanoTime() - started) / 1_000_000)
+      mapOf("operation" to name, "result" to result, "durationMs" to (System.nanoTime() - started) / NANOS_PER_MILLI)
     )
   }
 

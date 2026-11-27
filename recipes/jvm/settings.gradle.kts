@@ -5,6 +5,7 @@ import dev.aga.gradle.versioncatalogs.GeneratorConfig
 
 rootProject.name = "jvm-recipes"
 pluginManagement {
+  includeBuild("../../build-logic")
   includeBuild("../../build-logic/test-conventions")
 
   repositories {

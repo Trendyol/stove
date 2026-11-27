@@ -12,11 +12,13 @@ import java.util.concurrent.TimeUnit
 import java.util.concurrent.locks.ReentrantLock
 import kotlin.concurrent.withLock
 
+private const val DEFAULT_SHUTDOWN_SECONDS = 5L
+
 /** Serializes native capture while keeping network exports outside the lifecycle lock. */
 internal class FlushingProfileScheduler(
   private val interval: Duration,
   exporter: Exporter,
-  private val shutdownTimeout: Duration = Duration.ofSeconds(5)
+  private val shutdownTimeout: Duration = Duration.ofSeconds(DEFAULT_SHUTDOWN_SECONDS)
 ) : ProfilingScheduler {
   private val logger = org.slf4j.LoggerFactory.getLogger(FlushingProfileScheduler::class.java)
   private val executor = Executors.newSingleThreadScheduledExecutor { task ->

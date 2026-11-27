@@ -24,12 +24,12 @@ The [Setup Wizard](wizard.md) generates the dependency block, `StoveConfig.kt`, 
   <div class="stove-ribbon-item">
     <div class="icon">🐳</div>
     <strong>Docker</strong>
-    <p>For Testcontainers (default). Skip if you use <a href="Components/11-provided-instances/">Provided Instances</a>.</p>
+    <p>For Testcontainers (default). Skip if you use <a href="../Components/11-provided-instances/">Provided Instances</a>.</p>
   </div>
   <div class="stove-ribbon-item">
     <div class="icon">📦</div>
     <strong>Gradle (recommended)</strong>
-    <p>Examples use Gradle Kotlin DSL. Maven works for deps; the <code>stoveTracing</code> plugin needs Gradle.</p>
+    <p>Examples use Gradle Kotlin DSL. Maven works for deps; the <code>stove</code> plugin needs Gradle.</p>
   </div>
   <div class="stove-ribbon-item">
     <div class="icon">🧪</div>
@@ -54,10 +54,10 @@ For framework-specific discovery and lifecycle setup, see [Testing Styles](testi
 Start with the smallest set that proves the wiring works: BOM + core + one AUT runner + one test extension + `stove-http`. Add database, messaging, mocks, and observability modules only when the app actually uses them.
 
 !!! tip "Gradle recommended"
-    All examples use Gradle (Kotlin DSL). Maven works for Stove dependencies; the **`stoveTracing`** Gradle plugin is the easiest path to OTel tracing and is the recommended setup for observability.
+    All examples use Gradle (Kotlin DSL). Maven works for Stove dependencies; the **`stove`** Gradle plugin is the easiest path to OTel tracing and is the recommended setup for observability.
 
 ```kotlin
-val stoveVersion = "0.28.0"
+val stoveVersion = "<stove-version>"
 
 dependencies {
     testImplementation(platform("com.trendyol:stove-bom:$stoveVersion"))
@@ -81,13 +81,24 @@ Systems are á-la-carte. Each dependency adds one DSL block and, when needed, on
 | `stove-grpc` | gRPC client |
 | `stove-tracing`, `stove-dashboard` | observability |
 
+The unified Gradle plugin is new after 0.28.0. Applying it alone attaches no agents and generates no code. Choose any combination in one Gradle `stove { ... }` block:
+
+| Block | What it affects |
+|---|---|
+| [`tracing {}`](Components/15-tracing.md) | Attaches the OpenTelemetry agent to selected Gradle test JVMs. |
+| [`profiling {}`](observability/profiling.md) | Attaches the Pyroscope agent independently. Trace correlation requires tracing and profiling together. |
+| [`wiremock { api(...) { ... } }`](Components/04-wiremock.md#typed-mocks-from-openapi) | Generates Kotlin mocks for a source set; no agent is required. |
+
+`serviceName` and `testTaskNames` are shared agent settings. An empty task list selects all Gradle `Test` tasks. For conditional builds, set `enabled` inside the tracing or profiling block. WireMock selects a Kotlin source set separately. If upgrading an existing build, follow the [migration notes](release-notes/unreleased.md#one-stove-gradle-plugin).
+
 !!! tip "Enable tracing with the Gradle plugin"
-    `stove-tracing` is wired by the **`com.trendyol.stove.tracing`** Gradle plugin. For in-process JVM applications launched by Stove, it attaches the OpenTelemetry Java agent to your test JVM, starts an OTLP gRPC receiver, and exposes the endpoint to your AUT without application-code changes.
+    `stove-tracing` is wired by the **`com.trendyol.stove`** Gradle plugin. For in-process JVM applications launched by Stove, it attaches the OpenTelemetry Java agent to your test JVM, starts an OTLP gRPC receiver, and exposes the endpoint to your AUT without application-code changes.
 
     ```kotlin
-    plugins { id("com.trendyol.stove.tracing") version "$stoveVersion" }
+    plugins { id("com.trendyol.stove") version "$stoveVersion" }
 
-    stoveTracing {
+    stove {
+        tracing {}
         serviceName.set("my-service")
         testTaskNames.set(listOf("e2eTest"))
     }

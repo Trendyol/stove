@@ -14,11 +14,11 @@ internal class GatewayWebSocketRelay(private val policy: GatewayTransport.WebSoc
       transfer(browser, upstream, revoked)
     } catch (error: SocketPolicyFailure) {
       finish(browser, upstream, error.reason)
-    } catch (error: FrameTooBigException) {
+    } catch (ignored: FrameTooBigException) {
       finish(browser, upstream, CloseReason(CloseReason.Codes.TOO_BIG, "Frame limit exceeded"))
-    } catch (error: ProtocolViolationException) {
+    } catch (ignored: ProtocolViolationException) {
       finish(browser, upstream, CloseReason(CloseReason.Codes.PROTOCOL_ERROR, "Invalid frame"))
-    } catch (error: IOException) {
+    } catch (ignored: IOException) {
       finish(browser, upstream, CloseReason(CloseReason.Codes.INTERNAL_ERROR, "Peer disconnected"))
     } catch (error: CancellationException) {
       finish(browser, upstream, CloseReason(CloseReason.Codes.GOING_AWAY, "Gateway connection ended"))

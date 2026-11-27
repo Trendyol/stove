@@ -20,6 +20,7 @@ import kotlin.concurrent.withLock
 import kotlin.time.Duration.Companion.milliseconds
 
 private const val DEFAULT_MAX_FAILURES = 5
+private const val MAX_BACKOFF_DOUBLINGS = 5
 
 /**
  * Queues dashboard events and sends them using the selected [ingestion] transport.
@@ -122,7 +123,7 @@ class DashboardEmitter internal constructor(
 
         is SendOutcome.Failed -> handleFailure(outcome.cause, attempt)
       }
-      if (attempt < maxFailures) delay((RETRY_BASE_DELAY_MS shl (attempt.coerceAtMost(5) - 1)).milliseconds)
+      if (attempt < maxFailures) delay((RETRY_BASE_DELAY_MS shl (attempt.coerceAtMost(MAX_BACKOFF_DOUBLINGS) - 1)).milliseconds)
     }
   }
 

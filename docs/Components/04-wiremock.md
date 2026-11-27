@@ -46,6 +46,122 @@ Stove().with {
 | `serde` | `StoveSerde.jackson.anyByteArraySerde()` | Pass your app's mapper |
 | `configureExposedConfiguration` | empty | Inject WireMock URL into AUT |
 
+## Typed mocks from OpenAPI
+
+### Set up generation
+
+Apply the Stove Gradle plugin at the same version as your Stove libraries (unreleased after 0.28.0). Keep your existing `stove-wiremock` dependency and normal WireMock registration. Register each contract in your Kotlin/JVM test project:
+
+```kotlin
+plugins { id("com.trendyol.stove") version "$stoveVersion" }
+
+stove {
+    wiremock {
+        // sourceSet.set("test-e2e") // defaults to test
+        api("supplier") {
+            specUrl.set("https://supplier.example.com/openapi.json")
+        }
+        api("inventory") {
+            specFile.set(layout.projectDirectory.file("contracts/inventory.yaml"))
+            schemaMappings.put("Item", "com.example.inventory.Item")
+        }
+    }
+}
+```
+
+Use exactly one of `specUrl`, `specFile`, or `specText` per API. For the default source set, run `./gradlew compileTestKotlin` once to generate the Kotlin sources.
+
+### Stub and verify a declared response
+
+Import the accessor and contract models:
+
+```kotlin
+import stove.generated.wiremock.supplier.supplier
+import stove.generated.wiremock.supplier.SupplierPermission
+
+// Inside stove { ... }
+wiremock {
+    supplier.getSupplierPermission(supplierId = id) {
+        ok(SupplierPermission(supplierId = id, isAllowed = true))
+    }
+}
+// Exercise the application, then:
+wiremock {
+    shouldHaveBeenCalled(supplier.requests.getSupplierPermission(supplierId = id))
+}
+```
+
+The operation declares the method, path and possible responses. Mocks include the base path of the first applicable OpenAPI server, using its variable defaults. Supply all path values and just the header, query or JSON body constraints your test needs. Choose exactly one declared response. The same accessor works in `wiremock(key)` and uses that server for registration and verification.
+
+### Use a generated request with Stove's WireMock DSL
+
+Use the operation directly for one of the contract's declared responses. Use `supplier.requests` when you want the same method, encoded path, and matchers with a handwritten response. For example, this supplier contract declares only 200, but a retry test needs a temporary 503:
+
+```kotlin
+import com.github.tomakehurst.wiremock.client.WireMock.exactly
+
+// Inside stove { ... }, with the same supplier imports as above
+wiremock {
+    val permission = supplier.requests.getSupplierPermission(supplierId = id)
+    stub(permission) {
+        behaviour {
+            respond { status = 503 }
+            thenAlways {
+                status = 200
+                json(SupplierPermission(supplierId = id, isAllowed = true))
+            }
+        }
+    }
+}
+// Exercise the application and wait for its retry to complete.
+wiremock {
+    val permission = supplier.requests.getSupplierPermission(supplierId = id)
+    shouldHaveBeenCalled(permission, exactly(2))
+}
+```
+
+The first matching call gets 503; every later match gets 200. The generated request is still typed, but the ordinary `respond` and `thenAlways` blocks accept any status and body. Contract response helpers such as `ok(...)` are available only inside the generated operation block.
+
+| What you need | Use |
+|---|---|
+| One custom response, delay, or extra response headers | `stub(permission) { respond { … } }` |
+| A sequence of responses, including a simulated timeout | `stub(permission) { behaviour { … } }` |
+| Assert a call count or absence | `shouldHaveBeenCalled(permission, exactly(2))` or `shouldNotHaveBeenCalled(permission)` |
+| Inspect matching requests | `callsFor(permission)` on the same WireMock system |
+
+The bridge is `RequestSpec`. Helpers such as `behaviourFor(url, method)` that take a URL do not accept it; use the structured `stub` overload above.
+
+### Generation capabilities and limits
+
+**Names and types.** Each unique lower camel case API name becomes an accessor and the last segment of its package (`stove.generated.wiremock.supplier`, for example). Operations use their `operationId` converted to a Kotlin name; without one, Stove derives a name from the HTTP method and path. Give operations explicit, distinct IDs for a stable test API. A collision, such as a parameterless `toString`, fails generation with the method and path. Map a component schema name to a fully qualified DTO using `schemaMappings`; that DTO must be on the selected source set's compile classpath.
+
+**Request matching.** Path values are required. A path parameter accepts both literal and percent-encoded spellings of characters allowed inside a segment. An encoded slash (`%2F`) stays inside its segment. Omit a query, header, or body to leave it unconstrained, even if the real API requires it. If the contract declares a nullable JSON request body, pass `body = null` to match a literal JSON `null`.
+
+Body matching ignores array order. If Jackson serializes a field as `null` in the expected body, the client may omit that field or send any value. If a mapped DTO uses `@JsonInclude(NON_NULL)`, Jackson omits its null fields before Stove builds the matcher. The client must omit those fields too: any field absent from the serialized expected body is rejected as an extra. `LocalDate`, `OffsetDateTime`, and `Instant` values are written in ISO format and compared as text. `Accept`, `Content-Type` and `Authorization` header parameters are ignored, as OpenAPI 3 says.
+
+**Responses.** Helpers use the declared status, body type and media type: for example, `created(reservation)`, `conflict(problem)`, or bodyless `noContent()`. A declared response range or `default` takes a status code; an explicitly declared status takes precedence. An empty response block or selecting two responses fails when registering the stub.
+
+Online compilation rechecks the spec and its referenced documents. An unchanged contract skips code generation. Use Gradle `--offline` to reuse the last download that successfully generated sources. A failed fetch or invalid update fails the online build and leaves that offline copy intact. On a fresh checkout, build online once before using a URL offline. An unresolved reference fails the build; a literal `$ref` in an example payload is data and is never fetched. Changed input regenerates the suite and removes stale generated files. Contract drift surfaces when it changes generated types or exercised HTTP behavior; this is not a general compatibility check. Prefer files checked into source control when CI needs reproducible input.
+
+Swagger 2.0 and OpenAPI 3.0/3.1 use the same Gradle configuration and generated Kotlin DSL. For a Swagger 2.0 contract, register the original file, URL, or inline text; Stove converts it during generation. Use `basePath` for the URL prefix and declare JSON media types in `consumes` and `produces` for operations with bodies. Only HTTP(S) documents use the offline cache. Local references are always read from disk, so changing or deleting one can change or fail an offline build.
+
+Operations with JSON (including `+json`) and bodyless responses are supported, as are `text/plain` string responses. When a body lists several media types, the stub uses the first JSON one. A reference wrapped as `allOf: [$ref]` or as nullable `anyOf: [$ref, {type: "null"}]` is read as the referenced schema. Every build reports the operations that are skipped, such as multipart requests, complex parameter encodings, or composed schemas. Handwritten mocks remain available for those operations.
+
+For a larger example, the [inventory contract](https://github.com/trendyol/stove/blob/main/plugins/stove-gradle-plugin/src/test/resources/openapi/inventory.yaml) and its [executable Kotlin consumer](https://github.com/trendyol/stove/blob/main/plugins/stove-gradle-plugin/src/test/resources/openapi/InventoryScenario.kt) exercise reservations across two contract files:
+
+```kotlin
+wiremock(Inventory) {
+    inventory.reserveStock(warehouseId = "EU/West", channel = Channel.online, body = cart) {
+        created(Reservation(id = "r1", lines = cart.lines))
+    }
+    inventory.reservationState(warehouseId = "EU/West", reservationId = "r1") {
+        ok(ReservationState.held)
+    }
+}
+```
+
+Here `Channel` is an existing application enum mapped with `schemaMappings`. Stove uses the selected WireMock system's JSON serializer for enum parameter values, so a custom wire spelling works in both stubs and verification. `ReservationState` comes from an inline response enum: its schema's `title` gives the Kotlin type a readable name, and the compiler rejects an arbitrary string passed to `ok`.
+
 ## Basic stubs
 
 ```kotlin
@@ -125,7 +241,7 @@ Request targets are explicit when building a reusable specification:
 - `exactUrl("/api/payments?dryRun=false")` matches the complete URL.
 - `pathRegex("/api/payments/[0-9]+")` matches a path regex.
 
-Request blocks support `header`, `query`, `contentTypeJson`, `jsonEqualTo`, `jsonField`, and `jsonPath`. Response blocks support `json`, `jsonNull`, `rawJson`, `text`, `bytes`, `empty`, headers, status, and delay.
+Request blocks support `header`, `query`, `contentTypeJson`, `jsonEqualTo`, `jsonField`, `jsonPath`, and `body(pattern)` for any native WireMock body pattern such as `equalToJson(json, true, false)`. Response blocks support `json`, `jsonNull`, `rawJson`, `text`, `bytes`, `empty`, headers, status, and delay.
 
 ### Reuse a request for stubbing and verification
 

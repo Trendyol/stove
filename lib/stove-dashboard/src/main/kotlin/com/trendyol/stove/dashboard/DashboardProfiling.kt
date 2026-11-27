@@ -15,7 +15,7 @@ internal class DashboardProfiling(runId: String, appName: String) : AutoCloseabl
     check(!PyroscopeAgent.isStarted()) { "A profiler is already active in this JVM; Stove requires ownership of its profiling lifecycle" }
   }
   private val service = System.getProperty("stove.profiling.service", appName).also {
-    require(it.isNotBlank() && it.length <= 256 && it.all { char -> char in ' '..'~' }) {
+    require(it.isNotBlank() && it.length <= SERVICE_NAME_LIMIT && it.all { char -> char in ' '..'~' }) {
       "Profiling service name must be nonblank printable ASCII and at most 256 bytes"
     }
   }
@@ -29,9 +29,9 @@ internal class DashboardProfiling(runId: String, appName: String) : AutoCloseabl
     .setProfilingLock(System.getProperty("stove.profiling.lock", ""))
     .setAllocLive(System.getProperty("stove.profiling.live", "false").toBoolean())
     .setGcBeforeDump(false)
-    .setJavaStackDepthMax(256)
+    .setJavaStackDepthMax(STACK_DEPTH_LIMIT)
     .setUploadInterval(Duration.ofSeconds(System.getProperty("stove.profiling.interval", "10").toLong()))
-    .setProfileExportTimeout(Duration.ofSeconds(5))
+    .setProfileExportTimeout(Duration.ofSeconds(EXPORT_TIMEOUT_SECONDS))
     .setIngestMaxRetries(2)
     .setLabels(mapOf("stove_app" to appName, "stove_run_id" to runId))
     .setHTTPHeaders(
@@ -60,3 +60,7 @@ internal class DashboardProfiling(runId: String, appName: String) : AutoCloseabl
     if (PyroscopeAgent.isStarted()) PyroscopeAgent.stop()
   }
 }
+
+private const val SERVICE_NAME_LIMIT = 256
+private const val STACK_DEPTH_LIMIT = 256
+private const val EXPORT_TIMEOUT_SECONDS = 5L

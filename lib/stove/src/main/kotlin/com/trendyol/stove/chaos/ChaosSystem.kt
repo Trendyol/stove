@@ -11,6 +11,9 @@ import java.util.concurrent.atomic.AtomicReference
 import java.util.concurrent.locks.ReentrantLock
 import kotlin.concurrent.withLock
 import kotlin.time.Duration
+import kotlin.time.Duration.Companion.seconds
+
+private val JOB_JOIN_TIMEOUT = 5.seconds
 
 internal fun Stove.existingChaosSystem(): ChaosSystem? = getOrNone<ChaosSystem>().getOrNull()
 
@@ -159,7 +162,7 @@ internal class ChaosSystem(
       closeAll(
         // Cancellation alone cannot unblock synchronous I/O waiting on a stalled route.
         ::healActiveRoutes,
-        { withTimeout(5_000) { jobs.joinAll() } }
+        { withTimeout(JOB_JOIN_TIMEOUT) { jobs.joinAll() } }
       )
     }
   }

@@ -4,7 +4,7 @@ plugins {
   alias(libs.plugins.google.ksp)
   alias(libs.plugins.micronaut.application)
   alias(libs.plugins.micronaut.aot)
-  id("com.trendyol.stove.tracing")
+  id("com.trendyol.stove")
   application
   idea
 }
@@ -53,11 +53,12 @@ java {
   sourceCompatibility = JavaVersion.toVersion("25")
 }
 
-stoveTracing {
+stove {
   serviceName.set("micronaut-example")
-  otelAgentVersion.set(libs.versions.opentelemetry.instrumentation.get())
+  tracing {
+    otelAgentVersion.set(libs.versions.opentelemetry.instrumentation.get())
+  }
   profiling {
-    enabled.set(true)
     agentVersion.set(libs.versions.pyroscope.get())
     allocations.set(true)
   }

@@ -4,7 +4,7 @@ Test failed. Need to know what happened *inside the app*, not just at the test b
 
 <div class="stove-tldr" markdown>
 <span class="stove-tldr-title">Two steps</span>
-1) Apply the <code>stoveTracing</code> Gradle plugin. 2) Call <code>tracing { enableSpanReceiver() }</code> in your <code>Stove().with</code>. For JVM apps launched by Stove, the plugin can attach the OTel Java Agent; for process/container apps, wire your language's OTel SDK to the exposed endpoint. Walk through the full failure loop in <a href="../observability/when-it-fails/">When a test fails</a>.
+1) Apply <code>com.trendyol.stove</code> and enable <code>stove { tracing {} }</code>. 2) Call <code>tracing { enableSpanReceiver() }</code> in your <code>Stove().with</code>. For JVM apps launched by Stove, the plugin can attach the OTel Java Agent; for process/container apps, wire your language's OTel SDK to the exposed endpoint. Walk through the full failure loop in <a href="../../observability/when-it-fails/">When a test fails</a>.
 </div>
 
 ## Setup
@@ -15,10 +15,11 @@ Test failed. Need to know what happened *inside the app*, not just at the test b
 
 ```kotlin hl_lines="2 6 7 8"
 plugins {
-    id("com.trendyol.stove.tracing") version "$stoveVersion"
+    id("com.trendyol.stove") version "$stoveVersion"
 }
 
-stoveTracing {
+stove {
+    tracing {}
     serviceName.set("my-service")
     testTaskNames.set(listOf("e2eTest"))
 }
@@ -43,7 +44,7 @@ Stove().with {
 For in-process JVM apps, spans from agent-supported libraries such as Spring, JDBC, Kafka, gRPC, HTTP clients, Redis, and MongoDB can show up in the failure report without application code changes. For separate processes or containers, the app must initialize an OTel SDK/exporter and send spans to the receiver.
 
 !!! info "Why Gradle?"
-    The `stoveTracing` plugin handles JVM agent attachment and OTLP wiring per test task. Maven can replicate the receiver setup manually, but the agent-attach + per-task port allocation is plugin-only today.
+    The `stove` plugin handles JVM agent attachment and OTLP wiring per test task. Maven can replicate the receiver setup manually, but the agent-attach + per-task port allocation is plugin-only today.
 
 ## What you get
 
@@ -97,15 +98,14 @@ stove {
 
 ## Configuration
 
-`stoveTracing { }` Gradle extension:
+`stove { }` Gradle extension:
 
 | Option | Default | Notes |
 |---|---|---|
-| `serviceName` | project name | shown in spans + dashboard |
-| `testTaskNames` | `["test"]` | tasks the plugin instruments |
-| `spanCollectionTimeout` | 5 seconds | how long to wait for late spans after the test ends |
-| `maxSpansPerTrace` | 1000 | bounds memory; spans past the cap are dropped |
-| `otelAgentVersion` | latest stable | override if you need to pin |
+| `serviceName` | `stove-traced-app` | shared tracing and profiling service name |
+| `testTaskNames` | all Gradle test tasks | shared agent task selection |
+| `tracing.enabled` | enabled by the tracing block | override to disable conditionally |
+| `tracing.otelAgentVersion` | plugin default | pin a different OTel agent |
 
 `tracing { }` runtime block options inside `Stove().with`:
 
@@ -154,7 +154,7 @@ For non-JVM AUTs, the plugin still boots the OTLP receiver. Process and containe
 
 | Symptom | Check |
 |---|---|
-| No spans in failure report | `stoveTracing` plugin applied? Task name listed in `testTaskNames`? `tracing { enableSpanReceiver() }` in `Stove().with`? |
+| No spans in failure report | `stove` plugin applied with `stove { tracing {} }`? Task name listed in `testTaskNames`? `tracing { enableSpanReceiver() }` in `Stove().with`? |
 | Test task hangs at end | Span collection timeout too high; lower `spanCollectionTimeout` |
 | Span tree too noisy | Use `filterSpans { ... }` to drop health checks and trivial spans |
 | Different agent version needed | Pin via `otelAgentVersion.set("...")` |
@@ -162,7 +162,7 @@ For non-JVM AUTs, the plugin still boots the OTLP receiver. Process and containe
 
 ## Profiling alongside tracing
 
-The same `stoveTracing` extension supports opt-in Pyroscope JVM profiling through
+The same `stove` extension supports opt-in Pyroscope JVM profiling through
 its `profiling { ... }` block. Profiles are sent directly to Stove Server and
 scoped by the dashboard run ID. See [Profiling and Drill Down](../observability/profiling.md)
 for configuration, supported JVM scope, costs, and memory interpretation.

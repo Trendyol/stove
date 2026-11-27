@@ -58,24 +58,30 @@ internal class TcpTrafficGate {
 
   fun awaitForwarding(direction: TrafficDirection, isOpen: () -> Boolean): Boolean = lock.withLock {
     while (isOpen()) {
-      when (val current = fault) {
+      val current = fault
+      if (current.letsThrough(direction)) return true
+      when (current) {
         NetworkFault.Unavailable -> return false
 
         is NetworkFault.Stall -> {
-          if (!current.direction.appliesTo(direction)) return true
           observation.value = observation.value.copy(directions = observation.value.directions + direction)
           changed.await()
         }
 
-        is NetworkFault.Latency -> {
-          if (!current.direction.appliesTo(direction)) return true
-          if (awaitLatency(current, isOpen)) return isOpen()
-        }
+        is NetworkFault.Latency -> if (awaitLatency(current, isOpen)) return isOpen()
 
         null -> return true
       }
     }
     false
+  }
+
+  // No fault, or one scoped to the other direction, forwards untouched.
+  private fun NetworkFault?.letsThrough(direction: TrafficDirection): Boolean = when (this) {
+    null -> true
+    NetworkFault.Unavailable -> false
+    is NetworkFault.Stall -> !this.direction.appliesTo(direction)
+    is NetworkFault.Latency -> !this.direction.appliesTo(direction)
   }
 
   // False means the fault changed; the caller re-evaluates it before forwarding buffered bytes.

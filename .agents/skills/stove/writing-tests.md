@@ -553,6 +553,51 @@ Observation is distinct from business completion. Go consumer hooks pre-report c
 
 ## WireMock mocking
 
+### Generated WireMock operations
+
+1. Keep the consuming project's `stove-wiremock` test dependency and register WireMock at startup. Configure the application's upstream client to use the exposed base URL.
+2. Apply `com.trendyol.stove` at the Stove version. In the Gradle build, register one input per API:
+
+   ```kotlin
+   stove {
+     wiremock {
+       api("supplier") { specFile.set(layout.projectDirectory.file("contracts/supplier.yaml")) }
+     }
+   }
+   ```
+
+   Use `specUrl` or inline `specText` instead of `specFile` if appropriate. The default Kotlin source set is `test`; set `sourceSet` inside `wiremock` for a custom suite. Compile that source set before importing `stove.generated.wiremock.supplier.supplier` and its models.
+3. For contract-conforming responses, call the operation directly:
+
+   ```kotlin
+   wiremock {
+     supplier.getSupplierPermission(supplierId = id) {
+       ok(SupplierPermission(supplierId = id, isAllowed = true))
+     }
+   }
+   ```
+
+   Supply all path values. Query, header, and body arguments constrain matching only when supplied. For a nullable JSON request body, `body = null` matches the JSON value `null`; omitting `body` leaves it unconstrained. Select exactly one declared response.
+4. For custom responses or retry scenarios, build a `RequestSpec` from the same accessor. For example, simulate an outage followed by recovery:
+
+   ```kotlin
+   wiremock {
+     val request = supplier.requests.getSupplierPermission(supplierId = id)
+     stub(request) {
+       behaviour {
+         respond { status = 503 }
+         thenAlways { json(SupplierPermission(supplierId = id, isAllowed = true)) }
+       }
+     }
+   }
+   ```
+
+   These response steps use Stove's ordinary response DSL: Kotlin checks the request arguments, but does not enforce the contract's response types here. After exercising the app, use the same request specification with `shouldHaveBeenCalled`, `shouldNotHaveBeenCalled`, or `callsFor`. For keyed servers, register and verify inside `wiremock(theSameKey)`.
+
+Swagger 2.0 and OpenAPI 3.0/3.1 support JSON and bodyless operations. Register Swagger 2.0 inputs directly with the same DSL; check `consumes` and `produces` when a body operation is skipped. If generation skips an operation, use a handwritten stub for that operation. See the [WireMock guide](https://trendyol.github.io/stove/Components/04-wiremock/#typed-mocks-from-openapi) for schema mappings, URL refresh and offline behavior, and an executable inventory example.
+
+### Handwritten WireMock operations
+
 Prefer the structured DSL for new tests in 0.26+. It requires no opt-in annotation. Stove APIs may evolve in minor releases; release notes provide migration guidance when they do.
 
 ```kotlin

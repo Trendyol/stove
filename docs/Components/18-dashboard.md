@@ -394,7 +394,7 @@ With `DashboardIngestion.Http`, each event is sent as a protobuf-encoded `Dashbo
 
 The server exposes its HTTP API documentation at `/swagger-ui` and its OpenAPI document at `/api-docs/openapi.json`. The ingestion request and response are binary protobuf payloads; the shared `.proto` files in `stove-dashboard-api` remain the authoritative message schema.
 
-For profiling on the same deployment, configure `stoveTracing.profiling.serverUrl` separately. Its multipart `POST /ingest` uses the HTTP port too. See [shared profiling deployment](../observability/profiling.md#shared-stove-server-over-https) for a common CI setting, path prefixes, required headers, upload limits, Java certificate trust, authentication limitations, and verification steps.
+For profiling on the same deployment, configure `stove.profiling.serverUrl` separately. Its multipart `POST /ingest` uses the HTTP port too. See [shared profiling deployment](../observability/profiling.md#shared-stove-server-over-https) for a common CI setting, path prefixes, required headers, upload limits, Java certificate trust, authentication limitations, and verification steps.
 
 ## What you see
 
@@ -661,7 +661,7 @@ The acceptance suite verifies the same ingestion, filtering, retention, administ
 
 In **0.28.0**, Stove Server receives Pyroscope Java JFR and native Go pprof recordings and
 provides **Drill Down** for CPU and memory investigation, with no separate
-profiling backend. Enable collection in the tracing Gradle plugin and keep the
+profiling backend. Enable collection in the Stove Gradle plugin and keep the
 normal dashboard integration. The plugin profiles the test JVM; Go applications use `go/stove-profiler`
 and dashboard-exposed run configuration.
 

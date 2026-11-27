@@ -1,0 +1,66 @@
+openapi: 3.0.3
+info: { title: probe, version: "1" }
+paths:
+  /mixed:
+    get:
+      operationId: mixed
+      responses:
+        "200": { $ref: "#/components/responses/NoteAlias" }
+        "500": { description: err, content: { text/plain: { schema: { type: string } } } }
+  /multi:
+    post:
+      operationId: multi
+      requestBody:
+        content:
+          application/json: { schema: { $ref: "#/components/schemas/Item" } }
+          application/xml: { schema: { $ref: "#/components/schemas/Item" } }
+      responses:
+        "201": { description: created, content: { application/json: { schema: { $ref: "#/components/schemas/Item" } } } }
+  /nullable-body:
+    post:
+      operationId: nullableBody
+      parameters:
+        - { name: mode, in: query, schema: { type: string } }
+      requestBody:
+        content:
+          application/json: { schema: { type: string, nullable: true } }
+      responses:
+        "202": { description: accepted }
+        "204": { description: no content }
+  /nullable-text:
+    get:
+      operationId: nullableText
+      responses:
+        "200": { description: nullable, content: { text/plain: { schema: { type: string, nullable: true } } } }
+  /secure:
+    get:
+      operationId: secure
+      parameters:
+        - { name: Authorization, in: header, schema: { type: string } }
+        - { name: Accept, in: header, schema: { type: string } }
+      responses: { "204": { description: ok } }
+  /notes:
+    post:
+      operationId: createNote
+      requestBody: { content: { application/json: { schema: { $ref: "#/components/schemas/Note" } } } }
+      responses:
+        "201": { description: ok, content: { application/json: { schema: { $ref: "#/components/schemas/Note" } } } }
+components:
+  responses:
+    NoteAlias: { $ref: "#/components/responses/ActualNote" }
+    ActualNote: { description: ok, content: { application/json: { schema: { $ref: "#/components/schemas/Note" } } } }
+  schemas:
+    Item:
+      type: object
+      required: [name, createdAt]
+      properties:
+        name: { type: string }
+        createdAt: { type: string, format: date-time }
+        detail: { type: string, nullable: true }
+    Note:
+      type: object
+      required: [text]
+      properties:
+        text: { type: string }
+        note: { type: string, nullable: true }
+        at: { type: string, format: date-time }

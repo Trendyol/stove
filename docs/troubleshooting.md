@@ -392,7 +392,7 @@ The server intentionally has no authentication or authorization and accepts remo
 | `0.23 → 0.24` | Polyglot leap (provided app, keyed systems, process/container, Go, MCP) | All additive |
 | `0.27.x → 0.28.0` | Managed database chaos, Cucumber suspend steps, Quarkus Bridge, JVM/Go profiling, Redis database selection fix | [Release notes and migration guidance](release-notes/0.28.0.md) |
 
-Pin the BOM, all `com.trendyol:stove-*` dependencies, the tracing Gradle plugin, and `stove-server` to one Stove version.
+Pin the BOM, all `com.trendyol:stove-*` dependencies, the Stove Gradle plugin, and `stove-server` to one Stove version.
 Mixed versions are a common cause of class-load errors and empty dashboard data.
 
 ## Common FAQ
@@ -446,7 +446,7 @@ Mixed versions are a common cause of class-load errors and empty dashboard data.
 - Containers have enough memory
 - Ports free or `port = 0` for mocks
 - Test extension registered (`StoveKotestExtension()` or `@ExtendWith(StoveJUnitExtension)`)
-- For tracing: `stoveTracing` Gradle plugin applied + `tracing { enableSpanReceiver() }` in setup
+- For tracing: apply the `com.trendyol.stove` Gradle plugin, opt in with `stove { tracing {} }` in the build, and register `tracing { enableSpanReceiver() }` in test setup
 
 
 ## Cancelled CI jobs leave dashboard runs running

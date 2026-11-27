@@ -37,6 +37,7 @@ Native access is correct when it is the documented API contract: Redis currently
 | JVM setup, system options, provided instances (existing infra), keyed systems (`SystemKey`) | [system-setup.md](system-setup.md) |
 | Quarkus Bridge, CDI bean access, e2e bean preservation, augmented test classpath | [system-setup.md#quarkus-bridge-setup](system-setup.md#quarkus-bridge-setup) |
 | Cucumber feature files, suspend steps, scenario reporting | [cucumber.md](cucumber.md) |
+| Generate WireMock mocks from OpenAPI, simulate retries, or verify generated requests | [writing-tests.md#generated-wiremock-operations](writing-tests.md#generated-wiremock-operations) |
 | Writing `stove {}` assertions and validation DSL | [writing-tests.md](writing-tests.md) |
 | OIDC authentication, NAV/Keycloak providers, JWTs, token grants, or keyed issuers | [oidc.md](oidc.md) |
 | Choosing an API, using a native handle, or reviewing SDK-based helpers | [api-selection.md](api-selection.md) |

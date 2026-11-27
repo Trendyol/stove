@@ -1,12 +1,13 @@
 plugins {
-  id("com.trendyol.stove.tracing")
+  id("com.trendyol.stove")
 }
 
-stoveTracing {
+stove {
   serviceName.set("cucumber-example")
-  otelAgentVersion.set(libs.versions.opentelemetry.instrumentation.get())
+  tracing {
+    otelAgentVersion.set(libs.versions.opentelemetry.instrumentation.get())
+  }
   profiling {
-    enabled.set(true)
     agentVersion.set(libs.versions.pyroscope.get())
     allocations.set(true)
     liveAllocations.set(true)

@@ -25,12 +25,13 @@ The dashboard ingestion port is not an OTLP endpoint.
 
 ### JVM application running inside the test JVM
 
-Apply `com.trendyol.stove.tracing` with the version declared in the project's plugin management or version catalog. Configure the actual test task names:
+Apply `com.trendyol.stove` with the version declared in the project's plugin management or version catalog. Configure the actual test task names:
 
 ```kotlin
-plugins { id("com.trendyol.stove.tracing") }
+plugins { id("com.trendyol.stove") }
 
-stoveTracing {
+stove {
+    tracing {}
     serviceName.set("my-service")
     testTaskNames.set(listOf("e2eTest"))
 }
@@ -53,22 +54,22 @@ Configure W3C Trace Context propagation and preserve context across async work a
 
 ## 3. JVM plugin options
 
-Defaults below describe current source; check the project's resolved plugin version.
+Tracing is off until the Gradle build declares `stove { tracing {} }`. The table uses paths relative to `stove`; tracing defaults apply inside the enabled block. Defaults describe current source; check the project's resolved plugin version.
 
 | Option | Default | Description |
 |---|---|---|
 | `serviceName` | `"stove-traced-app"` | Service name in traces |
-| `enabled` | `true` | Toggle Java agent wiring |
+| `tracing.enabled` | `false` without the block; `true` inside it | Toggle Java agent wiring |
 | `testTaskNames` | `[]` | Task names; empty applies to all `Test` tasks |
-| `otelAgentVersion` | `"2.24.0"` | OTel Java agent version |
-| `disabledInstrumentations` | `[]` | Instrumentations to disable, such as `jdbc` |
-| `additionalInstrumentations` | `[]` | Extra instrumentations |
-| `customAnnotations` | `[]` | Annotation classes to instrument |
-| `protocol` | `"grpc"` | Only `grpc` is supported; other values are rejected |
-| `captureHttpHeaders` | `true` | Capture HTTP headers in spans |
-| `captureExperimentalTelemetry` | `true` | Enable experimental HTTP telemetry |
-| `bspScheduleDelay` | `100` | Batch span processor delay, milliseconds |
-| `bspMaxBatchSize` | `1` | Maximum spans per export batch; export is still asynchronous |
+| `tracing.otelAgentVersion` | `"2.24.0"` | OTel Java agent version |
+| `tracing.disabledInstrumentations` | `[]` | Instrumentations to disable, such as `jdbc` |
+| `tracing.additionalInstrumentations` | `[]` | Extra instrumentations |
+| `tracing.customAnnotations` | `[]` | Annotation classes to instrument |
+| `tracing.protocol` | `"grpc"` | Only `grpc` is supported; other values are rejected |
+| `tracing.captureHttpHeaders` | `true` | Capture HTTP headers in spans |
+| `tracing.captureExperimentalTelemetry` | `true` | Enable experimental HTTP telemetry |
+| `tracing.bspScheduleDelay` | `100` | Batch span processor delay, milliseconds |
+| `tracing.bspMaxBatchSize` | `1` | Maximum spans per export batch; export is still asynchronous |
 
 ## 4. Wait for evidence and assert
 
@@ -102,7 +103,7 @@ For a test that expects a failure, use `shouldHaveFailedSpan("PaymentGateway.cha
 
 Check the receiver startup log and port first, then the AUT's exporter protocol/address, installed instrumentation, sampling, and propagation. A receiver bind failure is logged and tests can continue without spans. If spans arrive under another trace, inspect `getAllTraceVisualizations()` and trace headers rather than repeatedly increasing timeouts.
 
-Source: `lib/stove-tracing/`, `plugins/stove-tracing-gradle-plugin/`.
+Source: `lib/stove-tracing/`, `plugins/stove-gradle-plugin/`.
 
 ## Continuous profiling
 
