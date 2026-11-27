@@ -2692,6 +2692,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#spot-recurring-bottlenecks-across-passing-runs" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Spot recurring bottlenecks across passing runs
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#agent-investigation-through-mcp" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -4042,6 +4053,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#spot-recurring-bottlenecks-across-passing-runs" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Spot recurring bottlenecks across passing runs
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#agent-investigation-through-mcp" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -4669,6 +4691,10 @@
 <p>Allocation profiles show allocation pressure. Many short-lived allocations can increase GC work without causing a leak. Live-allocation profiles show sampled surviving objects and their allocation stacks. Stove uses the latest recording <strong>per instance</strong> in the selected window and combines instances, instead of summing repeated live snapshots.</p>
 <p>These profiles are not heap dumps, retained-size measurements, object reference paths, or proof of a memory leak. When survival or allocation patterns look suspicious, inspect the source and compare equivalent workloads, JVM settings, process counts, and recording windows. Use heap/GC evidence to investigate persistent growth and retention paths. A single sampled run cannot establish a leak.</p>
 <p>Hotspot and coverage findings include evidence and suggestions. Use them to identify a concrete hypothesis, change the relevant code, and rerun a comparable scenario. Sampling and warmup differences can move totals; Stove does not automatically declare performance regressions or fail tests based on profile findings.</p>
+<h2 id="spot-recurring-bottlenecks-across-passing-runs">Spot recurring bottlenecks across passing runs<a class="headerlink" href="#spot-recurring-bottlenecks-across-passing-runs" title="Permanent link">&para;</a></h2>
+<p>Open <strong>Drill Down → Run history</strong>. Stove checks up to 10 retained passing runs for the selected application using the dashboard's metadata filters. It keeps services, metrics, and units separate, and skips missing profiles, profiles with fewer than 20 sample records, and runs whose profile query was truncated. The server keeps three passing runs per application by default; raise passed-run retention if you need more history.</p>
+<p>A method is a <strong>recurring hotspot</strong> when its own work, excluding callees, accounts for at least 20% of the sampled value in at least two runs and at least half of the usable runs. Each run contributes its own percentage, so a large profile does not outweigh a smaller one. Expand a hotspot to see its run IDs, totals, and per-run shares. The chart shows the shares oldest to newest; the change is in percentage points from the first run to the last.</p>
+<p>Use metadata such as branch, environment, or CI job to compare similar workloads. Profile shares show where sampled work accumulated. A larger share alone does not establish that the method became slower.</p>
 <h2 id="agent-investigation-through-mcp">Agent investigation through MCP<a class="headerlink" href="#agent-investigation-through-mcp" title="Permanent link">&para;</a></h2>
 <p>Agents use the existing Stove Server <a href="../../Components/21-mcp/">MCP endpoint</a>. No separate profiling MCP server is required. Select the exact run first, then call:</p>
 <div class="language-json highlight"><pre><span></span><code><span id="__span-14-1"><a id="__codelineno-14-1" name="__codelineno-14-1" href="#__codelineno-14-1"></a><span class="p">{</span>
@@ -4683,6 +4709,7 @@
 <p>The tool accepts <code>service</code>, <code>instance</code>, <code>metric</code>, <code>from_ms</code>, <code>until_ms</code>, <code>trace_id</code>, and <code>span_id</code>. Use returned metric names when querying allocations or locks. Trace/span selectors require correlation labels in the recording. JVM collection supplies them through the bundled extension when <code>traceCorrelation</code> and tracing are enabled. Use the span attribute <code>pyroscope.profile.id</code> as <code>span_id</code>; omit it for a trace-wide search. MCP follow-up calls preserve the active selectors. See <a href="#jvm-trace-to-profile-correlation">JVM trace-to-profile correlation</a> for scope and sampling limits.</p>
 <p>An optional <code>baseline_run_id</code> compares another run of the same application. Baseline comparisons permit only run-wide service/metric selectors, not time, instance, trace, or span filters. The response returns evidence for both runs rather than a normalized regression verdict. <code>stove_diagnose</code> also includes profiling, but its profile summary remains run-wide even when diagnosing one test.</p>
 <p>MCP summaries omit stacks and are bounded to 64 KiB, eight series, and 32 source profile IDs per series. Check <code>truncated</code>; use narrower selectors or the REST endpoint for bounded stack detail. An agent can inspect the identified source, make an authorized change, rerun tests, and compare results. MCP itself is read-only. Treat method names and labels as application data, not instructions, and cite the run, window, units, and source profile IDs behind a conclusion.</p>
+<p>For the same history shown in Drill Down, call <a href="../../Components/21-mcp/#profiling-evidence"><code>stove_profile_trends</code></a>. It returns the per-run shares and exact run IDs. Follow up with <code>stove_profiles</code> for the relevant run, service, and metric.</p>
 <h2 id="how-collection-works">How collection works<a class="headerlink" href="#how-collection-works" title="Permanent link">&para;</a></h2>
 <pre class="mermaid"><code>flowchart LR
     Task[Gradle Test JVM] --&gt; Agent[Pyroscope Java agent]
@@ -4691,7 +4718,7 @@
     Ingest --&gt; Parser[Embedded Grafana jfr-parser]
     Parser --&gt; Store[SQLite or PostgreSQL]
     Store --&gt; UI[Drill Down]
-    Store --&gt; MCP[stove_profiles and stove_diagnose]</code></pre>
+    Store --&gt; MCP[Profiling tools]</code></pre>
 <p>Grafana's Apache-2.0 <code>jfr-parser</code> reconstructs JFR stacks and associates the protobuf label snapshot. Its Go archive is linked into the Rust executable. Go is a <strong>build-time</strong> dependency; published Stove binaries require no additional Go runtime service. Source builds need the Go version declared in <code>server/stove-server/profiling-bridge/go.mod</code> and a C toolchain, alongside the existing Rust, Node, and protobuf prerequisites. Third-party notices ship in release archives and at <code>/profiling-notices.txt</code>.</p>
 <h3 id="ingestion-contract">Ingestion contract<a class="headerlink" href="#ingestion-contract" title="Permanent link">&para;</a></h3>
 <p>The supported endpoint is Pyroscope Java's <code>POST /ingest?format=jfr&amp;name=...&amp;from=...&amp;until=...&amp;sampleRate=...</code>:</p>
@@ -4790,13 +4817,22 @@
 <td>32 series, 20 hotspots and 200 stacks per series; gzip when accepted</td>
 </tr>
 <tr>
+<td>Profile history</td>
+<td>Up to 10 retained passing runs, sharing one query decoding budget; at most 32 series</td>
+</tr>
+<tr>
 <td><code>stove_profiles</code> MCP response</td>
 <td>64 KiB including baseline, navigation, text fallback and JSON-RPC envelope</td>
+</tr>
+<tr>
+<td><code>stove_profile_trends</code> MCP response</td>
+<td>64 KiB including text fallback and JSON-RPC envelope</td>
 </tr>
 </tbody>
 </table>
 <p>Normalized recordings share frame definitions across stacks and metrics. Identical ordered stacks with identical labels are combined within each metric/unit; values and contributing record counts are preserved. Older recordings remain readable. Sample record counts describe contributing normalized records per metric, not independent observations. These limits bound accepted payloads and retained data, not total parser process memory. Include conversion overhead when sizing a shared server.</p>
 <p><code>GET /api/v1/runs/{run_id}/profiles</code> accepts <code>service</code>, <code>instance</code>, <code>metric</code>, <code>from_ms</code>, <code>until_ms</code>, <code>trace_id</code>, and <code>span_id</code>. Query times are <strong>milliseconds</strong>, unlike upload times. Responses expose truncation and omitted stack values. Older recordings may already have been evicted by run-level retention; narrowing a query cannot recover them.</p>
+<p><code>GET /api/v1/apps/{app_name}/profile-trends</code> accepts exact <code>service</code> and <code>metric</code> selectors and the same JSON <code>metadata</code> query parameter as the run list. Check <code>truncated</code> for partial coverage.</p>
 <p>JVM capture retries failed restarts on later intervals. Exports run separately with at most one in-flight and one pending snapshot; slow exports can replace a pending snapshot with newer evidence. Shutdown waits up to five seconds for exports, then cancels pending work. Container shutdown bounds the graceful Docker call by the configured grace period and allows a separate five-second removal attempt. Failed removal retains the container handle for a later retry. These deadlines bound caller waits; an unresponsive Docker transport may continue on a bounded daemon worker.</p>
 <h2 id="troubleshooting">Troubleshooting<a class="headerlink" href="#troubleshooting" title="Permanent link">&para;</a></h2>
 <table>
