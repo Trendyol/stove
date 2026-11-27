@@ -4689,7 +4689,7 @@ dashboard.</p>
 </tr>
 </tbody>
 </table>
-<p>Pin the BOM, all <code>com.trendyol:stove-*</code> dependencies, the tracing Gradle plugin, and <code>stove-server</code> to one Stove version.
+<p>Pin the BOM, all <code>com.trendyol:stove-*</code> dependencies, the Stove Gradle plugin, and <code>stove-server</code> to one Stove version.
 Mixed versions are a common cause of class-load errors and empty dashboard data.</p>
 <h2 id="common-faq">Common FAQ<a class="headerlink" href="#common-faq" title="Permanent link">&para;</a></h2>
 <details class="question">
@@ -4751,7 +4751,7 @@ Mixed versions are a common cause of class-load errors and empty dashboard data.
 <li>Containers have enough memory</li>
 <li>Ports free or <code>port = 0</code> for mocks</li>
 <li>Test extension registered (<code>StoveKotestExtension()</code> or <code>@ExtendWith(StoveJUnitExtension)</code>)</li>
-<li>For tracing: <code>stoveTracing</code> Gradle plugin applied + <code>tracing { enableSpanReceiver() }</code> in setup</li>
+<li>For tracing: apply the <code>com.trendyol.stove</code> Gradle plugin, opt in with <code>stove { tracing {} }</code> in the build, and register <code>tracing { enableSpanReceiver() }</code> in test setup</li>
 </ul>
 <h2 id="cancelled-ci-jobs-leave-dashboard-runs-running">Cancelled CI jobs leave dashboard runs running<a class="headerlink" href="#cancelled-ci-jobs-leave-dashboard-runs-running" title="Permanent link">&para;</a></h2>
 <p>Stove Server permanently deletes inactive running runs and their tests and evidence after <strong>3600 seconds (1 hour)</strong> without newly committed ingestion, checked every 60 seconds. Completed runs are unaffected. Set the shared, persistent timeout in <strong>Admin → Idle run cleanup</strong>; <code>0</code> disables expiry. Initial configuration uses <code>--run-idle-timeout-seconds</code>, <code>STOVE_RUN_IDLE_TIMEOUT_SECONDS</code>, or <code>run_idle_timeout_seconds</code> in the server configuration file.</p>

@@ -4067,7 +4067,7 @@
 </span><span id="__span-2-8"><a id="__codelineno-2-8" name="__codelineno-2-8" href="#__codelineno-2-8"></a><span class="w">  </span><span class="p">.</span><span class="na">run</span><span class="p">()</span>
 </span></code></pre></div>
 <h3 id="step-2-attach-the-opentelemetry-agent-in-your-build">Step 2: Attach the OpenTelemetry agent in your build<a class="headerlink" href="#step-2-attach-the-opentelemetry-agent-in-your-build" title="Permanent link">&para;</a></h3>
-<p>At the original 0.21.0 release, setup used a copied Gradle helper. Current projects should prefer the standalone <code>com.trendyol.stove.tracing</code> Gradle plugin described in the <a href="../../Components/15-tracing/">tracing docs</a>. The historical helper setup looked like this:</p>
+<p>At the original 0.21.0 release, setup used a copied Gradle helper. For current projects, follow the plugin setup in the <a href="../../Components/15-tracing/">tracing docs</a>. The historical helper setup looked like this:</p>
 <div class="language-kotlin highlight"><pre><span></span><code><span id="__span-3-1"><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="k">import</span><span class="w"> </span><span class="nn">com.trendyol.stove.gradle.stoveTracing</span>
 </span><span id="__span-3-2"><a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a>
 </span><span id="__span-3-3"><a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a><span class="hll"><span class="n">stoveTracing</span><span class="w"> </span><span class="p">{</span>

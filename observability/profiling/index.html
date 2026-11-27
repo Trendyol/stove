@@ -4171,7 +4171,7 @@
 
 
 <h1 id="profiling-and-drill-down">Profiling and Drill Down<a class="headerlink" href="#profiling-and-drill-down" title="Permanent link">&para;</a></h1>
-<p><strong>Available in 0.28.0.</strong> Use matching Stove libraries, tracing Gradle plugin, and Stove Server builds that include profiling. Stove 0.27.x does not include this feature.</p>
+<p><strong>Available in 0.28.0.</strong> The unified plugin DSL below requires the release after 0.28.0. Use matching Stove libraries, Gradle plugin, and Stove Server builds that include profiling. Stove 0.27.x does not include this feature.</p>
 <p>Stove collects continuous JVM and Go profiles during end-to-end tests and shows them in <strong>Drill Down</strong>. CPU, allocation, surviving-object, and lock samples help locate methods worth investigating before a performance problem reaches production. The existing Stove Server receives, converts, stores, and queries the recordings. Downstream users do not need to deploy Pyroscope or another profiling backend.</p>
 <h2 id="choose-the-right-evidence">Choose the right evidence<a class="headerlink" href="#choose-the-right-evidence" title="Permanent link">&para;</a></h2>
 <table>
@@ -4206,7 +4206,7 @@
 </table>
 <p>Profiles are sampled evidence. A hot method is an investigation starting point; a high share alone does not establish a defect. Test setup, framework code, JIT compilation, background threads, and the test harness can all contribute.</p>
 <h2 id="language-and-runner-support">Language and runner support<a class="headerlink" href="#language-and-runner-support" title="Permanent link">&para;</a></h2>
-<p>Having Gradle in a project does not make the application a JVM process. <code>stoveTracing.profiling</code> installs the <strong>Pyroscope Java agent in the selected Gradle test JVMs</strong>. It does not attach to child processes or discover applications in containers.</p>
+<p>Having Gradle in a project does not make the application a JVM process. <code>stove.profiling</code> installs the <strong>Pyroscope Java agent in the selected Gradle test JVMs</strong>. It does not attach to child processes or discover applications in containers.</p>
 <table>
 <thead>
 <tr>
@@ -4239,7 +4239,7 @@
 </tbody>
 </table>
 <h3 id="go-developers">Go developers<a class="headerlink" href="#go-developers" title="Permanent link">&para;</a></h3>
-<p>Stove 0.28.0 supports native Go profiles through the small <a href="https://github.com/Trendyol/stove/tree/main/go/stove-profiler"><code>go/stove-profiler</code></a> module, following the <code>stove-kafka</code> integration pattern. It wraps Grafana <code>pyroscope-go</code> <strong>1.5.0</strong>, pushes directly to Stove Server, and is inactive when no profiling URL is configured. <code>stoveTracing.profiling</code> remains the Java-agent configuration; it is unnecessary for profiling a Go binary.</p>
+<p>Stove 0.28.0 supports native Go profiles through the small <a href="https://github.com/Trendyol/stove/tree/main/go/stove-profiler"><code>go/stove-profiler</code></a> module, following the <code>stove-kafka</code> integration pattern. It wraps Grafana <code>pyroscope-go</code> <strong>1.5.0</strong>, pushes directly to Stove Server, and is inactive when no profiling URL is configured. <code>stove.profiling</code> remains the Java-agent configuration; it is unnecessary for profiling a Go binary.</p>
 <p>Install the published module:</p>
 <div class="language-shell highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>go<span class="w"> </span>get<span class="w"> </span>github.com/trendyol/stove/go/stove-profiler@v0.28.0
 </span></code></pre></div>
@@ -4335,28 +4335,27 @@
 <p>The server accepts the pinned Go SDK's multipart push contract on <code>POST /ingest</code>: <code>spyName=gospy</code>, <code>format</code> omitted or <code>pprof</code>, <code>name</code>, and <code>from</code>/<code>until</code> as <strong>epoch nanoseconds</strong> (unlike Java's epoch seconds). <code>profile</code> contains a gzip-compressed pprof protobuf; <code>sample_type_config</code> carries the SDK's units, display aliases, and delta/snapshot semantics. Unknown fields and null entries are rejected; allocation/contention metrics require delta metadata. <code>sampleRate=0</code> means unspecified. Stove displays sampling frequencies only for Go CPU metrics; the SDK’s synthetic heap sample rate is not a collection frequency. The same three <code>X-Stove-*</code> headers, ingress routes, 16 MiB upload limit, retention, and query budgets apply. Repeating the same upload is idempotent. The Go wrapper repairs equal/reversed final snapshot windows caused by SDK interval rounding before retrying; ordinary SDK windows retain their original timestamps.</p>
 <p>The embedded converter uses Grafana's generated <code>google.v1.Profile</code> protobuf, validates references and supported sample types, and reuses the JFR normalization/storage pipeline. It supports the SDK's delta uploads, not arbitrary cumulative heap/lock files, a pull-based <code>net/http/pprof</code> endpoint, Pyroscope Push RPC, or OTLP Profiles. No additional backend, service, or schema is needed.</p>
 <h2 id="configure-an-in-process-jvm-application">Configure an in-process JVM application<a class="headerlink" href="#configure-an-in-process-jvm-application" title="Permanent link">&para;</a></h2>
-<p>Keep versions in the project's Gradle version catalog. For 0.28.0, the relevant catalog entries are:</p>
+<p>Keep versions in the project's Gradle version catalog. For the unified plugin, use its release version:</p>
 <div class="language-toml highlight"><pre><span></span><code><span id="__span-4-1"><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="k">[versions]</span>
-</span><span id="__span-4-2"><a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a><span class="n">stove</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"0.28.0"</span>
+</span><span id="__span-4-2"><a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a><span class="n">stove</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"&lt;stove-version&gt;"</span>
 </span><span id="__span-4-3"><a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a>
 </span><span id="__span-4-4"><a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a><span class="k">[plugins]</span>
-</span><span id="__span-4-5"><a id="__codelineno-4-5" name="__codelineno-4-5" href="#__codelineno-4-5"></a><span class="n">stove-tracing</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="n">id</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="s2">"com.trendyol.stove.tracing"</span><span class="p">,</span><span class="w"> </span><span class="n">version</span><span class="p">.</span><span class="n">ref</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="s2">"stove"</span><span class="w"> </span><span class="p">}</span>
+</span><span id="__span-4-5"><a id="__codelineno-4-5" name="__codelineno-4-5" href="#__codelineno-4-5"></a><span class="n">stove</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="n">id</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="s2">"com.trendyol.stove"</span><span class="p">,</span><span class="w"> </span><span class="n">version</span><span class="p">.</span><span class="n">ref</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="s2">"stove"</span><span class="w"> </span><span class="p">}</span>
 </span></code></pre></div>
 <p>Merge these into the existing sections in <code>gradle/libs.versions.toml</code>. Keep the server, libraries, and plugin aligned.</p>
 <p>In the test project's <code>build.gradle.kts</code>:</p>
 <div class="language-kotlin highlight"><pre><span></span><code><span id="__span-5-1"><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a><span class="n">plugins</span><span class="w"> </span><span class="p">{</span>
-</span><span id="__span-5-2"><a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a><span class="w">    </span><span class="n">alias</span><span class="p">(</span><span class="n">libs</span><span class="p">.</span><span class="na">plugins</span><span class="p">.</span><span class="na">stove</span><span class="p">.</span><span class="na">tracing</span><span class="p">)</span>
+</span><span id="__span-5-2"><a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a><span class="w">    </span><span class="n">alias</span><span class="p">(</span><span class="n">libs</span><span class="p">.</span><span class="na">plugins</span><span class="p">.</span><span class="na">stove</span><span class="p">)</span>
 </span><span id="__span-5-3"><a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a><span class="p">}</span>
 </span><span id="__span-5-4"><a id="__codelineno-5-4" name="__codelineno-5-4" href="#__codelineno-5-4"></a>
-</span><span id="__span-5-5"><a id="__codelineno-5-5" name="__codelineno-5-5" href="#__codelineno-5-5"></a><span class="n">stoveTracing</span><span class="w"> </span><span class="p">{</span>
+</span><span id="__span-5-5"><a id="__codelineno-5-5" name="__codelineno-5-5" href="#__codelineno-5-5"></a><span class="n">stove</span><span class="w"> </span><span class="p">{</span>
 </span><span id="__span-5-6"><a id="__codelineno-5-6" name="__codelineno-5-6" href="#__codelineno-5-6"></a><span class="w">    </span><span class="n">serviceName</span><span class="p">.</span><span class="na">set</span><span class="p">(</span><span class="s">"checkout-api"</span><span class="p">)</span>
 </span><span id="__span-5-7"><a id="__codelineno-5-7" name="__codelineno-5-7" href="#__codelineno-5-7"></a><span class="w">    </span><span class="n">testTaskNames</span><span class="p">.</span><span class="na">set</span><span class="p">(</span><span class="n">listOf</span><span class="p">(</span><span class="s">"e2eTest"</span><span class="p">))</span><span class="w"> </span><span class="c1">// Use your actual Gradle Test task name.</span>
 </span><span id="__span-5-8"><a id="__codelineno-5-8" name="__codelineno-5-8" href="#__codelineno-5-8"></a><span class="w">    </span><span class="n">profiling</span><span class="w"> </span><span class="p">{</span>
-</span><span id="__span-5-9"><a id="__codelineno-5-9" name="__codelineno-5-9" href="#__codelineno-5-9"></a><span class="w">        </span><span class="n">enabled</span><span class="p">.</span><span class="na">set</span><span class="p">(</span><span class="kc">true</span><span class="p">)</span>
-</span><span id="__span-5-10"><a id="__codelineno-5-10" name="__codelineno-5-10" href="#__codelineno-5-10"></a><span class="w">        </span><span class="n">serverUrl</span><span class="p">.</span><span class="na">set</span><span class="p">(</span><span class="s">"http://localhost:4040"</span><span class="p">)</span>
-</span><span id="__span-5-11"><a id="__codelineno-5-11" name="__codelineno-5-11" href="#__codelineno-5-11"></a><span class="w">        </span><span class="n">allocations</span><span class="p">.</span><span class="na">set</span><span class="p">(</span><span class="kc">true</span><span class="p">)</span><span class="w"> </span><span class="c1">// Optional; CPU collection is enabled by default.</span>
-</span><span id="__span-5-12"><a id="__codelineno-5-12" name="__codelineno-5-12" href="#__codelineno-5-12"></a><span class="w">    </span><span class="p">}</span>
-</span><span id="__span-5-13"><a id="__codelineno-5-13" name="__codelineno-5-13" href="#__codelineno-5-13"></a><span class="p">}</span>
+</span><span id="__span-5-9"><a id="__codelineno-5-9" name="__codelineno-5-9" href="#__codelineno-5-9"></a><span class="w">        </span><span class="n">serverUrl</span><span class="p">.</span><span class="na">set</span><span class="p">(</span><span class="s">"http://localhost:4040"</span><span class="p">)</span>
+</span><span id="__span-5-10"><a id="__codelineno-5-10" name="__codelineno-5-10" href="#__codelineno-5-10"></a><span class="w">        </span><span class="n">allocations</span><span class="p">.</span><span class="na">set</span><span class="p">(</span><span class="kc">true</span><span class="p">)</span><span class="w"> </span><span class="c1">// Optional; CPU collection is enabled by default.</span>
+</span><span id="__span-5-11"><a id="__codelineno-5-11" name="__codelineno-5-11" href="#__codelineno-5-11"></a><span class="w">    </span><span class="p">}</span>
+</span><span id="__span-5-12"><a id="__codelineno-5-12" name="__codelineno-5-12" href="#__codelineno-5-12"></a><span class="p">}</span>
 </span></code></pre></div>
 <p>The plugin resolves Pyroscope Java agent <strong>2.9.2</strong>. You do not need to add the agent as an application runtime dependency. In Stove's own build, the agent API uses <code>compileOnly(libs.pyroscope.agent)</code> and <code>testImplementation(libs.pyroscope.agent)</code> from the version catalog; the selected test task supplies the runtime agent.</p>
 <p>Keep the normal <code>stove-dashboard</code> dependency and dashboard registration in the existing Stove setup:</p>
@@ -4366,7 +4365,7 @@
 </span><span id="__span-6-4"><a id="__codelineno-6-4" name="__codelineno-6-4" href="#__codelineno-6-4"></a><span class="p">}</span>
 </span></code></pre></div>
 <p>Use the project's normal Kotest or JUnit lifecycle and pair Stove startup with <code>Stove.stop()</code>. The dashboard creates the run ID, starts profiling for that run, and flushes the last partial recording before ending it. Do not start a second Pyroscope agent independently in the same JVM; Stove needs ownership of that lifecycle.</p>
-<p>Profiling is independent of <code>stoveTracing.enabled</code>: setting the outer <code>enabled.set(false)</code> disables OTel Java-agent wiring while an enabled <code>profiling</code> block still works. <code>tracing { enableSpanReceiver() }</code> is needed for receiving spans, not for uploading profiles.</p>
+<p>Profiling is independent of <code>stove.tracing.enabled</code>: setting <code>tracing.enabled.set(false)</code> disables OTel Java-agent wiring while an enabled <code>profiling</code> block still works. <code>tracing { enableSpanReceiver() }</code> is needed for receiving spans, not for uploading profiles.</p>
 <h3 id="running-from-intellij-and-ci">Running from IntelliJ and CI<a class="headerlink" href="#running-from-intellij-and-ci" title="Permanent link">&para;</a></h3>
 <p>Run the configured Gradle <code>Test</code> task, for example <code>./gradlew :your-project:e2eTest</code>. In IntelliJ, delegate test execution to Gradle, or launch that task from the Gradle tool window. IntelliJ's native <strong>Run Test</strong> runner bypasses the plugin's task wiring and does not attach this agent automatically.</p>
 <p>Recordings upload every ten seconds by default and once more during orderly teardown. A shorter run can therefore appear only after it finishes. A hard process kill cannot perform the final flush. Lowering the interval can improve visibility during a run, but cannot fix missing agent attachment, unsupported formats, or a wrong server address.</p>
@@ -4382,8 +4381,8 @@
 <tbody>
 <tr>
 <td><code>enabled</code></td>
-<td><code>false</code></td>
-<td>Opt in to JVM profiling</td>
+<td>enabled by the profiling block</td>
+<td>Override to disable conditionally</td>
 </tr>
 <tr>
 <td><code>serverUrl</code></td>
@@ -4427,34 +4426,33 @@
 </tr>
 </tbody>
 </table>
-<p><code>serviceName</code> and <code>testTaskNames</code> belong to the outer <code>stoveTracing</code> block. An empty task list selects all Gradle <code>Test</code> tasks. Select only the intended tasks when you have unit, integration, and end-to-end suites.</p>
+<p><code>serviceName</code> and <code>testTaskNames</code> belong to the outer <code>stove</code> block. An empty task list selects all Gradle <code>Test</code> tasks. Select only the intended tasks when you have unit, integration, and end-to-end suites.</p>
 <p>CPU collection uses async-profiler's ITIMER event. Native support depends on the JVM, OS, and architecture. Unsupported startup is logged without failing the test suite. Allocation, live-object, and lock collection add workload-dependent overhead and are opt-in. Stove does not force garbage collection before dumping profiles.</p>
 <h2 id="jvm-trace-to-profile-correlation">JVM trace-to-profile correlation<a class="headerlink" href="#jvm-trace-to-profile-correlation" title="Permanent link">&para;</a></h2>
-<p>When both tracing and profiling are enabled, <code>stoveTracing</code> automatically loads the Pyroscope OpenTelemetry Java-agent extension <strong>2.1.4</strong>. Keep the existing <code>tracing { enableSpanReceiver() }</code> and dashboard registration. No additional application dependency or backend is needed.</p>
+<p>When both tracing and profiling are enabled, <code>stove</code> automatically loads the Pyroscope OpenTelemetry Java-agent extension <strong>2.1.4</strong>. Keep the existing <code>tracing { enableSpanReceiver() }</code> and dashboard registration. No additional application dependency or backend is needed.</p>
 <p>The official shaded extension is bundled in the Stove Gradle plugin and extracted by <code>stoveExtractPyroscopeExtension</code>. Downstream builds do not need a GitHub repository or direct GitHub access. Stove's source build resolves the versioned GitHub release; <code>gradle/libs.versions.toml</code> pins the version. Maven's <code>io.pyroscope:otel</code> is the library, not this extension. Existing <code>otel.javaagent.extensions</code> entries are preserved.</p>
 <p>Stove sets <code>otel.pyroscope.start.profiling=false</code> and <code>otel.pyroscope.root.span.only=true</code>. The extension supplies correlation context; the dashboard still starts Pyroscope after assigning the run identity, configures the exporter and identity headers, flushes the last recording, and stops collection. Do not start another profiler. The extension bundles an older fallback profiler, but uses Stove's separately attached <strong>2.9.2</strong> agent through the shared API. Overriding <code>agentVersion</code> requires verifying compatibility with this extension.</p>
 <p>The default correlates <strong>local root spans</strong>: spans with no parent or a remote parent, such as an incoming HTTP request. Such spans receive <code>pyroscope.profile.id</code>. JFR samples carry their trace and span context; the embedded parser produces <code>trace_id</code> and <code>profile_id</code> labels. The REST/MCP <code>span_id</code> selector matches that <code>profile_id</code>, using the span's <code>pyroscope.profile.id</code> attribute.</p>
 <p>Open a span in the application's test trace view and choose <strong>Drill Down · this span</strong>. If it has no profile ID, <strong>Drill Down · this trace</strong> searches tagged samples across that trace. The panel shows the scope and offers <strong>Show entire run</strong>. A trace search may include several local root spans; it does not claim samples belong to the selected child span.</p>
 <p>Short operations may receive no samples. Coroutine, reactive, and other asynchronous thread transitions are not guaranteed to retain profiling context; OTel context propagation alone does not prove correct sample attribution. An empty result means no matching samples were found, not that the operation did no work. Refresh after upload or teardown, then inspect the whole run if needed. Allocation/live profiles still do not prove memory leaks.</p>
 <p>To keep profiling without correlation:</p>
-<div class="language-kotlin highlight"><pre><span></span><code><span id="__span-7-1"><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a><span class="n">stoveTracing</span><span class="w"> </span><span class="p">{</span>
-</span><span id="__span-7-2"><a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a><span class="w">    </span><span class="n">profiling</span><span class="w"> </span><span class="p">{</span>
-</span><span id="__span-7-3"><a id="__codelineno-7-3" name="__codelineno-7-3" href="#__codelineno-7-3"></a><span class="w">        </span><span class="n">enabled</span><span class="p">.</span><span class="na">set</span><span class="p">(</span><span class="kc">true</span><span class="p">)</span>
+<div class="language-kotlin highlight"><pre><span></span><code><span id="__span-7-1"><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a><span class="n">stove</span><span class="w"> </span><span class="p">{</span>
+</span><span id="__span-7-2"><a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a><span class="w">    </span><span class="n">tracing</span><span class="w"> </span><span class="p">{}</span>
+</span><span id="__span-7-3"><a id="__codelineno-7-3" name="__codelineno-7-3" href="#__codelineno-7-3"></a><span class="w">    </span><span class="n">profiling</span><span class="w"> </span><span class="p">{</span>
 </span><span id="__span-7-4"><a id="__codelineno-7-4" name="__codelineno-7-4" href="#__codelineno-7-4"></a><span class="w">        </span><span class="n">traceCorrelation</span><span class="p">.</span><span class="na">set</span><span class="p">(</span><span class="kc">false</span><span class="p">)</span>
 </span><span id="__span-7-5"><a id="__codelineno-7-5" name="__codelineno-7-5" href="#__codelineno-7-5"></a><span class="w">    </span><span class="p">}</span>
 </span><span id="__span-7-6"><a id="__codelineno-7-6" name="__codelineno-7-6" href="#__codelineno-7-6"></a><span class="p">}</span>
 </span></code></pre></div>
-<p>Setting the outer <code>stoveTracing.enabled=false</code> also omits the OTel agent and extension while preserving profiling. IntelliJ must delegate tests to Gradle for all this wiring; native Run Test bypasses it. This extension applies only to JVM profiling. Go still needs explicit runtime profiling labels.</p>
+<p>Leaving out the <code>tracing {}</code> block also omits the OTel agent and extension while preserving profiling. IntelliJ must delegate tests to Gradle for all this wiring; native Run Test bypasses it. This extension applies only to JVM profiling. Go still needs explicit runtime profiling labels.</p>
 <h2 id="shared-stove-server-over-https">Shared Stove Server over HTTPS<a class="headerlink" href="#shared-stove-server-over-https" title="Permanent link">&para;</a></h2>
 <p>Use the same deployment for dashboard events and profiling. The two client settings are currently independent; the profiler does <strong>not</strong> inherit <code>DashboardIngestion.Http</code> automatically.</p>
 <div class="language-kotlin highlight"><pre><span></span><code><span id="__span-8-1"><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a><span class="c1">// build.gradle.kts</span>
-</span><span id="__span-8-2"><a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a><span class="n">stoveTracing</span><span class="w"> </span><span class="p">{</span>
+</span><span id="__span-8-2"><a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a><span class="n">stove</span><span class="w"> </span><span class="p">{</span>
 </span><span id="__span-8-3"><a id="__codelineno-8-3" name="__codelineno-8-3" href="#__codelineno-8-3"></a><span class="w">    </span><span class="n">serviceName</span><span class="p">.</span><span class="na">set</span><span class="p">(</span><span class="s">"checkout-api"</span><span class="p">)</span>
 </span><span id="__span-8-4"><a id="__codelineno-8-4" name="__codelineno-8-4" href="#__codelineno-8-4"></a><span class="w">    </span><span class="n">profiling</span><span class="w"> </span><span class="p">{</span>
-</span><span id="__span-8-5"><a id="__codelineno-8-5" name="__codelineno-8-5" href="#__codelineno-8-5"></a><span class="w">        </span><span class="n">enabled</span><span class="p">.</span><span class="na">set</span><span class="p">(</span><span class="kc">true</span><span class="p">)</span>
-</span><span id="__span-8-6"><a id="__codelineno-8-6" name="__codelineno-8-6" href="#__codelineno-8-6"></a><span class="w">        </span><span class="n">serverUrl</span><span class="p">.</span><span class="na">set</span><span class="p">(</span><span class="s">"https://stove.example.internal"</span><span class="p">)</span>
-</span><span id="__span-8-7"><a id="__codelineno-8-7" name="__codelineno-8-7" href="#__codelineno-8-7"></a><span class="w">    </span><span class="p">}</span>
-</span><span id="__span-8-8"><a id="__codelineno-8-8" name="__codelineno-8-8" href="#__codelineno-8-8"></a><span class="p">}</span>
+</span><span id="__span-8-5"><a id="__codelineno-8-5" name="__codelineno-8-5" href="#__codelineno-8-5"></a><span class="w">        </span><span class="n">serverUrl</span><span class="p">.</span><span class="na">set</span><span class="p">(</span><span class="s">"https://stove.example.internal"</span><span class="p">)</span>
+</span><span id="__span-8-6"><a id="__codelineno-8-6" name="__codelineno-8-6" href="#__codelineno-8-6"></a><span class="w">    </span><span class="p">}</span>
+</span><span id="__span-8-7"><a id="__codelineno-8-7" name="__codelineno-8-7" href="#__codelineno-8-7"></a><span class="p">}</span>
 </span></code></pre></div>
 <div class="language-kotlin highlight"><pre><span></span><code><span id="__span-9-1"><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a><span class="c1">// Inside the existing Stove setup:</span>
 </span><span id="__span-9-2"><a id="__codelineno-9-2" name="__codelineno-9-2" href="#__codelineno-9-2"></a><span class="n">dashboard</span><span class="w"> </span><span class="p">{</span>
@@ -4468,13 +4466,12 @@
 <p>The ingress must forward <code>POST /ingest</code> with its query parameters and multipart body, preserve <code>X-Stove-Run-Id</code>, <code>X-Stove-Service-Name</code>, and <code>X-Stove-Instance-Id</code>, and allow requests up to the server's 16 MiB upload limit. Dashboard events must reach the same logical storage so the referenced run exists. HTTPS does not change the recording format.</p>
 <h3 id="use-one-deployment-setting-in-local-runs-and-ci">Use one deployment setting in local runs and CI<a class="headerlink" href="#use-one-deployment-setting-in-local-runs-and-ci" title="Permanent link">&para;</a></h3>
 <p>To avoid configuring different destinations accidentally, read one environment variable in both places. <code>STOVE_SERVER_URL</code> below is a project convention explicitly wired by these snippets, not an automatically recognized Stove setting.</p>
-<div class="language-kotlin highlight"><pre><span></span><code><span id="__span-10-1"><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a><span class="c1">// build.gradle.kts; inside the existing stoveTracing configuration:</span>
-</span><span id="__span-10-2"><a id="__codelineno-10-2" name="__codelineno-10-2" href="#__codelineno-10-2"></a><span class="n">stoveTracing</span><span class="w"> </span><span class="p">{</span>
+<div class="language-kotlin highlight"><pre><span></span><code><span id="__span-10-1"><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a><span class="c1">// build.gradle.kts; inside the existing stove configuration:</span>
+</span><span id="__span-10-2"><a id="__codelineno-10-2" name="__codelineno-10-2" href="#__codelineno-10-2"></a><span class="n">stove</span><span class="w"> </span><span class="p">{</span>
 </span><span id="__span-10-3"><a id="__codelineno-10-3" name="__codelineno-10-3" href="#__codelineno-10-3"></a><span class="w">    </span><span class="n">profiling</span><span class="w"> </span><span class="p">{</span>
-</span><span id="__span-10-4"><a id="__codelineno-10-4" name="__codelineno-10-4" href="#__codelineno-10-4"></a><span class="w">        </span><span class="n">enabled</span><span class="p">.</span><span class="na">set</span><span class="p">(</span><span class="kc">true</span><span class="p">)</span>
-</span><span id="__span-10-5"><a id="__codelineno-10-5" name="__codelineno-10-5" href="#__codelineno-10-5"></a><span class="w">        </span><span class="n">serverUrl</span><span class="p">.</span><span class="na">set</span><span class="p">(</span><span class="n">providers</span><span class="p">.</span><span class="na">environmentVariable</span><span class="p">(</span><span class="s">"STOVE_SERVER_URL"</span><span class="p">))</span>
-</span><span id="__span-10-6"><a id="__codelineno-10-6" name="__codelineno-10-6" href="#__codelineno-10-6"></a><span class="w">    </span><span class="p">}</span>
-</span><span id="__span-10-7"><a id="__codelineno-10-7" name="__codelineno-10-7" href="#__codelineno-10-7"></a><span class="p">}</span>
+</span><span id="__span-10-4"><a id="__codelineno-10-4" name="__codelineno-10-4" href="#__codelineno-10-4"></a><span class="w">        </span><span class="n">serverUrl</span><span class="p">.</span><span class="na">set</span><span class="p">(</span><span class="n">providers</span><span class="p">.</span><span class="na">environmentVariable</span><span class="p">(</span><span class="s">"STOVE_SERVER_URL"</span><span class="p">))</span>
+</span><span id="__span-10-5"><a id="__codelineno-10-5" name="__codelineno-10-5" href="#__codelineno-10-5"></a><span class="w">    </span><span class="p">}</span>
+</span><span id="__span-10-6"><a id="__codelineno-10-6" name="__codelineno-10-6" href="#__codelineno-10-6"></a><span class="p">}</span>
 </span></code></pre></div>
 <div class="language-kotlin highlight"><pre><span></span><code><span id="__span-11-1"><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a><span class="c1">// Test setup; inside the existing Stove().with { ... } block:</span>
 </span><span id="__span-11-2"><a id="__codelineno-11-2" name="__codelineno-11-2" href="#__codelineno-11-2"></a><span class="n">dashboard</span><span class="w"> </span><span class="p">{</span>
@@ -4490,7 +4487,7 @@
 </span></code></pre></div>
 <div class="language-shell highlight"><pre><span></span><code><span id="__span-12-1"><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a><span class="nv">STOVE_SERVER_URL</span><span class="o">=</span>https://stove.example.internal<span class="w"> </span>./gradlew<span class="w"> </span>:your-project:e2eTest
 </span></code></pre></div>
-<p>Set that variable in the CI job or IntelliJ's Gradle run configuration as well. Use a base URL without credentials, query parameters, fragments, or an endpoint suffix. <code>serviceName</code> still belongs in the outer <code>stoveTracing</code> configuration. <code>appName</code> groups dashboard runs; the service name identifies the profiled service within a run. Using the same name for a single application makes navigation easier.</p>
+<p>Set that variable in the CI job or IntelliJ's Gradle run configuration as well. Use a base URL without credentials, query parameters, fragments, or an endpoint suffix. <code>serviceName</code> still belongs in the outer <code>stove</code> configuration. <code>appName</code> groups dashboard runs; the service name identifies the profiled service within a run. Using the same name for a single application makes navigation easier.</p>
 <h3 id="routes-ports-and-gateway-prefixes">Routes, ports, and gateway prefixes<a class="headerlink" href="#routes-ports-and-gateway-prefixes" title="Permanent link">&para;</a></h3>
 <p>Both HTTP clients use the server's HTTP port, <strong>4040</strong> by default. An ingress typically exposes that port as HTTPS on <strong>443</strong>. Profiles never use the gRPC event port, <strong>4041</strong>. You may keep gRPC for dashboard events and HTTPS for profiles if both reach the same storage; selecting <code>DashboardIngestion.Http</code> is convenient for an HTTPS-only deployment.</p>
 <table>
@@ -4558,7 +4555,7 @@
 </tr>
 <tr>
 <td><code>X-Stove-Service-Name</code></td>
-<td>Profile service from <code>stoveTracing.serviceName</code>; at most 256 bytes; the server can fall back to the query name</td>
+<td>Profile service from <code>stove.serviceName</code>; at most 256 bytes; the server can fall back to the query name</td>
 </tr>
 <tr>
 <td><code>X-Stove-Instance-Id</code></td>
@@ -4574,7 +4571,7 @@
 <h3 id="tls-and-authentication">TLS and authentication<a class="headerlink" href="#tls-and-authentication" title="Permanent link">&para;</a></h3>
 <p>TLS usually terminates at the existing ingress, which forwards HTTP to Stove on the private network. The test JVM must trust the certificate issuer and the certificate must match the public hostname. A browser or <code>curl</code> succeeding does not prove Java trust is configured: the Gradle test JVM may use a different JDK and trust store from the browser, shell, or Gradle daemon.</p>
 <p>For an internal CA, provision the approved CA chain in the test JDK's trust store, or configure a dedicated trust store on the selected Gradle <code>Test</code> tasks using the JVM properties <code>javax.net.ssl.trustStore</code>, <code>javax.net.ssl.trustStoreType</code>, and, when required, <code>javax.net.ssl.trustStorePassword</code>. Keep any password in the existing CI secret mechanism. Setting properties only on the Gradle daemon does not configure forked test JVMs. Check the Gradle Java toolchain and IntelliJ Gradle JVM when local and CI results differ. Do not disable certificate or hostname verification.</p>
-<p>Stove's endpoints have no built-in authentication or authorization. Keep the deployment behind the existing trusted network/access boundary. Neither <code>stoveTracing.profiling</code> nor <code>DashboardIngestion.Http</code> currently exposes arbitrary authentication headers or a dedicated client-certificate configuration API.</p>
+<p>Stove's endpoints have no built-in authentication or authorization. Keep the deployment behind the existing trusted network/access boundary. Neither <code>stove.profiling</code> nor <code>DashboardIngestion.Http</code> currently exposes arbitrary authentication headers or a dedicated client-certificate configuration API.</p>
 <table>
 <thead>
 <tr>

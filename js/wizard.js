@@ -67,7 +67,7 @@
         keyed: false,
         pkg: "com.yourcompany.yourapp",
         appClass: "MyApp",
-        stoveVersion: "0.28.0",
+        stoveVersion: "<stove-version>",
       },
 
       async init() {
@@ -617,13 +617,13 @@ ${fill(test.sample, { body })}`;
             </div>
             <div class="sw-callout" x-show="state.obs.includes('obs.tracing') && state.runtime !== 'provided'">
               <strong>🐘 Gradle required for tracing.</strong>
-              The <code>stoveTracing</code> plugin attaches the OpenTelemetry Java agent, runs the OTLP receiver, allocates a per-task port, and exposes the endpoint to your AUT via env vars. <strong>Zero app-code changes.</strong>
+              The <code>stove</code> plugin attaches the OpenTelemetry Java agent, runs the OTLP receiver, allocates a per-task port, and exposes the endpoint to your AUT via env vars. <strong>Zero app-code changes.</strong>
               Maven users would need to wire all of that manually. If you're on Maven, this is the moment to consider switching. <code>gradle init --type pom</code> gets you most of the way there.
             </div>
 
             <div class="sw-callout" x-show="state.obs.includes('obs.tracing') && state.runtime === 'provided'">
               <strong>⚠️ Tracing has limited value for provided mode.</strong>
-              The <code>stoveTracing</code> plugin instruments the JVM that runs your AUT. With <code>providedApplication</code> the AUT runs remotely, so the agent can't attach. Spans only reach Stove if the remote app is <em>already</em> OTel-instrumented and exports to a Stove-reachable OTLP endpoint.
+              The <code>stove</code> plugin instruments the JVM that runs your AUT. With <code>providedApplication</code> the AUT runs remotely, so the agent can't attach. Spans only reach Stove if the remote app is <em>already</em> OTel-instrumented and exports to a Stove-reachable OTLP endpoint.
               <br><br>
               For most provided-mode tests, <strong>Reporting + Dashboard + MCP</strong> are enough. They show Stove's own actions (HTTP calls, DB queries, Kafka publishes) without needing the AUT's spans.
             </div>
@@ -652,7 +652,7 @@ ${fill(test.sample, { body })}`;
                 <strong>Built for Gradle (Kotlin DSL)</strong>
               </div>
               <p>
-                The <code>stoveTracing</code> plugin (OpenTelemetry agent attach + OTLP receiver + per-task port allocation) is <strong>Gradle-only</strong>.
+                The <code>stove</code> plugin (OpenTelemetry agent attach + OTLP receiver + per-task port allocation) is <strong>Gradle-only</strong>.
                 Stove dependencies work on Maven, but tracing, dashboard auto-wiring, and the polyglot tooling assume the Gradle path.
                 On Maven? Converting is worth it. Use Gradle's <code>init</code> task as a starting point:
               </p>

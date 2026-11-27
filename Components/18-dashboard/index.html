@@ -4635,7 +4635,7 @@ Install <code>stove-server</code>, run <code>stove</code>, add <code>dashboard {
 </span></code></pre></div>
 <p>With <code>DashboardIngestion.Http</code>, each event is sent as a protobuf-encoded <code>DashboardEvent</code> in the body of <code>POST &lt;baseUrl&gt;/api/v1/events</code> (<code>Content-Type: application/x-protobuf</code>) and acknowledged with a protobuf <code>EventAck</code>. The base URL may include the gateway path prefix but must not include <code>/api/v1/events</code>, a query, or a fragment. Queueing, retry, and auto-disable semantics are identical to the default <code>DashboardIngestion.Grpc</code> transport, and the server applies the same validation, deduplication, and live broadcast pipeline to both.</p>
 <p>The server exposes its HTTP API documentation at <code>/swagger-ui</code> and its OpenAPI document at <code>/api-docs/openapi.json</code>. The ingestion request and response are binary protobuf payloads; the shared <code>.proto</code> files in <code>stove-dashboard-api</code> remain the authoritative message schema.</p>
-<p>For profiling on the same deployment, configure <code>stoveTracing.profiling.serverUrl</code> separately. Its multipart <code>POST /ingest</code> uses the HTTP port too. See <a href="../../observability/profiling/#shared-stove-server-over-https">shared profiling deployment</a> for a common CI setting, path prefixes, required headers, upload limits, Java certificate trust, authentication limitations, and verification steps.</p>
+<p>For profiling on the same deployment, configure <code>stove.profiling.serverUrl</code> separately. Its multipart <code>POST /ingest</code> uses the HTTP port too. See <a href="../../observability/profiling/#shared-stove-server-over-https">shared profiling deployment</a> for a common CI setting, path prefixes, required headers, upload limits, Java certificate trust, authentication limitations, and verification steps.</p>
 <h2 id="what-you-see">What you see<a class="headerlink" href="#what-you-see" title="Permanent link">&para;</a></h2>
 <div class="stove-catalog">
   <div class="stove-sys-card">
@@ -5041,7 +5041,7 @@ stored <code>stove_version</code>; if it is absent, the UI says "not reported" i
 <h2 id="continuous-profiling">Continuous profiling<a class="headerlink" href="#continuous-profiling" title="Permanent link">&para;</a></h2>
 <p>In <strong>0.28.0</strong>, Stove Server receives Pyroscope Java JFR and native Go pprof recordings and
 provides <strong>Drill Down</strong> for CPU and memory investigation, with no separate
-profiling backend. Enable collection in the tracing Gradle plugin and keep the
+profiling backend. Enable collection in the Stove Gradle plugin and keep the
 normal dashboard integration. The plugin profiles the test JVM; Go applications use <code>go/stove-profiler</code>
 and dashboard-exposed run configuration.</p>
 <p>See <a href="../../observability/profiling/">Profiling and Drill Down</a> for the complete
