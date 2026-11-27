@@ -1,5 +1,6 @@
 use super::Analyzer;
 use crate::mcp::profile_response::MAX_BYTES as MAX_SUMMARY_BYTES;
+use crate::profiling::trends::{ProfileTrendsQuery, trends};
 use crate::profiling::{ProfileQuery, ProfileReport};
 use serde_json::{Value, json};
 
@@ -7,6 +8,12 @@ const MAX_SUMMARY_SERIES: usize = 8;
 const MAX_SOURCE_PROFILES: usize = 32;
 
 impl Analyzer {
+  pub(super) fn profile_trends(&self, arguments: Value) -> Result<Value, String> {
+    let query: ProfileTrendsQuery = crate::mcp::args::parse(arguments)?;
+    let report = trends(&self.repository, query).map_err(|e| e.to_string())?;
+    serde_json::to_value(report).map_err(|e| e.to_string())
+  }
+
   pub(super) fn profiles(&self, mut arguments: Value) -> Result<Value, String> {
     let run_id = arguments["run_id"]
       .as_str()

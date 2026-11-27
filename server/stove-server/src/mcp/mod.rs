@@ -55,13 +55,13 @@ pub async fn handle_post(
     return StatusCode::ACCEPTED.into_response();
   }
 
-  match handle_request(state, request) {
+  match handle_request(state, request).await {
     Ok(result) => protocol::rpc_result(id, result),
     Err(error) => protocol::rpc_error(id, StatusCode::OK, error.code, &error.message, error.data),
   }
 }
 
-fn handle_request(state: AppState, request: JsonRpcRequest) -> Result<Value, RpcError> {
+async fn handle_request(state: AppState, request: JsonRpcRequest) -> Result<Value, RpcError> {
   match MethodName::from_str(&request.method) {
     Some(MethodName::Initialize) => Ok(protocol::initialize_result()),
     Some(MethodName::Ping) => Ok(json!({})),
@@ -76,10 +76,16 @@ fn handle_request(state: AppState, request: JsonRpcRequest) -> Result<Value, Rpc
       let tool = ToolName::from_str(&params.name).ok_or_else(|| {
         RpcError::invalid_params(format!("unknown Stove MCP tool: {}", params.name))
       })?;
-      Ok(match analyzer.call_tool(tool, arguments) {
-        Ok(output) if tool == ToolName::Profiles => {
-          profile_response::tool_result(output, request.id.as_ref())
-        }
+      let is_profile = matches!(tool, ToolName::Profiles | ToolName::ProfileTrends);
+      let output = if is_profile {
+        tokio::task::spawn_blocking(move || analyzer.call_tool(tool, arguments))
+          .await
+          .unwrap_or_else(|_| Err("Profile query failed".into()))
+      } else {
+        analyzer.call_tool(tool, arguments)
+      };
+      Ok(match output {
+        Ok(output) if is_profile => profile_response::tool_result(output, request.id.as_ref()),
         Ok(output) => protocol::tool_result(&output),
         Err(message) => protocol::tool_error(&message),
       })

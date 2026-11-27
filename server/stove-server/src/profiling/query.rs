@@ -76,12 +76,15 @@ pub struct Finding {
   pub evidence: String,
   pub suggestion: String,
 }
-struct Aggregate {
-  service: String,
-  metric: String,
-  unit: String,
-  total: i64,
-  records: usize,
+pub(super) const HOTSPOT_PERCENT: f64 = 20.0;
+pub(super) const MIN_SAMPLE_RECORDS: usize = 20;
+
+pub(super) type SeriesKey = (String, String, String);
+pub(super) type MethodValues = BTreeMap<(String, String), i64>;
+
+pub(super) struct Aggregate {
+  pub total: i64,
+  pub records: usize,
   from: i64,
   until: i64,
   rates: BTreeSet<i64>,
@@ -89,11 +92,8 @@ struct Aggregate {
   stacks: BTreeMap<Vec<Arc<Frame>>, i64>,
 }
 impl Aggregate {
-  fn new(chunk: &StoredChunk, metric: String, unit: String) -> Self {
+  fn new(chunk: &StoredChunk) -> Self {
     Self {
-      service: chunk.service.clone(),
-      metric,
-      unit,
       total: 0,
       records: 0,
       from: chunk.from_ms,
@@ -104,13 +104,7 @@ impl Aggregate {
     }
   }
 
-  fn record(
-    &mut self,
-    sample: Sample,
-    frame_table: &[Arc<Frame>],
-    chunk: &StoredChunk,
-    sample_rate: i64,
-  ) -> Result<()> {
+  fn record(&mut self, sample: Sample, frame_table: &[Arc<Frame>]) -> Result<()> {
     let frames = if sample.frame_ids.is_empty() {
       sample.frames.into_iter().map(Arc::new).collect()
     } else {
@@ -136,17 +130,30 @@ impl Aggregate {
       .checked_add(sample.count.get())
       .ok_or_else(|| invalid("Profile record count overflow"))?;
     add(self.stacks.entry(frames).or_default(), sample.value)?;
+    Ok(())
+  }
+
+  fn include_chunk(&mut self, chunk: &StoredChunk, sample_rate: Option<i64>) {
     self.ids.insert(chunk.id.clone());
-    // The Go SDK sends a synthetic sampleRate=100 for heap uploads as well.
-    // Only its CPU collector uses that value as an actual frequency.
-    let has_frequency =
-      !self.metric.starts_with("go:") || matches!(self.metric.as_str(), "go:cpu" | "go:samples");
-    if sample_rate > 0 && has_frequency {
+    if let Some(sample_rate) = sample_rate {
       self.rates.insert(sample_rate);
     }
     self.from = self.from.min(chunk.from_ms);
     self.until = self.until.max(chunk.until_ms);
-    Ok(())
+  }
+
+  pub(super) fn self_values_by_method(&self) -> MethodValues {
+    let mut methods = BTreeMap::new();
+    for (frames, &value) in &self.stacks {
+      if let Some(frame) = frames.last() {
+        // Every positive stack contributes once, so a method's sum is bounded by total.
+        *methods.entry((&frame.name, &frame.file)).or_default() += value;
+      }
+    }
+    methods
+      .into_iter()
+      .map(|((name, file), value)| ((name.clone(), file.clone()), value))
+      .collect()
   }
 }
 
@@ -194,6 +201,26 @@ impl SnapshotSelection {
   }
 }
 
+pub(super) struct QueryBudget {
+  chunks: usize,
+  bytes: usize,
+}
+
+impl Default for QueryBudget {
+  fn default() -> Self {
+    Self {
+      chunks: limits::MAX_QUERY_CHUNKS,
+      bytes: limits::MAX_QUERY_BYTES,
+    }
+  }
+}
+
+impl QueryBudget {
+  pub(super) fn exhausted(&self) -> bool {
+    self.chunks == 0 || self.bytes == 0
+  }
+}
+
 pub fn report(repo: &Repository, run_id: &str, query: &ProfileQuery) -> Result<ProfileReport> {
   if query
     .from_ms
@@ -205,49 +232,10 @@ pub fn report(repo: &Repository, run_id: &str, query: &ProfileQuery) -> Result<P
   let run = repo
     .get_run(run_id)?
     .ok_or_else(|| AppError::NotFound(format!("Run {run_id} not found")))?;
-  let chunks = repo.profile_chunk_ids(run_id, query)?;
-  let mut groups: BTreeMap<(String, String, String), Aggregate> = BTreeMap::new();
-  let mut snapshots = SnapshotSelection::default();
-  let mut decoded = 0;
-  let mut truncated = chunks.len() > limits::MAX_QUERY_CHUNKS;
-  for id in chunks.into_iter().take(limits::MAX_QUERY_CHUNKS) {
-    let Some(chunk) = repo.profile_chunk(&id)? else {
-      continue;
-    };
-    let Some(bytes) = decompress_bounded(&chunk.payload, limits::MAX_QUERY_BYTES - decoded)? else {
-      truncated = true;
-      break;
-    };
-    decoded += bytes.len();
-    let recording: Recording = serde_json::from_slice(&bytes)?;
-    let latest_jvm = snapshots.latest_jvm_recording(&chunk, &recording);
-    let frame_table: Vec<_> = recording.frame_table.into_iter().map(Arc::new).collect();
-    for p in recording.profiles {
-      if query.metric.as_ref().is_some_and(|v| v != &p.metric) {
-        continue;
-      }
-      if !snapshots.includes(&chunk, &p.metric, &p.unit, latest_jvm) {
-        continue;
-      }
-      let key = (chunk.service.clone(), p.metric.clone(), p.unit.clone());
-      if !groups.contains_key(&key) && groups.len() >= limits::MAX_SERIES {
-        truncated = true;
-        continue;
-      }
-      let g = groups
-        .entry(key)
-        .or_insert_with(|| Aggregate::new(&chunk, p.metric, p.unit));
-      for s in p.samples {
-        if query.includes_sample(&s) {
-          g.record(s, &frame_table, &chunk, recording.sample_rate)?;
-        }
-      }
-    }
-  }
+  let (groups, truncated) = aggregate(repo, run_id, query, &mut QueryBudget::default())?;
   let series = groups
-    .into_values()
-    .filter(|g| g.total > 0)
-    .map(finish)
+    .into_iter()
+    .map(|(key, group)| finish(key, group))
     .collect::<Result<Vec<_>>>()?;
   Ok(ProfileReport {
     run_id: run_id.into(),
@@ -263,8 +251,70 @@ pub fn report(repo: &Repository, run_id: &str, query: &ProfileQuery) -> Result<P
     ).into(),
   })
 }
+
+pub(super) fn aggregate(
+  repo: &Repository,
+  run_id: &str,
+  query: &ProfileQuery,
+  budget: &mut QueryBudget,
+) -> Result<(BTreeMap<SeriesKey, Aggregate>, bool)> {
+  let chunks = repo.profile_chunk_ids(run_id, query)?;
+  let mut groups = BTreeMap::new();
+  let mut snapshots = SnapshotSelection::default();
+  let mut truncated = chunks.len() > budget.chunks;
+  for id in chunks.into_iter().take(budget.chunks) {
+    budget.chunks -= 1;
+    let Some(chunk) = repo.profile_chunk(&id)? else {
+      truncated = true;
+      continue;
+    };
+    let Some(bytes) = decompress_bounded(&chunk.payload, budget.bytes)? else {
+      budget.bytes = 0;
+      truncated = true;
+      break;
+    };
+    budget.bytes -= bytes.len();
+    let recording: Recording = serde_json::from_slice(&bytes)?;
+    let latest_jvm = snapshots.latest_jvm_recording(&chunk, &recording);
+    let frame_table: Vec<_> = recording.frame_table.into_iter().map(Arc::new).collect();
+    for p in recording.profiles {
+      if query.metric.as_ref().is_some_and(|v| v != &p.metric) {
+        continue;
+      }
+      if !snapshots.includes(&chunk, &p.metric, &p.unit, latest_jvm) {
+        continue;
+      }
+      // Only Go's CPU collector uses the SDK's sample rate as an actual frequency.
+      let has_frequency =
+        !p.metric.starts_with("go:") || matches!(p.metric.as_str(), "go:cpu" | "go:samples");
+      let rate = (has_frequency && recording.sample_rate > 0).then_some(recording.sample_rate);
+      let key = (chunk.service.clone(), p.metric, p.unit);
+      if groups.len() >= limits::MAX_SERIES && !groups.contains_key(&key) {
+        truncated = true;
+        continue;
+      }
+      let g = groups.entry(key).or_insert_with(|| Aggregate::new(&chunk));
+      let records_before = g.records;
+      for s in p.samples {
+        if query.includes_sample(&s) {
+          g.record(s, &frame_table)?;
+        }
+      }
+      if g.records > records_before {
+        g.include_chunk(&chunk, rate);
+      }
+    }
+  }
+  groups.retain(|_, g| g.total > 0);
+  Ok((groups, truncated))
+}
+
 #[allow(clippy::cast_precision_loss)] // Percentages are approximate; integer totals remain exact.
-fn finish(g: Aggregate) -> Result<Series> {
+pub(super) fn sampled_share(value: i64, total: i64) -> f64 {
+  100.0 * value as f64 / total as f64
+}
+
+fn finish((service, metric, unit): SeriesKey, g: Aggregate) -> Result<Series> {
   let mut methods: BTreeMap<Arc<Frame>, (i64, i64)> = BTreeMap::new();
   for (frames, value) in &g.stacks {
     for frame in frames.iter().collect::<BTreeSet<_>>() {
@@ -280,7 +330,7 @@ fn finish(g: Aggregate) -> Result<Series> {
       frame: (*frame).clone(),
       self_value,
       inclusive_value,
-      self_percent: 100.0 * self_value as f64 / g.total as f64,
+      self_percent: sampled_share(self_value, g.total),
     })
     .collect();
   hotspots.sort_by(|a, b| {
@@ -290,12 +340,15 @@ fn finish(g: Aggregate) -> Result<Series> {
   });
   hotspots.truncate(limits::MAX_HOTSPOTS);
   let mut findings = Vec::new();
-  if let Some(h) = hotspots.first().filter(|h| h.self_percent >= 20.0) {
+  if let Some(h) = hotspots
+    .first()
+    .filter(|h| h.self_percent >= HOTSPOT_PERCENT)
+  {
     findings.push(Finding {
       kind: "hotspot".into(),
       evidence: format!(
         "{} accounts for {:.1}% of self {} ({} {}) in {} contributing sample records.",
-        h.frame.name, h.self_percent, g.metric, h.self_value, g.unit, g.records
+        h.frame.name, h.self_percent, metric, h.self_value, unit, g.records
       ),
       suggestion: concat!(
         "Inspect this method and its callers. ",
@@ -304,7 +357,7 @@ fn finish(g: Aggregate) -> Result<Series> {
       .into(),
     });
   }
-  if g.records < 20 {
+  if g.records < MIN_SAMPLE_RECORDS {
     findings.push(Finding {
       kind: "limited_coverage".into(),
       evidence: format!(
@@ -326,9 +379,9 @@ fn finish(g: Aggregate) -> Result<Series> {
     })
     .collect();
   Ok(Series {
-    service: g.service,
-    metric: g.metric,
-    unit: g.unit,
+    service,
+    metric,
+    unit,
     total: g.total,
     sample_records: g.records,
     from_ms: g.from,

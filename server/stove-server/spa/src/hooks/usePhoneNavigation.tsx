@@ -3,7 +3,7 @@ import { createContext, type ReactNode, useContext, useMemo, useSyncExternalStor
 import type { Tab } from "../layout/detail/TabBar";
 
 type PhoneScreen = {
-  level: "tests" | "test" | "event";
+  level: "tests" | "test" | "event" | "profiles";
   testId?: string;
   entryId?: number;
   tab?: Tab;

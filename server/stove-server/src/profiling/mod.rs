@@ -1,8 +1,9 @@
-//! Run-scoped continuous profiles. The embedded converter uses Pyroscope's JFR and Go pprof contracts.
+//! Continuous profiles and their history. The converter uses Pyroscope's JFR and Go pprof contracts.
 mod bridge;
 pub(crate) mod http;
 pub(crate) mod limits;
 mod query;
+pub(crate) mod trends;
 pub use http::routes;
 pub use query::{ProfileQuery, ProfileReport, report};
 use serde::{Deserialize, Serialize};

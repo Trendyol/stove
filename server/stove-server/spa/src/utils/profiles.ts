@@ -4,6 +4,10 @@ export type ProfileFrame = ProfileSeries["hotspots"][number]["frame"];
 export const frameKey = (frame: ProfileFrame) =>
   JSON.stringify([frame.name, frame.file, frame.line]);
 
+export type ProfileSeriesIdentity = Pick<ProfileSeries, "service" | "metric" | "unit">;
+export const profileSeriesKey = ({ service, metric, unit }: ProfileSeriesIdentity) =>
+  JSON.stringify([service, metric, unit]);
+
 export function profileLabel(metric: string): string {
   const labels: Record<string, string> = {
     "process_cpu:cpu": "CPU time",

@@ -68,6 +68,8 @@ export type AgentSetupScope = components["schemas"]["AgentSetupScope"];
 
 export type ProfileReport = components["schemas"]["ProfileReport"];
 export type ProfileSeries = components["schemas"]["Series"];
+export type ProfileTrendReport = components["schemas"]["ProfileTrendReport"];
+export type ProfileTrendSeries = components["schemas"]["ProfileTrendSeries"];
 
 export type TestPage = components["schemas"]["TestPage"];
 export type TestSummary = components["schemas"]["TestSummary"];

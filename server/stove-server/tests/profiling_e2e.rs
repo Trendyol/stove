@@ -322,6 +322,153 @@ async fn mcp_exposes_evidence_and_rejects_cross_application_baselines() {
 }
 
 #[tokio::test]
+async fn profile_history_uses_comparable_passing_runs_and_normalizes_each_run() {
+  let server = TestServer::start().await;
+  server
+    .repo
+    .update_retention_policy(&equal_retention(0))
+    .unwrap();
+  let runs = [
+    ("old", "checkout", "main", Some(true), 100, 25, 30, 20),
+    ("large", "checkout", "main", Some(true), 1000, 400, 0, 20),
+    ("absent", "checkout", "main", Some(true), 100, 0, 30, 20),
+    ("low", "checkout", "main", Some(true), 100, 10, 0, 20),
+    ("new", "checkout", "main", Some(true), 100, 60, 0, 20),
+    ("thin", "checkout", "main", Some(true), 100, 99, 0, 1),
+    ("unprofiled", "checkout", "main", Some(true), 0, 0, 0, 0),
+    ("failed", "checkout", "main", Some(false), 100, 99, 0, 20),
+    ("running", "checkout", "main", None, 100, 99, 0, 20),
+    (
+      "different-branch",
+      "checkout",
+      "staging",
+      Some(true),
+      100,
+      99,
+      0,
+      20,
+    ),
+    (
+      "different-app",
+      "worker",
+      "main",
+      Some(true),
+      100,
+      99,
+      0,
+      20,
+    ),
+  ];
+  for (index, (id, app, branch, passed, total, hot, burst, records)) in runs.into_iter().enumerate()
+  {
+    server
+      .repo
+      .save_run_start_with_metadata(
+        id,
+        app,
+        &format!("2024-06-01T10:{index:02}:00Z"),
+        None,
+        &[],
+        &[("branch".into(), branch.into())].into(),
+      )
+      .unwrap();
+    if total > 0 {
+      let sample = |name: &str, line, value, count| {
+        json!({
+          "frames": [{"name": "app.Caller", "file": "App.kt", "line": 1}, {"name": name, "file": "App.kt", "line": line}],
+          "value": value, "count": count, "labels": {}
+        })
+      };
+      let mut recording = chunk(id, id, "jvm", 2000, 0);
+      recording.payload = serde_json::to_vec(&json!({"sample_rate": 100, "profiles": [{
+        "metric": "cpu:cpu", "unit": "nanoseconds", "samples": [
+          sample("app.Hot", index + 2, hot / 2, 1),
+          sample("app.Hot", index + 20, hot - hot / 2, 1),
+          sample("app.Burst", 2, burst, 1),
+          sample(&format!("app.Background.{id}"), 3, total - hot - burst, records)
+        ]
+      }]}))
+      .unwrap();
+      server.repo.save_profile(&recording).unwrap();
+      if id == "new" {
+        recording.id = "new-worker".into();
+        recording.service = "worker".into();
+        server.repo.save_profile(&recording).unwrap();
+      }
+    }
+    if let Some(passed) = passed {
+      server
+        .repo
+        .save_run_end(
+          id,
+          &format!("2024-06-01T10:{index:02}:10Z"),
+          1,
+          i32::from(passed),
+          i32::from(!passed),
+          10_000,
+        )
+        .unwrap();
+    }
+  }
+
+  let mut url = reqwest::Url::parse(&format!(
+    "{}/api/v1/apps/checkout/profile-trends",
+    server.base_url
+  ))
+  .unwrap();
+  url.query_pairs_mut().extend_pairs([
+    ("metadata", r#"{"branch":["main","release"]}"#),
+    ("metric", "cpu:cpu"),
+    ("service", "checkout"),
+  ]);
+  let history: Value = server
+    .client
+    .get(url)
+    .send()
+    .await
+    .unwrap()
+    .error_for_status()
+    .unwrap()
+    .json()
+    .await
+    .unwrap();
+  assert_eq!(history["passed_runs_considered"], 7);
+  assert_eq!(history["truncated"], false);
+  let groups = history["series"].as_array().unwrap();
+  assert_eq!(groups.len(), 1);
+  let observations = groups[0]["runs"].as_array().unwrap();
+  assert_eq!(
+    observations
+      .iter()
+      .map(|r| r["run_id"].as_str().unwrap())
+      .collect::<Vec<_>>(),
+    ["old", "large", "absent", "low", "new"]
+  );
+  assert_eq!(observations[1]["total"], 1000);
+  assert_eq!(
+    groups[0]["bottlenecks"],
+    json!([{
+      "method": "app.Hot", "file": "App.kt", "hot_runs": 3,
+      "median_self_percent": 25.0, "change_percentage_points": 35.0,
+      "self_percent_by_run": [25.0, 40.0, 0.0, 10.0, 60.0]
+    }])
+  );
+  let agent = tool(&server, "stove_profile_trends", json!({
+    "app_name":"checkout", "metadata":{"branch":["main","release"]}, "metric":"cpu:cpu", "service":"checkout"
+  })).await;
+  assert_eq!(agent["result"]["structuredContent"], history);
+
+  let one = server
+    .get_json("/apps/checkout/profile-trends?service=worker")
+    .await;
+  assert_eq!(one["series"][0]["runs"].as_array().unwrap().len(), 1);
+  assert_eq!(one["series"][0]["bottlenecks"], json!([]));
+  let unknown = server.get_json("/apps/no-such-app/profile-trends").await;
+  assert_eq!(unknown["passed_runs_considered"], 0);
+  assert_eq!(unknown["series"], json!([]));
+}
+
+#[tokio::test]
 async fn newer_recording_without_live_objects_does_not_resurrect_old_survivors() {
   let server = TestServer::start().await;
   server.seed_run("run", "app");

@@ -1,6 +1,7 @@
 import type { CSSProperties } from "react";
 import type { TestBrowserState } from "../api/test-queries";
 import type { AppSummary, Run, RunMetadataFacet, Test } from "../api/types";
+import { Icon } from "../components/Icon";
 import { TopFilterPicker, type TopFilterPickerProps } from "../components/TopFilterPicker";
 import type { MetadataFilter } from "../utils/metadata-filter";
 import { AppPicker } from "./sidebar/AppPicker";
@@ -32,8 +33,8 @@ interface SidebarProps {
   testBrowser: TestBrowserState;
   selectedTestId: string | undefined;
   onSelectTest: (testId: string) => void;
-  onSelectProfiles?: () => void;
-  profilesSelected?: boolean;
+  onSelectProfiles: (trigger: HTMLButtonElement) => void;
+  profilesSelected: boolean;
 }
 
 export function Sidebar({
@@ -97,14 +98,14 @@ export function Sidebar({
           />
         )}
       </div>
-      {run && onSelectProfiles && (
+      {run && (
         <button
           type="button"
           className="profiles-nav stove-focus-ring"
           aria-pressed={profilesSelected}
-          onClick={onSelectProfiles}
+          onClick={(event) => onSelectProfiles(event.currentTarget)}
         >
-          Drill Down · whole run
+          <Icon name="activity" /> Drill Down · whole run
         </button>
       )}
       <TestFilters

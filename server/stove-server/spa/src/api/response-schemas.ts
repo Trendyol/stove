@@ -22,6 +22,8 @@ import type {
   MockWarning,
   ProfileReport,
   ProfileSeries,
+  ProfileTrendReport,
+  ProfileTrendSeries,
   PurgePreview,
   PurgeResult,
   RunMetadataFacet,
@@ -251,6 +253,45 @@ export const isProfileReport = object<ProfileReport>({
   run_id: isString,
   app_name: isString,
   series: arrayOf(isProfileSeries),
+  truncated: isBoolean,
+  interpretation: isString,
+});
+
+const isProfileTrendSeries = object<ProfileTrendSeries>({
+  service: isString,
+  metric: isString,
+  unit: isString,
+  runs: arrayOf(
+    object({
+      run_id: isString,
+      started_at: isString,
+      total: isNumber,
+      sample_records: isNumber,
+    }),
+  ),
+  bottlenecks: arrayOf(
+    object({
+      method: isString,
+      file: isString,
+      hot_runs: isNumber,
+      median_self_percent: isNumber,
+      change_percentage_points: isNumber,
+      self_percent_by_run: arrayOf(isNumber),
+    }),
+  ),
+});
+
+export const isProfileTrendReport = object<ProfileTrendReport>({
+  app_name: isString,
+  passed_runs_considered: isNumber,
+  run_limit: isNumber,
+  hotspot_threshold_percent: isNumber,
+  min_sample_records: isNumber,
+  series: arrayOf(
+    (value): value is ProfileTrendSeries =>
+      isProfileTrendSeries(value) &&
+      value.bottlenecks.every((signal) => signal.self_percent_by_run.length === value.runs.length),
+  ),
   truncated: isBoolean,
   interpretation: isString,
 });

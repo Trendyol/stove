@@ -226,6 +226,13 @@ until the execution can be identified; do not silently switch runs.
 Introduced in 0.28.0. For collection setup and JVM/Go support boundaries,
 read [profiling.md](profiling.md) before changing application configuration.
 
+If the server advertises `stove_profile_trends`, use it with an exact `app_name`
+and metadata selectors for comparable workloads to find recurring hotspots in
+retained passing runs. Optional `service` and `metric` narrow the survey. The
+per-run shares align with the returned oldest-first run list for each series.
+Check `truncated` and coverage, then inspect the relevant run with
+`stove_profiles`. A rise in sampled share alone does not establish a slowdown.
+
 Use `stove_profiles(run_id, service?, metric?, instance?, from_ms?, until_ms?)`
 for method hotspots and sampled costs; exact `trace_id` / `span_id` selectors
 require correlation labels in the recording. JVM tracing plus profiling enables the bundled OTel extension by default. Use `pyroscope.profile.id` from a local root span as `span_id`; for a child without that attribute, use `trace_id` alone. Preserve the exact run and selectors when following up. Short operations and async context gaps can yield no samples; do not claim no work occurred. Go requires explicit profiling labels. Optional `baseline_run_id` compares

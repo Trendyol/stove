@@ -405,6 +405,40 @@ test("phone history drills into an event, restores its row on Back, and preserve
   assert.equal(window.location.search, "");
 });
 
+test("run history opens inside Drill Down and phone Back restores focus to the sidebar button", async (t) => {
+  t.mock.method(window, "matchMedia", () => ({matches: true, addEventListener() {}, removeEventListener() {}}));
+  dashboardApi(t);
+  t.mock.method(api, "profiles", async id => ({
+    run_id: id, app_name: run.app_name, series: [], interpretation: "", truncated: false,
+  }));
+  const historyRequest = t.mock.method(api, "profileTrends", async appName => ({
+    app_name: appName, passed_runs_considered: 0, series: [], truncated: false,
+  }));
+  const view = render(h(App), wrapper());
+  const runShortcut = await view.findByRole("button", {name: "Drill Down · whole run"});
+  const sidebar = within(view.getByRole("complementary", {name: "Test navigator"}));
+  assert.equal(sidebar.queryByRole("button", {name: /run history/i}), null);
+  assert.ok(runShortcut.querySelector('svg[aria-hidden="true"]'));
+  fireEvent.click(runShortcut);
+  const panel = within(view.getByRole("region", {name: "Drill Down"}));
+  await panel.findByRole("heading", {name: "No profiles received yet"});
+  assert.ok(document.activeElement === panel.getByRole("heading", {name: /Drill Down/}));
+  assert.equal(historyRequest.mock.callCount(), 0);
+  fireEvent.click(panel.getByRole("button", {name: "Run history"}));
+  await panel.findByText("No passing runs match the current filters.");
+  assert.deepEqual(historyRequest.mock.calls[0].arguments.slice(0, 2), [app.app_name, {}]);
+  assert.equal(runShortcut.getAttribute("aria-pressed"), "true");
+  fireEvent.click(panel.getByRole("button", {name: "Back to tests"}));
+  await waitFor(() => assert.ok(document.activeElement === runShortcut));
+
+  fireEvent.click(runShortcut);
+  await view.findByRole("heading", {name: "No profiles received yet"});
+  assert.ok(document.activeElement === view.getByRole("heading", {name: /Drill Down/}));
+  act(() => window.history.back());
+  await waitFor(() => assert.ok(document.activeElement === runShortcut));
+  assert.equal(view.queryByRole("region", {name: "Drill Down"}), null);
+});
+
 test("a manually scrolled ledger restores its anchor after a tab visit and earlier insertion", async () => {
   const { EvidenceViewMemoryProvider } = await jiti.import("../src/components/evidence/EvidenceViewMemory.tsx");
   let rows = Array.from({length: 220}, (_, index) => ({id: index + 1}));

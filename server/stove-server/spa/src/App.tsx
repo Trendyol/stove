@@ -45,6 +45,7 @@ function DashboardApp({ route }: { route: StoveRoute }) {
     loadOlderRuns,
     selectedRunId,
     metadataFilter,
+    scopedMetadata,
     tests,
     testBrowser,
     selectedTest,
@@ -87,6 +88,7 @@ function DashboardApp({ route }: { route: StoveRoute }) {
           onLoadOlderRuns={loadOlderRuns}
           selectedRunId={selectedRunId}
           metadataFilter={metadataFilter}
+          scopedMetadata={scopedMetadata}
           latestRun={latestRun}
           tests={tests}
           testBrowser={testBrowser}

@@ -67,6 +67,16 @@ async fn mcp_lists_tools_and_initializes() {
       .iter()
       .any(|tool| tool["name"] == "stove_failure_detail")
   );
+  let profile_trends = tools["result"]["tools"]
+    .as_array()
+    .unwrap()
+    .iter()
+    .find(|tool| tool["name"] == "stove_profile_trends")
+    .unwrap();
+  assert_eq!(
+    profile_trends["inputSchema"]["required"],
+    json!(["app_name"])
+  );
 }
 
 #[tokio::test]

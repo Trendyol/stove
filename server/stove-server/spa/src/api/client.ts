@@ -1,4 +1,5 @@
 import { appPath, type EvidenceFocus } from "../utils/location";
+import type { MetadataFilter } from "../utils/metadata-filter";
 import { isRunEnvironment } from "./environment";
 import * as schema from "./response-schemas";
 import type { RunListRequest } from "./run-queries";
@@ -84,6 +85,15 @@ export const api = {
     get(`/runs/${encodePath(runId)}/environment`, nullable(isRunEnvironment), signal),
   profiles: (runId: string, parameters: URLSearchParams, signal?: AbortSignal) =>
     get(`/runs/${encodePath(runId)}/profiles?${parameters}`, schema.isProfileReport, signal),
+  profileTrends: (appName: string, metadata: MetadataFilter, signal?: AbortSignal) => {
+    const params = new URLSearchParams();
+    if (Object.keys(metadata).length) params.set("metadata", JSON.stringify(metadata));
+    return get(
+      `/apps/${encodePath(appName)}/profile-trends?${params}`,
+      schema.isProfileTrendReport,
+      signal,
+    );
+  },
   getAgentSetup: (endpoint: string, signal?: AbortSignal) =>
     get(`/agent-setup?${new URLSearchParams({ endpoint })}`, schema.isAgentSetupResponse, signal),
   getTopFilter: (signal?: AbortSignal) => get("/top-filter", schema.isTopFilterCatalog, signal),

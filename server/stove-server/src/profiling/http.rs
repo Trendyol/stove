@@ -1,3 +1,4 @@
+use super::trends::{ProfileTrendReport, ProfileTrendsQuery, trends};
 use super::{ProfileQuery, ProfileReport, StoredChunk, compress, decompress, invalid, limits};
 use crate::{error::Result, http::server::AppState};
 use axum::{
@@ -9,6 +10,7 @@ use axum::{
 use serde::Deserialize;
 use sha2::{Digest, Sha256};
 use std::sync::Arc;
+use utoipa::IntoParams;
 // Admission bounds requests waiting for upload or conversion capacity.
 static ADMITTED_UPLOADS: tokio::sync::Semaphore =
   tokio::sync::Semaphore::const_new(limits::MAX_ADMITTED_UPLOADS);
@@ -25,6 +27,10 @@ pub fn routes() -> Router<AppState> {
       post(ingest).layer(DefaultBodyLimit::max(limits::MAX_UPLOAD_BYTES)),
     )
     .route("/api/v1/runs/{run_id}/profiles", get(get_profiles))
+    .route(
+      "/api/v1/apps/{app_name}/profile-trends",
+      get(get_profile_trends),
+    )
     .route(
       "/profiling-notices.txt",
       get(|| async { include_str!("../../profiling-bridge/THIRD_PARTY_NOTICES") }),
@@ -293,6 +299,44 @@ pub async fn get_profiles(
   tokio::task::spawn_blocking(move || super::report(&repository, &run_id, &query))
     .await
     .map_err(|_| invalid("Profile query failed"))?
+    .map(Json)
+}
+
+#[derive(Deserialize, IntoParams)]
+#[into_params(parameter_in = Query)]
+#[serde(deny_unknown_fields)]
+pub struct ProfileTrendsParams {
+  service: Option<String>,
+  metric: Option<String>,
+  /// JSON object of exact run metadata selectors, with string or string-array values.
+  metadata: Option<String>,
+}
+
+#[utoipa::path(
+  get, path = "/api/v1/apps/{app_name}/profile-trends",
+  params(("app_name" = String, Path, description = "Exact Stove application"), ProfileTrendsParams),
+  responses((status = 200, body = ProfileTrendReport), (status = 400, description = "Invalid selector"))
+)]
+pub async fn get_profile_trends(
+  State(state): State<AppState>,
+  Path(app_name): Path<String>,
+  Query(params): Query<ProfileTrendsParams>,
+) -> Result<Json<ProfileTrendReport>> {
+  let metadata = params
+    .metadata
+    .as_deref()
+    .map(serde_json::from_str)
+    .transpose()
+    .map_err(|error| invalid(format!("Invalid metadata selector: {error}")))?;
+  let query = ProfileTrendsQuery {
+    app_name,
+    service: params.service,
+    metric: params.metric,
+    metadata,
+  };
+  tokio::task::spawn_blocking(move || trends(&state.repository, query))
+    .await
+    .map_err(|_| invalid("Profile history query failed"))?
     .map(Json)
 }
 
