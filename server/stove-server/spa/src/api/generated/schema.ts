@@ -1059,8 +1059,8 @@ export interface components {
             hotspot_threshold_percent: number;
             interpretation: string;
             min_sample_records: number;
-            passed_runs_considered: number;
             run_limit: number;
+            runs_considered: number;
             series: components["schemas"]["ProfileTrendSeries"][];
             truncated: boolean;
         };
@@ -1068,6 +1068,7 @@ export interface components {
             run_id: string;
             sample_records: number;
             started_at: string;
+            status: components["schemas"]["RunStatus"];
             /** Format: int64 */
             total: number;
         };

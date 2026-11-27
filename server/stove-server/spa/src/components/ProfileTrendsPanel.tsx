@@ -42,11 +42,11 @@ export function ProfileTrendsPanel({
   const selected =
     report?.series.find((s) => profileSeriesKey(s) === seriesId) ?? report?.series[0];
   return (
-    <section className="profile-hotspots" aria-label="Passing run history">
+    <section className="profile-hotspots" aria-label="Run history">
       <div className="profile-explorer-heading">
         <div>
           <h2>Recurring hotspots</h2>
-          <p>Compare passing runs of {appName} that match the dashboard filters.</p>
+          <p>Compare runs of {appName} that match the dashboard filters.</p>
         </div>
         {metadata !== null && (
           <button
@@ -61,9 +61,9 @@ export function ProfileTrendsPanel({
       </div>
       <div className="profile-trend-body">
         {metadata === null ? (
-          <p>No passing runs match the current filters.</p>
+          <p>No runs match the current filters.</p>
         ) : (
-          query.isPending && <p role="status">Loading passing run history…</p>
+          query.isPending && <p role="status">Loading run history…</p>
         )}
         {query.isError && (
           <div className="profile-notice is-error" role="alert">
@@ -77,9 +77,9 @@ export function ProfileTrendsPanel({
         )}
         {report && !selected && (
           <p>
-            {report.passed_runs_considered === 0
-              ? "No passing runs match the current filters."
-              : `No usable profiles were found in the recent passing runs. A profile needs at least ${report.min_sample_records} sample records.`}
+            {report.runs_considered === 0
+              ? "No runs match the current filters."
+              : `No usable profiles were found in the recent runs. A profile needs at least ${report.min_sample_records} sample records.`}
           </p>
         )}
         {report && selected && (
@@ -99,13 +99,13 @@ export function ProfileTrendsPanel({
                 </select>
               </label>
               <p>
-                {selected.runs.length} of {report.passed_runs_considered} recent passing runs have
-                usable samples for this metric.
+                {selected.runs.length} of {report.runs_considered} recent runs have usable samples
+                for this metric.
               </p>
             </div>
             <div key={profileSeriesKey(selected)}>
               {selected.runs.length < 2 ? (
-                <p>At least two passing runs with usable profiles are needed for a trend.</p>
+                <p>At least two runs with usable profiles are needed for a trend.</p>
               ) : (
                 <>
                   {!selected.bottlenecks.length && <p>No recurring hotspots in these runs.</p>}
@@ -188,7 +188,9 @@ function TrendHotspot({
               <tr key={run.run_id}>
                 <th scope="row">
                   <time dateTime={run.started_at}>{new Date(run.started_at).toLocaleString()}</time>
-                  <small className="profile-source">{run.run_id}</small>
+                  <small className="profile-source">
+                    {run.run_id} · {run.status.toLowerCase()}
+                  </small>
                   <button
                     type="button"
                     className="profile-button"

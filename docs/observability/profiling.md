@@ -386,9 +386,9 @@ These profiles are not heap dumps, retained-size measurements, object reference 
 
 Hotspot and coverage findings include evidence and suggestions. Use them to identify a concrete hypothesis, change the relevant code, and rerun a comparable scenario. Sampling and warmup differences can move totals; Stove does not automatically declare performance regressions or fail tests based on profile findings.
 
-## Spot recurring bottlenecks across passing runs
+## Spot recurring bottlenecks across run outcomes
 
-Open **Drill Down → Run history**. Stove checks up to 10 retained passing runs for the selected application using the dashboard's metadata filters. It keeps services, metrics, and units separate, and skips missing profiles, profiles with fewer than 20 sample records, and runs whose profile query was truncated. The server keeps three passing runs per application by default; raise passed-run retention if you need more history.
+Open **Drill Down → Run history**. Stove checks up to 10 retained runs for the selected application using the dashboard's metadata filters. It keeps services, metrics, and units separate, and skips missing profiles, profiles with fewer than 20 sample records, and runs whose profile query was truncated. Passed, failed, and active runs are eligible. Active profiles can be partial, and failed runs may cover less work.
 
 A method is a **recurring hotspot** when its own work, excluding callees, accounts for at least 20% of the sampled value in at least two runs and at least half of the usable runs. Each run contributes its own percentage, so a large profile does not outweigh a smaller one. Expand a hotspot to see its run IDs, totals, and per-run shares. The chart shows the shares oldest to newest; the change is in percentage points from the first run to the last.
 
@@ -467,7 +467,7 @@ Profiles use the server's configured SQLite or PostgreSQL database. Run retentio
 | Retained per run | 256 newest chunks per service/instance; shared 64 MiB compressed per run |
 | Query decoding | 4096 matching chunks / 64 MiB; streams interleaved, newest first within each stream |
 | REST response | 32 series, 20 hotspots and 200 stacks per series; gzip when accepted |
-| Profile history | Up to 10 retained passing runs, sharing one query decoding budget; at most 32 series |
+| Profile history | Up to 10 retained runs, sharing one query decoding budget; at most 32 series |
 | `stove_profiles` MCP response | 64 KiB including baseline, navigation, text fallback and JSON-RPC envelope |
 | `stove_profile_trends` MCP response | 64 KiB including text fallback and JSON-RPC envelope |
 

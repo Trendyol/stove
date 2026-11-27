@@ -412,7 +412,7 @@ test("run history opens inside Drill Down and phone Back restores focus to the s
     run_id: id, app_name: run.app_name, series: [], interpretation: "", truncated: false,
   }));
   const historyRequest = t.mock.method(api, "profileTrends", async appName => ({
-    app_name: appName, passed_runs_considered: 0, series: [], truncated: false,
+    app_name: appName, runs_considered: 0, series: [], truncated: false,
   }));
   const view = render(h(App), wrapper());
   const runShortcut = await view.findByRole("button", {name: "Drill Down · whole run"});
@@ -425,7 +425,7 @@ test("run history opens inside Drill Down and phone Back restores focus to the s
   assert.ok(document.activeElement === panel.getByRole("heading", {name: /Drill Down/}));
   assert.equal(historyRequest.mock.callCount(), 0);
   fireEvent.click(panel.getByRole("button", {name: "Run history"}));
-  await panel.findByText("No passing runs match the current filters.");
+  await panel.findByText("No runs match the current filters.");
   assert.deepEqual(historyRequest.mock.calls[0].arguments.slice(0, 2), [app.app_name, {}]);
   assert.equal(runShortcut.getAttribute("aria-pressed"), "true");
   fireEvent.click(panel.getByRole("button", {name: "Back to tests"}));

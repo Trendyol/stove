@@ -370,7 +370,7 @@ export function createDemoBackend(SQL: SqlJsStatic, version: string) {
             return ok(
               demoProfileTrends(
                 app,
-                filtered.filter((run) => run.app_name === app && run.status === "PASSED"),
+                filtered.filter((run) => run.app_name === app),
                 rows("spans"),
                 url.searchParams,
               ),

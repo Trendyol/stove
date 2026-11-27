@@ -208,15 +208,16 @@ test("Drill Down provides consistent CPU/allocation totals and honest scope filt
   assert.equal((await request("/runs/missing/profiles")).status, 404);
 });
 
-test("demo history shows profile trends from passing runs under the active metadata filter", async (t) => {
+test("demo history shows profile trends from all run outcomes under the active metadata filter", async (t) => {
   const { get } = setup(t);
   const url = "/apps/checkout-api/profile-trends?" + new URLSearchParams({
-    service: "checkout-api", metric: "process_cpu:cpu", metadata: JSON.stringify({ branch: ["main"] }),
+    service: "checkout-api", metric: "process_cpu:cpu", metadata: JSON.stringify({ branch: ["main", "feature/payment-retry"] }),
   });
   const history = await get(url, schema.isProfileTrendReport);
-  assert.equal(history.passed_runs_considered, 2);
+  assert.equal(history.runs_considered, 3);
   assert.equal(history.series.length, 1);
-  assert.deepEqual(history.series[0].runs.map(r => r.run_id), ["checkout-api-ci-1840", "checkout-api-ci-1841"]);
+  assert.deepEqual(history.series[0].runs.map(r => r.run_id), ["checkout-api-ci-1840", "checkout-api-ci-1841", "checkout-api-ci-1842"]);
+  assert.equal(history.series[0].runs[2].status, "FAILED");
   assert.ok(history.series[0].bottlenecks.some(b => b.change_percentage_points > 0));
 });
 

@@ -322,7 +322,7 @@ async fn mcp_exposes_evidence_and_rejects_cross_application_baselines() {
 }
 
 #[tokio::test]
-async fn profile_history_uses_comparable_passing_runs_and_normalizes_each_run() {
+async fn profile_history_uses_all_run_outcomes_and_normalizes_each_run() {
   let server = TestServer::start().await;
   server
     .repo
@@ -432,7 +432,7 @@ async fn profile_history_uses_comparable_passing_runs_and_normalizes_each_run() 
     .json()
     .await
     .unwrap();
-  assert_eq!(history["passed_runs_considered"], 7);
+  assert_eq!(history["runs_considered"], 9);
   assert_eq!(history["truncated"], false);
   let groups = history["series"].as_array().unwrap();
   assert_eq!(groups.len(), 1);
@@ -442,15 +442,17 @@ async fn profile_history_uses_comparable_passing_runs_and_normalizes_each_run() 
       .iter()
       .map(|r| r["run_id"].as_str().unwrap())
       .collect::<Vec<_>>(),
-    ["old", "large", "absent", "low", "new"]
+    ["old", "large", "absent", "low", "new", "failed", "running"]
   );
+  assert_eq!(observations[5]["status"], "FAILED");
+  assert_eq!(observations[6]["status"], "RUNNING");
   assert_eq!(observations[1]["total"], 1000);
   assert_eq!(
     groups[0]["bottlenecks"],
     json!([{
-      "method": "app.Hot", "file": "App.kt", "hot_runs": 3,
-      "median_self_percent": 25.0, "change_percentage_points": 35.0,
-      "self_percent_by_run": [25.0, 40.0, 0.0, 10.0, 60.0]
+      "method": "app.Hot", "file": "App.kt", "hot_runs": 5,
+      "median_self_percent": 40.0, "change_percentage_points": 74.0,
+      "self_percent_by_run": [25.0, 40.0, 0.0, 10.0, 60.0, 99.0, 99.0]
     }])
   );
   let agent = tool(&server, "stove_profile_trends", json!({
@@ -464,7 +466,7 @@ async fn profile_history_uses_comparable_passing_runs_and_normalizes_each_run() 
   assert_eq!(one["series"][0]["runs"].as_array().unwrap().len(), 1);
   assert_eq!(one["series"][0]["bottlenecks"], json!([]));
   let unknown = server.get_json("/apps/no-such-app/profile-trends").await;
-  assert_eq!(unknown["passed_runs_considered"], 0);
+  assert_eq!(unknown["runs_considered"], 0);
   assert_eq!(unknown["series"], json!([]));
 }
 

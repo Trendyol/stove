@@ -78,10 +78,10 @@ test("run history opens the exact profile and restores the series, hotspot, and 
   api.profileTrends = async (appName, filter) => {
     calls.push([appName, filter]);
     const runs = ["older-pass", "newer-pass"].map((run_id, i) => ({
-      run_id, started_at: `2024-06-0${i + 1}T10:00:00Z`, total: 100, sample_records: 50,
+      run_id, started_at: `2024-06-0${i + 1}T10:00:00Z`, status: "PASSED", total: 100, sample_records: 50,
     }));
     return {
-      app_name: appName, passed_runs_considered: 3, min_sample_records: 20,
+      app_name: appName, runs_considered: 3, min_sample_records: 20,
       hotspot_threshold_percent: 20, run_limit: 10, interpretation: "Sampled evidence",
       truncated: false,
       series: [
@@ -102,7 +102,7 @@ test("run history opens the exact profile and restores the series, hotspot, and 
   const summary = screen.getByText("app.Worker.process");
   const hotspot = summary.closest("details");
   assert.deepEqual(calls, [[run.app_name, metadata]]);
-  assert.match(screen.getByText(/of 3 recent passing runs/).textContent, /2 of 3/);
+  assert.match(screen.getByText(/of 3 recent runs/).textContent, /2 of 3/);
   assert.ok(screen.getByText("25.0% → 45.0% of sampled CPU"));
   assert.ok(screen.getByText(/Hot in 2 of 2 runs/));
   fireEvent.click(summary.closest("summary"));

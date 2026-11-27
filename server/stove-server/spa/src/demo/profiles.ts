@@ -250,6 +250,7 @@ export function demoProfileTrends(
       runs: group.map(({ run, profile }) => ({
         run_id: run.id,
         started_at: run.started_at,
+        status: run.status,
         total: profile.total,
         sample_records: profile.sample_records,
       })),
@@ -260,7 +261,7 @@ export function demoProfileTrends(
   });
   return {
     app_name: app,
-    passed_runs_considered: latest.length,
+    runs_considered: latest.length,
     run_limit: 10,
     hotspot_threshold_percent: 20,
     min_sample_records: 20,
