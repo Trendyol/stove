@@ -53,6 +53,7 @@ impl Analyzer {
     crate::mcp::tools::validate_arguments(tool, &arguments)?;
     let mut result = match tool {
       ToolName::Profiles => self.profiles(arguments),
+      ToolName::ProfileTrends => self.profile_trends(arguments),
       ToolName::Apps => self.apps(arguments),
       ToolName::Runs => self.runs(arguments),
       ToolName::Failures => self.failures(arguments),

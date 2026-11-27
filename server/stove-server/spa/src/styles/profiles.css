@@ -1,4 +1,8 @@
 .profiles-nav {
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  gap: 8px;
   margin: 12px;
   padding: 11px 14px;
   border: 1px solid var(--stove-border);
@@ -8,6 +12,11 @@
   text-align: left;
   font-size: 13px;
   cursor: pointer;
+}
+.profiles-nav > svg,
+.profile-heading-icon {
+  flex-shrink: 0;
+  color: var(--stove-amber);
 }
 .profiles-nav[aria-pressed="true"] {
   background: var(--stove-amber-bg);
@@ -36,6 +45,10 @@
   font-weight: 650;
   letter-spacing: -0.8px;
 }
+.profile-heading-icon {
+  width: 1em;
+  height: 1em;
+}
 .profiles-panel h2 {
   font-size: 15px;
   font-weight: 650;
@@ -52,6 +65,10 @@
   justify-content: space-between;
   gap: 16px;
   margin-bottom: 24px;
+}
+.profiles-header > div {
+  min-width: 0;
+  overflow-wrap: anywhere;
 }
 .profile-status {
   display: inline-flex;
@@ -102,6 +119,94 @@
 .profiles-panel button:disabled {
   cursor: default;
   opacity: 0.45;
+}
+.profile-view-switch {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 16px;
+  min-inline-size: 0;
+  padding: 0;
+  border: 0;
+}
+.profile-view-switch .profile-button[aria-pressed="true"] {
+  background: var(--stove-amber-bg);
+  border-color: var(--stove-ember);
+  color: var(--stove-text-heading);
+}
+.profile-trend-body {
+  padding: 0 16px 16px;
+}
+.profile-trend-scope {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: end;
+  gap: 8px 16px;
+  margin-bottom: 14px;
+}
+.profile-trend-scope label {
+  display: grid;
+  gap: 6px;
+  max-width: 100%;
+  font-size: 11px;
+  color: var(--stove-text-muted);
+}
+.profiles-panel .profile-trend-rule {
+  margin: 12px 0;
+}
+.profile-trend-item {
+  border: 1px solid var(--stove-border);
+  border-radius: 6px;
+  margin: 8px 0;
+}
+.profile-trend-item summary {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) minmax(48px, 100px) 16px;
+  align-items: center;
+  gap: 6px 14px;
+  padding: 10px 12px;
+  border-radius: inherit;
+  background: var(--stove-surface);
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+  cursor: pointer;
+}
+.profile-trend-item summary::-webkit-details-marker {
+  display: none;
+}
+.profile-trend-item :where(summary) small {
+  display: block;
+  margin-top: 3px;
+  color: var(--stove-text-muted);
+  font-size: 10px;
+}
+.profile-trend-method > * {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.profile-trend-method {
+  font-family: var(--font-mono);
+}
+.profile-trend-chart {
+  display: block;
+  width: 100%;
+  max-width: 100px;
+  height: 28px;
+  color: var(--stove-amber);
+}
+.profile-trend-chevron {
+  width: 16px;
+  height: 16px;
+  color: var(--stove-text-muted);
+}
+.profile-trend-item[open] .profile-trend-chevron {
+  transform: rotate(90deg);
+}
+.profiles-panel .profile-trend-file {
+  padding: 6px 12px;
+  overflow-wrap: anywhere;
+  font-family: var(--font-mono);
 }
 .profiles-panel :is(button, input, select, summary, [tabindex]):focus-visible {
   outline: 2px solid var(--stove-blue);
@@ -482,6 +587,21 @@
 .profile-table td:not(:first-child) {
   white-space: nowrap;
 }
+.profile-history-table {
+  max-height: none;
+  overflow: visible;
+}
+.profile-history-table th[scope="row"] {
+  position: static;
+  background: transparent;
+  color: inherit;
+  font-size: inherit;
+}
+.profile-history-table .profile-button {
+  margin-top: 6px;
+  scroll-margin-top: 48px;
+  white-space: normal;
+}
 .profile-table tr[data-selected="true"] {
   background: var(--stove-amber-bg);
 }
@@ -628,6 +748,16 @@
   }
 }
 @container (max-width: 520px) {
+  .profile-trend-item summary {
+    grid-template-columns: minmax(0, 1fr) minmax(40px, 72px) 16px;
+  }
+  .profile-trend-method {
+    grid-column: 1 / 3;
+  }
+  .profile-trend-chevron {
+    grid-column: 3;
+    grid-row: 1;
+  }
   .profiles-header {
     align-items: start;
   }
@@ -652,8 +782,18 @@
   .profile-explorer-heading {
     flex-wrap: wrap;
   }
-  .profile-table table {
+  .profile-table:not(.profile-history-table) table {
     min-width: 530px;
+  }
+  .profile-history-table :is(th, td) {
+    padding: 8px;
+    overflow-wrap: anywhere;
+  }
+  .profile-history-table td:not(:first-child) {
+    white-space: normal;
+  }
+  .profile-history-table .profile-button {
+    min-height: 44px;
   }
   .profile-graph-toolbar {
     flex-wrap: wrap;

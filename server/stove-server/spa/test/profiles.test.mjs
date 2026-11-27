@@ -8,8 +8,8 @@ const dom = new JSDOM("<html><body></body></html>", { url: "http://localhost" })
 Object.assign(globalThis, { window: dom.window, document: dom.window.document,
   HTMLElement: dom.window.HTMLElement, IS_REACT_ACT_ENVIRONMENT: true });
 const jiti = createJiti(import.meta.url, { jsx: { runtime: "automatic" }, fsCache: false });
-const { createElement: h } = await jiti.import("react");
-const { render, fireEvent, waitFor, cleanup } = await jiti.import("@testing-library/react");
+const { createElement: h, useState } = await jiti.import("react");
+const { render, fireEvent, waitFor, cleanup, within } = await jiti.import("@testing-library/react");
 const { QueryClient, QueryClientProvider } = await jiti.import("@tanstack/react-query");
 const { api } = await jiti.import("../src/api/client.ts");
 const { DrillDownPanel } = await jiti.import("../src/components/DrillDownPanel.tsx");
@@ -26,7 +26,12 @@ function report(value) {
 function mount(props = {}) {
   const client = new QueryClient({ defaultOptions: {queries:{retry:false,gcTime:Infinity}} });
   clients.push(client);
-  return render(h(QueryClientProvider,{client},h(DrillDownPanel,{run,tests:[testRecord],onClose:()=>{},...props})));
+  function Panel() {
+    const [view, onViewChange] = useState({ kind: "run" });
+    return h(DrillDownPanel, { appName: run.app_name, run, tests: [testRecord],
+      view, onViewChange, onClose: () => {}, ...props });
+  }
+  return render(h(QueryClientProvider, { client }, h(Panel)));
 }
 test("profile zoom refreshes with new evidence and test selection requests an overlapping window",async()=>{
   let value=10;
@@ -55,6 +60,75 @@ test("failed profiling query is visible and refresh can recover",async()=>{
   fireEvent.click(screen.getByRole("button",{name:"Refresh"}));
   await waitFor(()=>assert.ok(screen.getByRole("button",{name:"Leaf",exact:true})));
   assert.equal(screen.queryByRole("alert"),null);
+});
+
+test("run history opens the exact profile and restores the series, hotspot, and row focus", async () => {
+  const metadata = { branch: ["main"], environment: ["ci"] };
+  const calls = [];
+  const profileCalls = [];
+  const cpu = report(100).series[0];
+  api.profiles = async (id, params) => {
+    profileCalls.push([id, Object.fromEntries(params)]);
+    return id === run.id ? report(10) : {
+      ...report(0), run_id: id,
+      series: [{ ...cpu, service: "worker", unit: "count" }, { ...cpu, service: "worker" }],
+    };
+  };
+  const worker = { service: "worker", metric: cpu.metric, unit: cpu.unit };
+  api.profileTrends = async (appName, filter) => {
+    calls.push([appName, filter]);
+    const runs = ["older-pass", "newer-pass"].map((run_id, i) => ({
+      run_id, started_at: `2024-06-0${i + 1}T10:00:00Z`, total: 100, sample_records: 50,
+    }));
+    return {
+      app_name: appName, passed_runs_considered: 3, min_sample_records: 20,
+      hotspot_threshold_percent: 20, run_limit: 10, interpretation: "Sampled evidence",
+      truncated: false,
+      series: [
+        { ...worker, service: "checkout", runs, bottlenecks: [] },
+        { ...worker, runs, bottlenecks: [{
+          method: "app.Worker.process", file: "Worker.kt", hot_runs: 2, median_self_percent: 35,
+          change_percentage_points: 20, self_percent_by_run: [25, 45],
+        }] },
+      ],
+    };
+  };
+  const screen = mount({ metadata });
+  assert.deepEqual(calls, []);
+  fireEvent.click(screen.getByRole("button", { name: "Run history" }));
+  const selector = await screen.findByLabelText("Service and profile metric");
+  const workerKey = JSON.stringify(Object.values(worker));
+  fireEvent.change(selector, { target: { value: workerKey } });
+  const summary = screen.getByText("app.Worker.process");
+  const hotspot = summary.closest("details");
+  assert.deepEqual(calls, [[run.app_name, metadata]]);
+  assert.match(screen.getByText(/of 3 recent passing runs/).textContent, /2 of 3/);
+  assert.ok(screen.getByText("25.0% → 45.0% of sampled CPU"));
+  assert.ok(screen.getByText(/Hot in 2 of 2 runs/));
+  fireEvent.click(summary.closest("summary"));
+  assert.equal(hotspot.open, true);
+  assert.match(screen.getByRole("row", { name: /older-pass/ }).textContent, /25\.0%/);
+  assert.match(screen.getByRole("row", { name: /newer-pass/ }).textContent, /45\.0%/);
+  const inspect = within(screen.getByRole("row", { name: /older-pass/ }))
+    .getByRole("button", { name: /Inspect profile/ });
+  inspect.focus();
+  fireEvent.click(inspect);
+  assert.ok(document.activeElement === screen.getByRole("heading", { name: "Historical run profile" }));
+  const metric = await screen.findByRole("button", { name: "CPU time 100 ns" });
+  assert.equal(metric.getAttribute("aria-pressed"), "true");
+  assert.equal(screen.queryByRole("button", { name: "CPU time 100" }), null);
+  assert.deepEqual(profileCalls.at(-1), ["older-pass", { service: "worker", metric: cpu.metric }]);
+
+  fireEvent.click(screen.getByRole("button", { name: "Back to run history" }));
+  assert.ok(document.activeElement === inspect);
+  assert.equal(selector.value, workerKey);
+  assert.equal(hotspot.open, true);
+  fireEvent.click(screen.getByRole("button", { name: "This run" }));
+  await screen.findByRole("button", { name: "Leaf", exact: true });
+  fireEvent.click(screen.getByRole("button", { name: "Run history" }));
+  assert.equal(selector.value, workerKey);
+  assert.equal(hotspot.open, true);
+  assert.ok(screen.getByRole("button", { name: "Inspect profile for run older-pass" }));
 });
 
 test("CPU is selected first and metric selection falls back when the service changes", async () => {

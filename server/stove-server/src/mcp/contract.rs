@@ -30,11 +30,12 @@ pub(crate) enum ToolName {
   Snapshot,
   Interactions,
   Profiles,
+  ProfileTrends,
   RawEvidence,
 }
 
 impl ToolName {
-  pub(crate) const ALL: [Self; 11] = [
+  pub(crate) const ALL: [Self; 12] = [
     Self::Apps,
     Self::Runs,
     Self::Failures,
@@ -45,6 +46,7 @@ impl ToolName {
     Self::Snapshot,
     Self::Interactions,
     Self::Profiles,
+    Self::ProfileTrends,
     Self::RawEvidence,
   ];
 
@@ -60,6 +62,7 @@ impl ToolName {
       Self::Snapshot => "stove_snapshot",
       Self::Interactions => "stove_interactions",
       Self::Profiles => "stove_profiles",
+      Self::ProfileTrends => "stove_profile_trends",
       Self::RawEvidence => "stove_raw_evidence",
     }
   }

@@ -1,37 +1,174 @@
 import { useQuery } from "@tanstack/react-query";
-import { useState } from "react";
+import { useLayoutEffect, useRef, useState } from "react";
 import { api } from "../api/client";
-import type { ProfileSeries, Run, Test } from "../api/types";
+import type { ProfileSeries, ProfileTrendSeries, Run, Test } from "../api/types";
 import type { ProfileCorrelation } from "../hooks/useDrillDownNavigation";
+import type { MetadataFilter } from "../utils/metadata-filter";
 import {
   formatProfileValue,
   frameKey,
   type ProfileFrame,
+  type ProfileSeriesIdentity,
   profileLabel,
   profileOrder,
+  profileSeriesKey,
   shortMethod,
 } from "../utils/profiles";
 import { Icon } from "./Icon";
 import { ProfileFlameGraph } from "./ProfileFlameGraph";
+import { ProfileTrendsPanel } from "./ProfileTrendsPanel";
 
-export function DrillDownPanel({
-  run,
-  tests,
-  onClose,
-  correlation,
-  onClearCorrelation,
-}: {
-  run: Run;
-  tests: Test[];
-  onClose: () => void;
+export type ProfileView =
+  | { kind: "run" | "history" }
+  | { kind: "inspection"; run: ProfileTrendSeries["runs"][number]; series: ProfileSeriesIdentity };
+
+interface ProfileScope {
   correlation?: ProfileCorrelation;
   onClearCorrelation?: () => void;
+}
+
+export function DrillDownPanel({
+  appName,
+  run,
+  view,
+  onViewChange,
+  onClose,
+  metadata = {},
+  tests,
+  ...scope
+}: ProfileScope & {
+  appName: string;
+  run?: Run;
+  tests: Test[];
+  view: ProfileView;
+  onViewChange: (view: ProfileView) => void;
+  onClose: () => void;
+  metadata?: MetadataFilter | null;
+}) {
+  const heading = useRef<HTMLHeadingElement>(null);
+  const returnTo = useRef<HTMLButtonElement>(null);
+  const inspection = view.kind === "inspection" ? view : undefined;
+  const live = run?.status === "RUNNING";
+  useLayoutEffect(() => {
+    heading.current?.focus();
+  }, []);
+  useLayoutEffect(() => {
+    if (view.kind === "inspection") {
+      heading.current?.focus();
+    } else if (returnTo.current) {
+      if (view.kind === "history")
+        (returnTo.current.isConnected ? returnTo.current : heading.current)?.focus();
+      returnTo.current = null;
+    }
+  }, [view.kind]);
+  return (
+    <section className="test-detail profiles-panel" aria-label="Drill Down">
+      <header className="profiles-header">
+        <div>
+          <div className="stove-kicker">Performance evidence</div>
+          <h1 ref={heading} tabIndex={-1}>
+            <Icon name="activity" className="profile-heading-icon" />
+            {inspection ? "Historical run profile" : "Drill Down"}
+            {view.kind === "run" && (
+              <span className="profile-status" data-live={live}>
+                {live ? "Collecting" : "Run complete"}
+              </span>
+            )}
+          </h1>
+          {inspection ? (
+            <p>
+              {inspection.series.service} · {profileLabel(inspection.series.metric)} (
+              {inspection.series.unit}) ·{" "}
+              <time dateTime={inspection.run.started_at}>
+                {new Date(inspection.run.started_at).toLocaleString()}
+              </time>
+              <small className="profile-source">{inspection.run.run_id}</small>
+            </p>
+          ) : (
+            <p>Find where your application spends time and allocates memory.</p>
+          )}
+        </div>
+        <button
+          type="button"
+          className="profile-button"
+          onClick={inspection ? () => onViewChange({ kind: "history" }) : onClose}
+        >
+          {inspection ? "Back to run history" : "Back to tests"}
+        </button>
+      </header>
+      {run && !inspection && (
+        <fieldset className="profile-view-switch">
+          <legend className="sr-only">Profiling view</legend>
+          <button
+            type="button"
+            className="profile-button"
+            aria-pressed={view.kind === "run"}
+            onClick={() => onViewChange({ kind: "run" })}
+          >
+            This run
+          </button>
+          <button
+            type="button"
+            className="profile-button"
+            aria-pressed={view.kind === "history"}
+            onClick={() => onViewChange({ kind: "history" })}
+          >
+            Run history
+          </button>
+        </fieldset>
+      )}
+      <div hidden={view.kind !== "run"}>
+        {run && (
+          <RunProfile
+            key={run.id}
+            runId={run.id}
+            live={live}
+            tests={tests}
+            {...scope}
+            enabled={view.kind === "run"}
+          />
+        )}
+      </div>
+      <div hidden={view.kind !== "history"}>
+        <ProfileTrendsPanel
+          appName={appName}
+          metadata={metadata}
+          enabled={view.kind === "history"}
+          onInspect={(run, series, trigger) => {
+            returnTo.current = trigger;
+            onViewChange({ kind: "inspection", run, series });
+          }}
+        />
+      </div>
+      {inspection && <RunProfile runId={inspection.run.run_id} fixedSeries={inspection.series} />}
+    </section>
+  );
+}
+
+function RunProfile({
+  runId,
+  tests,
+  live = false,
+  correlation,
+  onClearCorrelation,
+  enabled = true,
+  fixedSeries,
+}: ProfileScope & {
+  runId: string;
+  tests?: Test[];
+  live?: boolean;
+  enabled?: boolean;
+  fixedSeries?: ProfileSeriesIdentity;
 }) {
   const [service, setService] = useState("");
-  const [metric, setMetric] = useState("");
+  const [seriesId, setSeriesId] = useState("");
   const [testId, setTestId] = useState("");
-  const testWindow = !correlation && tests.find((t) => t.id === testId);
+  const testWindow = !correlation && tests?.find((t) => t.id === testId);
   const parameters = new URLSearchParams();
+  if (fixedSeries) {
+    parameters.set("service", fixedSeries.service);
+    parameters.set("metric", fixedSeries.metric);
+  }
   if (correlation) {
     parameters.set("trace_id", correlation.traceId);
     if (correlation.spanId) parameters.set("span_id", correlation.spanId);
@@ -41,47 +178,34 @@ export function DrillDownPanel({
     if (testWindow.ended_at) parameters.set("until_ms", String(Date.parse(testWindow.ended_at)));
   }
   const query = useQuery({
-    queryKey: ["profiles", run.id, parameters.toString()],
-    queryFn: ({ signal }) => api.profiles(run.id, parameters, signal),
-    refetchInterval: run.status === "RUNNING" ? 5000 : false,
+    queryKey: ["profiles", runId, parameters.toString()],
+    queryFn: ({ signal }) => api.profiles(runId, parameters, signal),
+    enabled,
+    refetchInterval: enabled && live ? 5000 : false,
   });
   const series = query.data?.series ?? [];
   const services = [...new Set(series.map((s) => s.service))].sort();
   const activeService = services.includes(service) ? service : (services[0] ?? "");
+  const fixedKey = fixedSeries && profileSeriesKey(fixedSeries);
   const available = series
-    .filter((s) => s.service === activeService)
+    .filter((s) => (fixedKey ? profileSeriesKey(s) === fixedKey : s.service === activeService))
     .sort((a, b) => profileOrder(a) - profileOrder(b) || a.metric.localeCompare(b.metric));
-  const selected = available.find((s) => s.metric === metric) ?? available[0];
-  const live = run.status === "RUNNING";
+  const selected = available.find((s) => profileSeriesKey(s) === seriesId) ?? available[0];
   let emptyTitle = "No profiles received yet";
-  if (correlation) emptyTitle = "No correlated samples found";
+  if (fixedSeries) emptyTitle = "This profile series is no longer available";
+  else if (correlation) emptyTitle = "No correlated samples found";
   else if (testWindow) emptyTitle = "No recordings overlap this test";
   return (
-    <section className="test-detail profiles-panel" aria-label="Drill Down">
-      <header className="profiles-header">
-        <div>
-          <div className="stove-kicker">Performance evidence</div>
-          <h1>
-            Drill Down{" "}
-            <span className="profile-status" data-live={live}>
-              {live ? "Collecting" : "Run complete"}
-            </span>
-          </h1>
-          <p>Find where your application spends time and allocates memory.</p>
-        </div>
-        <button type="button" className="profile-button" onClick={onClose}>
-          Back to tests
-        </button>
-      </header>
+    <>
       <div className="profile-scope">
-        {services.length > 1 && (
+        {!fixedSeries && services.length > 1 && (
           <label>
             Service
             <select
               value={activeService}
               onChange={(e) => {
                 setService(e.target.value);
-                setMetric("");
+                setSeriesId("");
               }}
             >
               {services.map((s) => (
@@ -91,7 +215,7 @@ export function DrillDownPanel({
           </label>
         )}
         <div className="profile-window-controls">
-          {correlation ? (
+          {correlation && (
             <div>
               <strong>
                 {correlation.spanId ? "Span" : "Trace"}: {correlation.name}
@@ -107,7 +231,8 @@ export function DrillDownPanel({
                 Show entire run
               </button>
             </div>
-          ) : (
+          )}
+          {!correlation && tests && (
             <label>
               Recording window
               <select value={testId} onChange={(e) => setTestId(e.target.value)}>
@@ -181,7 +306,8 @@ export function DrillDownPanel({
               </button>
             </>
           )}
-          {!correlation && !testWindow && (
+          {fixedSeries && <p>Go back and refresh run history to see the remaining evidence.</p>}
+          {!fixedSeries && !correlation && !testWindow && (
             <>
               <p>
                 {live
@@ -212,9 +338,9 @@ export function DrillDownPanel({
             {available.map((s) => (
               <button
                 type="button"
-                key={s.metric}
-                aria-pressed={s.metric === selected.metric}
-                onClick={() => setMetric(s.metric)}
+                key={profileSeriesKey(s)}
+                aria-pressed={s === selected}
+                onClick={() => setSeriesId(profileSeriesKey(s))}
                 title={s.metric}
               >
                 <span>{profileLabel(s.metric)}</span>{" "}
@@ -222,10 +348,7 @@ export function DrillDownPanel({
               </button>
             ))}
           </fieldset>
-          <ProfileDetail
-            key={`${selected.service}:${selected.metric}:${testId}`}
-            series={selected}
-          />
+          <ProfileDetail key={`${profileSeriesKey(selected)}:${testId}`} series={selected} />
         </>
       )}
       {query.data && (
@@ -234,7 +357,7 @@ export function DrillDownPanel({
           <p>{query.data.interpretation}</p>
         </details>
       )}
-    </section>
+    </>
   );
 }
 

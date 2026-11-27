@@ -17,7 +17,7 @@ import { metadataOptionsForRuns } from "../utils/metadata-options";
 import { expiredRunIds, parseRetentionPolicy } from "../utils/retention";
 import { demoEnvironment } from "./environment";
 import { createDemoData, type DemoData } from "./fixtures";
-import { demoProfileReport } from "./profiles";
+import { demoProfileReport, demoProfileTrends } from "./profiles";
 
 const tables = [
   "runs",
@@ -351,7 +351,8 @@ export function createDemoBackend(SQL: SqlJsStatic, version: string) {
             if (!apps.has(run.app_name)) apps.set(run.app_name, appSummary(run, version));
           return ok([...apps.values()]);
         }
-        if (path === "/runs" || path === "/runs/metadata") {
+        const trendApp = /^\/apps\/([^/]+)\/profile-trends$/.exec(path ?? "")?.[1];
+        if (path === "/runs" || path === "/runs/metadata" || trendApp) {
           const metadata = JSON.parse(url.searchParams.get("metadata") ?? "{}") as Record<
             string,
             string | string[]
@@ -364,6 +365,17 @@ export function createDemoBackend(SQL: SqlJsStatic, version: string) {
                 (Array.isArray(selected) ? selected : [selected]).includes(run.metadata[key]),
               ),
           );
+          if (trendApp) {
+            const app = decodeURIComponent(trendApp);
+            return ok(
+              demoProfileTrends(
+                app,
+                filtered.filter((run) => run.app_name === app && run.status === "PASSED"),
+                rows("spans"),
+                url.searchParams,
+              ),
+            );
+          }
           if (path === "/runs/metadata") return ok(metadataOptionsForRuns(filtered));
           const limit = Number(url.searchParams.get("limit") ?? 50);
           if (!Number.isInteger(limit) || limit < 1 || limit > 100)

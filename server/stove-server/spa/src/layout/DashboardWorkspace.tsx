@@ -2,7 +2,7 @@ import { useLayoutEffect, useRef, useState } from "react";
 import type { TestBrowserState } from "../api/test-queries";
 import type { AppSummary, Run, RunMetadataFacet, Test } from "../api/types";
 import { ConnectAgentButton } from "../components/agent-connection/AgentConnectionProvider";
-import { DrillDownPanel } from "../components/DrillDownPanel";
+import { DrillDownPanel, type ProfileView } from "../components/DrillDownPanel";
 import type { TopFilterPickerProps } from "../components/TopFilterPicker";
 import {
   DrillDownNavigationProvider,
@@ -31,6 +31,7 @@ interface DashboardWorkspaceProps {
   onLoadOlderRuns: () => void;
   selectedRunId: string | undefined;
   metadataFilter: MetadataFilter;
+  scopedMetadata: MetadataFilter | null;
   latestRun: Run | undefined;
   tests: Test[];
   testBrowser: TestBrowserState;
@@ -62,6 +63,7 @@ function DashboardWorkspaceContent({
   onLoadOlderRuns,
   selectedRunId,
   metadataFilter,
+  scopedMetadata,
   latestRun,
   tests,
   testBrowser,
@@ -72,36 +74,62 @@ function DashboardWorkspaceContent({
   onMetadataFilterChange,
   onSelectTest,
 }: DashboardWorkspaceProps) {
-  const [profilesRun, setProfilesRun] = useState<string>();
-  const [correlation, setCorrelation] = useState<ProfileCorrelation>();
-  const showProfiles = profilesRun !== undefined && profilesRun === latestRun?.id;
+  const [profiles, setProfiles] = useState<{
+    appName: string;
+    runId?: string;
+    view: ProfileView;
+    correlation?: ProfileCorrelation;
+  }>();
+  const selectedProfiles =
+    profiles &&
+    profiles.appName === activeApp &&
+    (profiles.view.kind !== "run" || profiles.runId === latestRun?.id)
+      ? profiles
+      : undefined;
   const phone = usePhoneNavigation();
   const isPhone = useIsPhone();
+  const phoneLevel = phone?.level === "profiles" && !selectedProfiles ? "tests" : phone?.level;
+  const openProfilePane = !isPhone || phoneLevel === "profiles" ? selectedProfiles : undefined;
+  const correlation =
+    openProfilePane?.runId === latestRun?.id ? openProfilePane?.correlation : undefined;
+  const profileTrigger = useRef<HTMLButtonElement | undefined>(undefined);
   const workspaceRef = useRef<HTMLDivElement>(null);
-  const lastLevel = useRef(phone?.level);
+  const lastLevel = useRef(phoneLevel);
   useLayoutEffect(() => {
     if (!isPhone) return;
     if (phone?.testId && phone.testId !== selectedTest?.id) onSelectTest(phone.testId);
-    if (lastLevel.current !== phone?.level) {
-      if (phone?.level === "tests")
-        workspaceRef.current
-          ?.querySelector<HTMLElement>('.stove-test-item[aria-current="true"]')
-          ?.focus({ preventScroll: true });
-      if (phone?.level === "test" && lastLevel.current === "tests")
+    if (lastLevel.current !== phoneLevel) {
+      if (phoneLevel === "tests") {
+        const trigger = lastLevel.current === "profiles" ? profileTrigger.current : undefined;
+        if (trigger?.isConnected) trigger.focus();
+        else
+          workspaceRef.current
+            ?.querySelector<HTMLElement>('.stove-test-item[aria-current="true"]')
+            ?.focus({ preventScroll: true });
+      }
+      if (
+        phoneLevel === "test" &&
+        (lastLevel.current === "tests" || lastLevel.current === "profiles")
+      )
         workspaceRef.current?.querySelector<HTMLElement>("h1")?.focus();
     }
-    lastLevel.current = phone?.level;
-  }, [isPhone, phone?.level, phone?.testId, selectedTest?.id, onSelectTest]);
+    lastLevel.current = phoneLevel;
+  }, [isPhone, phoneLevel, phone?.testId, selectedTest?.id, onSelectTest]);
+
+  const openProfiles = (trigger?: HTMLButtonElement, correlation?: ProfileCorrelation) => {
+    if (!activeApp || !latestRun) return;
+    profileTrigger.current = trigger;
+    setProfiles({ appName: activeApp, runId: latestRun.id, view: { kind: "run" }, correlation });
+    if (isPhone && phoneLevel !== "profiles") phone?.go({ level: "profiles" });
+  };
   return (
     <DrillDownNavigationProvider
       value={(runId, selection) => {
         if (runId !== latestRun?.id) return;
-        setCorrelation(selection);
-        setProfilesRun(runId);
-        if (isPhone) phone?.go({ level: "test" });
+        openProfiles(undefined, selection);
       }}
     >
-      <div ref={workspaceRef} className="stove-workspace" data-phone-screen={phone?.level}>
+      <div ref={workspaceRef} className="stove-workspace" data-phone-screen={phoneLevel}>
         <Sidebar
           topFilter={topFilter}
           apps={apps}
@@ -122,35 +150,47 @@ function DashboardWorkspaceContent({
           tests={tests}
           testBrowser={testBrowser}
           selectedTestId={selectedTest?.id}
-          profilesSelected={showProfiles}
-          onSelectProfiles={() => {
-            setCorrelation(undefined);
-            setProfilesRun(latestRun?.id);
-            if (isPhone) phone?.go({ level: "test" });
-          }}
+          profilesSelected={Boolean(openProfilePane)}
+          onSelectProfiles={openProfiles}
           onSelectTest={(testId) => {
-            setProfilesRun(undefined);
+            setProfiles(undefined);
             onSelectTest(testId);
             if (isPhone) phone?.go({ level: "test", testId });
           }}
         />
-        {latestRun && showProfiles && (
+        {openProfilePane && (
           <DrillDownPanel
-            key={latestRun.id}
+            key={openProfilePane.appName}
+            appName={openProfilePane.appName}
             run={latestRun}
+            metadata={scopedMetadata}
             tests={tests}
+            view={openProfilePane.view}
+            onViewChange={(view) =>
+              setProfiles({
+                ...openProfilePane,
+                runId: latestRun?.id,
+                view,
+                correlation,
+              })
+            }
             correlation={correlation}
-            onClearCorrelation={() => setCorrelation(undefined)}
+            onClearCorrelation={() => setProfiles({ ...openProfilePane, correlation: undefined })}
             onClose={() => {
-              setProfilesRun(undefined);
-              if (isPhone) phone?.go({ level: "tests" });
+              if (isPhone && phone && profileTrigger.current?.isConnected) {
+                phone.back();
+              } else {
+                setProfiles(undefined);
+                if (isPhone) phone?.go({ level: "tests" }, true);
+                else profileTrigger.current?.focus();
+              }
             }}
           />
         )}
-        {!showProfiles && latestRun && selectedTest && (
+        {!openProfilePane && latestRun && selectedTest && (
           <TestDetail runId={latestRun.id} test={selectedTest} liveConnected={liveConnected} />
         )}
-        {!showProfiles && !(latestRun && selectedTest) && (
+        {!openProfilePane && !(latestRun && selectedTest) && (
           <WorkspaceEmpty
             waitingForFirstRun={apps.length === 0}
             filtered={topFilter.value !== null}

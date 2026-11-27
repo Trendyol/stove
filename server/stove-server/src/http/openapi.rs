@@ -9,6 +9,7 @@ use utoipa_swagger_ui::{Config, SwaggerUi};
 #[openapi(
   paths(
     crate::profiling::http::get_profiles,
+    crate::profiling::http::get_profile_trends,
     super::routes::get_meta,
     super::routes::get_agent_setup,
     super::routes::get_health,

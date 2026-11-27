@@ -161,6 +161,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/apps/{app_name}/profile-trends": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["get_profile_trends"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/data": {
         parameters: {
             query?: never;
@@ -1019,12 +1035,49 @@ export interface components {
             test_id: string | null;
             timestamp: string;
         };
+        ProfileBottleneck: {
+            /** Format: double */
+            change_percentage_points: number;
+            file: string;
+            hot_runs: number;
+            /** Format: double */
+            median_self_percent: number;
+            method: string;
+            /** @description Sampled self share (0–100), in the same order as the series runs. */
+            self_percent_by_run: number[];
+        };
         ProfileReport: {
             app_name: string;
             interpretation: string;
             run_id: string;
             series: components["schemas"]["Series"][];
             truncated: boolean;
+        };
+        ProfileTrendReport: {
+            app_name: string;
+            /** Format: double */
+            hotspot_threshold_percent: number;
+            interpretation: string;
+            min_sample_records: number;
+            passed_runs_considered: number;
+            run_limit: number;
+            series: components["schemas"]["ProfileTrendSeries"][];
+            truncated: boolean;
+        };
+        ProfileTrendRun: {
+            run_id: string;
+            sample_records: number;
+            started_at: string;
+            /** Format: int64 */
+            total: number;
+        };
+        ProfileTrendSeries: {
+            bottlenecks: components["schemas"]["ProfileBottleneck"][];
+            metric: string;
+            /** @description Comparable profile runs, oldest first. */
+            runs: components["schemas"]["ProfileTrendRun"][];
+            service: string;
+            unit: string;
         };
         PurgePreview: {
             evidence: components["schemas"]["EvidenceCounts"];
@@ -1527,6 +1580,40 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["AppSummary"][];
                 };
+            };
+        };
+    };
+    get_profile_trends: {
+        parameters: {
+            query?: {
+                /** @description JSON object of exact run metadata selectors, with string or string-array values. */
+                metadata?: string;
+                metric?: string;
+                service?: string;
+            };
+            header?: never;
+            path: {
+                /** @description Exact Stove application */
+                app_name: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProfileTrendReport"];
+                };
+            };
+            /** @description Invalid selector */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
         };
     };

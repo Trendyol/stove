@@ -257,7 +257,7 @@ mod tests {
       "binary"
     );
     assert_eq!(document["servers"][0]["url"], "..");
-    assert_eq!(document["paths"].as_object().unwrap().len(), 37);
+    assert_eq!(document["paths"].as_object().unwrap().len(), 38);
     assert!(document["paths"]["/api/v1/runs/metadata"]["get"].is_object());
     assert!(document["paths"]["/api/v1/agent-setup"]["get"].is_object());
     assert!(document["paths"]["/api/v1/top-filter"]["get"].is_object());

@@ -30,15 +30,14 @@ pub(super) fn tool_result(mut structured: Value, id: Option<&Value>) -> Value {
     };
     let last = series.last_mut().unwrap();
     // Keep totals and source references for every series as long as possible.
-    if last["hotspots"]
-      .as_array_mut()
-      .is_some_and(|a| a.pop().is_some())
-    {
-      continue;
-    }
-    if last["findings"]
-      .as_array_mut()
-      .is_some_and(|a| a.pop().is_some())
+    if ["hotspots", "findings", "bottlenecks"]
+      .into_iter()
+      .any(|key| {
+        last
+          .get_mut(key)
+          .and_then(Value::as_array_mut)
+          .is_some_and(|a| a.pop().is_some())
+      })
     {
       continue;
     }

@@ -267,6 +267,7 @@ export function useAppData() {
     loadOlderRuns: runsQuery.loadOlderRuns,
     selectedRunId: selectedRunId ?? latestRun?.id,
     metadataFilter,
+    scopedMetadata: combined,
     tests,
     testBrowser,
     selectedTest,

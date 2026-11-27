@@ -1,4 +1,11 @@
-import type { ProfileReport, ProfileSeries, Run, Span } from "../api/types";
+import type {
+  ProfileReport,
+  ProfileSeries,
+  ProfileTrendReport,
+  ProfileTrendSeries,
+  Run,
+  Span,
+} from "../api/types";
 import { frameKey, type ProfileFrame } from "../utils/profiles";
 
 const frame = (name: string, file: string, line: number): ProfileFrame => ({ name, file, line });
@@ -56,6 +63,7 @@ export function demoProfileReport(run: Run, spans: Span[], params: URLSearchPara
     throw new Error("from_ms must precede until_ms");
   const matches = (key: string, value: string) => !params.has(key) || params.get(key) === value;
   const groups = new Map<string, ProfileSeries>();
+  const priceWeight = 2 + (Number(run.metadata.pipeline) % 3 || 0);
   for (const span of spans) {
     if (
       span.run_id !== run.id ||
@@ -92,7 +100,7 @@ export function demoProfileReport(run: Run, spans: Span[], params: URLSearchPara
                 pricing,
                 ...(allocation ? [decimal, copy] : [decimal]),
               ],
-              weight: 3,
+              weight: priceWeight,
             },
             {
               frames: [thread, controller, order, inventory, ...(allocation ? [copy] : [])],
@@ -183,5 +191,85 @@ export function demoProfileReport(run: Run, spans: Span[], params: URLSearchPara
     truncated: false,
     interpretation:
       "Fictional CPU and allocation recordings for exploring Drill Down, not measured performance. Time filters select whole overlapping recording windows, including background work. Trace and local-root span filters select tagged samples only. CPU time does not measure network waiting, and allocated bytes do not prove a memory leak. Real runs require optional profiling and correlation instrumentation.",
+  };
+}
+
+export function demoProfileTrends(
+  app: string,
+  runs: Run[],
+  spans: Span[],
+  params: URLSearchParams,
+): ProfileTrendReport {
+  const latest = runs.slice(0, 10);
+  const selectors = new URLSearchParams();
+  for (const key of ["service", "metric"]) {
+    const value = params.get(key);
+    if (value !== null) selectors.set(key, value);
+  }
+  const groups = new Map<string, { run: Run; profile: ProfileSeries }[]>();
+  for (const run of [...latest].reverse()) {
+    for (const profile of demoProfileReport(run, spans, selectors).series) {
+      if (profile.sample_records < 20) continue;
+      const key = JSON.stringify([profile.service, profile.metric, profile.unit]);
+      const group = groups.get(key) ?? [];
+      group.push({ run, profile });
+      groups.set(key, group);
+    }
+  }
+  const series: ProfileTrendSeries[] = [...groups.values()].map((group) => {
+    const { service, metric, unit } = group[0].profile;
+    const candidates = new Map<string, ProfileFrame>();
+    for (const { profile } of group) {
+      for (const hotspot of profile.hotspots)
+        if (hotspot.self_percent >= 20) candidates.set(frameKey(hotspot.frame), hotspot.frame);
+    }
+    const bottlenecks = [...candidates].flatMap(([key, frame]) => {
+      const shares = group.map(
+        ({ profile }) => profile.hotspots.find((h) => frameKey(h.frame) === key)?.self_percent ?? 0,
+      );
+      const hotRuns = shares.filter((share) => share >= 20).length;
+      if (hotRuns < Math.max(2, Math.ceil(group.length / 2))) return [];
+      const sorted = [...shares].sort((a, b) => a - b);
+      return [
+        {
+          method: frame.name,
+          file: frame.file,
+          hot_runs: hotRuns,
+          median_self_percent:
+            (sorted[Math.floor(sorted.length / 2)] + sorted[Math.floor((sorted.length - 1) / 2)]) /
+            2,
+          change_percentage_points: shares[shares.length - 1] - shares[0],
+          self_percent_by_run: shares,
+        },
+      ];
+    });
+    return {
+      service,
+      metric,
+      unit,
+      runs: group.map(({ run, profile }) => ({
+        run_id: run.id,
+        started_at: run.started_at,
+        total: profile.total,
+        sample_records: profile.sample_records,
+      })),
+      bottlenecks: bottlenecks.sort(
+        (a, b) => b.hot_runs - a.hot_runs || b.median_self_percent - a.median_self_percent,
+      ),
+    };
+  });
+  return {
+    app_name: app,
+    passed_runs_considered: latest.length,
+    run_limit: 10,
+    hotspot_threshold_percent: 20,
+    min_sample_records: 20,
+    series: series.sort(
+      (a, b) =>
+        Number(b.bottlenecks.length > 0) - Number(a.bottlenecks.length > 0) ||
+        b.runs.length - a.runs.length,
+    ),
+    truncated: false,
+    interpretation: "Fictional profile history for exploring Drill Down.",
   };
 }

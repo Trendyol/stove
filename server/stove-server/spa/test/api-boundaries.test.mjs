@@ -116,6 +116,25 @@ test("REST accepts additional server fields", async (t) => {
   assert.equal((await api.getMeta()).stove_server_version, meta.stove_server_version);
 });
 
+test("profile history rejects a hotspot missing a share for a listed run", async (t) => {
+  t.mock.method(globalThis, "fetch", async () => Response.json({
+    app_name: "checkout", passed_runs_considered: 2, run_limit: 10,
+    hotspot_threshold_percent: 20, min_sample_records: 20,
+    truncated: false, interpretation: "Sampled evidence",
+    series: [{
+      service: "checkout", metric: "go:cpu", unit: "nanoseconds",
+      runs: ["older", "newer"].map((run_id, index) => ({
+        run_id, started_at: `2024-06-0${index + 1}T10:00:00Z`, total: 100, sample_records: 20,
+      })),
+      bottlenecks: [{
+        method: "Checkout", file: "checkout.go", hot_runs: 2,
+        median_self_percent: 40, change_percentage_points: 20, self_percent_by_run: [30],
+      }],
+    }],
+  }));
+  await assert.rejects(api.profileTrends("checkout", {}), /Invalid response.*profile-trends/);
+});
+
 test("failed and cancelled requests do not produce successful empty data", async (t) => {
   t.mock.method(
     globalThis,
