@@ -20,6 +20,7 @@ public final class com/trendyol/stove/wiremock/RawStubDsl {
 }
 
 public final class com/trendyol/stove/wiremock/RequestDsl {
+	public final fun body (Lcom/github/tomakehurst/wiremock/matching/StringValuePattern;)V
 	public final fun contentTypeJson ()V
 	public final fun header (Ljava/lang/String;Lcom/github/tomakehurst/wiremock/matching/StringValuePattern;)V
 	public final fun header (Ljava/lang/String;Ljava/lang/String;)V

@@ -1,0 +1,39 @@
+openapi: 3.0.3
+info: { title: probe, version: "1" }
+paths:
+  /mixed:
+    get:
+      operationId: mixed
+      responses:
+        "200": { description: ok, content: { application/json: { schema: { $ref: "#/components/schemas/Note" } } } }
+        "500": { description: err, content: { text/plain: { schema: { type: string } } } }
+  /multi:
+    post:
+      operationId: multi
+      requestBody:
+        content:
+          application/json: { schema: { $ref: "#/components/schemas/Note" } }
+          application/xml: { schema: { $ref: "#/components/schemas/Note" } }
+      responses: { "204": { description: ok } }
+  /secure:
+    get:
+      operationId: secure
+      parameters:
+        - { name: Authorization, in: header, schema: { type: string } }
+        - { name: Accept, in: header, schema: { type: string } }
+      responses: { "204": { description: ok } }
+  /notes:
+    post:
+      operationId: createNote
+      requestBody: { content: { application/json: { schema: { $ref: "#/components/schemas/Note" } } } }
+      responses:
+        "201": { description: ok, content: { application/json: { schema: { $ref: "#/components/schemas/Note" } } } }
+components:
+  schemas:
+    Note:
+      type: object
+      required: [text]
+      properties:
+        text: { type: string }
+        note: { type: string, nullable: true }
+        at: { type: string, format: date-time }

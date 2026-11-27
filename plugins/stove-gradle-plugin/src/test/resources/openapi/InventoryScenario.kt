@@ -6,8 +6,10 @@ import com.trendyol.stove.system.abstractions.SystemKey
 import com.trendyol.stove.system.stove
 import com.trendyol.stove.wiremock.*
 import stove.generated.wiremock.inventory.*
+import java.math.BigDecimal
 import java.net.URI
 import java.net.http.*
+import java.time.OffsetDateTime
 
 object Inventory : SystemKey
 
@@ -18,6 +20,9 @@ suspend fun exerciseInventory(baseUrl: String) {
   val reservation = Reservation(id = "r1", lines = listOf(line))
   val cart = ReserveStock(lines = listOf(line), labels = mapOf("\$ref" to "cart-42"))
   val warehouse = "EU/West"
+  val startsAt = OffsetDateTime.parse("2026-01-01T10:00:00Z")
+  val weight = BigDecimal("0.0000001")
+  val slot = Slot(primary = null, latest = line)
   stove {
     wiremock(Inventory) {
       inventory.reserveStock(warehouseId = warehouse, channel = Channel.online, idempotencyKey = "cart-42", body = cart) {
@@ -28,6 +33,8 @@ suspend fun exerciseInventory(baseUrl: String) {
       }
       inventory.reservationState(warehouseId = warehouse, reservationId = "r1") { ok(ReservationState.held) }
       inventory.releaseStock(warehouseId = warehouse, reservationId = "r1") { noContent() }
+      inventory.pickupSlot(warehouseId = warehouse, startsAt = startsAt, minWeight = weight, xUntil = startsAt) { ok(slot) }
+      inventory.pickupSlot(warehouseId = warehouse, startsAt = startsAt.plusHours(1)) { ok(null) }
     }
   }
 
@@ -50,6 +57,14 @@ suspend fun exerciseInventory(baseUrl: String) {
   check(json.readValue(problem.body(), InventoryProblem::class.java).reason == "sold out")
   check(json.readValue(call("GET", "/r1").body(), ReservationState::class.java) == ReservationState.held)
   check(call("DELETE", "/r1").statusCode() == 204)
+  val slots = "$baseUrl/api/v2/warehouses/EU%2FWest/slots"
+  fun get(suffix: String) = client.send(
+    HttpRequest.newBuilder(URI(slots + suffix)).header("X-Until", "2026-01-01T10:00:00Z").build(),
+    HttpResponse.BodyHandlers.ofString(),
+  )
+  val free = get("/2026-01-01T10:00:00Z?minWeight=0.0000001")
+  check(free.statusCode() == 200 && json.readValue(free.body(), Slot::class.java) == slot) { free.toString() + free.body() }
+  check(get("/2026-01-01T11:00:00Z").body() == "null")
   stove {
     wiremock(Inventory) {
       shouldHaveBeenCalled(inventory.requests.reserveStock(warehouseId = warehouse, channel = Channel.online, body = cart))

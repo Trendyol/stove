@@ -2,6 +2,7 @@ package com.trendyol.stove.wiremock
 
 import com.github.tomakehurst.wiremock.client.WireMock.aResponse
 import com.github.tomakehurst.wiremock.client.WireMock.containing
+import com.github.tomakehurst.wiremock.client.WireMock.equalToJson
 import com.github.tomakehurst.wiremock.client.WireMock.exactly
 import com.github.tomakehurst.wiremock.client.WireMock.get
 import com.github.tomakehurst.wiremock.client.WireMock.matching
@@ -310,6 +311,27 @@ class WireMockDslApiTest :
           shouldNotHaveBeenCalled(RequestMethod.GET, exactUrl("$url?filter=active"))
         }
       }
+    }
+
+    test("a native WireMock body pattern constrains the request") {
+      val url = "/dsl/native-body"
+      stove {
+        wiremock {
+          repeat(2) {
+            mockPost(url) {
+              request { body(equalToJson("""{"id":"a","note":"${'$'}{json-unit.ignore-element}"}""", true, false)) }
+              respond { text("native") }
+            }
+          }
+        }
+      }
+      fun post(body: String) = client.send(
+        HttpRequest.newBuilder(URI("$WIREMOCK_BASE_URL$url")).POST(BodyPublishers.ofString(body)).build(),
+        BodyHandlers.ofString()
+      )
+      post("""{"id":"a"}""").body() shouldBe "native"
+      post("""{"id":"a","note":"x"}""").body() shouldBe "native"
+      post("""{"id":"b"}""").statusCode() shouldBe 404
     }
 
     test("binary response snapshots bytes and retains value semantics") {

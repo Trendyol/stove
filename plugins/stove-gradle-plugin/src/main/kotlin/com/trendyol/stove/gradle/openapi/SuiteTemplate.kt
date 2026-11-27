@@ -4,6 +4,7 @@ import com.samskivert.mustache.Mustache
 import io.swagger.v3.oas.models.OpenAPI
 import io.swagger.v3.oas.models.PathItem
 import io.swagger.v3.oas.models.media.Schema
+import io.swagger.v3.oas.models.parameters.Parameter
 import io.swagger.v3.oas.models.responses.ApiResponse
 import org.openapitools.codegen.languages.KotlinClientCodegen
 import org.openapitools.codegen.utils.ModelUtils
@@ -16,6 +17,12 @@ private val responseNames = mapOf(
   422 to "unprocessableEntity", 429 to "tooManyRequests", 500 to "internalServerError", 502 to "badGateway",
   503 to "serviceUnavailable", 504 to "gatewayTimeout",
 )
+private val typeName = Regex("""(?<![\w.])[a-zA-Z_]\w*""")
+private val template by lazy {
+  checkNotNull(SuiteTemplate::class.java.getResourceAsStream("/openapi/suite.kt.mustache")).bufferedReader().use {
+    Mustache.compiler().escapeHTML(false).emptyStringIsFalse(true).compile(it)
+  }
+}
 
 internal class SuiteTemplate(
   private val api: OpenAPI,
@@ -29,10 +36,6 @@ internal class SuiteTemplate(
     val suite = alias.replaceFirstChar(Char::uppercase) + "Wiremock"
     val target = dir.resolve(pkg.replace('.', '/')).resolve("$suite.kt")
     require(!target.exists()) { "Schema name conflicts with generated accessor: $suite" }
-
-    val template = checkNotNull(javaClass.getResourceAsStream("/openapi/suite.kt.mustache")).bufferedReader().use {
-      Mustache.compiler().escapeHTML(false).emptyStringIsFalse(true).compile(it)
-    }
     val operations = endpoints.map { operation(alias, it) }
     target.parentFile.mkdirs()
     target.writeText(template.execute(mapOf("pkg" to pkg, "alias" to alias, "suite" to suite, "operations" to operations)))
@@ -41,30 +44,22 @@ internal class SuiteTemplate(
   private fun operation(alias: String, endpoint: Endpoint): OperationTemplate {
     val (path, method, op) = endpoint
     val name = op.operationId
-    val arguments = linkedMapOf<String, String>()
-    val constraints = mutableListOf<String>()
-    val segments = mutableMapOf<String, String>()
-
-    fun argument(wireName: String, location: String, schema: Schema<*>): String {
-      val base = config.toVarName(wireName).trim('`')
-      val local = if ("`$base`" in arguments) "`$location${base.replaceFirstChar(Char::uppercase)}`" else "`$base`"
-      require(local !in arguments) { "Duplicate Kotlin parameter $local on $name" }
-      arguments[local] = typeOf(schema) + if (location == "path") "" else "? = null"
-      return local
+    val parameters = op.parameters.orEmpty()
+    val body = op.requestBody?.let { ModelUtils.getReferencedRequestBody(api, it).content }?.values?.singleOrNull()
+    val inputs = buildList {
+      parameters.forEach { add(Input(it.name, it.`in`, it.schema)) }
+      body?.let { add(Input("body", "request", it.schema)) }
     }
 
-    for (p in op.parameters.orEmpty()) {
-      val local = argument(p.name, p.`in`, p.schema)
-      val enum = !ModelUtils.getReferencedSchema(api, p.schema).enum.isNullOrEmpty()
-      fun wireValue(value: String) = if (enum) "this@Requests.system.scalarParameter($value)" else "$value.toString()"
-      when (p.`in`) {
-        "path" -> segments[p.name] = "encodeSegment(${wireValue(local)})"
-        "query", "header" -> constraints += "$local?.let { ${p.`in`}(${literal(p.name)}, ${wireValue("it")}) }"
-      }
-    }
-    op.requestBody?.let { ModelUtils.getReferencedRequestBody(api, it).content }?.values?.singleOrNull()?.let {
-      val body = argument("body", "request", it.schema)
-      constraints += "$body?.let { jsonEqualTo(it) }"
+    val locals = localNames(inputs, name)
+    val arguments = inputs.zip(locals) { input, local -> local to typeOf(input.schema) + if (input.location == "path") "" else "? = null" }
+    val bound = parameters.zip(locals)
+    val segments = bound.filter { (p, _) -> p.`in` == "path" }
+      .associate { (p, local) -> p.name to "encodeSegment(${wireValue(p, local)})" }
+    val constraints = buildList {
+      bound.filter { (p, _) -> p.`in` == "query" || p.`in` == "header" }
+        .forEach { (p, local) -> add("$local?.let { ${p.`in`}(${literal(p.name)}, ${wireValue(p, "it")}) }") }
+      if (body != null) add("${locals.last()}?.let { body(stubBody(it)) }")
     }
 
     return OperationTemplate(
@@ -72,13 +67,33 @@ internal class SuiteTemplate(
       label = literal("$alias.$name"),
       missingResponse = literal("Choose a response for $alias.$name"),
       scope = name.replaceFirstChar(Char::uppercase) + "Response",
-      params = arguments.entries.joinToString { (name, type) -> "$name: $type" },
-      args = arguments.keys.joinToString(),
+      params = arguments.joinToString { (name, type) -> "$name: $type" },
+      args = locals.joinToString(),
       method = method,
       path = pathExpression(path, segments),
       constraints = constraints,
       responses = op.responses.map { (code, r) -> response(code, r, op.responses.keys) },
     )
+  }
+
+  /** Backticked Kotlin names for [inputs], in order; a second input with the same name gets its location as a prefix. */
+  private fun localNames(inputs: List<Input>, operation: String): List<String> =
+    inputs.fold(emptyList()) { taken, input ->
+      val base = config.toVarName(input.wireName).trim('`')
+      val local = if ("`$base`" in taken) "`${input.location}${base.replaceFirstChar(Char::uppercase)}`" else "`$base`"
+      require(local !in taken) { "Duplicate Kotlin parameter $local on $operation" }
+      taken + local
+    }
+
+  // Exact matching needs the text a client sends; toString() drops zero seconds and uses exponents.
+  private fun wireValue(p: Parameter, value: String): String {
+    val type = typeOf(p.schema)
+    return when {
+      !ModelUtils.getReferencedSchema(api, p.schema).enum.isNullOrEmpty() -> "this@Requests.system.scalarParameter($value)"
+      type == "java.time.OffsetDateTime" -> "java.time.format.DateTimeFormatter.ISO_OFFSET_DATE_TIME.format($value)"
+      type == "java.math.BigDecimal" -> "$value.toPlainString()"
+      else -> "$value.toString()"
+    }
   }
 
   private fun response(code: String, response: ApiResponse, declared: Set<String>): ResponseTemplate {
@@ -100,18 +115,20 @@ internal class SuiteTemplate(
       contentType = media?.let { literal(it.key) },
       body = when {
         media == null -> "empty()"
-        nullable -> "if (body == null) jsonNull() else json(body)"
-        else -> "json(body)"
+        media.key == "text/plain" -> "text(body)"
+        else -> "rawJson(mapper.writeValueAsString(body))" // Also writes null for a nullable body.
       },
     )
   }
 
   // Qualify model names even inside generics: a response scope can have the same name as a DTO.
   private fun typeOf(schema: Schema<*>): String =
-    Regex("""(?<![\w.])[a-zA-Z_]\w*""").replace(config.getTypeDeclaration(schema)) {
+    typeName.replace(config.getTypeDeclaration(schema)) {
       if (it.value in modelNames) "${config.modelPackage()}.${it.value}" else it.value
     }
 }
+
+private data class Input(val wireName: String, val location: String, val schema: Schema<*>)
 
 private data class OperationTemplate(
   val name: String, val label: String, val missingResponse: String, val scope: String,
@@ -124,31 +141,33 @@ private data class ResponseTemplate(
   val guard: String?, val contentType: String?, val body: String,
 )
 
-private fun pathExpression(path: String, segments: Map<String, String>) = buildList {
-  var start = 0
-  for (match in pathParameter.findAll(path)) {
-    add(literal(path.substring(start, match.range.first)))
-    add(segments.getValue(match.groupValues[1]))
-    start = match.range.last + 1
-  }
-  add(literal(path.substring(start)))
-}.joinToString(" + ")
+/** Literal text between parameters (split keeps empty ends), interleaved with the encoded segment values. */
+private fun pathExpression(path: String, segments: Map<String, String>): String {
+  val texts = path.split(pathParameter).map(::literal)
+  val values = pathParameter.findAll(path).map { segments.getValue(it.groupValues[1]) }.toList()
+  return buildList {
+    texts.zip(values).forEach { (text, value) -> add(text); add(value) }
+    add(texts.last())
+  }.joinToString(" + ")
+}
 
 // Exact codes take precedence over ranges, and both take precedence over the default.
-private fun statusGuard(code: String, declared: Set<String>) = buildList {
-  add(if (code == "default") "statusCode in 100..599" else "statusCode / 100 == ${code.first()}")
-  for (other in declared) {
-    if (other.toIntOrNull() != null) add("statusCode != $other")
-    else if (code == "default" && other.endsWith("XX")) add("statusCode / 100 != ${other.first()}")
-  }
-}.joinToString(" && ")
-
-private fun literal(value: String) = buildString {
-  append('"')
-  for (c in value) when (c) {
-    '"', '\\', '$' -> append('\\').append(c)
-    in ' '..'~' -> append(c)
-    else -> append("\\u%04x".format(c.code))
-  }
-  append('"')
+private fun statusGuard(code: String, declared: Set<String>): String {
+  return buildList {
+    add(if (code == "default") "statusCode in 100..599" else "statusCode / 100 == ${code.first()}")
+    declared.forEach { other ->
+      when {
+        other.toIntOrNull() != null -> add("statusCode != $other")
+        code == "default" && other.endsWith("XX") -> add("statusCode / 100 != ${other.first()}")
+      }
+    }
+  }.joinToString(" && ")
 }
+
+private fun literal(value: String) = value.map { c ->
+  when (c) {
+    '"', '\\', '$' -> "\\$c"
+    in ' '..'~' -> c.toString()
+    else -> "\\u%04x".format(c.code)
+  }
+}.joinToString("", prefix = "\"", postfix = "\"")

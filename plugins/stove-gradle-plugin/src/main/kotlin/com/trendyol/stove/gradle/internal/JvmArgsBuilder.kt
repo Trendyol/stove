@@ -27,13 +27,8 @@ internal object JvmArgsBuilder {
     addAll(coreExportArgs(config, port))
     add("-Dotel.propagators=tracecontext,baggage")
     addAll(testOptimizationArgs(config))
-
-    if (config.captureHttpHeaders) {
-      addAll(httpHeaderCaptureArgs())
-    }
-    if (config.captureExperimentalTelemetry) {
-      addAll(experimentalTelemetryArgs())
-    }
+    if (config.captureHttpHeaders) addAll(httpHeaderCaptureArgs())
+    if (config.captureExperimentalTelemetry) addAll(experimentalTelemetryArgs())
     if (config.customAnnotations.isNotEmpty()) {
       add("-Dotel.instrumentation.annotations.methods=${config.customAnnotations.joinToString(",")}")
     }
@@ -41,18 +36,14 @@ internal object JvmArgsBuilder {
   }
 
   private fun coreExportArgs(config: ResolvedTracingConfig, port: Int): List<String> = buildList {
-    val endpoint = "http://localhost:$port"
     add("-Dotel.traces.exporter=otlp")
     add("-Dotel.exporter.otlp.protocol=${config.protocol}")
-    add("-Dotel.exporter.otlp.endpoint=$endpoint")
+    add("-Dotel.exporter.otlp.endpoint=http://localhost:$port")
     add("-Dotel.metrics.exporter=none")
     add("-Dotel.logs.exporter=none")
     add("-Dotel.service.name=${config.serviceName}")
     add("-Dotel.resource.attributes=service.name=${config.serviceName},deployment.environment=test")
-
-    if (config.protocol == "grpc") {
-      add("-Dotel.instrumentation.grpc.enabled=false")
-    }
+    if (config.protocol == "grpc") add("-Dotel.instrumentation.grpc.enabled=false")
   }
 
   private fun testOptimizationArgs(config: ResolvedTracingConfig): List<String> = listOf(
@@ -75,10 +66,8 @@ internal object JvmArgsBuilder {
   )
 
   private fun instrumentationControlArgs(config: ResolvedTracingConfig): List<String> = buildList {
-    if (config.disabledInstrumentations.isNotEmpty()) {
-      add("-Dotel.instrumentation.common.default-enabled=true")
-      addAll(config.disabledInstrumentations.map { "-Dotel.instrumentation.$it.enabled=false" })
-    }
-    addAll(config.additionalInstrumentations.map { "-Dotel.instrumentation.$it.enabled=true" })
+    if (config.disabledInstrumentations.isNotEmpty()) add("-Dotel.instrumentation.common.default-enabled=true")
+    config.disabledInstrumentations.forEach { add("-Dotel.instrumentation.$it.enabled=false") }
+    config.additionalInstrumentations.forEach { add("-Dotel.instrumentation.$it.enabled=true") }
   }
 }

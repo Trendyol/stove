@@ -19,6 +19,33 @@ private fun encodeSegment(value: String): String = buildString {
   }
 }
 
+// Writes dates as a client sends them, without needing jsr310 on the classpath.
+private val mapper = com.fasterxml.jackson.module.kotlin.jacksonObjectMapper().registerModule(
+  com.fasterxml.jackson.databind.module.SimpleModule()
+    .iso<java.time.OffsetDateTime>(java.time.format.DateTimeFormatter.ISO_OFFSET_DATE_TIME)
+    .iso<java.time.LocalDate>(java.time.format.DateTimeFormatter.ISO_LOCAL_DATE)
+)
+
+private inline fun <reified T : java.time.temporal.TemporalAccessor> com.fasterxml.jackson.databind.module.SimpleModule.iso(
+  format: java.time.format.DateTimeFormatter,
+) = addSerializer(T::class.java, object : com.fasterxml.jackson.databind.JsonSerializer<T>() {
+  override fun serialize(value: T, gen: com.fasterxml.jackson.core.JsonGenerator, p: com.fasterxml.jackson.databind.SerializerProvider) =
+    gen.writeString(format.format(value))
+})
+
+/** Matches the body exactly, except that a null field also matches an absent one, as clients often omit it. */
+private fun stubBody(value: Any) =
+  com.github.tomakehurst.wiremock.client.WireMock.equalToJson(mapper.writeValueAsString(optional(mapper.valueToTree(value))), true, false)
+
+private fun optional(node: com.fasterxml.jackson.databind.JsonNode): com.fasterxml.jackson.databind.JsonNode = node.apply {
+  when (this) {
+    is com.fasterxml.jackson.databind.node.ObjectNode -> properties().forEach { field ->
+      field.setValue(if (field.value.isNull) textNode("\${json-unit.ignore-element}") else optional(field.value))
+    }
+    is com.fasterxml.jackson.databind.node.ArrayNode -> forEach(::optional)
+  }
+}
+
 class {{suite}} internal constructor(private val system: WireMockSystem) {
   val requests = Requests(system)
   class Requests internal constructor(private val system: WireMockSystem) {

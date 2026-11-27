@@ -10,19 +10,14 @@ import java.net.ServerSocket
 internal object TestTaskConfigurator {
 
   fun configure(project: Project, extension: StoveExtension) {
-    val otelAgentConfig = project.configurations.create("otelAgent") {
+    fun agentConfiguration(name: String, purpose: String) = project.configurations.create(name) {
       isTransitive = false
       isCanBeResolved = true
       isCanBeConsumed = false
-      description = "OpenTelemetry Java Agent for Stove test tracing"
+      description = purpose
     }
-
-    val pyroAgentConfig = project.configurations.create("stovePyroscopeAgent") {
-      isTransitive = false
-      isCanBeResolved = true
-      isCanBeConsumed = false
-      description = "Pyroscope Java agent for Stove continuous profiling"
-    }
+    val otelAgentConfig = agentConfiguration("otelAgent", "OpenTelemetry Java Agent for Stove test tracing")
+    val pyroAgentConfig = agentConfiguration("stovePyroscopeAgent", "Pyroscope Java agent for Stove continuous profiling")
 
     project.afterEvaluate {
       val testTasks by lazy { resolveTestTasks(extension) }

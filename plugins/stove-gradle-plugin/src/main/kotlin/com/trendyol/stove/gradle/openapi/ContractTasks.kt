@@ -1,6 +1,7 @@
 package com.trendyol.stove.gradle.openapi
 
 import com.trendyol.stove.gradle.StoveWiremockExtension
+import com.trendyol.stove.gradle.internal.StovePluginDefaults
 import org.gradle.api.DefaultTask
 import org.gradle.api.Project
 import org.gradle.api.file.*
@@ -8,7 +9,6 @@ import org.gradle.api.provider.*
 import org.gradle.api.tasks.*
 import org.gradle.work.DisableCachingByDefault
 import org.gradle.workers.*
-import com.trendyol.stove.gradle.internal.StovePluginDefaults
 import javax.inject.Inject
 
 internal fun configureWiremock(project: Project, wiremock: StoveWiremockExtension) = with(project) {
@@ -27,13 +27,14 @@ internal fun configureWiremock(project: Project, wiremock: StoveWiremockExtensio
         "Stove WireMock '$alias': supply exactly one of specFile, specText, or specUrl"
       }
       val title = alias.replaceFirstChar(Char::uppercase)
+      val offlineCache = layout.projectDirectory.file(".gradle/stove/openapi/$alias.json")
       val resolve = tasks.register("resolve${title}StoveContract", ResolveStoveContract::class.java) {
         toolClasspath.from(generator)
         location.set(spec.specUrl.orElse(spec.specFile.map { it.asFile.toURI().toString() })
           .orElse(layout.projectDirectory.file("inline-openapi.yaml").asFile.toURI().toString()))
         content.set(spec.specText)
         offline.set(gradle.startParameter.isOffline)
-        remoteCache.set(layout.projectDirectory.file(".gradle/stove/openapi/$alias.json"))
+        remoteCache.set(offlineCache)
         downloads.set(layout.buildDirectory.file("stove/openapi/$alias-downloads.json"))
         snapshot.set(layout.buildDirectory.file("stove/openapi/$alias.json"))
       }
@@ -43,12 +44,13 @@ internal fun configureWiremock(project: Project, wiremock: StoveWiremockExtensio
         apiName.set(alias)
         mappings.set(spec.schemaMappings)
         destination.set(layout.buildDirectory.dir("generated/stove/wiremock/$alias"))
+        skipped.set(layout.buildDirectory.file("stove/openapi/$alias-skipped.txt"))
       }
       // Commit downloads only after the Kotlin sources were generated (or restored from Gradle's build cache).
       val complete = tasks.register("generate${title}StoveWiremock", CacheStoveContract::class.java) {
-        dependsOn(generate)
+        skipped.set(generate.flatMap { it.skipped })
         downloads.set(resolve.flatMap { it.downloads })
-        remoteCache.set(layout.projectDirectory.file(".gradle/stove/openapi/$alias.json"))
+        remoteCache.set(offlineCache)
       }
       kotlin.srcDir(files(generate.flatMap { it.destination }).builtBy(complete))
     }
@@ -87,6 +89,7 @@ abstract class GenerateStoveContract @Inject constructor(private val workers: Wo
   @get:Input abstract val apiName: Property<String>
   @get:Input abstract val mappings: MapProperty<String, String>
   @get:OutputDirectory abstract val destination: DirectoryProperty
+  @get:OutputFile abstract val skipped: RegularFileProperty
 
   @TaskAction fun generate() {
     workers.classLoaderIsolation { classpath.from(toolClasspath) }.submit(GenerateContractWork::class.java) {
@@ -94,6 +97,7 @@ abstract class GenerateStoveContract @Inject constructor(private val workers: Wo
       alias.set(apiName)
       types.set(mappings)
       output.set(destination)
+      skipped.set(this@GenerateStoveContract.skipped)
       scratch.set(temporaryDir)
     }
   }
@@ -103,8 +107,13 @@ abstract class GenerateStoveContract @Inject constructor(private val workers: Wo
 abstract class CacheStoveContract : DefaultTask() {
   @get:InputFile @get:PathSensitive(PathSensitivity.NONE) abstract val downloads: RegularFileProperty
   @get:OutputFile abstract val remoteCache: RegularFileProperty
+  @get:InputFile @get:PathSensitive(PathSensitivity.NONE) abstract val skipped: RegularFileProperty
+
+  // Generation is cached, so skipped operations are reported here on every build.
+  init { outputs.upToDateWhen { false } }
 
   @TaskAction fun remember() {
+    skipped.asFile.get().forEachLine(action = logger::warn)
     writeChanged(remoteCache.asFile.get(), downloads.asFile.get().readBytes())
   }
 }

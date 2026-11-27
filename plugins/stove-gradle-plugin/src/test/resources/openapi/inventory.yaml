@@ -48,6 +48,30 @@ paths:
       operationId: releaseStock
       responses:
         "204": {description: Released}
+  /warehouses/{warehouseId}/slots/{startsAt}:
+    parameters:
+      - {$ref: '#/components/parameters/WarehouseId'}
+      - {in: path, name: startsAt, required: true, schema: {type: string, format: date-time}}
+    get:
+      operationId: pickupSlot
+      parameters:
+        - {in: query, name: minWeight, schema: {type: number}}
+        - {in: header, name: X-Until, schema: {type: string, format: date-time}}
+      responses:
+        "200":
+          description: Slot, or null when none is free
+          content:
+            application/json:
+              schema: {anyOf: [{$ref: '#/components/schemas/Slot'}, {type: "null"}]}
+  /search:
+    get:
+      operationId: search
+      responses:
+        "200":
+          description: A real union stays unsupported
+          content:
+            application/json:
+              schema: {anyOf: [{$ref: '#/components/schemas/Slot'}, {$ref: '#/components/schemas/Reservation'}]}
 components:
   parameters:
     WarehouseId: {in: path, name: warehouseId, required: true, schema: {type: string}}
@@ -77,6 +101,12 @@ components:
       properties:
         id: {type: string}
         lines: {type: array, items: {$ref: '#/components/schemas/StockLine'}}
+    Slot:
+      type: object
+      required: [primary, latest]
+      properties:
+        primary: {anyOf: [{$ref: '#/components/schemas/StockLine'}, {type: "null"}]}
+        latest: {allOf: [{$ref: '#/components/schemas/StockLine'}], description: Most recent line}
     InventoryProblem:
       type: object
       required: [reason]

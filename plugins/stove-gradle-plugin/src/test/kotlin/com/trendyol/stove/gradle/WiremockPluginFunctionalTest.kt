@@ -4,6 +4,7 @@ import com.sun.net.httpserver.HttpServer
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.string.shouldContain
+import io.kotest.matchers.string.shouldNotContain
 import org.gradle.testkit.runner.TaskOutcome
 import java.io.File
 import java.net.InetSocketAddress
@@ -41,8 +42,24 @@ class WiremockPluginFunctionalTest : FunSpec({
   test("two generated clients exercise separate WireMock servers from a custom source set") {
     val first = run("exercise").build()
     first.output shouldContain "Skipping GET /upload"
+    first.output shouldContain "Skipping GET /search"
     first.task(":stoveExtractPyroscopeExtension") shouldBe null
-    run("exercise").build().task(":generateSupplierStoveWiremockSources")?.outcome shouldBe TaskOutcome.UP_TO_DATE
+    val second = run("exercise").build()
+    second.task(":generateSupplierStoveWiremockSources")?.outcome shouldBe TaskOutcome.UP_TO_DATE
+    second.output shouldContain "Skipping GET /upload"
+  }
+
+  test("mixed media types, reserved headers, optional fields and dates are stubbed as a client sends them") {
+    spec.set(resource("probe.yaml"))
+    dir.resolve("src/contractTest/kotlin/InventoryScenario.kt").delete()
+    dir.write("src/contractTest/kotlin/Consumer.kt", resource("ProbeConsumer.kt"))
+    val result = run("exercise").build()
+    result.output shouldContain "PROBE passed"
+    // Only the inventory contract's composed schema is skipped; every probe operation is kept.
+    result.output.lines().filter { "Skipping" in it } shouldBe listOf("Skipping GET /search (search): composed schema")
+    val suite = dir.resolve("build/generated/stove/wiremock/supplier").walk().single { it.name == "SupplierWiremock.kt" }
+    suite.readText() shouldNotContain "\"Authorization\""
+    suite.readText() shouldNotContain "\"Accept\""
   }
 
   test("configuration reuse and build-cache restoration still recheck remote references") {

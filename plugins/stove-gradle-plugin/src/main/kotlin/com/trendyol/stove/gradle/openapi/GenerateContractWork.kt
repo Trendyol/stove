@@ -1,7 +1,6 @@
 package com.trendyol.stove.gradle.openapi
 
 import com.fasterxml.jackson.databind.JsonNode
-import com.fasterxml.jackson.databind.ObjectMapper
 import io.swagger.v3.oas.models.OpenAPI
 import org.gradle.api.file.DirectoryProperty
 import org.gradle.api.file.RegularFileProperty
@@ -19,6 +18,7 @@ interface GenerateParameters : WorkParameters {
   val alias: Property<String>
   val types: MapProperty<String, String>
   val output: DirectoryProperty
+  val skipped: RegularFileProperty
   val scratch: DirectoryProperty
 }
 
@@ -28,7 +28,7 @@ abstract class GenerateContractWork : WorkAction<GenerateParameters> {
     val docs = scratch.resolve("documents")
     val generated = scratch.resolve("kotlin")
     generated.deleteRecursively()
-    val api = readContract(ObjectMapper().readTree(parameters.input.asFile.get()), docs)
+    val api = readContract(json.readTree(parameters.input.asFile.get()), docs)
     val alias = parameters.alias.get()
     val pkg = "stove.generated.wiremock.$alias"
     val config = KotlinClientCodegen().apply {
@@ -39,7 +39,8 @@ abstract class GenerateContractWork : WorkAction<GenerateParameters> {
       inlineSchemaOption()["RESOLVE_INLINE_ENUMS"] = "true"
       schemaMapping().putAll(parameters.types.get())
     }
-    val operations = supportedOperations(api, config, parameters.types.get().keys)
+    val (operations, skipped) = supportedOperations(api, config, parameters.types.get().keys)
+    parameters.skipped.asFile.get().writeText(skipped.joinToString("\n"))
     val generator = DefaultGenerator().apply {
       setGenerateMetadata(false)
       setGeneratorPropertyDefault("models", "true")

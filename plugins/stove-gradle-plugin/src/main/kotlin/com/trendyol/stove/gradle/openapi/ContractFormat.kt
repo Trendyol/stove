@@ -16,6 +16,8 @@ import io.swagger.v3.parser.core.extensions.SwaggerParserExtension
 import io.swagger.v3.parser.core.models.ParseOptions
 import java.io.File
 
+private val supportedVersion = Regex("""3\.[01]\.\d+.*""")
+
 internal enum class ContractFormat(private val newParser: () -> SwaggerParserExtension) {
   OPENAPI_3(::OpenAPIV3Parser) {
     override fun references(mapper: ObjectMapper) = ContractReferences(mapper, OpenAPI::class.java)
@@ -30,7 +32,7 @@ internal enum class ContractFormat(private val newParser: () -> SwaggerParserExt
     val parsed = newParser().readLocation(input.toURI().toString(), null, ParseOptions().apply { isResolve = true })
     require(parsed.messages.isNullOrEmpty()) { "Invalid Stove OpenAPI contract: ${parsed.messages.joinToString("; ")}" }
     val api = requireNotNull(parsed.openAPI) { "Expected a Swagger 2.0 or OpenAPI 3.0/3.1 contract" }
-    require(api.openapi?.matches(Regex("3\\.[01]\\.\\d+.*")) == true) { "Unsupported OpenAPI version: ${api.openapi}" }
+    require(api.openapi?.matches(supportedVersion) == true) { "Unsupported OpenAPI version: ${api.openapi}" }
     return api
   }
 
