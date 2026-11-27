@@ -49,7 +49,7 @@ class WiremockPluginFunctionalTest : FunSpec({
     second.output shouldContain "Skipping GET /upload"
   }
 
-  test("mixed media types, reserved headers, optional fields and dates are stubbed as a client sends them") {
+  test("generated stubs match JSON and mapped DTOs as a client sends them") {
     spec.set(resource("probe.yaml"))
     dir.resolve("src/contractTest/kotlin/InventoryScenario.kt").delete()
     dir.write("src/contractTest/kotlin/Consumer.kt", resource("ProbeConsumer.kt"))
@@ -161,6 +161,7 @@ class WiremockPluginFunctionalTest : FunSpec({
           properties:
             sku: { ${'$'}ref: '#/${'$'}defs/Sku' }
             quantity: { ${'$'}id: counts/value.json, ${'$'}ref: integer.yaml }
+            note: { type: [string, "null"] }
           ${'$'}defs:
             Sku: { type: string }
     """)

@@ -17,8 +17,9 @@ enum class Channel { online, @JsonProperty("shop") IN_STORE }
 
 suspend fun exerciseInventory(baseUrl: String) {
   val line = StockLine(sku = "tea", quantity = 2)
-  val reservation = Reservation(id = "r1", lines = listOf(line))
-  val cart = ReserveStock(lines = listOf(line), labels = mapOf("\$ref" to "cart-42"))
+  val lines = listOf(line, StockLine(sku = "coffee", quantity = 1, note = "chilled"))
+  val reservation = Reservation(id = "r1", lines = lines)
+  val cart = ReserveStock(lines = lines, labels = mapOf("\$ref" to "cart-42"))
   val warehouse = "EU/West"
   val startsAt = OffsetDateTime.parse("2026-01-01T10:00:00Z")
   val weight = BigDecimal("0.0000001")
@@ -47,11 +48,17 @@ suspend fun exerciseInventory(baseUrl: String) {
       .method(method, body?.let(HttpRequest.BodyPublishers::ofString) ?: HttpRequest.BodyPublishers.noBody()).build(),
     HttpResponse.BodyHandlers.ofString(),
   )
-  val payload = """{"labels":{"${'$'}ref":"cart-42"},"lines":[{"quantity":2,"sku":"tea"}]}"""
+  val payload = """
+    {"labels":{"${'$'}ref":"cart-42"},"lines":[
+      {"quantity":1,"sku":"coffee","note":"chilled"},
+      {"quantity":2,"sku":"tea","note":"packed"}
+    ]}
+  """.trimIndent()
   val created = call("POST", "?channel=online", payload)
   val json = StoveSerde.jackson.default
   check(created.statusCode() == 201 && json.readValue(created.body(), Reservation::class.java) == reservation)
-  check(call("POST", "?channel=online", payload.replace("tea", "coffee")).statusCode() == 404)
+  check(call("POST", "?channel=online", payload.replace("tea", "cocoa")).statusCode() == 404)
+  check(call("POST", "?channel=online", payload.replace("\"note\":\"packed\"", "\"extra\":true")).statusCode() == 404)
   val problem = call("POST", "?channel=shop")
   check(problem.statusCode() == 409 && problem.headers().firstValue("Content-Type").get() == "application/problem+json")
   check(json.readValue(problem.body(), InventoryProblem::class.java).reason == "sold out")

@@ -4,3 +4,4 @@ StockLine:
   properties:
     sku: {type: string}
     quantity: {type: integer, format: int32}
+    note: {type: [string, "null"]}

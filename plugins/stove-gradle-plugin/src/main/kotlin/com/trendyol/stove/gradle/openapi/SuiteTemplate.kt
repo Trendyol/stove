@@ -9,6 +9,7 @@ import io.swagger.v3.oas.models.responses.ApiResponse
 import org.openapitools.codegen.languages.KotlinClientCodegen
 import org.openapitools.codegen.utils.ModelUtils
 import java.io.File
+import java.util.regex.Pattern
 
 private val responseNames = mapOf(
   200 to "ok", 201 to "created", 202 to "accepted", 204 to "noContent", 301 to "movedPermanently",
@@ -18,6 +19,7 @@ private val responseNames = mapOf(
   503 to "serviceUnavailable", 504 to "gatewayTimeout",
 )
 private val typeName = Regex("""(?<![\w.])[a-zA-Z_]\w*""")
+private val jvmMethods = setOf("toString", "hashCode", "getClass", "wait", "notify", "notifyAll", "clone", "finalize")
 private val template by lazy {
   checkNotNull(SuiteTemplate::class.java.getResourceAsStream("/openapi/suite.kt.mustache")).bufferedReader().use {
     Mustache.compiler().escapeHTML(false).emptyStringIsFalse(true).compile(it)
@@ -52,14 +54,32 @@ internal class SuiteTemplate(
     }
 
     val locals = localNames(inputs, name)
-    val arguments = inputs.zip(locals) { input, local -> local to typeOf(input.schema) + if (input.location == "path") "" else "? = null" }
+    val nullableBody = body?.schema?.let(::isNullable) == true
+    val arguments = inputs.zip(locals) { input, local ->
+      val suffix = when {
+        input.location == "path" -> ""
+        input.location == "request" && nullableBody -> "?"
+        else -> "? = null"
+      }
+      "$local: ${typeOf(input.schema)}$suffix"
+    }
     val bound = parameters.zip(locals)
     val segments = bound.filter { (p, _) -> p.`in` == "path" }
-      .associate { (p, local) -> p.name to "encodeSegment(${wireValue(p, local)})" }
-    val constraints = buildList {
-      bound.filter { (p, _) -> p.`in` == "query" || p.`in` == "header" }
-        .forEach { (p, local) -> add("$local?.let { ${p.`in`}(${literal(p.name)}, ${wireValue(p, "it")}) }") }
-      if (body != null) add("${locals.last()}?.let { body(stubBody(it)) }")
+      .associate { (p, local) -> p.name to "segmentPattern(${wireValue(p, local)})" }
+    val constraints = bound.filter { (p, _) -> p.`in` == "query" || p.`in` == "header" }
+      .map { (p, local) -> "$local?.let { ${p.`in`}(${literal(p.name)}, ${wireValue(p, "it")}) }" }
+    val bodyConstraint = when {
+      body == null -> null
+      nullableBody -> "body(stubBody(${locals.last()}))"
+      else -> "${locals.last()}?.let { body(stubBody(it)) }"
+    }
+    val signatures = buildList {
+      // Nullable contracts distinguish an omitted constraint from an explicitly null JSON value.
+      if (nullableBody) add(Signature(arguments.dropLast(1), locals.dropLast(1), constraints))
+      add(Signature(arguments, locals, constraints + listOfNotNull(bodyConstraint)))
+    }
+    require(name !in jvmMethods || signatures.none { it.params.isEmpty() }) {
+      "Kotlin operation '$name' at $method $path conflicts with an inherited JVM method; choose another operationId"
     }
 
     return OperationTemplate(
@@ -67,11 +87,9 @@ internal class SuiteTemplate(
       label = literal("$alias.$name"),
       missingResponse = literal("Choose a response for $alias.$name"),
       scope = name.replaceFirstChar(Char::uppercase) + "Response",
-      params = arguments.joinToString { (name, type) -> "$name: $type" },
-      args = locals.joinToString(),
       method = method,
-      path = pathExpression(path, segments),
-      constraints = constraints,
+      target = if (segments.isEmpty()) "path(${literal(path)})" else "pathRegex(${pathPattern(path, segments)})",
+      signatures = signatures,
       responses = op.responses.map { (code, r) -> response(code, r, op.responses.keys) },
     )
   }
@@ -99,12 +117,10 @@ internal class SuiteTemplate(
   private fun response(code: String, response: ApiResponse, declared: Set<String>): ResponseTemplate {
     val media = api.resolveResponse(response).content.orEmpty().entries.singleOrNull()
     val schema = media?.value?.schema
-    val shape = schema?.let { ModelUtils.getReferencedSchema(api, it) }
-    val nullable = shape?.nullable == true || "null" in shape?.types.orEmpty()
     val status = code.toIntOrNull()
     val params = listOfNotNull(
       "statusCode: Int".takeIf { status == null },
-      schema?.let { "body: ${typeOf(it)}" + if (nullable) "?" else "" },
+      schema?.let { "body: ${typeOf(it)}" + if (isNullable(it)) "?" else "" },
     )
     return ResponseTemplate(
       name = if (code == "default") "defaultResponse" else responseNames[status] ?: "status$code",
@@ -121,6 +137,10 @@ internal class SuiteTemplate(
     )
   }
 
+  private fun isNullable(schema: Schema<*>): Boolean = ModelUtils.getReferencedSchema(api, schema).let { shape ->
+    shape.nullable == true || "null" in shape.types.orEmpty()
+  }
+
   // Qualify model names even inside generics: a response scope can have the same name as a DTO.
   private fun typeOf(schema: Schema<*>): String =
     typeName.replace(config.getTypeDeclaration(schema)) {
@@ -132,18 +152,23 @@ private data class Input(val wireName: String, val location: String, val schema:
 
 private data class OperationTemplate(
   val name: String, val label: String, val missingResponse: String, val scope: String,
-  val params: String, val args: String, val method: PathItem.HttpMethod, val path: String,
-  val constraints: List<String>, val responses: List<ResponseTemplate>,
+  val method: PathItem.HttpMethod, val target: String,
+  val signatures: List<Signature>, val responses: List<ResponseTemplate>,
 )
+
+private class Signature(parameters: List<String>, locals: List<String>, val constraints: List<String>) {
+  val params = parameters.joinToString()
+  val args = locals.joinToString()
+}
 
 private data class ResponseTemplate(
   val name: String, val code: String, val status: String, val params: String,
   val guard: String?, val contentType: String?, val body: String,
 )
 
-/** Literal text between parameters (split keeps empty ends), interleaved with the encoded segment values. */
-private fun pathExpression(path: String, segments: Map<String, String>): String {
-  val texts = path.split(pathParameter).map(::literal)
+/** Quote the contract's text literally and allow alternate encodings only inside the parameter values. */
+private fun pathPattern(path: String, segments: Map<String, String>): String {
+  val texts = path.split(pathParameter).map { literal(Pattern.quote(it)) }
   val values = pathParameter.findAll(path).map { segments.getValue(it.groupValues[1]) }.toList()
   return buildList {
     texts.zip(values).forEach { (text, value) -> add(text); add(value) }

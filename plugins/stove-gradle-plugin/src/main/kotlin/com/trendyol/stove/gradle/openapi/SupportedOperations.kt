@@ -15,7 +15,6 @@ import java.net.URI
 internal val pathParameter = Regex("""\{([^}]+)}""")
 private val nonIdentifier = Regex("[^a-zA-Z0-9]+")
 private val responseStatus = Regex("[1-5](?:[0-9]{2}|XX)|default")
-private val jvmMethods = setOf("toString", "hashCode", "getClass", "wait", "notify", "notifyAll", "clone", "finalize")
 private val parameterLocations = setOf("path", "query", "header")
 private val binaryFormats = setOf("binary", "byte")
 private val reservedHeaders = setOf("accept", "content-type", "authorization")
@@ -38,13 +37,9 @@ internal fun supportedOperations(api: OpenAPI, kotlin: KotlinClientCodegen, mapp
   val names = mutableSetOf<String>()
   candidates.forEach { c -> require(names.add(c.name)) { "Duplicate Kotlin operation '${c.name}' at ${c.method} ${c.path}" } }
   // The generator reads the swagger model, so names and merged parameters are written back into it.
-  candidates.forEach { (path, item, method, op, name) ->
+  candidates.forEach { (_, item, _, op, name) ->
     op.operationId = name
     op.parameters = mergedParameters(api, item, op)
-    // A generated function without arguments cannot override a JVM method.
-    require(op.parameters.isNotEmpty() || op.requestBody != null || name !in jvmMethods) {
-      "Kotlin operation '$name' at $method $path conflicts with an inherited JVM method; choose another operationId"
-    }
   }
   api.paths.orEmpty().values.forEach { it.parameters = null } // Already merged into each operation.
 

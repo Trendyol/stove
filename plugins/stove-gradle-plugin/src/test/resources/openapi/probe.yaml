@@ -12,9 +12,21 @@ paths:
       operationId: multi
       requestBody:
         content:
-          application/json: { schema: { $ref: "#/components/schemas/Note" } }
-          application/xml: { schema: { $ref: "#/components/schemas/Note" } }
-      responses: { "204": { description: ok } }
+          application/json: { schema: { $ref: "#/components/schemas/Item" } }
+          application/xml: { schema: { $ref: "#/components/schemas/Item" } }
+      responses:
+        "201": { description: created, content: { application/json: { schema: { $ref: "#/components/schemas/Item" } } } }
+  /nullable-body:
+    post:
+      operationId: nullableBody
+      parameters:
+        - { name: mode, in: query, schema: { type: string } }
+      requestBody:
+        content:
+          application/json: { schema: { type: string, nullable: true } }
+      responses:
+        "202": { description: accepted }
+        "204": { description: no content }
   /nullable-text:
     get:
       operationId: nullableText
@@ -38,6 +50,13 @@ components:
     NoteAlias: { $ref: "#/components/responses/ActualNote" }
     ActualNote: { description: ok, content: { application/json: { schema: { $ref: "#/components/schemas/Note" } } } }
   schemas:
+    Item:
+      type: object
+      required: [name, createdAt]
+      properties:
+        name: { type: string }
+        createdAt: { type: string, format: date-time }
+        detail: { type: string, nullable: true }
     Note:
       type: object
       required: [text]

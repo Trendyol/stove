@@ -1,5 +1,6 @@
 package fixture
 
+import com.github.tomakehurst.wiremock.client.WireMock.exactly
 import com.trendyol.stove.system.*
 import com.trendyol.stove.system.abstractions.*
 import com.trendyol.stove.wiremock.*
@@ -30,12 +31,13 @@ fun main() = runBlocking {
 }
 
 private suspend fun exerciseSupplier(supplierUrl: String) {
+  val id = "a@b:c/d e"
   stove {
     wiremock(Supplier) {
       check(runCatching { supplier.submit("empty") {} }.isFailure)
       check(runCatching { supplier.submit("twice") { noContent(); noContent() } }.isFailure)
       supplier.submit("any") { noContent() }
-      supplier.submit("a@b:c/d e", limit = 2, xMode = "draft", body = Item("x")) {
+      supplier.submit(id, limit = 2, xMode = "draft", body = Item("x")) {
         conflict(SubmitResponse(detail = "busy"))
       }
     }
@@ -45,13 +47,16 @@ private suspend fun exerciseSupplier(supplierUrl: String) {
     .header("X-Mode", "draft").POST(HttpRequest.BodyPublishers.ofString("""{"value":"x"}""")).build(),
     HttpResponse.BodyHandlers.ofString())
   check(post("/v1/orders/any?ignored=1").statusCode() == 204)
-  val problem = post("/v1/orders/a@b:c%2Fd%20e?limit=2")
-  check(problem.statusCode() == 409 && problem.body() == """{"detail":"busy"}""") { problem.toString() + problem.body() }
-  check(problem.headers().firstValue("Content-Type").get() == "application/problem+json")
+  for (segment in listOf("a@b:c%2Fd%20e", "a%40b%3Ac%2fd%20e")) {
+    val problem = post("/v1/orders/$segment?limit=2")
+    check(problem.statusCode() == 409 && problem.body() == """{"detail":"busy"}""") { problem.toString() + problem.body() }
+    check(problem.headers().firstValue("Content-Type").get() == "application/problem+json")
+  }
+  check(post("/v1/orders/a@b:c/d%20e?limit=2").statusCode() == 404)
   stove {
     wiremock(Supplier) {
-      shouldHaveBeenCalled(supplier.requests.submit("a@b:c/d e", limit = 2, xMode = "draft", body = Item("x")))
-      shouldNotHaveBeenCalled(supplier.requests.submit("a@b:c/d e", limit = 1))
+      shouldHaveBeenCalled(supplier.requests.submit(id, limit = 2, xMode = "draft", body = Item("x")), exactly(2))
+      shouldNotHaveBeenCalled(supplier.requests.submit(id, limit = 1))
       shouldNotHaveBeenCalled(inventory.requests.releaseStock(warehouseId = "EU/West", reservationId = "r1"))
     }
   }

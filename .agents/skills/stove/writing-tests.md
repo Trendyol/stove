@@ -577,7 +577,7 @@ Observation is distinct from business completion. Go consumer hooks pre-report c
    }
    ```
 
-   Supply all path values. Query, header, and body arguments constrain matching only when supplied. Select exactly one declared response.
+   Supply all path values. Query, header, and body arguments constrain matching only when supplied. For a nullable JSON request body, `body = null` matches the JSON value `null`; omitting `body` leaves it unconstrained. Select exactly one declared response.
 4. For custom responses or retry scenarios, build a `RequestSpec` from the same accessor. For example, simulate an outage followed by recovery:
 
    ```kotlin

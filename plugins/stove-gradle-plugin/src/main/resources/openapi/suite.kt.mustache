@@ -6,16 +6,21 @@ import com.trendyol.stove.wiremock.ResponseDsl
 import com.trendyol.stove.wiremock.WireMockSystem
 import com.trendyol.stove.wiremock.WiremockDsl
 import com.trendyol.stove.wiremock.path
+import com.trendyol.stove.wiremock.pathRegex
+import java.util.regex.Pattern
 
 val WireMockSystem.{{alias}}: {{suite}} get() = {{suite}}(this)
 
-private fun encodeSegment(value: String): String = buildString {
+private fun segmentPattern(value: String): String = buildString {
   val hex = "0123456789ABCDEF"
   for (byte in value.toByteArray(Charsets.UTF_8)) {
     val octet = byte.toInt() and 255
     val c = octet.toChar()
-    if (c in 'a'..'z' || c in 'A'..'Z' || c in '0'..'9' || c in "-._~!$&'()*+,;=:@") append(c)
-    else append('%').append(hex[octet ushr 4]).append(hex[octet and 15])
+    val encoded = "(?i:%${hex[octet ushr 4]}${hex[octet and 15]})"
+    // The literal and escaped forms start differently, so the matcher never needs to backtrack.
+    if (c in 'a'..'z' || c in 'A'..'Z' || c in '0'..'9' || c in "-._~!$&'()*+,;=:@") {
+      append("(?>${Pattern.quote(c.toString())}|$encoded)")
+    } else append(encoded)
   }
 }
 
@@ -24,6 +29,7 @@ private val mapper = com.fasterxml.jackson.module.kotlin.jacksonObjectMapper().r
   com.fasterxml.jackson.databind.module.SimpleModule()
     .iso<java.time.OffsetDateTime>(java.time.format.DateTimeFormatter.ISO_OFFSET_DATE_TIME)
     .iso<java.time.LocalDate>(java.time.format.DateTimeFormatter.ISO_LOCAL_DATE)
+    .iso<java.time.Instant>(java.time.format.DateTimeFormatter.ISO_INSTANT)
 )
 
 private inline fun <reified T : java.time.temporal.TemporalAccessor> com.fasterxml.jackson.databind.module.SimpleModule.iso(
@@ -34,7 +40,7 @@ private inline fun <reified T : java.time.temporal.TemporalAccessor> com.fasterx
 })
 
 /** Ignores array order. A null field matches an absent field or any value; unexpected fields do not match. */
-private fun stubBody(value: Any) =
+private fun stubBody(value: Any?) =
   com.github.tomakehurst.wiremock.client.WireMock.equalToJson(mapper.writeValueAsString(optional(mapper.valueToTree(value))), true, false)
 
 private fun optional(node: com.fasterxml.jackson.databind.JsonNode): com.fasterxml.jackson.databind.JsonNode = node.apply {
@@ -50,20 +56,24 @@ class {{suite}} internal constructor(private val system: WireMockSystem) {
   val requests = Requests(system)
   class Requests internal constructor(private val system: WireMockSystem) {
 {{#operations}}
-    fun {{name}}({{params}}): RequestSpec = this.system.request(RequestMethod.{{method}}, path({{path}})) {
+{{#signatures}}
+    fun {{name}}({{params}}): RequestSpec = this.system.request(RequestMethod.{{method}}, {{target}}) {
 {{#constraints}}
       {{.}}
 {{/constraints}}
     }
+{{/signatures}}
 {{/operations}}
   }
 {{#operations}}
+{{#signatures}}
   suspend fun {{name}}({{#params}}{{.}}, {{/params}}_respond: {{scope}}.() -> Unit): WireMockSystem =
     this.system.stub(this.requests.{{name}}({{args}}), {{label}}) {
       var chosen = false
       {{scope}} { response -> respond(response); chosen = true }._respond()
       require(chosen) { {{missingResponse}} }
     }
+{{/signatures}}
 {{/operations}}
 {{#operations}}
   @WiremockDsl
